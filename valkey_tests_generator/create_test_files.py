@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import keyword
+import math
 import re
 import sys
 import textwrap
@@ -35,16 +37,28 @@ def _reconstruct_command(command: TCLCommandWord) -> str:
     return " ".join(parts)
 
 
-def _translate_arg(arg: TCLCommandArguments) -> str | None:
+def _format_arg(arg: TCLCommandArguments) -> str:
+    if isinstance(arg, TCLBracesWord) and "\n" in arg.value:
+        body = textwrap.indent(textwrap.dedent(arg.value).strip(), "    ")
+        return "{\n" + body + "\n}"
+    return _reconstruct_arg(arg)
+
+
+def _format_command(command: TCLCommandWord) -> str:
+    parts = [command.name, *(_format_arg(arg) for arg in command.args)]
+    return " ".join(parts)
+
+
+def _translate_arg(arg: TCLCommandArguments, defined_vars: set[str]) -> str | None:
     if isinstance(arg, TCLVariableSubstitutionWord):
-        if "::" in arg.variable_name:
+        if "::" in arg.variable_name or arg.variable_name not in defined_vars:
             return None
         return arg.variable_name
     if isinstance(arg, TCLBracketWord):
         commands = [c for c in arg.script.commands if c.name]
         if len(commands) != 1:
             return None
-        return _translate_command_expr(commands[0])
+        return _translate_command_expr(commands[0], defined_vars)
     if isinstance(arg, TCLBracesWord):
         return repr(arg.value)
     if isinstance(arg, TCLDoubleQuotedWord):
@@ -58,22 +72,26 @@ def _translate_arg(arg: TCLCommandArguments) -> str | None:
     except ValueError:
         pass
     try:
-        float(s)
+        v = float(s)
+        if math.isinf(v):
+            return f"float('{s}')"
+        if math.isnan(v):
+            return "float('nan')"
         return s
     except ValueError:
         pass
     return repr(s)
 
 
-def _translate_r_args(args: list[TCLCommandArguments]) -> str | None:
+def _translate_r_args(args: list[TCLCommandArguments], defined_vars: set[str]) -> str | None:
     if not args:
         return None
-    subcmd = _translate_arg(args[0])
+    subcmd = _translate_arg(args[0], defined_vars)
     if subcmd is None:
         return None
     rest = []
     for arg in args[1:]:
-        t = _translate_arg(arg)
+        t = _translate_arg(arg, defined_vars)
         if t is None:
             return None
         rest.append(t)
@@ -81,16 +99,16 @@ def _translate_r_args(args: list[TCLCommandArguments]) -> str | None:
     return f"r.run({call_args})"
 
 
-def _translate_command_expr(command: TCLCommandWord) -> str | None:
+def _translate_command_expr(command: TCLCommandWord, defined_vars: set[str]) -> str | None:
     if command.name == "r":
-        return _translate_r_args(command.args)
+        return _translate_r_args(command.args, defined_vars)
     return None
 
 
-def _translate_command_stmt(command: TCLCommandWord) -> list[str] | None:
+def _translate_command_stmt(command: TCLCommandWord, defined_vars: set[str]) -> list[str] | None:
     match command.name:
         case "r":
-            expr = _translate_r_args(command.args)
+            expr = _translate_r_args(command.args, defined_vars)
             if expr is None:
                 return None
             return [expr]
@@ -98,32 +116,38 @@ def _translate_command_stmt(command: TCLCommandWord) -> list[str] | None:
             if not command.args[1:]:
                 return None
             name_arg = command.args[0]
-            if not isinstance(name_arg, TCLWord):
+            if not isinstance(name_arg, TCLWord) or "(" in name_arg.value:
                 return None
-            val = _translate_arg(command.args[1])
+            val = _translate_arg(command.args[1], defined_vars)
             if val is None:
                 return None
             return [f"{name_arg.value} = {val}"]
         case "assert_equal":
             if not command.args[1:]:
                 return None
-            a = _translate_arg(command.args[0])
-            b = _translate_arg(command.args[1])
+            a = _translate_arg(command.args[0], defined_vars)
+            b = _translate_arg(command.args[1], defined_vars)
             if a is None or b is None:
                 return None
             return [f"assert {a} == {b}"]
         case "assert_match":
             if not command.args[1:]:
                 return None
-            pat = _translate_arg(command.args[0])
-            val = _translate_arg(command.args[1])
+            pat = _translate_arg(command.args[0], defined_vars)
+            val = _translate_arg(command.args[1], defined_vars)
             if pat is None or val is None:
                 return None
-            return [f"assert fnmatch({val}, {pat})"]
+            return [f"assert fnmatch(str({val}), str({pat}))"]
         case "assert":
             if not command.args:
                 return None
-            expr = _translate_arg(command.args[0])
+            arg0 = command.args[0]
+            if not isinstance(arg0, TCLBracketWord):
+                return None
+            inner = [c for c in arg0.script.commands if c.name]
+            if len(inner) != 1:
+                return None
+            expr = _translate_command_expr(inner[0], defined_vars)
             if expr is None:
                 return None
             return [f"assert {expr}"]
@@ -133,8 +157,10 @@ def _translate_command_stmt(command: TCLCommandWord) -> list[str] | None:
             name_arg = command.args[0]
             if not isinstance(name_arg, TCLWord):
                 return None
+            if name_arg.value not in defined_vars:
+                return None
             if len(command.args) > 1:
-                amount = _translate_arg(command.args[1])
+                amount = _translate_arg(command.args[1], defined_vars)
                 if amount is None:
                     return None
                 return [f"{name_arg.value} += {amount}"]
@@ -154,21 +180,30 @@ class TCLBodyTranslator:
             return []
 
         lines: list[str] = []
+        defined_vars: set[str] = set()
+
         for i, command in enumerate(commands):
             is_last = i == len(commands) - 1
+
             if is_last and expected is not None:
-                expr = _translate_command_expr(command)
+                expr = _translate_command_expr(command, defined_vars)
                 if expr is not None:
                     lines.append(f"assert {expr} == {expected!r}")
-                else:
-                    lines.append(f"# TODO: {_reconstruct_command(command)}")
-                    lines.append("assert False")
+                    continue
             else:
-                stmt = _translate_command_stmt(command)
+                stmt = _translate_command_stmt(command, defined_vars)
                 if stmt is not None:
                     lines.extend(stmt)
-                else:
-                    lines.append(f"# TODO: {_reconstruct_command(command)}")
+                    if command.name == "set" and isinstance(command.args[0], TCLWord):
+                        defined_vars.add(command.args[0].value)
+                    continue
+
+            formatted = _format_command(command)
+            first_line, *rest_lines = formatted.splitlines()
+            lines.append(f"# TODO: {first_line}")
+            lines.extend(f"#   {rest}" for rest in rest_lines)
+            if is_last and expected is not None:
+                lines.append("assert False")
 
         return lines
 
@@ -194,6 +229,7 @@ class TCLTestFileGenerator:
     _todo_counter: Counter = field(default_factory=Counter)
     _total_tests: int = field(default=0)
     _translated_tests: int = field(default=0)
+    _used_names: Counter = field(default_factory=Counter)
 
     @classmethod
     def collect_foreach_name_to_values(cls, foreach_command: TCLCommandForEach) -> dict[str, list]:
@@ -249,10 +285,15 @@ class TCLTestFileGenerator:
         translate_table = str.maketrans(
             {
                 "/": "_or_",
-                **{c: "_" for c in "{}\",#: -()<>=$'"},
+                **{c: "_" for c in "{}\",#: -()<>=$'.,*&@!?|+~^%"},
             }
         )
-        test_name = "test_" + re.sub("_+", "_", name.lower().translate(translate_table).strip("_"))
+        base_name = "test_" + re.sub(
+            "_+", "_", re.sub(r"[^a-z0-9_]", "_", name.lower().translate(translate_table)).strip("_")
+        )
+        count = self._used_names[base_name]
+        self._used_names[base_name] += 1
+        test_name = base_name if count == 0 else f"{base_name}_{count}"
 
         body_arg = test_command.args[1] if len(test_command.args) > 1 else None
         expected_arg = test_command.args[2] if test_command.args[2:] else None
@@ -275,22 +316,20 @@ class TCLTestFileGenerator:
             self.output.write("@pytest.mark.xfail(reason='not implemented')\n")
         if if_expressions:
             for if_expression in if_expressions:
-                self.output.write(f"@pytest.mark.skipif('', reason='{if_expression}')\n")
+                self.output.write(f"@pytest.mark.skipif('', reason={if_expression!r})\n")
         if parametrizes:
             self.output.writelines(parametrizes)
 
-        reconstructed = _reconstruct_command(test_command)
-        self.output.write(f"def {test_name}(r: ValkeyTestClient):\n")
+        self.output.write(f"def {test_name}(r: ValkeyTestClient) -> None:\n")
         self.output.write('    """\n')
-        self.output.write(f"{textwrap.indent(textwrap.dedent(reconstructed), '    ')}\n")
+        self.output.write(textwrap.indent(_format_command(test_command), "    ") + "\n")
         self.output.write('    """\n')
         for line in lines:
             self.output.write(f"    {line}\n")
 
     def generate_comment(self, command: TCLCommandWord) -> None:
-        reconstructed = _reconstruct_command(command)
         self.output.write('\n\n"""\n')
-        self.output.write(f"{textwrap.dedent(reconstructed)}\n")
+        self.output.write(_format_command(command) + "\n")
         self.output.write('"""\n')
 
     def generate_tests(
@@ -307,7 +346,7 @@ class TCLTestFileGenerator:
                         except Exception:
                             self.generate_comment(command)
                             continue
-                        expression, body = if_command.if_part
+                        _, body = if_command.if_part
 
                         if not any([c for c in body.commands if c.name == "test"]):
                             self.generate_comment(command)
@@ -315,7 +354,7 @@ class TCLTestFileGenerator:
 
                         self.generate_tests(
                             body,
-                            (if_expressions or []) + [str(expression.postfix)],
+                            (if_expressions or []) + [_reconstruct_arg(command.args[0])],
                             foreach_commands,
                         )
                     case "foreach":
@@ -353,10 +392,14 @@ class TCLTestFileGenerator:
         for option, value in zip(options[::2], options[1::2]):
             match option:
                 case "tags":
-                    tags.extend([word for word in TCLList.words_iterator(iter(value), {})])
+                    for word in TCLList.words_iterator(iter(value), {}):
+                        tag = re.sub(r"[^a-zA-Z0-9]+", "_", word).strip("_")
+                        if tag:
+                            tags.append(tag)
 
         if tags:
-            marks = ", ".join(["pytest.mark." + tag for tag in set(tags)])
+            safe_tags = [f"tag_{t}" if keyword.iskeyword(t) else t for t in dict.fromkeys(tags)]
+            marks = ", ".join(["pytest.mark." + tag for tag in safe_tags])
             self.output.write("\n")
             self.output.write(f"pytestmark = [{marks}]\n")
 
@@ -367,6 +410,7 @@ class TCLTestFileGenerator:
             self.generate_tests(start_server_code)
 
     def generate(self, source_file: TextIO) -> None:
+        self.output.write("# ruff: noqa: PLR2004, F841, N806\n")
         self.output.write("import pytest\n")
         self.output.write("from fnmatch import fnmatch\n\n")
         self.output.write("from tests.valkey_test_client import ValkeyTestClient\n")
@@ -382,7 +426,7 @@ class TCLTestFileGenerator:
                 self.generate_comment(command)
 
     def generate_file(self, source_file_path: Path) -> None:
-        with open(source_file_path) as source_file:
+        with open(source_file_path, encoding="utf-8", errors="replace") as source_file:
             self.generate(source_file)
 
 

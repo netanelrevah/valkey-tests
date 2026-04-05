@@ -7,8 +7,8 @@ from pathlib import Path
 
 import typer
 
-from valkeytests.compare_tests import compare_file, print_result
-from valkeytests.create_test_files import TCLTestFileGenerator, _discover_tcl_files, _tcl_path_to_python_path
+from valkey_tests_generator.compare_tests import compare_file, print_result
+from valkey_tests_generator.create_test_files import TCLTestFileGenerator, _discover_tcl_files, _tcl_path_to_python_path
 
 app = typer.Typer(pretty_exceptions_enable=False)
 logger = logging.getLogger(__name__)
@@ -30,8 +30,8 @@ def _get_git_commit(repo_dir: Path) -> str:
 
 @app.command()
 def generate(
-    valkey_directory: Path = typer.Argument(..., envvar="VALKEY_DIRECTORY"),
-    output_dir: Path = typer.Option(Path("valkeytests/generated/unit"), help="Output directory for generated files"),
+    valkey_directory: Path = typer.Option(..., help="Path to the Valkey source directory"),
+    output_dir: Path = typer.Option(Path("valkey_tests/unit"), help="Output directory for test_valkey files"),
     skip_errors: bool = typer.Option(False, help="Skip files that fail to parse"),
     stats: bool = typer.Option(False, "--stats", help="Print translation statistics after generation"),
 ) -> None:
@@ -53,7 +53,7 @@ def generate(
         python_path.parent.mkdir(parents=True, exist_ok=True)
 
         try:
-            with open(python_path, "w") as output_file:
+            with open(python_path, "w", encoding="utf-8") as output_file:
                 gen = TCLTestFileGenerator(output=output_file)
                 gen.generate_file(tcl_file)
                 total_tests += gen._total_tests
@@ -77,16 +77,14 @@ def generate(
 
 @app.command()
 def compare(
-    valkey_directory: Path = typer.Argument(..., envvar="VALKEY_DIRECTORY"),
-    generated_dir: Path = typer.Option(
-        Path("valkeytests/generated/unit"), help="Directory with generated Python files"
-    ),
+    valkey_directory: Path = typer.Option(..., help="Path to the Valkey source directory"),
+    generated_dir: Path = typer.Option(Path("valkey_tests/unit"), help="Directory with test_valkey Python files"),
     file: str | None = typer.Option(None, help="Compare a single TCL file (relative path, e.g. type/string.tcl)"),
 ) -> None:
     commit_file = generated_dir.parent / "VALKEY_COMMIT"
     if commit_file.exists():
         snapshot_commit = commit_file.read_text().strip()
-        print(f"Snapshot generated from Valkey commit: {snapshot_commit}")
+        print(f"Snapshot test_valkey from Valkey commit: {snapshot_commit}")
 
     unit_tests_path = valkey_directory / "tests" / "unit"
 
@@ -110,7 +108,7 @@ def compare(
     for tcl_file in tcl_files:
         python_path = generated_dir / _tcl_path_to_python_path(tcl_file, unit_tests_path)
         if not python_path.exists():
-            print(f"  MISSING: {tcl_file.name} (no generated file)")
+            print(f"  MISSING: {tcl_file.name} (no test_valkey file)")
             continue
 
         result = compare_file(tcl_file, python_path)

@@ -15,6 +15,16 @@ uv run ruff check .       # Lint
 uv run mypy valkeytests/  # Type check
 ```
 
+## Workflow
+
+**Always run pre-commit before committing and fix all failures before proceeding:**
+
+```bash
+uv run pre-commit run --all-files
+```
+
+Only commit once all hooks pass.
+
 ## Architecture
 
 **Key directories**:

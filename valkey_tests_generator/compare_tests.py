@@ -33,10 +33,8 @@ def reconstruct_tcl_from_python(python_path: Path) -> str:
             docstring = ast.get_docstring(node, clean=False)
             if docstring:
                 tcl_blocks.append(docstring)
-        elif isinstance(node, ast.Expr) and isinstance(node.value, (ast.Constant, ast.Str)):
-            value = node.value.value if isinstance(node.value, ast.Constant) else node.value.s
-            if isinstance(value, str):
-                tcl_blocks.append(value)
+        elif isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
+            tcl_blocks.append(node.value.value)
 
     return "\n".join(tcl_blocks)
 

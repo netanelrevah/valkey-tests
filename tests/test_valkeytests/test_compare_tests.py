@@ -4,8 +4,8 @@ import ast
 import io
 import textwrap
 
-from valkeytests.compare_tests import normalize_text
-from valkeytests.create_test_files import TCLTestFileGenerator
+from valkey_tests_generator.compare_tests import normalize_text
+from valkey_tests_generator.create_test_files import TCLTestFileGenerator
 
 
 def generate_python(tcl: str) -> str:

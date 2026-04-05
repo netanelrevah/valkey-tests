@@ -1,0 +1,310 @@
+# ruff: noqa: PLR2004
+
+import pytest
+
+from tests.valkey_test_client import ValkeyTestClient
+
+pytestmark = [pytest.mark.pubsubshard_external_skip]
+
+
+@pytest.mark.xfail(reason="not implemented")
+def test_spublish_or_ssubscribe_basics(r: ValkeyTestClient) -> None:
+    """
+    test "SPUBLISH/SSUBSCRIBE basics" {
+        set rd1 [valkey_deferring_client]
+
+        # subscribe to two channels
+        assert_equal {1} [ssubscribe $rd1 {chan1}]
+        assert_equal {2} [ssubscribe $rd1 {chan2}]
+        assert_equal 1 [r SPUBLISH chan1 hello]
+        assert_equal 1 [r SPUBLISH chan2 world]
+        assert_equal {smessage chan1 hello} [$rd1 read]
+        assert_equal {smessage chan2 world} [$rd1 read]
+
+        # unsubscribe from one of the channels
+        sunsubscribe $rd1 {chan1}
+        assert_equal 0 [r SPUBLISH chan1 hello]
+        assert_equal 1 [r SPUBLISH chan2 world]
+        assert_equal {smessage chan2 world} [$rd1 read]
+
+        # unsubscribe from the remaining channel
+        sunsubscribe $rd1 {chan2}
+        assert_equal 0 [r SPUBLISH chan1 hello]
+        assert_equal 0 [r SPUBLISH chan2 world]
+
+        # clean up clients
+        $rd1 close
+    }
+    """
+    # TODO: set rd1 valkey_deferring_client
+    # TODO: assert_equal {1} ssubscribe $rd1 {chan1}
+    # TODO: assert_equal {2} ssubscribe $rd1 {chan2}
+    assert 1 == r.run("SPUBLISH", "chan1", "hello")
+    assert 1 == r.run("SPUBLISH", "chan2", "world")
+    # TODO: assert_equal {smessage chan1 hello} $rd1 read
+    # TODO: assert_equal {smessage chan2 world} $rd1 read
+    # TODO: sunsubscribe rd1 {chan1}
+    assert 0 == r.run("SPUBLISH", "chan1", "hello")
+    assert 1 == r.run("SPUBLISH", "chan2", "world")
+    # TODO: assert_equal {smessage chan2 world} $rd1 read
+    # TODO: sunsubscribe rd1 {chan2}
+    assert 0 == r.run("SPUBLISH", "chan1", "hello")
+    assert 0 == r.run("SPUBLISH", "chan2", "world")
+    # TODO: $rd1 close
+
+
+@pytest.mark.xfail(reason="not implemented")
+def test_spublish_or_ssubscribe_with_two_clients(r: ValkeyTestClient) -> None:
+    """
+    test "SPUBLISH/SSUBSCRIBE with two clients" {
+        set rd1 [valkey_deferring_client]
+        set rd2 [valkey_deferring_client]
+
+        assert_equal {1} [ssubscribe $rd1 {chan1}]
+        assert_equal {1} [ssubscribe $rd2 {chan1}]
+        assert_equal 2 [r SPUBLISH chan1 hello]
+        assert_equal {smessage chan1 hello} [$rd1 read]
+        assert_equal {smessage chan1 hello} [$rd2 read]
+
+        # clean up clients
+        $rd1 close
+        $rd2 close
+    }
+    """
+    # TODO: set rd1 valkey_deferring_client
+    # TODO: set rd2 valkey_deferring_client
+    # TODO: assert_equal {1} ssubscribe $rd1 {chan1}
+    # TODO: assert_equal {1} ssubscribe $rd2 {chan1}
+    assert 2 == r.run("SPUBLISH", "chan1", "hello")
+    # TODO: assert_equal {smessage chan1 hello} $rd1 read
+    # TODO: assert_equal {smessage chan1 hello} $rd2 read
+    # TODO: $rd1 close
+    # TODO: $rd2 close
+
+
+@pytest.mark.xfail(reason="not implemented")
+def test_spublish_or_ssubscribe_after_unsubscribe_without_arguments(r: ValkeyTestClient) -> None:
+    """
+    test "SPUBLISH/SSUBSCRIBE after UNSUBSCRIBE without arguments" {
+        set rd1 [valkey_deferring_client]
+        assert_equal {1} [ssubscribe $rd1 {chan1}]
+        assert_equal {2} [ssubscribe $rd1 {chan2}]
+        assert_equal {3} [ssubscribe $rd1 {chan3}]
+        sunsubscribe $rd1
+
+        # wait for the unsubscribe to take effect
+        wait_for_condition 50 100 {
+            [r spublish chan1 hello] eq 0
+        } else {
+            fail "unsubscribe did not take effect"
+        }
+
+        assert_equal 0 [r SPUBLISH chan1 hello]
+        assert_equal 0 [r SPUBLISH chan2 hello]
+        assert_equal 0 [r SPUBLISH chan3 hello]
+
+        # clean up clients
+        $rd1 close
+    }
+    """
+    # TODO: set rd1 valkey_deferring_client
+    # TODO: assert_equal {1} ssubscribe $rd1 {chan1}
+    # TODO: assert_equal {2} ssubscribe $rd1 {chan2}
+    # TODO: assert_equal {3} ssubscribe $rd1 {chan3}
+    # TODO: sunsubscribe rd1
+    # TODO: wait_for_condition 50 100 {
+    #       [r spublish chan1 hello] eq 0
+    #   } else {
+    #       fail "unsubscribe did not take effect"
+    #   }
+    assert 0 == r.run("SPUBLISH", "chan1", "hello")
+    assert 0 == r.run("SPUBLISH", "chan2", "hello")
+    assert 0 == r.run("SPUBLISH", "chan3", "hello")
+    # TODO: $rd1 close
+
+
+@pytest.mark.xfail(reason="not implemented")
+def test_ssubscribe_to_one_channel_more_than_once(r: ValkeyTestClient) -> None:
+    """
+    test "SSUBSCRIBE to one channel more than once" {
+        set rd1 [valkey_deferring_client]
+        assert_equal {1 1 1} [ssubscribe $rd1 {chan1 chan1 chan1}]
+        assert_equal 1 [r SPUBLISH chan1 hello]
+        assert_equal {smessage chan1 hello} [$rd1 read]
+
+        # clean up clients
+        $rd1 close
+    }
+    """
+    # TODO: set rd1 valkey_deferring_client
+    # TODO: assert_equal {1 1 1} ssubscribe $rd1 {chan1 chan1 chan1}
+    assert 1 == r.run("SPUBLISH", "chan1", "hello")
+    # TODO: assert_equal {smessage chan1 hello} $rd1 read
+    # TODO: $rd1 close
+
+
+@pytest.mark.xfail(reason="not implemented")
+def test_sunsubscribe_from_non_subscribed_channels(r: ValkeyTestClient) -> None:
+    """
+    test "SUNSUBSCRIBE from non-subscribed channels" {
+        set rd1 [valkey_deferring_client]
+        assert_equal {0} [sunsubscribe $rd1 {foo}]
+        assert_equal {0} [sunsubscribe $rd1 {bar}]
+        assert_equal {0} [sunsubscribe $rd1 {quux}]
+
+        # clean up clients
+        $rd1 close
+    }
+    """
+    # TODO: set rd1 valkey_deferring_client
+    # TODO: assert_equal {0} sunsubscribe $rd1 {foo}
+    # TODO: assert_equal {0} sunsubscribe $rd1 {bar}
+    # TODO: assert_equal {0} sunsubscribe $rd1 {quux}
+    # TODO: $rd1 close
+
+
+def test_pubsub_command_basics(r: ValkeyTestClient) -> None:
+    """
+    test "PUBSUB command basics" {
+        r pubsub shardnumsub abc def
+    } {abc 0 def 0}
+    """
+    assert r.run("pubsub", "shardnumsub", "abc", "def") == "abc 0 def 0"
+
+
+@pytest.mark.xfail(reason="not implemented")
+def test_spublish_or_ssubscribe_with_two_clients_1(r: ValkeyTestClient) -> None:
+    """
+    test "SPUBLISH/SSUBSCRIBE with two clients" {
+        set rd1 [valkey_deferring_client]
+        set rd2 [valkey_deferring_client]
+
+        assert_equal {1} [ssubscribe $rd1 {chan1}]
+        assert_equal {1} [ssubscribe $rd2 {chan1}]
+        assert_equal 2 [r SPUBLISH chan1 hello]
+        assert_equal "chan1 2" [r pubsub shardnumsub chan1]
+        assert_equal "chan1" [r pubsub shardchannels]
+
+        # clean up clients
+        $rd1 close
+        $rd2 close
+    }
+    """
+    # TODO: set rd1 valkey_deferring_client
+    # TODO: set rd2 valkey_deferring_client
+    # TODO: assert_equal {1} ssubscribe $rd1 {chan1}
+    # TODO: assert_equal {1} ssubscribe $rd2 {chan1}
+    assert 2 == r.run("SPUBLISH", "chan1", "hello")
+    assert "chan1 2" == r.run("pubsub", "shardnumsub", "chan1")
+    assert "chan1" == r.run("pubsub", "shardchannels")
+    # TODO: $rd1 close
+    # TODO: $rd2 close
+
+
+@pytest.mark.xfail(reason="not implemented")
+def test_spublish_or_ssubscribe_with_publish_or_subscribe(r: ValkeyTestClient) -> None:
+    """
+    test "SPUBLISH/SSUBSCRIBE with PUBLISH/SUBSCRIBE" {
+        set rd1 [valkey_deferring_client]
+        set rd2 [valkey_deferring_client]
+
+        assert_equal {1} [ssubscribe $rd1 {chan1}]
+        assert_equal {1} [subscribe $rd2 {chan1}]
+        assert_equal 1 [r SPUBLISH chan1 hello]
+        assert_equal 1 [r publish chan1 hello]
+        assert_equal "chan1 1" [r pubsub shardnumsub chan1]
+        assert_equal "chan1 1" [r pubsub numsub chan1]
+        assert_equal "chan1" [r pubsub shardchannels]
+        assert_equal "chan1" [r pubsub channels]
+
+        $rd1 close
+        $rd2 close
+    }
+    """
+    # TODO: set rd1 valkey_deferring_client
+    # TODO: set rd2 valkey_deferring_client
+    # TODO: assert_equal {1} ssubscribe $rd1 {chan1}
+    # TODO: assert_equal {1} subscribe $rd2 {chan1}
+    assert 1 == r.run("SPUBLISH", "chan1", "hello")
+    assert 1 == r.run("publish", "chan1", "hello")
+    assert "chan1 1" == r.run("pubsub", "shardnumsub", "chan1")
+    assert "chan1 1" == r.run("pubsub", "numsub", "chan1")
+    assert "chan1" == r.run("pubsub", "shardchannels")
+    assert "chan1" == r.run("pubsub", "channels")
+    # TODO: $rd1 close
+    # TODO: $rd2 close
+
+
+@pytest.mark.xfail(reason="not implemented")
+def test_pubsubshard_with_client_reply_off(r: ValkeyTestClient) -> None:
+    """
+    test "PubSubShard with CLIENT REPLY OFF" {
+        set rd [valkey_deferring_client]
+        $rd hello 3
+        $rd read ;# Discard the hello reply
+
+        # Test that the ssubscribe notification is ok
+        $rd client reply off
+        $rd ping
+        assert_equal {1} [ssubscribe $rd channel]
+
+        # Test that the spublish notification is ok
+        $rd client reply off
+        $rd ping
+        assert_equal 1 [r spublish channel hello]
+        assert_equal {smessage channel hello} [$rd read]
+
+        # Test that sunsubscribe notification is ok
+        $rd client reply off
+        $rd ping
+        assert_equal {0} [sunsubscribe $rd channel]
+
+        $rd close
+    }
+    """
+    # TODO: set rd valkey_deferring_client
+    # TODO: $rd hello 3
+    # TODO: $rd read
+    # TODO: $rd client reply off
+    # TODO: $rd ping
+    # TODO: assert_equal {1} ssubscribe $rd channel
+    # TODO: $rd client reply off
+    # TODO: $rd ping
+    assert 1 == r.run("spublish", "channel", "hello")
+    # TODO: assert_equal {smessage channel hello} $rd read
+    # TODO: $rd client reply off
+    # TODO: $rd ping
+    # TODO: assert_equal {0} sunsubscribe $rd channel
+    # TODO: $rd close
+
+
+pytestmark = [pytest.mark.pubsubshard_external_skip]
+
+
+"""
+start_server {tags {"pubsubshard external:skip"}} {
+    set node_0 [srv 0 client]
+    set node_0_host [srv 0 host]
+    set node_0_port [srv 0 port]
+
+    set node_1 [srv -1 client]
+    set node_1_host [srv -1 host]
+    set node_1_port [srv -1 port]
+
+    test {setup replication for following tests} {
+        $node_1 replicaof $node_0_host $node_0_port
+        wait_for_sync $node_1
+    }
+
+    test {publish message to master and receive on replica} {
+        set rd0 [valkey_deferring_client node_0_host node_0_port]
+        set rd1 [valkey_deferring_client node_1_host node_1_port]
+
+        assert_equal {1} [ssubscribe $rd1 {chan1}]
+        $rd0 SPUBLISH chan1 hello
+        assert_equal {smessage chan1 hello} [$rd1 read]
+        $rd0 SPUBLISH chan1 world
+        assert_equal {smessage chan1 world} [$rd1 read]
+    }
+}
+"""

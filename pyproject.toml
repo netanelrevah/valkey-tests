@@ -15,7 +15,7 @@ dependencies = [
 ]
 
 [tool.uv.build-backend]
-module-name = "valkeytests"
+module-name = "valkey_tests_generator"
 module-root = ""
 
 [build-system]
@@ -73,3 +73,4 @@ lint.ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "**/{tests}/*" = ["ANN", "PLR2004", "PLR0913", "E501"]
+"valkey_tests/**" = ["E501"]

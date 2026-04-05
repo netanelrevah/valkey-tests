@@ -6,7 +6,7 @@ import textwrap
 from parametrization import Parametrization
 from pytcl.words import TCLScript
 
-from valkeytests.create_test_files import TCLTestFileGenerator, _reconstruct_command
+from valkey_tests_generator.create_test_files import TCLTestFileGenerator, _reconstruct_command
 
 
 def generate(tcl: str) -> str:
@@ -183,6 +183,22 @@ def test_generate_file__tag_with_spaces():
         }
     """)
     assert "def test_basic_test(" in output
+    assert "pytest.mark.protocol" in output
+    assert "pytest.mark.network" in output
+    assert "pytest.mark.protocol network" not in output
+
+
+def test_generate_file__tag_with_colon():
+    output = generate("""
+        start_server {tags {"auth external:skip"}} {
+            test {basic test} {
+                r ping
+            } {PONG}
+        }
+    """)
+    assert "pytest.mark.auth" in output
+    assert "pytest.mark.external_skip" in output
+    assert "pytest.mark.auth external:skip" not in output
 
 
 def test_generate_file__multiple_start_server_blocks():
