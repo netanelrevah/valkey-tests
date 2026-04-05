@@ -3,10 +3,7 @@ from __future__ import annotations
 import io
 import textwrap
 
-from parametrization import Parametrization
-from pytcl.words import TCLScript
-
-from valkey_tests_generator.create_test_files import TCLTestFileGenerator, _reconstruct_command
+from valkey_tests_generator.create_test_files import TCLTestFileGenerator
 
 
 def generate(tcl: str) -> str:
@@ -14,28 +11,6 @@ def generate(tcl: str) -> str:
     output = io.StringIO()
     TCLTestFileGenerator(output=output).generate(io.StringIO(tcl))
     return output.getvalue()
-
-
-@Parametrization.parameters("command_str", "expected")
-@Parametrization.case(
-    "simple word",
-    "cmd arg1",
-    "cmd arg1",
-)
-@Parametrization.case(
-    "braces word",
-    "cmd {hello world}",
-    "cmd {hello world}",
-)
-@Parametrization.case(
-    "double quoted word",
-    'cmd "hello world"',
-    'cmd "hello world"',
-)
-def test_reconstruct_command(command_str: str, expected: str):
-    script = TCLScript.read(iter(command_str))
-    command = script.commands[0]
-    assert _reconstruct_command(command) == expected
 
 
 def test_generate_file__header():

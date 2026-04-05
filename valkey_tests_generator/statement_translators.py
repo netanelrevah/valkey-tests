@@ -1,0 +1,201 @@
+from __future__ import annotations
+
+import re
+from typing import ClassVar
+
+from pytcl.commands import TCLBracesWord, TCLScript
+from pytcl.words import (
+    TCLBracketWord,
+    TCLCommandArguments,
+    TCLCommandWord,
+    TCLDoubleQuotedWord,
+    TCLWord,
+)
+
+from valkey_tests_generator.argument_translators import (
+    _translate_argument,
+    _translate_command_expr,
+    _translate_r_arguments,
+)
+
+
+class StatementTranslator:
+    MAPPING: ClassVar[dict[str, StatementTranslator]] = {}
+
+    def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
+        raise NotImplementedError
+
+
+class RStatementTranslator(StatementTranslator):
+    def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
+        expr = _translate_r_arguments(arguments, defined_vars)
+        return None if expr is None else [expr]
+
+
+class SetStatementTranslator(StatementTranslator):
+    def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
+        if not arguments[1:]:
+            return None
+        name_argument = arguments[0]
+        if not isinstance(name_argument, TCLWord) or "(" in name_argument.value:
+            return None
+        val = _translate_argument(arguments[1], defined_vars)
+        return None if val is None else [f"{name_argument.value} = {val}"]
+
+
+class AssertEqualStatementTranslator(StatementTranslator):
+    def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
+        if not arguments[1:]:
+            return None
+        a = _translate_argument(arguments[0], defined_vars)
+        b = _translate_argument(arguments[1], defined_vars)
+        return None if a is None or b is None else [f"assert {a} == {b}"]
+
+
+class AssertMatchStatementTranslator(StatementTranslator):
+    def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
+        if not arguments[1:]:
+            return None
+        pat = _translate_argument(arguments[0], defined_vars)
+        val = _translate_argument(arguments[1], defined_vars)
+        return None if pat is None or val is None else [f"assert fnmatch(str({val}), str({pat}))"]
+
+
+class AssertStatementTranslator(StatementTranslator):
+    def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
+        if not arguments or not isinstance(arguments[0], TCLBracketWord):
+            return None
+        inner = [c for c in arguments[0].script.commands if c.name]
+        if len(inner) != 1:
+            return None
+        expr = _translate_command_expr(inner[0], defined_vars)
+        return None if expr is None else [f"assert {expr}"]
+
+
+class IncrStatementTranslator(StatementTranslator):
+    def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
+        if not arguments or not isinstance(arguments[0], TCLWord):
+            return None
+        name = arguments[0].value
+        if name not in defined_vars:
+            return None
+        if len(arguments) > 1:
+            amount = _translate_argument(arguments[1], defined_vars)
+            return None if amount is None else [f"{name} += {amount}"]
+        return [f"{name} += 1"]
+
+
+class AssertErrorStatementTranslator(StatementTranslator):
+    def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
+        if not arguments[1:]:
+            return None
+        pattern_argument, body_argument = arguments[0], arguments[1]
+        if not isinstance(pattern_argument, (TCLDoubleQuotedWord, TCLBracesWord, TCLWord)):
+            return None
+        if not isinstance(body_argument, TCLBracesWord):
+            return None
+        pattern_regex = re.escape(pattern_argument.value).replace(r"\*", ".*").replace(r"\?", ".")
+        body_commands = [c for c in TCLScript.read(iter(body_argument.value)).commands if c.name]
+        if not body_commands:
+            return None
+        body_lines: list[str] = []
+        for command in body_commands:
+            statement = _translate_command_statement(command, defined_vars)
+            if statement is None:
+                return None
+            body_lines.extend(statement)
+        return (
+            None
+            if not body_lines
+            else [
+                f"with pytest.raises(Exception, match={pattern_regex!r}):",
+                *[f"    {line}" for line in body_lines],
+            ]
+        )
+
+
+class AfterStatementTranslator(StatementTranslator):
+    def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
+        if not arguments:
+            return None
+        ms = _translate_argument(arguments[0], defined_vars)
+        return None if ms is None else [f"time.sleep({ms} / 1000)"]
+
+
+class PutsStatementTranslator(StatementTranslator):
+    def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
+        return []
+
+
+StatementTranslator.MAPPING.update(
+    {
+        "r": RStatementTranslator(),
+        "set": SetStatementTranslator(),
+        "assert_equal": AssertEqualStatementTranslator(),
+        "assert_match": AssertMatchStatementTranslator(),
+        "assert": AssertStatementTranslator(),
+        "incr": IncrStatementTranslator(),
+        "assert_error": AssertErrorStatementTranslator(),
+        "after": AfterStatementTranslator(),
+        "puts": PutsStatementTranslator(),
+    }
+)
+
+
+def _translate_command_statement(command: TCLCommandWord, defined_vars: set[str]) -> list[str] | None:
+    translator = StatementTranslator.MAPPING.get(command.name)
+    if translator is None:
+        return None
+    return translator.get_statement(command.args, defined_vars)
+
+
+class TCLBodyTranslator:
+    def translate(self, body: TCLScript, expected: str | None) -> list[str]:
+        commands = [c for c in body.commands if c.name]
+        if not commands:
+            if expected is not None:
+                return [f"assert False  # expected: {expected!r}"]
+            return []
+
+        lines: list[str] = []
+        defined_vars: set[str] = set()
+
+        for i, command in enumerate(commands):
+            is_last = i == len(commands) - 1
+
+            if is_last and expected is not None:
+                expr = _translate_command_expr(command, defined_vars)
+                if expr is not None:
+                    lines.append(f"assert {expr} == {expected!r}")
+                    continue
+            else:
+                statement = _translate_command_statement(command, defined_vars)
+                if statement is not None:
+                    lines.extend(statement)
+                    if command.name == "set" and isinstance(command.args[0], TCLWord):
+                        defined_vars.add(command.args[0].value)
+                    continue
+
+            formatted = command.formatted()
+            first_line, *rest_lines = formatted.splitlines()
+            lines.append(f"# TODO: {first_line}")
+            lines.extend(f"#   {rest}" for rest in rest_lines)
+            if is_last and expected is not None:
+                lines.append("assert False")
+
+        return lines
+
+
+def _has_todos(lines: list[str]) -> bool:
+    return any("# TODO:" in line for line in lines)
+
+
+def _extract_todo_commands(lines: list[str]) -> list[str]:
+    result = []
+    for line in lines:
+        if "# TODO:" not in line:
+            continue
+        rest = line[line.index("# TODO:") + len("# TODO:") :].strip()
+        if rest:
+            result.append(rest.split()[0])
+    return result
