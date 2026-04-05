@@ -64,7 +64,7 @@ def test_generate_file__simple_test():
             } {foobar}
         }
     """)
-    assert "def test_set_and_get_an_item(r: ValkeyTestClient):" in output
+    assert "def test_set_and_get_an_item(r: ValkeyTestClient) -> None:" in output
     assert "SET and GET an item" in output
     assert "@pytest.mark.xfail" not in output
     assert "r.run('set', 'x', 'foobar')" in output
@@ -183,9 +183,7 @@ def test_generate_file__tag_with_spaces():
         }
     """)
     assert "def test_basic_test(" in output
-    assert "pytest.mark.protocol" in output
-    assert "pytest.mark.network" in output
-    assert "pytest.mark.protocol network" not in output
+    assert "pytest.mark.protocol_network" in output
 
 
 def test_generate_file__tag_with_colon():
@@ -196,9 +194,20 @@ def test_generate_file__tag_with_colon():
             } {PONG}
         }
     """)
-    assert "pytest.mark.auth" in output
-    assert "pytest.mark.external_skip" in output
-    assert "pytest.mark.auth external:skip" not in output
+    assert "pytest.mark.auth_external_skip" in output
+
+
+def test_generate_file__assert_error():
+    output = generate("""
+        start_server {tags {}} {
+            test {error test} {
+                assert_error "*ERR*" {r set}
+            }
+        }
+    """)
+    assert "@pytest.mark.xfail" not in output
+    assert "with pytest.raises(Exception, match=" in output
+    assert "r.run('set')" in output
 
 
 def test_generate_file__multiple_start_server_blocks():

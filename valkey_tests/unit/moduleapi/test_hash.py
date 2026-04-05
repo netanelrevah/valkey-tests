@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004
+# ruff: noqa: PLR2004, RUF043
 
 import pytest
 
@@ -16,7 +16,6 @@ r module load testmodule
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_hash_set(r: ValkeyTestClient) -> None:
     """
     test {Module hash set} {
@@ -38,7 +37,8 @@ def test_module_hash_set(r: ValkeyTestClient) -> None:
     } {squirrel ofcourse banana no what nothing something nice}
     """
     r.run("set", "k", "mystring")
-    # TODO: assert_error "WRONGTYPE*" {r hash.set k "" hello world}
+    with pytest.raises(Exception, match="WRONGTYPE.*"):
+        r.run("hash.set", "k", "", "hello", "world")
     r.run("del", "k")
     assert 0 == r.run("hash.set", "k", "", "squirrel", "yes")
     assert 2 == r.run("hash.set", "k", "a", "banana", "no", "sushi", "whynot")

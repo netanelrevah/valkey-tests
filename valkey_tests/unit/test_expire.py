@@ -1,4 +1,5 @@
 # ruff: noqa: PLR2004, F841
+import time
 from fnmatch import fnmatch
 
 import pytest
@@ -485,7 +486,7 @@ def test_server_should_lazy_expire_keys(r: ValkeyTestClient) -> None:
     r.run("psetex", "key2{t}", 500, "a")
     r.run("psetex", "key3{t}", 500, "a")
     size1 = r.run("dbsize")
-    # TODO: after 1000
+    time.sleep(1000 / 1000)
     size2 = r.run("dbsize")
     r.run("mget", "key1{t}", "key2{t}", "key3{t}")
     size3 = r.run("dbsize")
@@ -494,7 +495,6 @@ def test_server_should_lazy_expire_keys(r: ValkeyTestClient) -> None:
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_expire_should_not_resurrect_keys_issue_1026(r: ValkeyTestClient) -> None:
     """
     test {EXPIRE should not resurrect keys (issue #1026)} {
@@ -510,7 +510,7 @@ def test_expire_should_not_resurrect_keys_issue_1026(r: ValkeyTestClient) -> Non
     r.run("debug", "set-active-expire", 0)
     r.run("set", "foo", "bar")
     r.run("pexpire", "foo", 500)
-    # TODO: after 1000
+    time.sleep(1000 / 1000)
     r.run("expire", "foo", 10)
     r.run("debug", "set-active-expire", 1)
     assert r.run("exists", "foo") == "0"
@@ -613,7 +613,6 @@ def test_getex_with_smallest_integer_should_report_an_error(r: ValkeyTestClient)
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_getex_with_error_expiration_time(r: ValkeyTestClient) -> None:
     """
     test {GETEX with error expiration time} {
@@ -628,16 +627,18 @@ def test_getex_with_error_expiration_time(r: ValkeyTestClient) -> None:
     }
     """
     r.run("del", "foo")
-    # TODO: assert_error {ERR value is not an integer or out of range} {r getex foo ex abcd}
+    with pytest.raises(Exception, match="ERR\\ value\\ is\\ not\\ an\\ integer\\ or\\ out\\ of\\ range"):
+        r.run("getex", "foo", "ex", "abcd")
     r.run("set", "foo", "bar")
-    # TODO: assert_error {ERR value is not an integer or out of range} {r getex foo px -abcd}
+    with pytest.raises(Exception, match="ERR\\ value\\ is\\ not\\ an\\ integer\\ or\\ out\\ of\\ range"):
+        r.run("getex", "foo", "px", "-abcd")
     r.run("del", "foo")
     r.run("hset", "foo", "f", "v")
-    # TODO: assert_error {ERR value is not an integer or out of range} {r getex foo exat -abcd}
+    with pytest.raises(Exception, match="ERR\\ value\\ is\\ not\\ an\\ integer\\ or\\ out\\ of\\ range"):
+        r.run("getex", "foo", "exat", "-abcd")
     r.run("del", "foo")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_expire_with_big_integer_overflows_when_converted_to_milliseconds(r: ValkeyTestClient) -> None:
     """
     test {EXPIRE with big integer overflows when converted to milliseconds} {
@@ -655,10 +656,14 @@ def test_expire_with_big_integer_overflows_when_converted_to_milliseconds(r: Val
     }
     """
     r.run("set", "foo", "bar")
-    # TODO: assert_error "ERR invalid expire time in 'expire' command" {r EXPIRE foo 9223370399119966}
-    # TODO: assert_error "ERR invalid expire time in 'expire' command" {r EXPIRE foo 9223372036854776}
-    # TODO: assert_error "ERR invalid expire time in 'expire' command" {r EXPIRE foo 10000000000000000}
-    # TODO: assert_error "ERR invalid expire time in 'expire' command" {r EXPIRE foo 18446744073709561}
+    with pytest.raises(Exception, match="ERR\\ invalid\\ expire\\ time\\ in\\ 'expire'\\ command"):
+        r.run("EXPIRE", "foo", 9223370399119966)
+    with pytest.raises(Exception, match="ERR\\ invalid\\ expire\\ time\\ in\\ 'expire'\\ command"):
+        r.run("EXPIRE", "foo", 9223372036854776)
+    with pytest.raises(Exception, match="ERR\\ invalid\\ expire\\ time\\ in\\ 'expire'\\ command"):
+        r.run("EXPIRE", "foo", 10000000000000000)
+    with pytest.raises(Exception, match="ERR\\ invalid\\ expire\\ time\\ in\\ 'expire'\\ command"):
+        r.run("EXPIRE", "foo", 18446744073709561)
     assert "-1" == r.run("ttl", "foo")
 
 
@@ -677,7 +682,6 @@ def test_pexpire_with_big_integer_overflow_when_basetime_is_added(r: ValkeyTestC
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_expire_with_big_negative_integer(r: ValkeyTestClient) -> None:
     """
     test {EXPIRE with big negative integer} {
@@ -691,8 +695,10 @@ def test_expire_with_big_negative_integer(r: ValkeyTestClient) -> None:
     } {-1}
     """
     r.run("set", "foo", "bar")
-    # TODO: assert_error "ERR invalid expire time in 'expire' command" {r EXPIRE foo -9223372036854776}
-    # TODO: assert_error "ERR invalid expire time in 'expire' command" {r EXPIRE foo -9999999999999999}
+    with pytest.raises(Exception, match="ERR\\ invalid\\ expire\\ time\\ in\\ 'expire'\\ command"):
+        r.run("EXPIRE", "foo", -9223372036854776)
+    with pytest.raises(Exception, match="ERR\\ invalid\\ expire\\ time\\ in\\ 'expire'\\ command"):
+        r.run("EXPIRE", "foo", -9999999999999999)
     assert r.run("ttl", "foo") == "-1"
 
 
@@ -1110,7 +1116,7 @@ def test_set_use_keepttl_option_ttl_should_not_be_removed_after_loadaof(r: Valke
     r.run("config", "set", "appendonly", "yes")
     r.run("set", "foo", "bar", "EX", 100)
     r.run("set", "foo", "bar2", "KEEPTTL")
-    # TODO: after 2000
+    time.sleep(2000 / 1000)
     r.run("debug", "loadaof")
     ttl = r.run("ttl", "foo")
     # TODO: assert {$ttl <= 98 && $ttl > 90}
@@ -1563,7 +1569,7 @@ def test_scan_lazy_expire_should_not_be_wrapped_in_multi_or_exec(r: ValkeyTestCl
     r.run("flushall")
     r.run("set", "foo1", "bar", "PX", 1)
     r.run("set", "foo2", "bar", "PX", 1)
-    # TODO: after 2
+    time.sleep(2 / 1000)
     # TODO: set repl attach_to_replication_stream
     r.run("scan", 0)
     # TODO: assert_replication_stream repl {
@@ -1604,7 +1610,7 @@ def test_randomkey_lazy_expire_should_not_be_wrapped_in_multi_or_exec(r: ValkeyT
     r.run("flushall")
     r.run("set", "foo1", "bar", "PX", 1)
     r.run("set", "foo2", "bar", "PX", 1)
-    # TODO: after 2
+    time.sleep(2 / 1000)
     # TODO: set repl attach_to_replication_stream
     r.run("randomkey")
     # TODO: assert_replication_stream repl {
@@ -1617,7 +1623,6 @@ def test_randomkey_lazy_expire_should_not_be_wrapped_in_multi_or_exec(r: ValkeyT
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_import_source_can_be_closed_when_import_mode_is_off(r: ValkeyTestClient) -> None:
     """
     test {import-source can be closed when import-mode is off} {
@@ -1634,7 +1639,8 @@ def test_import_source_can_be_closed_when_import_mode_is_off(r: ValkeyTestClient
     }
     """
     r.run("config", "set", "import-mode", "no")
-    # TODO: assert_error "ERR Server is not in import mode" {r client import-source on}
+    with pytest.raises(Exception, match="ERR\\ Server\\ is\\ not\\ in\\ import\\ mode"):
+        r.run("client", "import-source", "on")
     r.run("config", "set", "import-mode", "yes")
     assert r.run("client", "import-source", "on") == "OK"
     assert fnmatch(str(r.run("client", "list", "id", r.run("client", "id"))), "*flags=I*")
@@ -1674,7 +1680,7 @@ def test_import_mode_should_forbid_active_expiration(r: ValkeyTestClient) -> Non
     assert r.run("client", "import-source", "on") == "OK"
     r.run("set", "foo1", "bar", "PX", 1)
     r.run("set", "foo2", "bar", "PX", 1)
-    # TODO: after 10
+    time.sleep(10 / 1000)
     assert r.run("dbsize") == "2"
     assert r.run("client", "import-source", "off") == "OK"
     r.run("config", "set", "import-mode", "no")
@@ -1716,7 +1722,7 @@ def test_import_mode_should_forbid_lazy_expiration(r: ValkeyTestClient) -> None:
     r.run("config", "set", "import-mode", "yes")
     assert r.run("client", "import-source", "on") == "OK"
     r.run("set", "foo1", 1, "PX", 1)
-    # TODO: after 10
+    time.sleep(10 / 1000)
     r.run("get", "foo1")
     assert r.run("dbsize") == "1"
     assert r.run("client", "import-source", "off") == "OK"
@@ -1766,7 +1772,7 @@ def test_client_can_visit_expired_key_in_import_source_state(r: ValkeyTestClient
     r.run("flushall")
     r.run("config", "set", "import-mode", "yes")
     r.run("set", "foo1", 1, "PX", 1)
-    # TODO: after 10
+    time.sleep(10 / 1000)
     assert r.run("get", "foo1") == ""
     assert r.run("ttl", "foo1") == "-2"
     assert r.run("dbsize") == 1

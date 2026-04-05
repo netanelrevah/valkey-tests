@@ -1,4 +1,5 @@
 # ruff: noqa: F841
+import time
 
 import pytest
 
@@ -773,7 +774,7 @@ def test_test_unblock_handler_are_executed_as_a_unit_with_lazy_expire(r: ValkeyT
     r.run("lpush", "l", "a")
     # TODO: assert_equal $rd read {OK}
     r.run("pexpire", "string_foo", 1)
-    # TODO: after 10
+    time.sleep(10 / 1000)
     # TODO: $rd blpop_and_set_multiple_keys l string_foo 1 string_bar 2
     # TODO: wait_for_blocked_clients_count 1
     r.run("lpush", "l", "a")

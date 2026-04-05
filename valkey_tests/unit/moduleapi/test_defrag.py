@@ -1,4 +1,5 @@
 # ruff: noqa: F841
+import time
 
 import pytest
 
@@ -50,7 +51,7 @@ def test_module_defrag_simple_key_defrag_works(r: ValkeyTestClient) -> None:
     }
     """
     r.run("frag.create", "key1", 1, 1000, 0)
-    # TODO: after 2000
+    time.sleep(2000 / 1000)
     info = r.run("info", "defragtest_stats")
     # TODO: assert {[getInfoProperty $info defragtest_datatype_attempts] > 0}
     # TODO: assert_equal 0 getInfoProperty $info defragtest_datatype_resumes
@@ -77,7 +78,7 @@ def test_module_defrag_late_defrag_with_cursor_works(r: ValkeyTestClient) -> Non
     r.run("flushdb")
     r.run("frag.resetstats")
     r.run("frag.create", "key2", 10000, 100, 1000)
-    # TODO: after 2000
+    time.sleep(2000 / 1000)
     info = r.run("info", "defragtest_stats")
     # TODO: assert {[getInfoProperty $info defragtest_datatype_resumes] > 10}
     # TODO: assert_equal 0 getInfoProperty $info defragtest_datatype_wrong_cursor
@@ -98,6 +99,6 @@ def test_module_defrag_global_defrag_works(r: ValkeyTestClient) -> None:
     """
     r.run("flushdb")
     r.run("frag.resetstats")
-    # TODO: after 2000
+    time.sleep(2000 / 1000)
     info = r.run("info", "defragtest_stats")
     # TODO: assert {[getInfoProperty $info defragtest_global_attempts] > 0}

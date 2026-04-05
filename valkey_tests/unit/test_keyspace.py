@@ -1,4 +1,5 @@
-# ruff: noqa: F841
+# ruff: noqa: F841, RUF043
+import time
 from fnmatch import fnmatch
 
 import pytest
@@ -130,7 +131,6 @@ def test_keys_with_empty_db(r: ValkeyTestClient) -> None:
     assert "" == r.run("keys", "*")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_del_against_expired_key(r: ValkeyTestClient) -> None:
     """
     test "DEL against expired key" {
@@ -143,7 +143,7 @@ def test_del_against_expired_key(r: ValkeyTestClient) -> None:
     """
     r.run("debug", "set-active-expire", 0)
     r.run("setex", "keyExpire", 1, "valExpire")
-    # TODO: after 1100
+    time.sleep(1100 / 1000)
     assert 0 == r.run("del", "keyExpire")
     assert r.run("debug", "set-active-expire", 1) == "OK"
 
@@ -1158,10 +1158,14 @@ def test_coverage_basic_swapdb_test_and_unhappy_path(r: ValkeyTestClient) -> Non
     r.run("select", 0)
     assert fnmatch(str(r.run("dbsize")), str(0))
     r.run("flushall")
-    # TODO: assert_error "ERR DB index is out of range*" {r swapdb 44 55}
-    # TODO: assert_error "ERR invalid second DB index*" {r swapdb 44 a}
-    # TODO: assert_error "ERR invalid first DB index*" {r swapdb a 55}
-    # TODO: assert_error "ERR invalid first DB index*" {r swapdb a b}
+    with pytest.raises(Exception, match="ERR\\ DB\\ index\\ is\\ out\\ of\\ range.*"):
+        r.run("swapdb", 44, 55)
+    with pytest.raises(Exception, match="ERR\\ invalid\\ second\\ DB\\ index.*"):
+        r.run("swapdb", 44, "a")
+    with pytest.raises(Exception, match="ERR\\ invalid\\ first\\ DB\\ index.*"):
+        r.run("swapdb", "a", 55)
+    with pytest.raises(Exception, match="ERR\\ invalid\\ first\\ DB\\ index.*"):
+        r.run("swapdb", "a", "b")
     # TODO: assert_match "OK" r swapdb 0 0
     assert False
 

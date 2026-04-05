@@ -632,7 +632,6 @@ def test_commandlog_slow_can_be_disabled(r: ValkeyTestClient) -> None:
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_commandlog_slow_count_must_be_1(r: ValkeyTestClient) -> None:
     """
     test {COMMANDLOG slow - count must be >= -1} {
@@ -640,8 +639,10 @@ def test_commandlog_slow_count_must_be_1(r: ValkeyTestClient) -> None:
         assert_error "ERR count should be greater than or equal to -1" {r commandlog get -222 slow}
     }
     """
-    # TODO: assert_error "ERR count should be greater than or equal to -1" {r commandlog get -2 slow}
-    # TODO: assert_error "ERR count should be greater than or equal to -1" {r commandlog get -222 slow}
+    with pytest.raises(Exception, match="ERR\\ count\\ should\\ be\\ greater\\ than\\ or\\ equal\\ to\\ \\-1"):
+        r.run("commandlog", "get", -2, "slow")
+    with pytest.raises(Exception, match="ERR\\ count\\ should\\ be\\ greater\\ than\\ or\\ equal\\ to\\ \\-1"):
+        r.run("commandlog", "get", -222, "slow")
 
 
 @pytest.mark.xfail(reason="not implemented")

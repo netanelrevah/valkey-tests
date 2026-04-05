@@ -1,4 +1,4 @@
-# ruff: noqa: F841
+# ruff: noqa: F841, RUF043
 
 import pytest
 
@@ -179,7 +179,8 @@ def test_datatype_slow_loading(r: ValkeyTestClient) -> None:
     #   } else {
     #       fail "Failed waiting for slow loading to start"
     #   }
-    # TODO: assert_error {*LOADING*} {r ping}
+    with pytest.raises(Exception, match=".*LOADING.*"):
+        r.run("ping")
     # TODO: assert_lessthan expr [clock clicks -milliseconds]-$start 2000
     r.run("datatype.slow_loading", 0)
     # TODO: wait_for_condition 50 100 {

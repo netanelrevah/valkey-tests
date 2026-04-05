@@ -1,4 +1,5 @@
 # ruff: noqa: F841
+
 from fnmatch import fnmatch
 
 import pytest
@@ -732,7 +733,6 @@ def test_georadiusbymember_crossing_pole_search(r: ValkeyTestClient) -> None:
     assert ret == "n1 n2"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_geosearch_frommember_member_does_not_exist(r: ValkeyTestClient) -> None:
     """
     test {GEOSEARCH FROMMEMBER member does not exist} {
@@ -743,7 +743,8 @@ def test_geosearch_frommember_member_does_not_exist(r: ValkeyTestClient) -> None
     """
     r.run("del", "Sicily")
     r.run("geoadd", "Sicily", 13.361389, 38.115556, "Palermo", 15.087269, 37.502669, "Catania")
-    # TODO: assert_error "ERR member none_exist_member does not exist" {r GEOSEARCH Sicily FROMMEMBER none_exist_member BYRADIUS 300 KM}
+    with pytest.raises(Exception, match="ERR\\ member\\ none_exist_member\\ does\\ not\\ exist"):
+        r.run("GEOSEARCH", "Sicily", "FROMMEMBER", "none_exist_member", "BYRADIUS", 300, "KM")
 
 
 def test_geosearch_frommember_simple_sorted(r: ValkeyTestClient) -> None:

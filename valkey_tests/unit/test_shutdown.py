@@ -1,3 +1,5 @@
+import time
+
 import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
@@ -48,7 +50,7 @@ def test_temp_rdb_will_be_deleted_if_we_use_bg_unlink_when_shutdown(r: ValkeyTes
     #   } else {
     #       fail "bgsave did not start in time"
     #   }
-    # TODO: after 100
+    time.sleep(100 / 1000)
     # TODO: set dir lindex [r config get dir] 1
     # TODO: set child_pid get_child_pid 0
     # TODO: set temp_rdb file join [lindex [r config get dir] 1] temp-${child_pid}.rdb
@@ -79,7 +81,7 @@ def test_shutdown_abort_can_cancel_sigterm(r: ValkeyTestClient) -> None:
     r.run("debug", "pause-cron", 1)
     # TODO: set pid s process_id
     # TODO: exec kill -SIGTERM pid
-    # TODO: after 10
+    time.sleep(10 / 1000)
     r.run("shutdown", "abort")
     # TODO: verify_log_message 0 "*Shutdown manually aborted*" 0
     r.run("debug", "pause-cron", 0)

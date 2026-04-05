@@ -1,3 +1,5 @@
+import time
+
 import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
@@ -53,7 +55,7 @@ def test_blocking_keyspace_notification_two(r: ValkeyTestClient) -> None:
     r.run("b_keyspace.clear")
     # TODO: set rd1 valkey_deferring_client
     # TODO: $rd1 hset b c d
-    # TODO: after 500
+    time.sleep(500 / 1000)
     # TODO: set rd2 valkey_deferring_client
     # TODO: $rd2 hset c d e
     # TODO: wait_for_blocked_clients_count 2

@@ -1,4 +1,5 @@
-# ruff: noqa: F841
+# ruff: noqa: F841, RUF043
+import time
 
 import pytest
 
@@ -73,7 +74,6 @@ def test_discard(r: ValkeyTestClient) -> None:
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_nested_multi_are_not_allowed(r: ValkeyTestClient) -> None:
     """
     test {Nested MULTI are not allowed} {
@@ -83,8 +83,10 @@ def test_nested_multi_are_not_allowed(r: ValkeyTestClient) -> None:
     }
     """
     r.run("multi")
-    # TODO: assert_error "ERR Command 'multi' not allowed inside a transaction*" {r multi}
-    # TODO: assert_error "EXECABORT*" {r exec}
+    with pytest.raises(Exception, match="ERR\\ Command\\ 'multi'\\ not\\ allowed\\ inside\\ a\\ transaction.*"):
+        r.run("multi")
+    with pytest.raises(Exception, match="EXECABORT.*"):
+        r.run("exec")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -104,7 +106,6 @@ def test_multi_where_commands_alter_argc_or_argv(r: ValkeyTestClient) -> None:
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_watch_inside_multi_is_not_allowed(r: ValkeyTestClient) -> None:
     """
     test {WATCH inside MULTI is not allowed} {
@@ -114,8 +115,10 @@ def test_watch_inside_multi_is_not_allowed(r: ValkeyTestClient) -> None:
     }
     """
     r.run("multi")
-    # TODO: assert_error "ERR Command 'watch' not allowed inside a transaction*" {r watch x}
-    # TODO: assert_error "EXECABORT*" {r exec}
+    with pytest.raises(Exception, match="ERR\\ Command\\ 'watch'\\ not\\ allowed\\ inside\\ a\\ transaction.*"):
+        r.run("watch", "x")
+    with pytest.raises(Exception, match="EXECABORT.*"):
+        r.run("exec")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -321,7 +324,6 @@ def test_exec_fail_on_lazy_expired_watched_key(r: ValkeyTestClient) -> None:
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_watch_stale_keys_should_not_fail_exec(r: ValkeyTestClient) -> None:
     """
     test {WATCH stale keys should not fail EXEC} {
@@ -339,7 +341,7 @@ def test_watch_stale_keys_should_not_fail_exec(r: ValkeyTestClient) -> None:
     r.run("del", "x")
     r.run("debug", "set-active-expire", 0)
     r.run("set", "x", "foo", "px", 1)
-    # TODO: after 2
+    time.sleep(2 / 1000)
     r.run("watch", "x")
     r.run("multi")
     r.run("ping")
@@ -347,7 +349,6 @@ def test_watch_stale_keys_should_not_fail_exec(r: ValkeyTestClient) -> None:
     assert r.run("debug", "set-active-expire", 1) == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_delete_watched_stale_keys_should_not_fail_exec(r: ValkeyTestClient) -> None:
     """
     test {Delete WATCHed stale keys should not fail EXEC} {
@@ -367,7 +368,7 @@ def test_delete_watched_stale_keys_should_not_fail_exec(r: ValkeyTestClient) -> 
     r.run("del", "x")
     r.run("debug", "set-active-expire", 0)
     r.run("set", "x", "foo", "px", 1)
-    # TODO: after 2
+    time.sleep(2 / 1000)
     r.run("watch", "x")
     assert 0 == r.run("exists", "x")
     r.run("multi")
@@ -376,7 +377,6 @@ def test_delete_watched_stale_keys_should_not_fail_exec(r: ValkeyTestClient) -> 
     assert r.run("debug", "set-active-expire", 1) == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_flushdb_while_watching_stale_keys_should_not_fail_exec(r: ValkeyTestClient) -> None:
     """
     test {FLUSHDB while watching stale keys should not fail EXEC} {
@@ -395,7 +395,7 @@ def test_flushdb_while_watching_stale_keys_should_not_fail_exec(r: ValkeyTestCli
     r.run("del", "x")
     r.run("debug", "set-active-expire", 0)
     r.run("set", "x", "foo", "px", 1)
-    # TODO: after 2
+    time.sleep(2 / 1000)
     r.run("watch", "x")
     r.run("flushdb")
     r.run("multi")
@@ -610,7 +610,6 @@ def test_swapdb_is_able_to_touch_the_watched_keys_that_do_not_exist(r: ValkeyTes
     assert r.run("exec") == ""
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_swapdb_does_not_touch_watched_stale_keys(r: ValkeyTestClient) -> None:
     """
     test {SWAPDB does not touch watched stale keys} {
@@ -631,7 +630,7 @@ def test_swapdb_does_not_touch_watched_stale_keys(r: ValkeyTestClient) -> None:
     r.run("select", 1)
     r.run("debug", "set-active-expire", 0)
     r.run("set", "x", "foo", "px", 1)
-    # TODO: after 2
+    time.sleep(2 / 1000)
     r.run("watch", "x")
     r.run("swapdb", 0, 1)
     r.run("multi")
@@ -640,7 +639,6 @@ def test_swapdb_does_not_touch_watched_stale_keys(r: ValkeyTestClient) -> None:
     assert r.run("debug", "set-active-expire", 1) == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_swapdb_does_not_touch_non_existing_key_replaced_with_stale_key(r: ValkeyTestClient) -> None:
     """
     test {SWAPDB does not touch non-existing key replaced with stale key} {
@@ -662,7 +660,7 @@ def test_swapdb_does_not_touch_non_existing_key_replaced_with_stale_key(r: Valke
     r.run("select", 0)
     r.run("debug", "set-active-expire", 0)
     r.run("set", "x", "foo", "px", 1)
-    # TODO: after 2
+    time.sleep(2 / 1000)
     r.run("select", 1)
     r.run("watch", "x")
     r.run("swapdb", 0, 1)
@@ -672,7 +670,6 @@ def test_swapdb_does_not_touch_non_existing_key_replaced_with_stale_key(r: Valke
     assert r.run("debug", "set-active-expire", 1) == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_swapdb_does_not_touch_stale_key_replaced_with_another_stale_key(r: ValkeyTestClient) -> None:
     """
     test {SWAPDB does not touch stale key replaced with another stale key} {
@@ -698,7 +695,7 @@ def test_swapdb_does_not_touch_stale_key_replaced_with_another_stale_key(r: Valk
     r.run("set", "x", "foo", "px", 1)
     r.run("select", 0)
     r.run("set", "x", "bar", "px", 1)
-    # TODO: after 2
+    time.sleep(2 / 1000)
     r.run("select", 1)
     r.run("watch", "x")
     r.run("swapdb", 0, 1)
@@ -1165,11 +1162,11 @@ def test_multi_and_script_timeout(r: ValkeyTestClient) -> None:
     r.run("config", "set", "lua-time-limit", 10)
     r.run("set", "xx", 1)
     # TODO: $rd1 eval {while true do end} 0
-    # TODO: after 200
+    time.sleep(200 / 1000)
     # TODO: catch { $r2 multi; } e
     # TODO: catch { $r2 incr xx; } e
     r.run("script", "kill")
-    # TODO: after 200
+    time.sleep(200 / 1000)
     # TODO: catch { $r2 incr xx; } e
     # TODO: catch { $r2 exec; } e
     # TODO: assert_match {EXECABORT*previous errors*} e
@@ -1216,12 +1213,12 @@ def test_exec_and_script_timeout(r: ValkeyTestClient) -> None:
     # TODO: catch { $r2 multi; } e
     # TODO: catch { $r2 incr xx; } e
     # TODO: $rd1 eval {while true do end} 0
-    # TODO: after 200
+    time.sleep(200 / 1000)
     # TODO: catch { $r2 incr xx; } e
     # TODO: catch { $r2 exec; } e
     # TODO: assert_match {EXECABORT*BUSY*} e
     r.run("script", "kill")
-    # TODO: after 200
+    time.sleep(200 / 1000)
     xx = r.run("get", "xx")
     # TODO: assert { $xx == 1 || $xx == 3}
     # TODO: set pong $r2 ping asdf
@@ -1265,10 +1262,10 @@ def test_multi_exec_body_and_script_timeout(r: ValkeyTestClient) -> None:
     # TODO: catch { $r2 multi; } e
     # TODO: catch { $r2 incr xx; } e
     # TODO: $rd1 eval {while true do end} 0
-    # TODO: after 200
+    time.sleep(200 / 1000)
     # TODO: catch { $r2 incr xx; } e
     r.run("script", "kill")
-    # TODO: after 200
+    time.sleep(200 / 1000)
     # TODO: catch { $r2 exec; } e
     # TODO: assert_match {EXECABORT*previous errors*} e
     xx = r.run("get", "xx")
@@ -1313,11 +1310,11 @@ def test_just_exec_and_script_timeout(r: ValkeyTestClient) -> None:
     # TODO: catch { $r2 multi; } e
     # TODO: catch { $r2 incr xx; } e
     # TODO: $rd1 eval {while true do end} 0
-    # TODO: after 200
+    time.sleep(200 / 1000)
     # TODO: catch { $r2 exec; } e
     # TODO: assert_match {EXECABORT*BUSY*} e
     r.run("script", "kill")
-    # TODO: after 200
+    time.sleep(200 / 1000)
     xx = r.run("get", "xx")
     # TODO: assert { $xx == 1}
     # TODO: set pong $r2 ping asdf
@@ -1665,7 +1662,8 @@ def test_multi_with_cmd(r: ValkeyTestClient) -> None:
     r.run("set", "foo", "bar")
     # TODO: set cmd_lower string tolower $cmd
     # TODO: assert_error "ERR Command '$cmd_lower' not allowed inside a transaction*" {r $cmd}
-    # TODO: assert_error "EXECABORT Transaction discarded because of previous errors*" {r exec}
+    with pytest.raises(Exception, match="EXECABORT\\ Transaction\\ discarded\\ because\\ of\\ previous\\ errors.*"):
+        r.run("exec")
     assert r.run("get", "foo") == ""
 
 
@@ -1792,7 +1790,6 @@ def test_flushall_while_watching_several_keys_by_one_client(r: ValkeyTestClient)
     r.run("unwatch")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_multi_is_rejected_when_client_reply_is_on_or_off_or_skip(r: ValkeyTestClient) -> None:
     """
     test {MULTI is rejected when CLIENT REPLY is ON/OFF/SKIP} {
@@ -1812,14 +1809,20 @@ def test_multi_is_rejected_when_client_reply_is_on_or_off_or_skip(r: ValkeyTestC
     }
     """
     r.run("multi")
-    # TODO: assert_error "ERR Command 'client|reply' not allowed inside a transaction" {r client reply on}
-    # TODO: assert_error "EXECABORT *" {r exec}
+    with pytest.raises(Exception, match="ERR\\ Command\\ 'client\\|reply'\\ not\\ allowed\\ inside\\ a\\ transaction"):
+        r.run("client", "reply", "on")
+    with pytest.raises(Exception, match="EXECABORT\\ .*"):
+        r.run("exec")
     r.run("multi")
-    # TODO: assert_error "ERR Command 'client|reply' not allowed inside a transaction" {r client reply skip}
-    # TODO: assert_error "EXECABORT *" {r exec}
+    with pytest.raises(Exception, match="ERR\\ Command\\ 'client\\|reply'\\ not\\ allowed\\ inside\\ a\\ transaction"):
+        r.run("client", "reply", "skip")
+    with pytest.raises(Exception, match="EXECABORT\\ .*"):
+        r.run("exec")
     r.run("multi")
-    # TODO: assert_error "ERR Command 'client|reply' not allowed inside a transaction" {r client reply off}
-    # TODO: assert_error "EXECABORT *" {r exec}
+    with pytest.raises(Exception, match="ERR\\ Command\\ 'client\\|reply'\\ not\\ allowed\\ inside\\ a\\ transaction"):
+        r.run("client", "reply", "off")
+    with pytest.raises(Exception, match="EXECABORT\\ .*"):
+        r.run("exec")
     r.run("client", "reply", "on")
 
 
@@ -1888,7 +1891,6 @@ def test_client_reply_off_or_skip_multi_command(r: ValkeyTestClient) -> None:
     # TODO: $rd close
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_auth_errored_inside_multi_will_add_the_reply(r: ValkeyTestClient) -> None:
     """
     test "AUTH errored inside MULTI will add the reply" {
@@ -1901,7 +1903,10 @@ def test_auth_errored_inside_multi_will_add_the_reply(r: ValkeyTestClient) -> No
     r.run("config", "set", "requirepass", "")
     r.run("multi")
     r.run("auth", "no-user", "foobar")
-    # TODO: assert_error {WRONGPASS invalid username-password pair or user is disabled.} {r exec}
+    with pytest.raises(
+        Exception, match="WRONGPASS\\ invalid\\ username\\-password\\ pair\\ or\\ user\\ is\\ disabled\\."
+    ):
+        r.run("exec")
 
 
 pytestmark = [pytest.mark.external_skip]

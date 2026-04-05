@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004
+# ruff: noqa: PLR2004, RUF043
 
 import pytest
 
@@ -16,7 +16,6 @@ r module load testmodule
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_rdbloadsave_sanity(r: ValkeyTestClient) -> None:
     """
     test "Module rdbloadsave sanity" {
@@ -34,7 +33,8 @@ def test_module_rdbloadsave_sanity(r: ValkeyTestClient) -> None:
     }
     """
     r.run("test.sanity")
-    # TODO: assert_error {*No such file or directory*} {r test.rdbload sanity.rdb}
+    with pytest.raises(Exception, match=".*No\\ such\\ file\\ or\\ directory.*"):
+        r.run("test.rdbload", "sanity.rdb")
     r.run("set", "x", 1)
     assert "OK" == r.run("test.rdbsave", "sanity.rdb")
     r.run("flushdb")

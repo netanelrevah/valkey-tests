@@ -466,7 +466,6 @@ def test_slowlog_can_be_disabled(r: ValkeyTestClient) -> None:
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_slowlog_count_must_be_1(r: ValkeyTestClient) -> None:
     """
     test {SLOWLOG - count must be >= -1} {
@@ -474,8 +473,10 @@ def test_slowlog_count_must_be_1(r: ValkeyTestClient) -> None:
         assert_error "ERR count should be greater than or equal to -1" {r slowlog get -222}
     }
     """
-    # TODO: assert_error "ERR count should be greater than or equal to -1" {r slowlog get -2}
-    # TODO: assert_error "ERR count should be greater than or equal to -1" {r slowlog get -222}
+    with pytest.raises(Exception, match="ERR\\ count\\ should\\ be\\ greater\\ than\\ or\\ equal\\ to\\ \\-1"):
+        r.run("slowlog", "get", -2)
+    with pytest.raises(Exception, match="ERR\\ count\\ should\\ be\\ greater\\ than\\ or\\ equal\\ to\\ \\-1"):
+        r.run("slowlog", "get", -222)
 
 
 @pytest.mark.xfail(reason="not implemented")

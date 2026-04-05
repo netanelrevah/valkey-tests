@@ -1,4 +1,5 @@
 # ruff: noqa: PLR2004, F841
+import time
 
 import pytest
 
@@ -36,7 +37,7 @@ def test_rm_createtimer_a_sequence_of_timers_work(r: ValkeyTestClient) -> None:
     #       r test.createtimer 10 timer-incr-key
     #   }
     r.run("exec")
-    # TODO: after 500
+    time.sleep(500 / 1000)
     assert 20 == r.run("get", "timer-incr-key")
 
 
@@ -67,7 +68,6 @@ def test_rm_gettimer_basic_sanity(r: ValkeyTestClient) -> None:
     assert 1 == r.run("test.stoptimer", id)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_rm_stoptimer_basic_sanity(r: ValkeyTestClient) -> None:
     """
     test {RM_StopTimer: basic sanity} {
@@ -87,12 +87,11 @@ def test_rm_stoptimer_basic_sanity(r: ValkeyTestClient) -> None:
     r.run("set", "timer-incr-key", 0)
     id = r.run("test.createtimer", 1000, "timer-incr-key")
     assert 1 == r.run("test.stoptimer", id)
-    # TODO: after 2000
+    time.sleep(2000 / 1000)
     assert 0 == r.run("get", "timer-incr-key")
     assert 0 == r.run("test.stoptimer", id)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_timer_appears_non_existing_after_it_fires(r: ValkeyTestClient) -> None:
     """
     test {Timer appears non-existing after it fires} {
@@ -109,7 +108,7 @@ def test_timer_appears_non_existing_after_it_fires(r: ValkeyTestClient) -> None:
     """
     r.run("set", "timer-incr-key", 0)
     id = r.run("test.createtimer", 10, "timer-incr-key")
-    # TODO: after 500
+    time.sleep(500 / 1000)
     assert 1 == r.run("get", "timer-incr-key")
     assert "" == r.run("test.gettimer", id)
 

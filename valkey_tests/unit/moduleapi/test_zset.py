@@ -1,3 +1,5 @@
+# ruff: noqa: RUF043
+
 import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
@@ -36,7 +38,6 @@ def test_module_zset_rem(r: ValkeyTestClient) -> None:
     assert 0 == r.run("exists", "k")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_zset_add(r: ValkeyTestClient) -> None:
     """
     test {Module zset add} {
@@ -50,13 +51,13 @@ def test_module_zset_add(r: ValkeyTestClient) -> None:
     }
     """
     r.run("del", "k")
-    # TODO: assert_error "ERR ZsetAdd failed" {r zset.add k nan hello}
+    with pytest.raises(Exception, match="ERR\\ ZsetAdd\\ failed"):
+        r.run("zset.add", "k", float("nan"), "hello")
     assert 0 == r.run("exists", "k")
     r.run("zset.add", "k", 100, "hello")
     assert "hello 100" == r.run("zrange", "k", 0, -1, "withscores")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_zset_incrby(r: ValkeyTestClient) -> None:
     """
     test {Module zset incrby} {
@@ -70,7 +71,8 @@ def test_module_zset_incrby(r: ValkeyTestClient) -> None:
     }
     """
     r.run("del", "k")
-    # TODO: assert_error "ERR ZsetIncrby failed" {r zset.incrby k hello nan}
+    with pytest.raises(Exception, match="ERR\\ ZsetIncrby\\ failed"):
+        r.run("zset.incrby", "k", "hello", float("nan"))
     assert 0 == r.run("exists", "k")
     r.run("zset.incrby", "k", "hello", 100)
     assert "hello 100" == r.run("zrange", "k", 0, -1, "withscores")
@@ -120,15 +122,20 @@ def test_module_zset_rangebylex(r: ValkeyTestClient) -> None:
         assert_equal {ele2 ele1} [r zset.revrangebylex k "(ele0" "(ele3"]
     }
     """
-    # TODO: assert_error "ERR wrong number of arguments*" {r zset.rangebylex}
-    # TODO: assert_error "ERR wrong number of arguments*" {r zset.revrangebylex}
+    with pytest.raises(Exception, match="ERR\\ wrong\\ number\\ of\\ arguments.*"):
+        r.run("zset.rangebylex")
+    with pytest.raises(Exception, match="ERR\\ wrong\\ number\\ of\\ arguments.*"):
+        r.run("zset.revrangebylex")
     r.run("del", "k")
     r.run("set", "k", "v")
-    # TODO: assert_error "WRONGTYPE Operation against a key*" {r zset.rangebylex k - +}
+    with pytest.raises(Exception, match="WRONGTYPE\\ Operation\\ against\\ a\\ key.*"):
+        r.run("zset.rangebylex", "k", "-", "+")
     r.run("del", "k")
     r.run("zadd", "k", 0, "ele")
-    # TODO: assert_error "invalid range" {r zset.rangebylex k - a}
-    # TODO: assert_error "invalid range" {r zset.revrangebylex k - a}
+    with pytest.raises(Exception, match="invalid\\ range"):
+        r.run("zset.rangebylex", "k", "-", "a")
+    with pytest.raises(Exception, match="invalid\\ range"):
+        r.run("zset.revrangebylex", "k", "-", "a")
     r.run("del", "k")
     r.run("config", "set", "zset-max-listpack-entries", 2)
     r.run("config", "set", "zset-max-listpack-value", 64)
@@ -182,10 +189,12 @@ def test_module_zset_members(r: ValkeyTestClient) -> None:
         assert_equal {ele0 ele1 ele2 ele3} [lsort [r zset.members k]]
     }
     """
-    # TODO: assert_error "ERR wrong number of arguments*" {r zset.members}
+    with pytest.raises(Exception, match="ERR\\ wrong\\ number\\ of\\ arguments.*"):
+        r.run("zset.members")
     r.run("del", "k")
     r.run("set", "k", "v")
-    # TODO: assert_error "WRONGTYPE Operation against a key*" {r zset.members k}
+    with pytest.raises(Exception, match="WRONGTYPE\\ Operation\\ against\\ a\\ key.*"):
+        r.run("zset.members", "k")
     r.run("del", "k")
     r.run("config", "set", "zset-max-listpack-entries", 2)
     r.run("config", "set", "zset-max-listpack-value", 64)

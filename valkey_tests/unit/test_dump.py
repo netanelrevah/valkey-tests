@@ -1,4 +1,5 @@
 # ruff: noqa: F841
+import time
 from fnmatch import fnmatch
 
 import pytest
@@ -426,7 +427,6 @@ def test_migrate_is_caching_connections(r: ValkeyTestClient) -> None:
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_migrate_cached_connections_are_released_after_some_time(r: ValkeyTestClient) -> None:
     """
     test {MIGRATE cached connections are released after some time} {
@@ -434,7 +434,7 @@ def test_migrate_cached_connections_are_released_after_some_time(r: ValkeyTestCl
         assert_match {*migrate_cached_sockets:0*} [r info]
     }
     """
-    # TODO: after 15000
+    time.sleep(15000 / 1000)
     assert fnmatch(str(r.run("info")), "*migrate_cached_sockets:0*")
 
 

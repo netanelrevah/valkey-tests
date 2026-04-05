@@ -1,4 +1,5 @@
-# ruff: noqa: F841
+# ruff: noqa: F841, RUF043
+import time
 
 import pytest
 
@@ -776,7 +777,7 @@ def test_client_tracking_don_t_cause_eviction_feedback_loop(r: ValkeyTestClient)
     #           $rd read
     #       }
     #   }
-    # TODO: after 1100
+    time.sleep(1100 / 1000)
     # TODO: set used s used_memory
     # TODO: set limit expr {$used - 40000}
     # TODO: r config set maxmemory limit
@@ -963,7 +964,6 @@ def test_lru_or_lfu_value_of_the_key_just_added(r: ValkeyTestClient) -> None:
 pytestmark = [pytest.mark.maxmemory, pytest.mark.external_skip]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_import_mode_should_forbid_eviction(r: ValkeyTestClient) -> None:
     """
     test {Import mode should forbid eviction} {
@@ -988,7 +988,8 @@ def test_import_mode_should_forbid_eviction(r: ValkeyTestClient) -> None:
     r.run("config", "set", "maxmemory-policy", "allkeys-lru")
     r.run("config", "set", "maxmemory", 1)
     assert r.run("dbsize") == "1"
-    # TODO: assert_error {OOM command not allowed*} {r set key1 val1}
+    with pytest.raises(Exception, match="OOM\\ command\\ not\\ allowed.*"):
+        r.run("set", "key1", "val1")
     assert r.run("client", "import-source", "off") == "OK"
     r.run("config", "set", "import-mode", "no")
     assert r.run("dbsize") == "0"

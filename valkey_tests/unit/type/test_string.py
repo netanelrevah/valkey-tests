@@ -1,4 +1,5 @@
-# ruff: noqa: PLR2004, F841
+# ruff: noqa: PLR2004, F841, RUF043
+import time
 
 import pytest
 
@@ -161,7 +162,7 @@ def test_setnx_against_expired_volatile_key(r: ValkeyTestClient) -> None:
     #   }
     r.run("set", "x", 10)
     r.run("expire", "x", 1)
-    # TODO: after 2000
+    time.sleep(2000 / 1000)
     assert 1 == r.run("setnx", "x", 20)
     assert 20 == r.run("get", "x")
 
@@ -278,7 +279,6 @@ def test_getex_syntax_errors(r: ValkeyTestClient) -> None:
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_getex_and_get_expired_key_or_not_exist(r: ValkeyTestClient) -> None:
     """
     test "GETEX and GET expired key or not exist" {
@@ -291,7 +291,7 @@ def test_getex_and_get_expired_key_or_not_exist(r: ValkeyTestClient) -> None:
     """
     r.run("del", "foo")
     r.run("set", "foo", "bar", "px", 1)
-    # TODO: after 2
+    time.sleep(2 / 1000)
     assert "" == r.run("getex", "foo")
     assert "" == r.run("get", "foo")
 
@@ -457,7 +457,6 @@ def test_mset_base_case(r: ValkeyTestClient) -> None:
     r.run("mget", "x{t}", "y{t}", "z{t}")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_mset_or_msetnx_wrong_number_of_args(r: ValkeyTestClient) -> None:
     """
     test {MSET/MSETNX wrong number of args} {
@@ -465,8 +464,10 @@ def test_mset_or_msetnx_wrong_number_of_args(r: ValkeyTestClient) -> None:
         assert_error {*wrong number of arguments for 'msetnx' command} {r msetnx x{t} 20 y{t} "foo bar" z{t}}
     }
     """
-    # TODO: assert_error {*wrong number of arguments for 'mset' command} {r mset x{t} 10 y{t} "foo bar" z{t}}
-    # TODO: assert_error {*wrong number of arguments for 'msetnx' command} {r msetnx x{t} 20 y{t} "foo bar" z{t}}
+    with pytest.raises(Exception, match=".*wrong\\ number\\ of\\ arguments\\ for\\ 'mset'\\ command"):
+        r.run("mset", "x{t}", 10, "y{t}", "foo bar", "z{t}")
+    with pytest.raises(Exception, match=".*wrong\\ number\\ of\\ arguments\\ for\\ 'msetnx'\\ command"):
+        r.run("msetnx", "x{t}", 20, "y{t}", "foo bar", "z{t}")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -615,7 +616,6 @@ def test_setbit_against_integer_encoded_key(r: ValkeyTestClient) -> None:
     # TODO: assert_equal binary format B* 00010011 r get mykey
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_setbit_against_key_with_wrong_type(r: ValkeyTestClient) -> None:
     """
     test "SETBIT against key with wrong type" {
@@ -626,7 +626,8 @@ def test_setbit_against_key_with_wrong_type(r: ValkeyTestClient) -> None:
     """
     r.run("del", "mykey")
     r.run("lpush", "mykey", "foo")
-    # TODO: assert_error "WRONGTYPE*" {r setbit mykey 0 1}
+    with pytest.raises(Exception, match="WRONGTYPE.*"):
+        r.run("setbit", "mykey", 0, 1)
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -640,10 +641,10 @@ def test_setbit_with_out_of_range_bit_offset(r: ValkeyTestClient) -> None:
     """
     r.run("del", "mykey")
     # TODO: assert_error "*out of range*" {r setbit mykey [expr 4*1024*1024*1024] 1}
-    # TODO: assert_error "*out of range*" {r setbit mykey -1 1}
+    with pytest.raises(Exception, match=".*out\\ of\\ range.*"):
+        r.run("setbit", "mykey", -1, 1)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_setbit_with_non_bit_argument(r: ValkeyTestClient) -> None:
     """
     test "SETBIT with non-bit argument" {
@@ -655,10 +656,14 @@ def test_setbit_with_non_bit_argument(r: ValkeyTestClient) -> None:
     }
     """
     r.run("del", "mykey")
-    # TODO: assert_error "*out of range*" {r setbit mykey 0 -1}
-    # TODO: assert_error "*out of range*" {r setbit mykey 0  2}
-    # TODO: assert_error "*out of range*" {r setbit mykey 0 10}
-    # TODO: assert_error "*out of range*" {r setbit mykey 0 20}
+    with pytest.raises(Exception, match=".*out\\ of\\ range.*"):
+        r.run("setbit", "mykey", 0, -1)
+    with pytest.raises(Exception, match=".*out\\ of\\ range.*"):
+        r.run("setbit", "mykey", 0, 2)
+    with pytest.raises(Exception, match=".*out\\ of\\ range.*"):
+        r.run("setbit", "mykey", 0, 10)
+    with pytest.raises(Exception, match=".*out\\ of\\ range.*"):
+        r.run("setbit", "mykey", 0, 20)
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -882,7 +887,6 @@ def test_setrange_against_integer_encoded_key(r: ValkeyTestClient) -> None:
     # TODO: assert_equal "1234\0002" r get mykey
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_setrange_against_key_with_wrong_type(r: ValkeyTestClient) -> None:
     """
     test "SETRANGE against key with wrong type" {
@@ -893,7 +897,8 @@ def test_setrange_against_key_with_wrong_type(r: ValkeyTestClient) -> None:
     """
     r.run("del", "mykey")
     r.run("lpush", "mykey", "foo")
-    # TODO: assert_error "WRONGTYPE*" {r setrange mykey 0 bar}
+    with pytest.raises(Exception, match="WRONGTYPE.*"):
+        r.run("setrange", "mykey", 0, "bar")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -911,7 +916,8 @@ def test_setrange_with_out_of_range_offset(r: ValkeyTestClient) -> None:
     r.run("del", "mykey")
     # TODO: assert_error "*maximum allowed size*" {r setrange mykey [expr 512*1024*1024-4] world}
     r.run("set", "mykey", "hello")
-    # TODO: assert_error "*out of range*" {r setrange mykey -1 world}
+    with pytest.raises(Exception, match=".*out\\ of\\ range.*"):
+        r.run("setrange", "mykey", -1, "world")
     # TODO: assert_error "*maximum allowed size*" {r setrange mykey [expr 512*1024*1024-4] world}
 
 
@@ -926,7 +932,6 @@ def test_getrange_against_non_existing_key(r: ValkeyTestClient) -> None:
     assert "" == r.run("getrange", "mykey", 0, -1)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_getrange_against_wrong_key_type(r: ValkeyTestClient) -> None:
     """
     test "GETRANGE against wrong key type" {
@@ -935,7 +940,10 @@ def test_getrange_against_wrong_key_type(r: ValkeyTestClient) -> None:
     }
     """
     r.run("lpush", "lkey1", "list")
-    # TODO: assert_error {WRONGTYPE Operation against a key holding the wrong kind of value*} {r getrange lkey1 0 -1}
+    with pytest.raises(
+        Exception, match="WRONGTYPE\\ Operation\\ against\\ a\\ key\\ holding\\ the\\ wrong\\ kind\\ of\\ value.*"
+    ):
+        r.run("getrange", "lkey1", 0, -1)
 
 
 def test_getrange_against_string_value(r: ValkeyTestClient) -> None:
@@ -1243,7 +1251,6 @@ def test_set_with_ifeq_conditional(r: ValkeyTestClient) -> None:
     assert "new_value" == r.run("get", "foo")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_set_with_ifeq_conditional_non_string_current_value(r: ValkeyTestClient) -> None:
     """
     test "SET with IFEQ conditional - non-string current value" {
@@ -1255,7 +1262,10 @@ def test_set_with_ifeq_conditional_non_string_current_value(r: ValkeyTestClient)
     """
     r.run("del", "foo")
     r.run("sadd", "foo", "some_set_value")
-    # TODO: assert_error {WRONGTYPE Operation against a key holding the wrong kind of value} {r set foo "new_value" ifeq "some_set_value"}
+    with pytest.raises(
+        Exception, match="WRONGTYPE\\ Operation\\ against\\ a\\ key\\ holding\\ the\\ wrong\\ kind\\ of\\ value"
+    ):
+        r.run("set", "foo", "new_value", "ifeq", "some_set_value")
 
 
 def test_set_with_ifeq_conditional_with_get(r: ValkeyTestClient) -> None:
@@ -1280,7 +1290,6 @@ def test_set_with_ifeq_conditional_with_get(r: ValkeyTestClient) -> None:
     assert "new_value" == r.run("get", "foo")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_set_with_ifeq_conditional_non_string_current_value_with_get(r: ValkeyTestClient) -> None:
     """
     test "SET with IFEQ conditional - non string current value with get" {
@@ -1293,10 +1302,12 @@ def test_set_with_ifeq_conditional_non_string_current_value_with_get(r: ValkeyTe
     """
     r.run("del", "foo")
     r.run("sadd", "foo", "some_set_value")
-    # TODO: assert_error {WRONGTYPE Operation against a key holding the wrong kind of value} {r set foo "new_value" ifeq "initial_value" get}
+    with pytest.raises(
+        Exception, match="WRONGTYPE\\ Operation\\ against\\ a\\ key\\ holding\\ the\\ wrong\\ kind\\ of\\ value"
+    ):
+        r.run("set", "foo", "new_value", "ifeq", "initial_value", "get")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_set_with_ifeq_conditional_with_xx(r: ValkeyTestClient) -> None:
     """
     test "SET with IFEQ conditional - with xx" {
@@ -1305,10 +1316,10 @@ def test_set_with_ifeq_conditional_with_xx(r: ValkeyTestClient) -> None:
     }
     """
     r.run("del", "foo")
-    # TODO: assert_error {ERR syntax error} {r set foo "new_value" ifeq "initial_value" xx}
+    with pytest.raises(Exception, match="ERR\\ syntax\\ error"):
+        r.run("set", "foo", "new_value", "ifeq", "initial_value", "xx")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_set_with_ifeq_conditional_with_nx(r: ValkeyTestClient) -> None:
     """
     test "SET with IFEQ conditional - with nx" {
@@ -1317,7 +1328,8 @@ def test_set_with_ifeq_conditional_with_nx(r: ValkeyTestClient) -> None:
     }
     """
     r.run("del", "foo")
-    # TODO: assert_error {ERR syntax error} {r set foo "new_value" ifeq "initial_value" nx}
+    with pytest.raises(Exception, match="ERR\\ syntax\\ error"):
+        r.run("set", "foo", "new_value", "ifeq", "initial_value", "nx")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1420,15 +1432,19 @@ def test_set_exat_or_pxat_expiration_time_is_expired(r: ValkeyTestClient) -> Non
     # TODO: set repl attach_to_replication_stream
     r.run("set", "foo", "bar")
     # TODO: r set foo bar exat expr [clock seconds] - 100
-    # TODO: assert_error {ERR no such key} {r debug object foo}
+    with pytest.raises(Exception, match="ERR\\ no\\ such\\ key"):
+        r.run("debug", "object", "foo")
     r.run("set", "foo", "bar")
     # TODO: r set foo bar pxat expr [clock milliseconds] - 10000
-    # TODO: assert_error {ERR no such key} {r debug object foo}
+    with pytest.raises(Exception, match="ERR\\ no\\ such\\ key"):
+        r.run("debug", "object", "foo")
     r.run("del", "foo")
     # TODO: r set foo bar exat expr [clock seconds] - 100
-    # TODO: assert_error {ERR no such key} {r debug object foo}
+    with pytest.raises(Exception, match="ERR\\ no\\ such\\ key"):
+        r.run("debug", "object", "foo")
     # TODO: r set foo bar pxat expr [clock milliseconds] - 10000
-    # TODO: assert_error {ERR no such key} {r debug object foo}
+    with pytest.raises(Exception, match="ERR\\ no\\ such\\ key"):
+        r.run("debug", "object", "foo")
     r.run("incr", "foo")
     # TODO: assert_replication_stream repl {
     #       {select *}
@@ -1632,7 +1648,6 @@ def test_delifeq_existing_key_non_matching_value(r: ValkeyTestClient) -> None:
     assert 0 == r.run("delifeq", "foo", "test")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_delifeq_existing_key_non_string_value(r: ValkeyTestClient) -> None:
     """
     test {DELIFEQ existing key, non-string value} {
@@ -1643,7 +1658,8 @@ def test_delifeq_existing_key_non_string_value(r: ValkeyTestClient) -> None:
     """
     r.run("del", "foo")
     r.run("sadd", "foo", "test")
-    # TODO: assert_error "WRONGTYPE*" {r delifeq foo "test"}
+    with pytest.raises(Exception, match="WRONGTYPE.*"):
+        r.run("delifeq", "foo", "test")
 
 
 @pytest.mark.xfail(reason="not implemented")

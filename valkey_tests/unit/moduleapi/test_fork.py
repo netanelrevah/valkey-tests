@@ -67,7 +67,8 @@ def test_module_fork_kill(r: ValkeyTestClient) -> None:
     #   } else {
     #       fail "fork didn't start"
     #   }
-    # TODO: assert_error {Fork failed} {r fork.create 0 1}
+    with pytest.raises(Exception, match="Fork\\ failed"):
+        r.run("fork.create", 0, 1)
     # TODO: assert {[count_log_message 0 "Can't fork for module: Operation already in progress"] eq "1"}
     r.run("fork.kill")
     # TODO: assert {[count_log_message 0 "Received SIGUSR1 in child"] eq "1"}

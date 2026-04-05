@@ -1,4 +1,4 @@
-# ruff: noqa: F841
+# ruff: noqa: F841, RUF043
 
 import pytest
 
@@ -59,7 +59,6 @@ proc simulate_bit_op {op args} {
 pytestmark = [pytest.mark.bitops]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitcount_against_wrong_type(r: ValkeyTestClient) -> None:
     """
     test {BITCOUNT against wrong type} {
@@ -75,10 +74,14 @@ def test_bitcount_against_wrong_type(r: ValkeyTestClient) -> None:
     """
     r.run("del", "mylist")
     r.run("lpush", "mylist", "a", "b", "c")
-    # TODO: assert_error "*WRONGTYPE*" {r bitcount mylist}
-    # TODO: assert_error "*WRONGTYPE*" {r bitcount mylist 0 100}
-    # TODO: assert_error "*WRONGTYPE*" {r bitcount mylist -6 -7}
-    # TODO: assert_error "*WRONGTYPE*" {r bitcount mylist -6 -15 bit}
+    with pytest.raises(Exception, match=".*WRONGTYPE.*"):
+        r.run("bitcount", "mylist")
+    with pytest.raises(Exception, match=".*WRONGTYPE.*"):
+        r.run("bitcount", "mylist", 0, 100)
+    with pytest.raises(Exception, match=".*WRONGTYPE.*"):
+        r.run("bitcount", "mylist", -6, -7)
+    with pytest.raises(Exception, match=".*WRONGTYPE.*"):
+        r.run("bitcount", "mylist", -6, -15, "bit")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -299,7 +302,6 @@ def test_bitcount_with_start_end(r: ValkeyTestClient) -> None:
     # TODO: assert_equal r bitcount s -1000 1000 bit count_bits $s
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitcount_with_illegal_arguments(r: ValkeyTestClient) -> None:
     """
     test {BITCOUNT with illegal arguments} {
@@ -314,14 +316,17 @@ def test_bitcount_with_illegal_arguments(r: ValkeyTestClient) -> None:
     }
     """
     r.run("del", "s")
-    # TODO: assert_error {ERR *syntax*} {r bitcount s 0 1 hello}
-    # TODO: assert_error {ERR *syntax*} {r bitcount s 0 1 hello hello2}
+    with pytest.raises(Exception, match="ERR\\ .*syntax.*"):
+        r.run("bitcount", "s", 0, 1, "hello")
+    with pytest.raises(Exception, match="ERR\\ .*syntax.*"):
+        r.run("bitcount", "s", 0, 1, "hello", "hello2")
     r.run("set", "s", 1)
-    # TODO: assert_error {ERR *syntax*} {r bitcount s 0 1 hello}
-    # TODO: assert_error {ERR *syntax*} {r bitcount s 0 1 hello hello2}
+    with pytest.raises(Exception, match="ERR\\ .*syntax.*"):
+        r.run("bitcount", "s", 0, 1, "hello")
+    with pytest.raises(Exception, match="ERR\\ .*syntax.*"):
+        r.run("bitcount", "s", 0, 1, "hello", "hello2")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitcount_against_non_integer_value(r: ValkeyTestClient) -> None:
     """
     test {BITCOUNT against non-integer value} {
@@ -339,11 +344,14 @@ def test_bitcount_against_non_integer_value(r: ValkeyTestClient) -> None:
     }
     """
     r.run("set", "s", 1)
-    # TODO: assert_error {ERR *not an integer*} {r bitcount s a b}
+    with pytest.raises(Exception, match="ERR\\ .*not\\ an\\ integer.*"):
+        r.run("bitcount", "s", "a", "b")
     r.run("del", "s")
-    # TODO: assert_error {ERR *not an integer*} {r bitcount s a b}
+    with pytest.raises(Exception, match="ERR\\ .*not\\ an\\ integer.*"):
+        r.run("bitcount", "s", "a", "b")
     r.run("lpush", "s", "a", "b", "c")
-    # TODO: assert_error {ERR *not an integer*} {r bitcount s a b}
+    with pytest.raises(Exception, match="ERR\\ .*not\\ an\\ integer.*"):
+        r.run("bitcount", "s", "a", "b")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -603,7 +611,6 @@ def test_bitop_with_empty_string_after_non_empty_string_issue_529(r: ValkeyTestC
     assert r.run("bitop", "or", "x{t}", "a{t}", "b{t}") == "32"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitpos_against_wrong_type(r: ValkeyTestClient) -> None:
     """
     test {BITPOS against wrong type} {
@@ -615,11 +622,12 @@ def test_bitpos_against_wrong_type(r: ValkeyTestClient) -> None:
     """
     r.run("del", "mylist")
     r.run("lpush", "mylist", "a", "b", "c")
-    # TODO: assert_error "*WRONGTYPE*" {r bitpos mylist 0}
-    # TODO: assert_error "*WRONGTYPE*" {r bitpos mylist 1 10 100}
+    with pytest.raises(Exception, match=".*WRONGTYPE.*"):
+        r.run("bitpos", "mylist", 0)
+    with pytest.raises(Exception, match=".*WRONGTYPE.*"):
+        r.run("bitpos", "mylist", 1, 10, 100)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitpos_will_illegal_arguments(r: ValkeyTestClient) -> None:
     """
     test {BITPOS will illegal arguments} {
@@ -634,14 +642,17 @@ def test_bitpos_will_illegal_arguments(r: ValkeyTestClient) -> None:
     }
     """
     r.run("del", "s")
-    # TODO: assert_error {ERR *syntax*} {r bitpos s 0 1 hello hello2}
-    # TODO: assert_error {ERR *syntax*} {r bitpos s 0 0 1 hello}
+    with pytest.raises(Exception, match="ERR\\ .*syntax.*"):
+        r.run("bitpos", "s", 0, 1, "hello", "hello2")
+    with pytest.raises(Exception, match="ERR\\ .*syntax.*"):
+        r.run("bitpos", "s", 0, 0, 1, "hello")
     r.run("set", "s", 1)
-    # TODO: assert_error {ERR *syntax*} {r bitpos s 0 1 hello hello2}
-    # TODO: assert_error {ERR *syntax*} {r bitpos s 0 0 1 hello}
+    with pytest.raises(Exception, match="ERR\\ .*syntax.*"):
+        r.run("bitpos", "s", 0, 1, "hello", "hello2")
+    with pytest.raises(Exception, match="ERR\\ .*syntax.*"):
+        r.run("bitpos", "s", 0, 0, 1, "hello")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitpos_against_non_integer_value(r: ValkeyTestClient) -> None:
     """
     test {BITPOS against non-integer value} {
@@ -662,14 +673,20 @@ def test_bitpos_against_non_integer_value(r: ValkeyTestClient) -> None:
     }
     """
     r.run("set", "s", 1)
-    # TODO: assert_error {ERR *not an integer*} {r bitpos s a}
-    # TODO: assert_error {ERR *not an integer*} {r bitpos s 0 a b}
+    with pytest.raises(Exception, match="ERR\\ .*not\\ an\\ integer.*"):
+        r.run("bitpos", "s", "a")
+    with pytest.raises(Exception, match="ERR\\ .*not\\ an\\ integer.*"):
+        r.run("bitpos", "s", 0, "a", "b")
     r.run("del", "s")
-    # TODO: assert_error {ERR *not an integer*} {r bitpos s b}
-    # TODO: assert_error {ERR *not an integer*} {r bitpos s 0 a b}
+    with pytest.raises(Exception, match="ERR\\ .*not\\ an\\ integer.*"):
+        r.run("bitpos", "s", "b")
+    with pytest.raises(Exception, match="ERR\\ .*not\\ an\\ integer.*"):
+        r.run("bitpos", "s", 0, "a", "b")
     r.run("lpush", "s", "a", "b", "c")
-    # TODO: assert_error {ERR *not an integer*} {r bitpos s a}
-    # TODO: assert_error {ERR *not an integer*} {r bitpos s 1 a b}
+    with pytest.raises(Exception, match="ERR\\ .*not\\ an\\ integer.*"):
+        r.run("bitpos", "s", "a")
+    with pytest.raises(Exception, match="ERR\\ .*not\\ an\\ integer.*"):
+        r.run("bitpos", "s", 1, "a", "b")
 
 
 @pytest.mark.xfail(reason="not implemented")

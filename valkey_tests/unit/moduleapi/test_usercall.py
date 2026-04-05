@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004
+# ruff: noqa: PLR2004, RUF043
 
 import pytest
 
@@ -104,7 +104,8 @@ def test_test_module_check_regular_valkey_command_with_user_and_acl(r: ValkeyTes
     assert r.run("usercall.reset_user") == "OK"
     assert r.run("usercall.add_to_acl", "~* &* +@all -set") == "OK"
     assert r.run("usercall.get_acl") == "off sanitize-payload ~* &* alldbs +@all -set"
-    # TODO: assert_error {*NOPERM User module_user has no permissions*} {r usercall.call_with_user_flag C set x 10}
+    with pytest.raises(Exception, match=".*NOPERM\\ User\\ module_user\\ has\\ no\\ permissions.*"):
+        r.run("usercall.call_with_user_flag", "C", "set", "x", 10)
     assert r.run("usercall.call_with_user_flag", "C", "get", "x") == 5
     # TODO: set entry lindex [r ACL LOG] 0
     # TODO: assert_equal dict get $entry username {module_user}
@@ -147,7 +148,8 @@ def test_test_module_check_regular_valkey_command_with_user_and_acl_from_blocked
     r.run("ACL", "LOG", "RESET")
     assert r.run("usercall.reset_user") == "OK"
     assert r.run("usercall.add_to_acl", "~* &* +@all -set") == "OK"
-    # TODO: assert_error {*NOPERM User module_user has no permissions*} {r usercall.call_with_user_bg C set x 10}
+    with pytest.raises(Exception, match=".*NOPERM\\ User\\ module_user\\ has\\ no\\ permissions.*"):
+        r.run("usercall.call_with_user_bg", "C", "set", "x", 10)
     assert r.run("usercall.call_with_user_bg", "C", "get", "x") == 5
     # TODO: set entry lindex [r ACL LOG] 0
     # TODO: assert_equal dict get $entry username {module_user}

@@ -1,4 +1,5 @@
 # ruff: noqa: PLR2004, F841
+
 from fnmatch import fnmatch
 
 import pytest

@@ -1,3 +1,4 @@
+# ruff: noqa: RUF043
 from fnmatch import fnmatch
 
 import pytest
@@ -2147,7 +2148,6 @@ def test_unknown_shebang_flag(r: ValkeyTestClient) -> None:
     # TODO: assert_match {*Unexpected flag in script shebang*} e
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_allow_oom_shebang_flag(r: ValkeyTestClient) -> None:
     """
     test "allow-oom shebang flag" {
@@ -2219,18 +2219,11 @@ def test_allow_oom_shebang_flag(r: ValkeyTestClient) -> None:
     """
     r.run("set", "x", 123)
     r.run("config", "set", "maxmemory", 1)
-    # TODO: assert_error {OOM command not allowed when used memory > 'maxmemory'*} {
-    #       r eval {
-    #           redis.call('set','x',1)
-    #           return 1
-    #       } 1 x
-    #   }
+    with pytest.raises(Exception, match="OOM\\ command\\ not\\ allowed\\ when\\ used\\ memory\\ >\\ 'maxmemory'.*"):
+        r.run("eval", "                redis.call('set','x',1)\n                return 1\n            ", 1, "x")
     assert r.run("eval", "                return redis.call('get','x')            ", 1, "x") == "123"
-    # TODO: assert_error {OOM *} {
-    #       r eval {#!lua flags=
-    #           return 1
-    #       } 0
-    #   }
+    with pytest.raises(Exception, match="OOM\\ .*"):
+        r.run("eval", "#!lua flags=\n                return 1\n            ", 0)
     assert (
         r.run(
             "eval",
@@ -2260,7 +2253,6 @@ def test_allow_oom_shebang_flag(r: ValkeyTestClient) -> None:
     assert r.run("config", "set", "maxmemory", 0) == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_no_writes_shebang_flag(r: ValkeyTestClient) -> None:
     """
     test "no-writes shebang flag" {
@@ -2272,12 +2264,15 @@ def test_no_writes_shebang_flag(r: ValkeyTestClient) -> None:
         }
     }
     """
-    # TODO: assert_error {ERR Write commands are not allowed from read-only scripts*} {
-    #       r eval {#!lua flags=no-writes
-    #           redis.call('set','x',1)
-    #           return 1
-    #       } 1 x
-    #   }
+    with pytest.raises(
+        Exception, match="ERR\\ Write\\ commands\\ are\\ not\\ allowed\\ from\\ read\\-only\\ scripts.*"
+    ):
+        r.run(
+            "eval",
+            "#!lua flags=no-writes\n                redis.call('set','x',1)\n                return 1\n            ",
+            1,
+            "x",
+        )
 
 
 """
@@ -2350,7 +2345,6 @@ start_server {tags {"external:skip"}} {
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_not_enough_good_replicas(r: ValkeyTestClient) -> None:
     """
     test "not enough good replicas" {
@@ -2391,16 +2385,10 @@ def test_not_enough_good_replicas(r: ValkeyTestClient) -> None:
         == "some value"
     )
     assert r.run("eval", "                return redis.call('get','x')            ", 1, "x") == "some value"
-    # TODO: assert_error {NOREPLICAS *} {
-    #       r eval {#!lua
-    #           return redis.call('get','x')
-    #       } 1 x
-    #   }
-    # TODO: assert_error {NOREPLICAS *} {
-    #       r eval {
-    #           return redis.call('set','x', 1)
-    #       } 1 x
-    #   }
+    with pytest.raises(Exception, match="NOREPLICAS\\ .*"):
+        r.run("eval", "#!lua\n                return redis.call('get','x')\n            ", 1, "x")
+    with pytest.raises(Exception, match="NOREPLICAS\\ .*"):
+        r.run("eval", "                return redis.call('set','x', 1)\n            ", 1, "x")
     r.run("config", "set", "min-replicas-to-write", 0)
 
 
@@ -2551,22 +2539,24 @@ def test_allow_stale_shebang_flag(r: ValkeyTestClient) -> None:
     """
     r.run("config", "set", "replica-serve-stale-data", "no")
     r.run("replicaof", "127.0.0.1", 1)
-    # TODO: assert_error {MASTERDOWN Link with MASTER is down and replica-serve-stale-data is set to 'no'.} {
-    #       r eval {
-    #           return redis.call('get','x')
-    #       } 1 x
-    #   }
-    # TODO: assert_error {MASTERDOWN Link with MASTER is down and replica-serve-stale-data is set to 'no'.} {
-    #       r eval {#!lua flags=no-writes
-    #           return 1
-    #       } 0
-    #   }
+    with pytest.raises(
+        Exception,
+        match="MASTERDOWN\\ Link\\ with\\ MASTER\\ is\\ down\\ and\\ replica\\-serve\\-stale\\-data\\ is\\ set\\ to\\ 'no'\\.",
+    ):
+        r.run("eval", "                return redis.call('get','x')\n            ", 1, "x")
+    with pytest.raises(
+        Exception,
+        match="MASTERDOWN\\ Link\\ with\\ MASTER\\ is\\ down\\ and\\ replica\\-serve\\-stale\\-data\\ is\\ set\\ to\\ 'no'\\.",
+    ):
+        r.run("eval", "#!lua flags=no-writes\n                return 1\n            ", 0)
     assert r.run("eval", "#!lua flags=allow-stale,no-writes                return 1            ", 0) == 1
-    # TODO: assert_error {*Can not execute the command on a stale replica*} {
-    #       r eval {#!lua flags=allow-stale,no-writes
-    #           return redis.call('get','x')
-    #       } 1 x
-    #   }
+    with pytest.raises(Exception, match=".*Can\\ not\\ execute\\ the\\ command\\ on\\ a\\ stale\\ replica.*"):
+        r.run(
+            "eval",
+            "#!lua flags=allow-stale,no-writes\n                return redis.call('get','x')\n            ",
+            1,
+            "x",
+        )
     assert fnmatch(
         str(
             r.run(
@@ -2732,9 +2722,8 @@ def test_consistent_eval_error_reporting(r: ValkeyTestClient) -> None:
     """
     r.run("config", "resetstat")
     r.run("config", "set", "maxmemory", 1)
-    # TODO: assert_error {OOM command not allowed when used memory > 'maxmemory'*} {
-    #       r eval {return redis.call('set','x','y')} 1 x
-    #   }
+    with pytest.raises(Exception, match="OOM\\ command\\ not\\ allowed\\ when\\ used\\ memory\\ >\\ 'maxmemory'.*"):
+        r.run("eval", "return redis.call('set','x','y')", 1, "x")
     # TODO: assert_equal errorrstat OOM r {count=1}
     # TODO: assert_equal s total_error_replies {1}
     # TODO: assert_match {calls=0*rejected_calls=1,failed_calls=0*} cmdrstat set r
@@ -2755,9 +2744,8 @@ def test_consistent_eval_error_reporting(r: ValkeyTestClient) -> None:
     # TODO: assert_match {calls=0*rejected_calls=1,failed_calls=0*} cmdrstat set r
     # TODO: assert_match {calls=1*rejected_calls=0,failed_calls=0*} cmdrstat eval r
     r.run("config", "resetstat")
-    # TODO: assert_error {OOM command not allowed when used memory > 'maxmemory'.} {
-    #       r eval { return redis.pcall('set','x','y') } 1 x
-    #   }
+    with pytest.raises(Exception, match="OOM\\ command\\ not\\ allowed\\ when\\ used\\ memory\\ >\\ 'maxmemory'\\."):
+        r.run("eval", " return redis.pcall('set','x','y') ", 1, "x")
     # TODO: assert_equal errorrstat ERR r {}
     # TODO: assert_equal errorrstat OOM r {count=1}
     # TODO: assert_equal s total_error_replies {1}
@@ -2765,9 +2753,8 @@ def test_consistent_eval_error_reporting(r: ValkeyTestClient) -> None:
     # TODO: assert_match {calls=1*rejected_calls=0,failed_calls=1*} cmdrstat eval r
     r.run("config", "set", "maxmemory", 0)
     r.run("config", "resetstat")
-    # TODO: assert_error {ERR DB index is out of range*} {
-    #       r eval {return redis.call('select',99)} 0
-    #   }
+    with pytest.raises(Exception, match="ERR\\ DB\\ index\\ is\\ out\\ of\\ range.*"):
+        r.run("eval", "return redis.call('select',99)", 0)
     # TODO: assert_equal errorrstat ERR r {count=1}
     # TODO: assert_equal s total_error_replies {1}
     # TODO: assert_match {calls=1*rejected_calls=0,failed_calls=1*} cmdrstat select r
@@ -2786,9 +2773,10 @@ def test_consistent_eval_error_reporting(r: ValkeyTestClient) -> None:
     # TODO: assert_match {calls=1*rejected_calls=0,failed_calls=1*} cmdrstat select r
     # TODO: assert_match {calls=1*rejected_calls=0,failed_calls=0*} cmdrstat eval r
     r.run("config", "resetstat")
-    # TODO: assert_error {ERR Write commands are not allowed from read-only scripts*} {
-    #       r eval_ro {return redis.call('set','x','y')} 1 x
-    #   }
+    with pytest.raises(
+        Exception, match="ERR\\ Write\\ commands\\ are\\ not\\ allowed\\ from\\ read\\-only\\ scripts.*"
+    ):
+        r.run("eval_ro", "return redis.call('set','x','y')", 1, "x")
     # TODO: assert_equal errorrstat ERR r {count=1}
     # TODO: assert_equal s total_error_replies {1}
     # TODO: assert_match {calls=0*rejected_calls=1,failed_calls=0*} cmdrstat set r
@@ -2809,9 +2797,15 @@ def test_consistent_eval_error_reporting(r: ValkeyTestClient) -> None:
     # TODO: assert_match {calls=1*rejected_calls=0,failed_calls=0*} cmdrstat eval_ro r
     r.run("config", "resetstat")
     r.run("set", "Sicily", 1)
-    # TODO: assert_error {WRONGTYPE Operation against a key holding the wrong kind of value*} {
-    #       r eval {return redis.call('GEOADD', 'Sicily', '13.361389', '38.115556', 'Palermo', '15.087269', '37.502669', 'Catania')} 1 x
-    #   }
+    with pytest.raises(
+        Exception, match="WRONGTYPE\\ Operation\\ against\\ a\\ key\\ holding\\ the\\ wrong\\ kind\\ of\\ value.*"
+    ):
+        r.run(
+            "eval",
+            "return redis.call('GEOADD', 'Sicily', '13.361389', '38.115556', 'Palermo', '15.087269', '37.502669', 'Catania')",
+            1,
+            "x",
+        )
     # TODO: assert_equal errorrstat WRONGTYPE r {count=1}
     # TODO: assert_equal s total_error_replies {1}
     # TODO: assert_match {calls=1*rejected_calls=0,failed_calls=1*} cmdrstat geoadd r
@@ -2831,9 +2825,8 @@ def test_lua_redis_error_reply_api(r: ValkeyTestClient) -> None:
     }
     """
     r.run("config", "resetstat")
-    # TODO: assert_error {MY_ERR_CODE custom msg} {
-    #       r eval {return redis.error_reply("MY_ERR_CODE custom msg")} 0
-    #   }
+    with pytest.raises(Exception, match="MY_ERR_CODE\\ custom\\ msg"):
+        r.run("eval", 'return redis.error_reply("MY_ERR_CODE custom msg")', 0)
     # TODO: assert_equal errorrstat MY_ERR_CODE r {count=1}
 
 
@@ -2849,9 +2842,8 @@ def test_lua_redis_error_reply_api_with_empty_string(r: ValkeyTestClient) -> Non
     }
     """
     r.run("config", "resetstat")
-    # TODO: assert_error {ERR} {
-    #       r eval {return redis.error_reply("")} 0
-    #   }
+    with pytest.raises(Exception, match="ERR"):
+        r.run("eval", 'return redis.error_reply("")', 0)
     # TODO: assert_equal errorrstat ERR r {count=1}
 
 
@@ -2913,7 +2905,6 @@ def test_lua_test_pcall_with_error(r: ValkeyTestClient) -> None:
     )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_lua_test_pcall_with_non_string_or_integer_arg(r: ValkeyTestClient) -> None:
     """
     test "LUA test pcall with non string/integer arg" {
@@ -2931,12 +2922,8 @@ def test_lua_test_pcall_with_non_string_or_integer_arg(r: ValkeyTestClient) -> N
         ] {asdf}
     }
     """
-    # TODO: assert_error "ERR Command arguments must be strings or integers*" {
-    #       r eval {
-    #           local x={}
-    #           return redis.call("ping", x)
-    #       } 0
-    #   }
+    with pytest.raises(Exception, match="ERR\\ Command\\ arguments\\ must\\ be\\ strings\\ or\\ integers.*"):
+        r.run("eval", '                local x={}\n                return redis.call("ping", x)\n            ', 0)
     assert r.run("eval", '                return redis.call("ping", "asdf")            ', 0) == "asdf"
 
 
@@ -3005,7 +2992,6 @@ def test_eval_scripts_support_null_byte(r: ValkeyTestClient) -> None:
     # TODO: assert_equal r eval "return \"\x00\";" 0 "\x00"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_eval_explicit_error_call_handling(r: ValkeyTestClient) -> None:
     """
     test {EVAL - explicit error() call handling} {
@@ -3025,15 +3011,12 @@ def test_eval_explicit_error_call_handling(r: ValkeyTestClient) -> None:
         }
     }
     """
-    # TODO: assert_error {ERR user_script:1: simple string error script: *} {
-    #       r eval "error('simple string error')" 0
-    #   }
-    # TODO: assert_error {ERR table error script: *} {
-    #       r eval "error({err='ERR table error'})" 0
-    #   }
-    # TODO: assert_error {ERR unknown error script: *} {
-    #       r eval "error({})" 0
-    #   }
+    with pytest.raises(Exception, match="ERR\\ user_script:1:\\ simple\\ string\\ error\\ script:\\ .*"):
+        r.run("eval", "error('simple string error')", 0)
+    with pytest.raises(Exception, match="ERR\\ table\\ error\\ script:\\ .*"):
+        r.run("eval", "error({err='ERR table error'})", 0)
+    with pytest.raises(Exception, match="ERR\\ unknown\\ error\\ script:\\ .*"):
+        r.run("eval", "error({})", 0)
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -3120,7 +3103,6 @@ def test_don_t_stop_the_dirty_scripts_when_an_oom_occurs_midway_through_executio
     r.run("config", "set", "maxmemory", 0)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_stop_the_non_dirty_scripts_when_an_oom_occurs_midway_through_execution(r: ValkeyTestClient) -> None:
     """
     test "Stop the non-dirty scripts when an OOM occurs midway through execution" {
@@ -3138,11 +3120,13 @@ def test_stop_the_non_dirty_scripts_when_an_oom_occurs_midway_through_execution(
     """
     r.run("flushall")
     r.run("config", "set", "maxmemory", 1)
-    # TODO: assert_error {OOM *} {
-    #       r eval {
-    #           server.call('get', KEYS[1])
-    #           server.call('set', KEYS[1], ARGV[1])
-    #       } 1 foo bar
-    #   }
+    with pytest.raises(Exception, match="OOM\\ .*"):
+        r.run(
+            "eval",
+            "                server.call('get', KEYS[1])\n                server.call('set', KEYS[1], ARGV[1])\n            ",
+            1,
+            "foo",
+            "bar",
+        )
     assert "" == r.run("get", "foo")
     r.run("config", "set", "maxmemory", 0)

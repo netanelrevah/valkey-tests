@@ -1,4 +1,5 @@
-# ruff: noqa: F841
+# ruff: noqa: F841, RUF043
+import time
 from fnmatch import fnmatch
 
 import pytest
@@ -258,7 +259,7 @@ def test_expires_after_aof_reload_without_rewrite(r: ValkeyTestClient) -> None:
     r.run("set", "pz", "somevalue")
     # TODO: r pexpireat pz expr {([clock seconds]+3000)*1000}
     # TODO: waitForBgrewriteaof r
-    # TODO: after 2000
+    time.sleep(2000 / 1000)
     r.run("debug", "loadaof")
     ttl = r.run("ttl", "x")
     # TODO: assert {$ttl > 900 && $ttl <= 1000}
@@ -502,7 +503,6 @@ def test_reset_clears_authenticated_state(r: ValkeyTestClient) -> None:
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_subcommand_syntax_error_crash_issue_10070(r: ValkeyTestClient) -> None:
     """
     test "Subcommand syntax error crash (issue #10070)" {
@@ -513,11 +513,16 @@ def test_subcommand_syntax_error_crash_issue_10070(r: ValkeyTestClient) -> None:
         assert_error {*unknown subcommand*} {r CONFIG GET_XX}
     }
     """
-    # TODO: assert_error {*unknown command*} {r GET|}
-    # TODO: assert_error {*unknown command*} {r GET|SET}
-    # TODO: assert_error {*unknown command*} {r GET|SET|OTHER}
-    # TODO: assert_error {*unknown command*} {r CONFIG|GET GET_XX}
-    # TODO: assert_error {*unknown subcommand*} {r CONFIG GET_XX}
+    with pytest.raises(Exception, match=".*unknown\\ command.*"):
+        r.run("GET|")
+    with pytest.raises(Exception, match=".*unknown\\ command.*"):
+        r.run("GET|SET")
+    with pytest.raises(Exception, match=".*unknown\\ command.*"):
+        r.run("GET|SET|OTHER")
+    with pytest.raises(Exception, match=".*unknown\\ command.*"):
+        r.run("CONFIG|GET", "GET_XX")
+    with pytest.raises(Exception, match=".*unknown\\ subcommand.*"):
+        r.run("CONFIG", "GET_XX")
 
 
 @pytest.mark.xfail(reason="not implemented")

@@ -1,3 +1,5 @@
+import time
+
 import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
@@ -197,10 +199,10 @@ def test_query_buffer_resized_correctly_with_fat_argv(r: ValkeyTestClient) -> No
     # TODO: $rd client setname test_client
     # TODO: $rd write "*3\r\n\$3\r\nset\r\n\$1\r\na\r\n\$1000000\r\n"
     # TODO: $rd flush
-    # TODO: after 200
+    time.sleep(200 / 1000)
     # TODO: $rd write "a"
     # TODO: $rd flush
-    # TODO: after 20
+    time.sleep(20 / 1000)
     # TODO: if {[client_query_buffer test_client] < 1000000} {
     #       fail "query buffer should not be resized when client idle time smaller than 2s"
     #   }

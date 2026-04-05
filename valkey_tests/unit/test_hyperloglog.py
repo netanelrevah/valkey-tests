@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841
+# ruff: noqa: PLR2004, F841, RUF043
 
 import pytest
 
@@ -43,8 +43,10 @@ def test_cve_2025_32023_sparse_hll_xzero_overflow_triggers_crash(r: ValkeyTestCl
     # TODO: append hll binary format c 0x80
     # TODO: r set hll_overflow hll
     r.run("pfadd", "hll_merge_source", "hi")
-    # TODO: assert_error {*INVALIDOBJ*} {r pfmerge fail_target hll_overflow hll_merge_source}
-    # TODO: assert_error {*INVALIDOBJ*} {r pfadd hll_overflow foo}
+    with pytest.raises(Exception, match=".*INVALIDOBJ.*"):
+        r.run("pfmerge", "fail_target", "hll_overflow", "hll_merge_source")
+    with pytest.raises(Exception, match=".*INVALIDOBJ.*"):
+        r.run("pfadd", "hll_overflow", "foo")
 
 
 pytestmark = [pytest.mark.hll]

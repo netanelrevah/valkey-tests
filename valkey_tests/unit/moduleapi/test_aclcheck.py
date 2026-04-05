@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004
+# ruff: noqa: PLR2004, RUF043
 
 import pytest
 
@@ -160,21 +160,28 @@ def test_test_module_check_acl_in_rm_call(r: ValkeyTestClient) -> None:
     assert r.run("aclcheck.rm_call", "set", "x", 5) == "OK"
     assert r.run("aclcheck.rm_call", "set", "x", 6, "get") == 5
     assert r.run("aclcheck.rm_call", "set", "y", 5) == "OK"
-    # TODO: assert_error {*NOPERM*} {r aclcheck.rm_call set y 5 get}
-    # TODO: assert_error {*NOPERM*No permissions to access a key*} {r aclcheck.rm_call_with_errors set y 5 get}
-    # TODO: assert_error {*NOPERM*} {r aclcheck.rm_call set z 5}
+    with pytest.raises(Exception, match=".*NOPERM.*"):
+        r.run("aclcheck.rm_call", "set", "y", 5, "get")
+    with pytest.raises(Exception, match=".*NOPERM.*No\\ permissions\\ to\\ access\\ a\\ key.*"):
+        r.run("aclcheck.rm_call_with_errors", "set", "y", 5, "get")
+    with pytest.raises(Exception, match=".*NOPERM.*"):
+        r.run("aclcheck.rm_call", "set", "z", 5)
     # TODO: catch {r aclcheck.rm_call_with_errors set z 5} e
     # TODO: assert_match {*NOPERM*No permissions to access a key*} e
-    # TODO: assert_error {*NOPERM*} {r aclcheck.rm_call set z 6 get}
-    # TODO: assert_error {*NOPERM*No permissions to access a key*} {r aclcheck.rm_call_with_errors set z 6 get}
+    with pytest.raises(Exception, match=".*NOPERM.*"):
+        r.run("aclcheck.rm_call", "set", "z", 6, "get")
+    with pytest.raises(Exception, match=".*NOPERM.*No\\ permissions\\ to\\ access\\ a\\ key.*"):
+        r.run("aclcheck.rm_call_with_errors", "set", "z", 6, "get")
     # TODO: set entry lindex [r ACL LOG] 0
     # TODO: assert {[dict get $entry username] eq {default}}
     # TODO: assert {[dict get $entry context] eq {module}}
     # TODO: assert {[dict get $entry object] eq {z}}
     # TODO: assert {[dict get $entry reason] eq {key}}
     r.run("acl", "setuser", "default", "-set")
-    # TODO: assert_error {*NOPERM*} {r aclcheck.rm_call set x 5}
-    # TODO: assert_error {*NOPERM*has no permissions to run the 'set' command*} {r aclcheck.rm_call_with_errors set x 5}
+    with pytest.raises(Exception, match=".*NOPERM.*"):
+        r.run("aclcheck.rm_call", "set", "x", 5)
+    with pytest.raises(Exception, match=".*NOPERM.*has\\ no\\ permissions\\ to\\ run\\ the\\ 'set'\\ command.*"):
+        r.run("aclcheck.rm_call_with_errors", "set", "x", 5)
     # TODO: set entry lindex [r ACL LOG] 0
     # TODO: assert {[dict get $entry username] eq {default}}
     # TODO: assert {[dict get $entry context] eq {module}}

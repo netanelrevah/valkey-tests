@@ -1,4 +1,5 @@
 # ruff: noqa: F841
+import time
 from fnmatch import fnmatch
 
 import pytest
@@ -573,14 +574,14 @@ def test_function_test_function_kill(r: ValkeyTestClient) -> None:
     r.run("config", "set", "busy-reply-threshold", 10)
     # TODO: r function load REPLACE get_function_code lua test test {local a = 1 while true do a = a + 1 end}
     # TODO: $rd fcall test 0
-    # TODO: after 200
+    time.sleep(200 / 1000)
     # TODO: catch {r ping} e
     # TODO: assert_match {BUSY*} e
     assert fnmatch(
         str(r.run("FUNCTION", "STATS")), "running_script {name test command {fcall test 0} duration_ms *} engines {*}"
     )
     r.run("function", "kill")
-    # TODO: after 200
+    time.sleep(200 / 1000)
     assert r.run("ping") == "PONG"
     # TODO: assert_error {ERR Script killed by user with FUNCTION KILL*} {$rd read}
     # TODO: $rd close
@@ -610,13 +611,13 @@ def test_function_test_script_kill_not_working_on_function(r: ValkeyTestClient) 
     r.run("config", "set", "busy-reply-threshold", 10)
     # TODO: r function load REPLACE get_function_code lua test test {local a = 1 while true do a = a + 1 end}
     # TODO: $rd fcall test 0
-    # TODO: after 200
+    time.sleep(200 / 1000)
     # TODO: catch {r ping} e
     # TODO: assert_match {BUSY*} e
     # TODO: catch {r script kill} e
     # TODO: assert_match {BUSY*} e
     r.run("function", "kill")
-    # TODO: after 200
+    time.sleep(200 / 1000)
     assert r.run("ping") == "PONG"
     # TODO: assert_error {ERR Script killed by user with FUNCTION KILL*} {$rd read}
     # TODO: $rd close
@@ -644,13 +645,13 @@ def test_function_test_function_kill_not_working_on_eval(r: ValkeyTestClient) ->
     # TODO: set rd valkey_deferring_client
     r.run("config", "set", "busy-reply-threshold", 10)
     # TODO: $rd eval {local a = 1 while true do a = a + 1 end} 0
-    # TODO: after 200
+    time.sleep(200 / 1000)
     # TODO: catch {r ping} e
     # TODO: assert_match {BUSY*} e
     # TODO: catch {r function kill} e
     # TODO: assert_match {BUSY*} e
     r.run("script", "kill")
-    # TODO: after 200
+    time.sleep(200 / 1000)
     assert r.run("ping") == "PONG"
     # TODO: assert_error {ERR Script killed by user with SCRIPT KILL*} {$rd read}
     # TODO: $rd close

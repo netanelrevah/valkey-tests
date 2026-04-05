@@ -1,4 +1,4 @@
-# ruff: noqa: F841
+# ruff: noqa: F841, RUF043
 
 import pytest
 
@@ -76,10 +76,12 @@ def test_test_module_auth_for_non_existing_or_disabled_users(r: ValkeyTestClient
     }
     """
     r.run("config", "resetstat")
-    # TODO: assert_error {*WRONGPASS*} {r AUTH foo pwd}
+    with pytest.raises(Exception, match=".*WRONGPASS.*"):
+        r.run("AUTH", "foo", "pwd")
     # TODO: assert_match {*calls=1,*,rejected_calls=0,failed_calls=1} cmdstat auth
     r.run("acl", "setuser", "foo", ">pwd", "off", "~*", "&*", "+@all")
-    # TODO: assert_error {*WRONGPASS*} {r AUTH foo pwd}
+    with pytest.raises(Exception, match=".*WRONGPASS.*"):
+        r.run("AUTH", "foo", "pwd")
     # TODO: assert_match {*calls=2,*,rejected_calls=0,failed_calls=2} cmdstat auth
 
 
@@ -116,14 +118,17 @@ def test_test_non_blocking_module_auth(r: ValkeyTestClient) -> None:
     r.run("config", "resetstat")
     r.run("acl", "setuser", "foo", ">pwd", "on", "~*", "&*", "+@all")
     assert "OK" == r.run("AUTH", "foo", "allow")
-    # TODO: assert_error {*Auth denied by Misc Module*} {r AUTH foo deny}
+    with pytest.raises(Exception, match=".*Auth\\ denied\\ by\\ Misc\\ Module.*"):
+        r.run("AUTH", "foo", "deny")
     # TODO: assert_match {*calls=2,*,rejected_calls=0,failed_calls=1} cmdstat auth
-    # TODO: assert_error {*WRONGPASS*} {r AUTH foo nomatch}
+    with pytest.raises(Exception, match=".*WRONGPASS.*"):
+        r.run("AUTH", "foo", "nomatch")
     # TODO: assert_match {*calls=3,*,rejected_calls=0,failed_calls=2} cmdstat auth
     assert "OK" == r.run("AUTH", "foo", "pwd")
     r.run("acl", "setuser", "foo", "on", "~*", "&*", "+@all", "nopass")
     assert "OK" == r.run("AUTH", "foo", "allow")
-    # TODO: assert_error {*Auth denied by Misc Module*} {r AUTH foo deny}
+    with pytest.raises(Exception, match=".*Auth\\ denied\\ by\\ Misc\\ Module.*"):
+        r.run("AUTH", "foo", "deny")
     # TODO: assert_match {*calls=6,*,rejected_calls=0,failed_calls=3} cmdstat auth
     assert "OK" == r.run("AUTH", "foo", "nomatch")
     # TODO: set entry lindex [r ACL LOG] 0
@@ -172,13 +177,17 @@ def test_test_non_blocking_module_hello_auth(r: ValkeyTestClient) -> None:
     # TODO: assert_equal hello2 _response r HELLO 2 AUTH foo allow
     # TODO: assert_equal hello3 _response r HELLO 3 AUTH foo pwd
     # TODO: assert_equal hello3 _response r HELLO 3 AUTH foo allow
-    # TODO: assert_error {*Auth denied by Misc Module*} {r HELLO 2 AUTH foo deny}
+    with pytest.raises(Exception, match=".*Auth\\ denied\\ by\\ Misc\\ Module.*"):
+        r.run("HELLO", 2, "AUTH", "foo", "deny")
     # TODO: assert_match {*calls=5,*,rejected_calls=0,failed_calls=1} cmdstat hello
-    # TODO: assert_error {*WRONGPASS*} {r HELLO 2 AUTH foo nomatch}
+    with pytest.raises(Exception, match=".*WRONGPASS.*"):
+        r.run("HELLO", 2, "AUTH", "foo", "nomatch")
     # TODO: assert_match {*calls=6,*,rejected_calls=0,failed_calls=2} cmdstat hello
-    # TODO: assert_error {*Auth denied by Misc Module*} {r HELLO 3 AUTH foo deny}
+    with pytest.raises(Exception, match=".*Auth\\ denied\\ by\\ Misc\\ Module.*"):
+        r.run("HELLO", 3, "AUTH", "foo", "deny")
     # TODO: assert_match {*calls=7,*,rejected_calls=0,failed_calls=3} cmdstat hello
-    # TODO: assert_error {*WRONGPASS*} {r HELLO 3 AUTH foo nomatch}
+    with pytest.raises(Exception, match=".*WRONGPASS.*"):
+        r.run("HELLO", 3, "AUTH", "foo", "nomatch")
     # TODO: assert_match {*calls=8,*,rejected_calls=0,failed_calls=4} cmdstat hello
     # TODO: set entry lindex [r ACL LOG] 1
     # TODO: assert {[dict get $entry username] eq {foo}}
@@ -217,10 +226,12 @@ def test_test_non_blocking_module_hello_auth_setname(r: ValkeyTestClient) -> Non
     # TODO: assert_equal hello2 _response r HELLO 2 AUTH foo allow setname client2
     # TODO: assert {[r client getname] eq {client2}}
     r.run("client", "setname", "client0")
-    # TODO: assert_error {*Auth denied by Misc Module*} {r HELLO 2 AUTH foo deny setname client1}
+    with pytest.raises(Exception, match=".*Auth\\ denied\\ by\\ Misc\\ Module.*"):
+        r.run("HELLO", 2, "AUTH", "foo", "deny", "setname", "client1")
     # TODO: assert {[r client getname] eq {client0}}
     # TODO: assert_match {*calls=3,*,rejected_calls=0,failed_calls=1} cmdstat hello
-    # TODO: assert_error {*WRONGPASS*} {r HELLO 2 AUTH foo nomatch setname client2}
+    with pytest.raises(Exception, match=".*WRONGPASS.*"):
+        r.run("HELLO", 2, "AUTH", "foo", "nomatch", "setname", "client2")
     # TODO: assert {[r client getname] eq {client0}}
     # TODO: assert_match {*calls=4,*,rejected_calls=0,failed_calls=2} cmdstat hello
 
@@ -262,14 +273,17 @@ def test_test_blocking_module_auth(r: ValkeyTestClient) -> None:
     r.run("config", "resetstat")
     r.run("acl", "setuser", "foo", ">pwd", "on", "~*", "&*", "+@all")
     assert "OK" == r.run("AUTH", "foo", "block_allow")
-    # TODO: assert_error {*Auth denied by Misc Module*} {r AUTH foo block_deny}
+    with pytest.raises(Exception, match=".*Auth\\ denied\\ by\\ Misc\\ Module.*"):
+        r.run("AUTH", "foo", "block_deny")
     # TODO: assert_match {*calls=2,*,rejected_calls=0,failed_calls=1} cmdstat auth
-    # TODO: assert_error {*WRONGPASS*} {r AUTH foo nomatch}
+    with pytest.raises(Exception, match=".*WRONGPASS.*"):
+        r.run("AUTH", "foo", "nomatch")
     # TODO: assert_match {*calls=3,*,rejected_calls=0,failed_calls=2} cmdstat auth
     assert "OK" == r.run("AUTH", "foo", "pwd")
     r.run("acl", "setuser", "foo", "on", "~*", "&*", "+@all", "nopass")
     assert "OK" == r.run("AUTH", "foo", "block_allow")
-    # TODO: assert_error {*Auth denied by Misc Module*} {r AUTH foo block_deny}
+    with pytest.raises(Exception, match=".*Auth\\ denied\\ by\\ Misc\\ Module.*"):
+        r.run("AUTH", "foo", "block_deny")
     # TODO: assert_match {*calls=6,*,rejected_calls=0,failed_calls=3} cmdstat auth
     assert "OK" == r.run("AUTH", "foo", "nomatch")
     # TODO: set stats cmdstat auth
@@ -325,13 +339,17 @@ def test_test_blocking_module_hello_auth(r: ValkeyTestClient) -> None:
     # TODO: assert_equal hello2 _response r HELLO 2 AUTH foo block_allow
     # TODO: assert_equal hello3 _response r HELLO 3 AUTH foo pwd
     # TODO: assert_equal hello3 _response r HELLO 3 AUTH foo block_allow
-    # TODO: assert_error {*Auth denied by Misc Module*} {r HELLO 2 AUTH foo block_deny}
+    with pytest.raises(Exception, match=".*Auth\\ denied\\ by\\ Misc\\ Module.*"):
+        r.run("HELLO", 2, "AUTH", "foo", "block_deny")
     # TODO: assert_match {*calls=5,*,rejected_calls=0,failed_calls=1} cmdstat hello
-    # TODO: assert_error {*WRONGPASS*} {r HELLO 2 AUTH foo nomatch}
+    with pytest.raises(Exception, match=".*WRONGPASS.*"):
+        r.run("HELLO", 2, "AUTH", "foo", "nomatch")
     # TODO: assert_match {*calls=6,*,rejected_calls=0,failed_calls=2} cmdstat hello
-    # TODO: assert_error {*Auth denied by Misc Module*} {r HELLO 3 AUTH foo block_deny}
+    with pytest.raises(Exception, match=".*Auth\\ denied\\ by\\ Misc\\ Module.*"):
+        r.run("HELLO", 3, "AUTH", "foo", "block_deny")
     # TODO: assert_match {*calls=7,*,rejected_calls=0,failed_calls=3} cmdstat hello
-    # TODO: assert_error {*WRONGPASS*} {r HELLO 3 AUTH foo nomatch}
+    with pytest.raises(Exception, match=".*WRONGPASS.*"):
+        r.run("HELLO", 3, "AUTH", "foo", "nomatch")
     # TODO: assert_match {*calls=8,*,rejected_calls=0,failed_calls=4} cmdstat hello
     # TODO: set stats cmdstat hello
     # TODO: regexp "usec_per_call=(\[0-9]{1,})\.*," stats all usec_per_call
@@ -377,10 +395,12 @@ def test_test_blocking_module_hello_auth_setname(r: ValkeyTestClient) -> None:
     # TODO: assert_equal hello2 _response r HELLO 2 AUTH foo block_allow setname client2
     # TODO: assert {[r client getname] eq {client2}}
     r.run("client", "setname", "client0")
-    # TODO: assert_error {*Auth denied by Misc Module*} {r HELLO 2 AUTH foo block_deny setname client1}
+    with pytest.raises(Exception, match=".*Auth\\ denied\\ by\\ Misc\\ Module.*"):
+        r.run("HELLO", 2, "AUTH", "foo", "block_deny", "setname", "client1")
     # TODO: assert {[r client getname] eq {client0}}
     # TODO: assert_match {*calls=3,*,rejected_calls=0,failed_calls=1} cmdstat hello
-    # TODO: assert_error {*WRONGPASS*} {r HELLO 2 AUTH foo nomatch setname client2}
+    with pytest.raises(Exception, match=".*WRONGPASS.*"):
+        r.run("HELLO", 2, "AUTH", "foo", "nomatch", "setname", "client2")
     # TODO: assert {[r client getname] eq {client0}}
     # TODO: assert_match {*calls=4,*,rejected_calls=0,failed_calls=2} cmdstat hello
     # TODO: set stats cmdstat hello
@@ -453,21 +473,25 @@ def test_test_auth_after_registering_multiple_module_auth_callbacks(r: ValkeyTes
     assert "OK" == r.run("testmoduletwo.rm_register_auth_cb")
     r.run("acl", "setuser", "foo", ">pwd", "on", "~*", "&*", "+@all")
     assert "OK" == r.run("AUTH", "foo", "allow")
-    # TODO: assert_error {*Auth denied by Misc Module*} {r AUTH foo deny}
+    with pytest.raises(Exception, match=".*Auth\\ denied\\ by\\ Misc\\ Module.*"):
+        r.run("AUTH", "foo", "deny")
     # TODO: assert_match {*calls=2,*,rejected_calls=0,failed_calls=1} cmdstat auth
     r.run("config", "resetstat")
     assert "OK" == r.run("AUTH", "foo", "block_allow")
-    # TODO: assert_error {*Auth denied by Misc Module*} {r AUTH foo block_deny}
+    with pytest.raises(Exception, match=".*Auth\\ denied\\ by\\ Misc\\ Module.*"):
+        r.run("AUTH", "foo", "block_deny")
     # TODO: assert_match {*calls=2,*,rejected_calls=0,failed_calls=1} cmdstat auth
     # TODO: set stats cmdstat auth
     # TODO: regexp "usec_per_call=(\[0-9]{1,})\.*," stats all usec_per_call
     # TODO: assert {$usec_per_call >= 500000}
     r.run("config", "resetstat")
     assert "OK" == r.run("AUTH", "foo", "allow_two")
-    # TODO: assert_error {*Auth denied by Misc Module*} {r AUTH foo deny_two}
+    with pytest.raises(Exception, match=".*Auth\\ denied\\ by\\ Misc\\ Module.*"):
+        r.run("AUTH", "foo", "deny_two")
     # TODO: assert_match {*calls=2,*,rejected_calls=0,failed_calls=1} cmdstat auth
     r.run("config", "resetstat")
-    # TODO: assert_error {*WRONGPASS*} {r AUTH foo nomatch}
+    with pytest.raises(Exception, match=".*WRONGPASS.*"):
+        r.run("AUTH", "foo", "nomatch")
     # TODO: assert_match {*calls=1,*,rejected_calls=0,failed_calls=1} cmdstat auth
     assert "OK" == r.run("AUTH", "foo", "pwd")
     # TODO: set stats cmdstat auth
@@ -549,7 +573,8 @@ def test_module_auth_inside_multi_exec(r: ValkeyTestClient) -> None:
     assert "OK" == r.run("exec")
     r.run("multi")
     r.run("AUTH", "foo", "block_allow")
-    # TODO: assert_error {*ERR Blocking module command called from transaction*} {r exec}
+    with pytest.raises(Exception, match=".*ERR\\ Blocking\\ module\\ command\\ called\\ from\\ transaction.*"):
+        r.run("exec")
     # TODO: assert_match {*calls=2,*,rejected_calls=0,failed_calls=1} cmdstat auth
 
 
@@ -638,7 +663,8 @@ def test_test_rm_abortblock_module_api_during_blocking_module_auth(r: ValkeyTest
     """
     r.run("config", "resetstat")
     r.run("acl", "setuser", "foo", ">pwd", "on", "~*", "&*", "+@all")
-    # TODO: assert_error {*WRONGPASS*} {r AUTH foo block_abort}
+    with pytest.raises(Exception, match=".*WRONGPASS.*"):
+        r.run("AUTH", "foo", "block_abort")
     # TODO: assert_match {*calls=1,*,rejected_calls=0,failed_calls=1} cmdstat auth
 
 
@@ -749,7 +775,10 @@ def test_module_unload_during_blocking_module_auth(r: ValkeyTestClient) -> None:
     # TODO: assert_match {*calls=1,*,rejected_calls=0,failed_calls=0} cmdstat auth
     assert "OK" == r.run("AUTH", "foo", "allow")
     r.run("module", "unload", "testacl")
-    # TODO: assert_error {*WRONGPASS*} {r AUTH foo block_allow}
-    # TODO: assert_error {*WRONGPASS*} {r AUTH foo allow_two}
-    # TODO: assert_error {*WRONGPASS*} {r AUTH foo allow}
+    with pytest.raises(Exception, match=".*WRONGPASS.*"):
+        r.run("AUTH", "foo", "block_allow")
+    with pytest.raises(Exception, match=".*WRONGPASS.*"):
+        r.run("AUTH", "foo", "allow_two")
+    with pytest.raises(Exception, match=".*WRONGPASS.*"):
+        r.run("AUTH", "foo", "allow")
     # TODO: assert_match {*calls=5,*,rejected_calls=0,failed_calls=3} cmdstat auth

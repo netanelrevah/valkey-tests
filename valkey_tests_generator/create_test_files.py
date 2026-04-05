@@ -8,7 +8,7 @@ import textwrap
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from itertools import cycle, zip_longest
-from typing import IO, TYPE_CHECKING, TextIO
+from typing import IO, TYPE_CHECKING, ClassVar, TextIO
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -24,48 +24,48 @@ from pytcl.words import (
 )
 
 
-def _reconstruct_arg(arg: TCLCommandArguments) -> str:
-    if isinstance(arg, TCLBracesWord):
-        return "{" + arg.value + "}"
-    if isinstance(arg, TCLDoubleQuotedWord):
-        return '"' + arg.value + '"'
-    return str(arg)
+def _reconstruct_argument(argument: TCLCommandArguments) -> str:
+    if isinstance(argument, TCLBracesWord):
+        return "{" + argument.value + "}"
+    if isinstance(argument, TCLDoubleQuotedWord):
+        return '"' + argument.value + '"'
+    return str(argument)
 
 
 def _reconstruct_command(command: TCLCommandWord) -> str:
-    parts = [command.name, *(_reconstruct_arg(arg) for arg in command.args)]
+    parts = [command.name, *(_reconstruct_argument(argument) for argument in command.args)]
     return " ".join(parts)
 
 
-def _format_arg(arg: TCLCommandArguments) -> str:
-    if isinstance(arg, TCLBracesWord) and "\n" in arg.value:
-        body = textwrap.indent(textwrap.dedent(arg.value).strip(), "    ")
+def _format_argument(argument: TCLCommandArguments) -> str:
+    if isinstance(argument, TCLBracesWord) and "\n" in argument.value:
+        body = textwrap.indent(textwrap.dedent(argument.value).strip(), "    ")
         return "{\n" + body + "\n}"
-    return _reconstruct_arg(arg)
+    return _reconstruct_argument(argument)
 
 
 def _format_command(command: TCLCommandWord) -> str:
-    parts = [command.name, *(_format_arg(arg) for arg in command.args)]
+    parts = [command.name, *(_format_argument(argument) for argument in command.args)]
     return " ".join(parts)
 
 
-def _translate_arg(arg: TCLCommandArguments, defined_vars: set[str]) -> str | None:
-    if isinstance(arg, TCLVariableSubstitutionWord):
-        if "::" in arg.variable_name or arg.variable_name not in defined_vars:
+def _translate_argument(argument: TCLCommandArguments, defined_vars: set[str]) -> str | None:
+    if isinstance(argument, TCLVariableSubstitutionWord):
+        if "::" in argument.variable_name or argument.variable_name not in defined_vars:
             return None
-        return arg.variable_name
-    if isinstance(arg, TCLBracketWord):
-        commands = [c for c in arg.script.commands if c.name]
+        return argument.variable_name
+    if isinstance(argument, TCLBracketWord):
+        commands = [c for c in argument.script.commands if c.name]
         if len(commands) != 1:
             return None
         return _translate_command_expr(commands[0], defined_vars)
-    if isinstance(arg, TCLBracesWord):
-        return repr(arg.value)
-    if isinstance(arg, TCLDoubleQuotedWord):
-        if "$" in arg.value or "\\" in arg.value:
+    if isinstance(argument, TCLBracesWord):
+        return repr(argument.value)
+    if isinstance(argument, TCLDoubleQuotedWord):
+        if "$" in argument.value or "\\" in argument.value:
             return None
-        return repr(arg.value)
-    s = arg.value
+        return repr(argument.value)
+    s = argument.value
     try:
         int(s)
         return s
@@ -83,92 +83,156 @@ def _translate_arg(arg: TCLCommandArguments, defined_vars: set[str]) -> str | No
     return repr(s)
 
 
-def _translate_r_args(args: list[TCLCommandArguments], defined_vars: set[str]) -> str | None:
-    if not args:
+def _translate_r_arguments(arguments: list[TCLCommandArguments], defined_vars: set[str]) -> str | None:
+    if not arguments:
         return None
-    subcmd = _translate_arg(args[0], defined_vars)
+    subcmd = _translate_argument(arguments[0], defined_vars)
     if subcmd is None:
         return None
     rest = []
-    for arg in args[1:]:
-        t = _translate_arg(arg, defined_vars)
+    for argument in arguments[1:]:
+        t = _translate_argument(argument, defined_vars)
         if t is None:
             return None
         rest.append(t)
-    call_args = ", ".join([subcmd, *rest])
-    return f"r.run({call_args})"
+    call_arguments = ", ".join([subcmd, *rest])
+    return f"r.run({call_arguments})"
 
 
 def _translate_command_expr(command: TCLCommandWord, defined_vars: set[str]) -> str | None:
     if command.name == "r":
-        return _translate_r_args(command.args, defined_vars)
+        return _translate_r_arguments(command.args, defined_vars)
     return None
 
 
-def _translate_command_stmt(command: TCLCommandWord, defined_vars: set[str]) -> list[str] | None:
-    match command.name:
-        case "r":
-            expr = _translate_r_args(command.args, defined_vars)
-            if expr is None:
-                return None
-            return [expr]
-        case "set":
-            if not command.args[1:]:
-                return None
-            name_arg = command.args[0]
-            if not isinstance(name_arg, TCLWord) or "(" in name_arg.value:
-                return None
-            val = _translate_arg(command.args[1], defined_vars)
-            if val is None:
-                return None
-            return [f"{name_arg.value} = {val}"]
-        case "assert_equal":
-            if not command.args[1:]:
-                return None
-            a = _translate_arg(command.args[0], defined_vars)
-            b = _translate_arg(command.args[1], defined_vars)
-            if a is None or b is None:
-                return None
-            return [f"assert {a} == {b}"]
-        case "assert_match":
-            if not command.args[1:]:
-                return None
-            pat = _translate_arg(command.args[0], defined_vars)
-            val = _translate_arg(command.args[1], defined_vars)
-            if pat is None or val is None:
-                return None
-            return [f"assert fnmatch(str({val}), str({pat}))"]
-        case "assert":
-            if not command.args:
-                return None
-            arg0 = command.args[0]
-            if not isinstance(arg0, TCLBracketWord):
-                return None
-            inner = [c for c in arg0.script.commands if c.name]
-            if len(inner) != 1:
-                return None
-            expr = _translate_command_expr(inner[0], defined_vars)
-            if expr is None:
-                return None
-            return [f"assert {expr}"]
-        case "incr":
-            if not command.args:
-                return None
-            name_arg = command.args[0]
-            if not isinstance(name_arg, TCLWord):
-                return None
-            if name_arg.value not in defined_vars:
-                return None
-            if len(command.args) > 1:
-                amount = _translate_arg(command.args[1], defined_vars)
-                if amount is None:
-                    return None
-                return [f"{name_arg.value} += {amount}"]
-            return [f"{name_arg.value} += 1"]
-        case "puts":
-            return []
-        case _:
+class StatementTranslator:
+    MAPPING: ClassVar[dict[str, StatementTranslator]] = {}
+
+    def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
+        raise NotImplementedError
+
+
+class RStatementTranslator(StatementTranslator):
+    def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
+        expr = _translate_r_arguments(arguments, defined_vars)
+        return None if expr is None else [expr]
+
+
+class SetStatementTranslator(StatementTranslator):
+    def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
+        if not arguments[1:]:
             return None
+        name_argument = arguments[0]
+        if not isinstance(name_argument, TCLWord) or "(" in name_argument.value:
+            return None
+        val = _translate_argument(arguments[1], defined_vars)
+        return None if val is None else [f"{name_argument.value} = {val}"]
+
+
+class AssertEqualStatementTranslator(StatementTranslator):
+    def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
+        if not arguments[1:]:
+            return None
+        a = _translate_argument(arguments[0], defined_vars)
+        b = _translate_argument(arguments[1], defined_vars)
+        return None if a is None or b is None else [f"assert {a} == {b}"]
+
+
+class AssertMatchStatementTranslator(StatementTranslator):
+    def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
+        if not arguments[1:]:
+            return None
+        pat = _translate_argument(arguments[0], defined_vars)
+        val = _translate_argument(arguments[1], defined_vars)
+        return None if pat is None or val is None else [f"assert fnmatch(str({val}), str({pat}))"]
+
+
+class AssertStatementTranslator(StatementTranslator):
+    def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
+        if not arguments or not isinstance(arguments[0], TCLBracketWord):
+            return None
+        inner = [c for c in arguments[0].script.commands if c.name]
+        if len(inner) != 1:
+            return None
+        expr = _translate_command_expr(inner[0], defined_vars)
+        return None if expr is None else [f"assert {expr}"]
+
+
+class IncrStatementTranslator(StatementTranslator):
+    def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
+        if not arguments or not isinstance(arguments[0], TCLWord):
+            return None
+        name = arguments[0].value
+        if name not in defined_vars:
+            return None
+        if len(arguments) > 1:
+            amount = _translate_argument(arguments[1], defined_vars)
+            return None if amount is None else [f"{name} += {amount}"]
+        return [f"{name} += 1"]
+
+
+class AssertErrorStatementTranslator(StatementTranslator):
+    def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
+        if not arguments[1:]:
+            return None
+        pattern_argument, body_argument = arguments[0], arguments[1]
+        if not isinstance(pattern_argument, (TCLDoubleQuotedWord, TCLBracesWord, TCLWord)):
+            return None
+        if not isinstance(body_argument, TCLBracesWord):
+            return None
+        pattern_regex = re.escape(pattern_argument.value).replace(r"\*", ".*").replace(r"\?", ".")
+        body_commands = [c for c in TCLScript.read(iter(body_argument.value)).commands if c.name]
+        if not body_commands:
+            return None
+        body_lines: list[str] = []
+        for command in body_commands:
+            statement = _translate_command_statement(command, defined_vars)
+            if statement is None:
+                return None
+            body_lines.extend(statement)
+        return (
+            None
+            if not body_lines
+            else [
+                f"with pytest.raises(Exception, match={pattern_regex!r}):",
+                *[f"    {line}" for line in body_lines],
+            ]
+        )
+
+
+class AfterStatementTranslator(StatementTranslator):
+    def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
+        if not arguments:
+            return None
+        ms = _translate_argument(arguments[0], defined_vars)
+        return None if ms is None else [f"time.sleep({ms} / 1000)"]
+
+
+class PutsStatementTranslator(StatementTranslator):
+    def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
+        return []
+
+
+StatementTranslator.MAPPING.update(
+    {
+        "r": RStatementTranslator(),
+        "set": SetStatementTranslator(),
+        "assert_equal": AssertEqualStatementTranslator(),
+        "assert_match": AssertMatchStatementTranslator(),
+        "assert": AssertStatementTranslator(),
+        "incr": IncrStatementTranslator(),
+        "assert_error": AssertErrorStatementTranslator(),
+        "after": AfterStatementTranslator(),
+        "puts": PutsStatementTranslator(),
+    }
+)
+
+
+def _translate_command_statement(command: TCLCommandWord, defined_vars: set[str]) -> list[str] | None:
+    translator = StatementTranslator.MAPPING.get(command.name)
+    if translator is None:
+        return None
+    return translator.get_statement(command.args, defined_vars)
 
 
 class TCLBodyTranslator:
@@ -191,9 +255,9 @@ class TCLBodyTranslator:
                     lines.append(f"assert {expr} == {expected!r}")
                     continue
             else:
-                stmt = _translate_command_stmt(command, defined_vars)
-                if stmt is not None:
-                    lines.extend(stmt)
+                statement = _translate_command_statement(command, defined_vars)
+                if statement is not None:
+                    lines.extend(statement)
                     if command.name == "set" and isinstance(command.args[0], TCLWord):
                         defined_vars.add(command.args[0].value)
                     continue
@@ -354,7 +418,7 @@ class TCLTestFileGenerator:
 
                         self.generate_tests(
                             body,
-                            (if_expressions or []) + [_reconstruct_arg(command.args[0])],
+                            (if_expressions or []) + [_reconstruct_argument(command.args[0])],
                             foreach_commands,
                         )
                     case "foreach":
@@ -410,7 +474,8 @@ class TCLTestFileGenerator:
             self.generate_tests(start_server_code)
 
     def generate(self, source_file: TextIO) -> None:
-        self.output.write("# ruff: noqa: PLR2004, F841, N806\n")
+        self.output.write("# ruff: noqa: PLR2004, F841, N806, RUF043\n")
+        self.output.write("import time\n\n")
         self.output.write("import pytest\n")
         self.output.write("from fnmatch import fnmatch\n\n")
         self.output.write("from tests.valkey_test_client import ValkeyTestClient\n")

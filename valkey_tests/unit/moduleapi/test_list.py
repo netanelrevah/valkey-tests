@@ -1,3 +1,5 @@
+# ruff: noqa: RUF043
+
 import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
@@ -23,7 +25,6 @@ r module load testmodule
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_list_set_get_insert_delete(r: ValkeyTestClient) -> None:
     """
     test {Module list set, get, insert, delete} {
@@ -54,7 +55,10 @@ def test_module_list_set_get_insert_delete(r: ValkeyTestClient) -> None:
     }
     """
     r.run("del", "k")
-    # TODO: assert_error {WRONGTYPE Operation against a key holding the wrong kind of value*} {r list.set k 1 xyz}
+    with pytest.raises(
+        Exception, match="WRONGTYPE\\ Operation\\ against\\ a\\ key\\ holding\\ the\\ wrong\\ kind\\ of\\ value.*"
+    ):
+        r.run("list.set", "k", 1, "xyz")
     r.run("rpush", "k", "x")
     r.run("list.insert", "k", 0, "foo")
     r.run("list.insert", "k", -1, "bar")
@@ -65,10 +69,14 @@ def test_module_list_set_get_insert_delete(r: ValkeyTestClient) -> None:
     assert "bar" == r.run("list.get", "k", 2)
     assert "bar" == r.run("list.get", "k", -1)
     assert "foo" == r.run("list.get", "k", -3)
-    # TODO: assert_error {ERR index out*} {r list.get k -4}
-    # TODO: assert_error {ERR index out*} {r list.get k 3}
-    # TODO: assert_error {ERR index out*} {r list.delete k -4}
-    # TODO: assert_error {ERR index out*} {r list.delete k 3}
+    with pytest.raises(Exception, match="ERR\\ index\\ out.*"):
+        r.run("list.get", "k", -4)
+    with pytest.raises(Exception, match="ERR\\ index\\ out.*"):
+        r.run("list.get", "k", 3)
+    with pytest.raises(Exception, match="ERR\\ index\\ out.*"):
+        r.run("list.delete", "k", -4)
+    with pytest.raises(Exception, match="ERR\\ index\\ out.*"):
+        r.run("list.delete", "k", 3)
     r.run("list.delete", "k", 0)
     r.run("list.delete", "k", -1)
     assert "xyz" == r.run("list.getall", "k")

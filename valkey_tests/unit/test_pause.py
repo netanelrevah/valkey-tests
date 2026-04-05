@@ -1,3 +1,5 @@
+# ruff: noqa: RUF043
+import time
 from fnmatch import fnmatch
 
 import pytest
@@ -42,7 +44,7 @@ def test_test_check_paused_info_in_info_clients(r: ValkeyTestClient) -> None:
     r.run("client", "PAUSE", 10000, "WRITE")
     # TODO: assert_equal s paused_reason "client_pause"
     # TODO: assert_equal s paused_actions "write"
-    # TODO: after 1000
+    time.sleep(1000 / 1000)
     # TODO: set timeout s paused_timeout_milliseconds
     # TODO: assert {$timeout > 0 && $timeout <= 9000}
     r.run("client", "unpause")
@@ -116,7 +118,7 @@ def test_test_old_pause_all_takes_precedence_over_new_pause_write_less_restricti
     # TODO: set test_start_time clock milliseconds
     r.run("client", "PAUSE", 200, "ALL")
     r.run("client", "PAUSE", 20, "WRITE")
-    # TODO: after 50
+    time.sleep(50 / 1000)
     # TODO: $rd get FOO
     # TODO: set elapsed expr {[clock milliseconds]-$test_start_time}
     # TODO: assert_lessthan 200 elapsed
@@ -140,7 +142,7 @@ def test_test_new_pause_time_is_smaller_than_old_one_then_old_time_preserved(r: 
     """
     r.run("client", "PAUSE", 60000, "WRITE")
     r.run("client", "PAUSE", 10, "WRITE")
-    # TODO: after 100
+    time.sleep(100 / 1000)
     # TODO: set rd valkey_deferring_client
     # TODO: $rd SET FOO BAR
     # TODO: wait_for_blocked_clients_count 1 100 10
@@ -488,7 +490,6 @@ def test_test_write_scripts_in_multi_exec_are_blocked_by_pause_ro(r: ValkeyTestC
     # TODO: $rd2 close
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_may_replicate_commands_are_rejected_in_ro_scripts(r: ValkeyTestClient) -> None:
     """
     test "Test may-replicate commands are rejected in RO scripts" {
@@ -505,14 +506,14 @@ def test_test_may_replicate_commands_are_rejected_in_ro_scripts(r: ValkeyTestCli
         assert_equal [r EVAL "return redis.call('publish','ch','msg')" 0] 0
     }
     """
-    # TODO: assert_error {ERR Write commands are not allowed from read-only scripts. script:*} {
-    #       r EVAL_RO "return redis.call('publish','ch','msg')" 0
-    #   }
-    # TODO: assert_error {ERR Write commands are not allowed from read-only scripts. script:*} {
-    #       r EVAL {#!lua flags=no-writes
-    #           return redis.call('publish','ch','msg')
-    #       } 0
-    #   }
+    with pytest.raises(
+        Exception, match="ERR\\ Write\\ commands\\ are\\ not\\ allowed\\ from\\ read\\-only\\ scripts\\.\\ script:.*"
+    ):
+        r.run("EVAL_RO", "return redis.call('publish','ch','msg')", 0)
+    with pytest.raises(
+        Exception, match="ERR\\ Write\\ commands\\ are\\ not\\ allowed\\ from\\ read\\-only\\ scripts\\.\\ script:.*"
+    ):
+        r.run("EVAL", "#!lua flags=no-writes\n                return redis.call('publish','ch','msg')\n            ", 0)
     assert r.run("EVAL", "return redis.call('publish','ch','msg')", 0) == 0
 
 
@@ -788,7 +789,7 @@ def test_test_the_randomkey_command_will_not_cause_the_server_to_get_into_an_inf
     r.run("set", "key", "value", "px", 3)
     r.run("client", "pause", 10000, "write")
     r.run("exec")
-    # TODO: after 5
+    time.sleep(5 / 1000)
     # TODO: wait_for_condition 50 100 {
     #       [r randomkey] == "key"
     #   } else {
