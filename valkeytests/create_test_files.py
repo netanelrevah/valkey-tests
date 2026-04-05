@@ -1,17 +1,16 @@
 from __future__ import annotations
 
-import logging
 import re
-import subprocess
 import sys
 import textwrap
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from itertools import cycle, zip_longest
-from pathlib import Path
-from typing import IO, TextIO
+from typing import IO, TYPE_CHECKING, TextIO
 
-import typer
+if TYPE_CHECKING:
+    from pathlib import Path
+
 from pytcl.commands import TCLBracesWord, TCLCommandForEach, TCLCommandIf, TCLList, TCLScript
 from pytcl.words import (
     TCLBracketWord,
@@ -21,9 +20,6 @@ from pytcl.words import (
     TCLVariableSubstitutionWord,
     TCLWord,
 )
-
-app = typer.Typer(pretty_exceptions_enable=False)
-logger = logging.getLogger(__name__)
 
 
 def _reconstruct_arg(arg: TCLCommandArguments) -> str:
@@ -397,68 +393,3 @@ def _discover_tcl_files(tests_path: Path) -> list[Path]:
 def _tcl_path_to_python_path(tcl_file: Path, base_tcl_path: Path) -> Path:
     relative = tcl_file.relative_to(base_tcl_path)
     return relative.parent / f"test_{relative.stem}.py"
-
-
-def _get_git_commit(repo_dir: Path) -> str:
-    try:
-        result = subprocess.run(
-            ["git", "rev-parse", "HEAD"],
-            cwd=repo_dir,
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        return result.stdout.strip()
-    except Exception:
-        return "unknown"
-
-
-@app.command()
-def generate(
-    valkey_directory: Path = typer.Argument(..., envvar="VALKEY_DIRECTORY"),
-    output_dir: Path = typer.Option(Path("valkeytests/generated/unit"), help="Output directory for generated files"),
-    skip_errors: bool = typer.Option(False, help="Skip files that fail to parse"),
-    stats: bool = typer.Option(False, "--stats", help="Print translation statistics after generation"),
-) -> None:
-    unit_tests_path = valkey_directory / "tests" / "unit"
-    tcl_files = _discover_tcl_files(unit_tests_path)
-
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    commit = _get_git_commit(valkey_directory)
-    (output_dir.parent / "VALKEY_COMMIT").write_text(commit + "\n")
-    logger.info(f"Valkey commit: {commit}")
-
-    total_todo_counter: Counter = Counter()
-    total_tests = 0
-    total_translated = 0
-
-    for tcl_file in tcl_files:
-        python_path = output_dir / _tcl_path_to_python_path(tcl_file, unit_tests_path)
-        python_path.parent.mkdir(parents=True, exist_ok=True)
-
-        try:
-            with open(python_path, "w") as output_file:
-                gen = TCLTestFileGenerator(output=output_file)
-                gen.generate_file(tcl_file)
-                total_tests += gen._total_tests
-                total_translated += gen._translated_tests
-                total_todo_counter.update(gen._todo_counter)
-            logger.info(f"Generated {python_path}")
-        except Exception as e:
-            if skip_errors:
-                logger.warning(f"Skipping {tcl_file}: {e}")
-                python_path.unlink(missing_ok=True)
-            else:
-                raise
-
-    if stats:
-        pct = int(100 * total_translated / total_tests) if total_tests else 0
-        print(f"Tests: {total_tests}  Translated: {total_translated} ({pct}%)  Stubs: {total_tests - total_translated}")
-        print("Top untranslated commands:")
-        for cmd, count in total_todo_counter.most_common(15):
-            print(f"  {cmd}: {count}")
-
-
-if __name__ == "__main__":
-    app()

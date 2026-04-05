@@ -4,13 +4,10 @@ import ast
 import difflib
 import re
 from dataclasses import dataclass, field
-from pathlib import Path
+from typing import TYPE_CHECKING
 
-import typer
-
-from valkeytests.create_test_files import _discover_tcl_files, _tcl_path_to_python_path
-
-app = typer.Typer(pretty_exceptions_enable=False)
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 @dataclass
@@ -116,66 +113,3 @@ def print_result(result: ComparisonResult) -> None:
         print(f"    {line}")
     if len(result.diff_lines) > max_diff_lines:
         print(f"    ... ({len(result.diff_lines) - max_diff_lines} more lines)")
-
-
-@app.command()
-def compare(
-    valkey_directory: Path = typer.Argument(..., envvar="VALKEY_DIRECTORY"),
-    generated_dir: Path = typer.Option(
-        Path("valkeytests/generated/unit"), help="Directory with generated Python files"
-    ),
-    file: str | None = typer.Option(None, help="Compare a single Tcl file (relative path, e.g. type/string.tcl)"),
-) -> None:
-    commit_file = generated_dir.parent / "VALKEY_COMMIT"
-    if commit_file.exists():
-        snapshot_commit = commit_file.read_text().strip()
-        print(f"Snapshot generated from Valkey commit: {snapshot_commit}")
-
-    unit_tests_path = valkey_directory / "tests" / "unit"
-
-    if file:
-        tcl_path = unit_tests_path / file
-        python_path = generated_dir / _tcl_path_to_python_path(tcl_path, unit_tests_path)
-        if not python_path.exists():
-            print(f"Generated file not found: {python_path}")
-            print("Run the generator first.")
-            raise typer.Exit(1)
-        result = compare_file(tcl_path, python_path)
-        print_result(result)
-        return
-
-    tcl_files = _discover_tcl_files(unit_tests_path)
-
-    total_new = 0
-    total_removed = 0
-    total_changed = 0
-    total_unchanged = 0
-
-    for tcl_file in tcl_files:
-        python_path = generated_dir / _tcl_path_to_python_path(tcl_file, unit_tests_path)
-        if not python_path.exists():
-            print(f"  MISSING: {tcl_file.name} (no generated file)")
-            continue
-
-        result = compare_file(tcl_file, python_path)
-
-        if result.diff_lines:
-            print_result(result)
-            total_changed += 1
-        else:
-            total_unchanged += 1
-
-        total_new += len(result.new_tests)
-        total_removed += len(result.removed_tests)
-
-    print(f"\n{'=' * 60}")
-    print("  Summary")
-    print(f"{'=' * 60}")
-    print(f"  Files unchanged: {total_unchanged}")
-    print(f"  Files changed:   {total_changed}")
-    print(f"  New tests:       {total_new}")
-    print(f"  Removed tests:   {total_removed}")
-
-
-if __name__ == "__main__":
-    app()
