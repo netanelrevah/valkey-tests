@@ -172,6 +172,59 @@ def test_generate_file__tag_with_colon():
     assert "pytest.mark.auth_external_skip" in output
 
 
+def test_generate_file__lindex_in_assert_equal():
+    output = generate("""
+        start_server {tags {}} {
+            test {lindex test} {
+                set reply [r lrange mylist 0 -1]
+                assert_equal [lindex $reply 0] {foo}
+            }
+        }
+    """)
+    assert "@pytest.mark.xfail" not in output
+    assert "reply = r.run('lrange', 'mylist', 0, -1)" in output
+    assert "assert reply[0] == 'foo'" in output
+
+
+def test_generate_file__llength_in_assert_equal():
+    output = generate("""
+        start_server {tags {}} {
+            test {llength test} {
+                set reply [r lrange mylist 0 -1]
+                assert_equal [llength $reply] 3
+            }
+        }
+    """)
+    assert "@pytest.mark.xfail" not in output
+    assert "assert len(reply) == 3" in output
+
+
+def test_generate_file__dict_get_in_assert_equal():
+    output = generate("""
+        start_server {tags {}} {
+            test {dict get test} {
+                set info [r xinfo groups mystream]
+                assert_equal [dict get $info lag] 0
+            }
+        }
+    """)
+    assert "@pytest.mark.xfail" not in output
+    assert "assert info['lag'] == 0" in output
+
+
+def test_generate_file__string_length_in_assert_equal():
+    output = generate("""
+        start_server {tags {}} {
+            test {string length test} {
+                set data [r get mykey]
+                assert_equal [string length $data] 5
+            }
+        }
+    """)
+    assert "@pytest.mark.xfail" not in output
+    assert "assert len(data) == 5" in output
+
+
 def test_generate_file__assert_error():
     output = generate("""
         start_server {tags {}} {

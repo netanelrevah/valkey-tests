@@ -156,8 +156,8 @@ def test_latency_histogram_with_wrong_command_name_skips_the_invalid_one(r: Valk
     # TODO: assert {[llength [r latency histogram blabla blabla2 set get]] == 0}
     r.run("set", "a", "b")
     r.run("get", "a")
-    # TODO: assert_match {calls 1 histogram_usec *} lindex [r latency histogram blabla blabla2 set get] 1
-    # TODO: assert_match {calls 1 histogram_usec *} lindex [r latency histogram blabla blabla2 set get] 3
+    assert fnmatch(str(r.run("latency", "histogram", "blabla", "blabla2", "set", "get")[1]), "calls 1 histogram_usec *")
+    assert fnmatch(str(r.run("latency", "histogram", "blabla", "blabla2", "set", "get")[3]), "calls 1 histogram_usec *")
     # TODO: assert {[string length [r latency histogram blabla set get]] > 0}
 
 

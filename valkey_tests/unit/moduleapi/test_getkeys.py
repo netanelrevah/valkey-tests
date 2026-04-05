@@ -16,7 +16,6 @@ r module load testmodule
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_command_info_correctly_reports_a_movable_keys_module_command(r: ValkeyTestClient) -> None:
     """
     test {COMMAND INFO correctly reports a movable keys module command} {
@@ -28,11 +27,11 @@ def test_command_info_correctly_reports_a_movable_keys_module_command(r: ValkeyT
         assert_equal {0} [lindex $info 5]
     }
     """
-    # TODO: set info lindex [r command info getkeys.command] 0
-    # TODO: assert_equal {module movablekeys} lindex $info 2
-    # TODO: assert_equal {0} lindex $info 3
-    # TODO: assert_equal {0} lindex $info 4
-    # TODO: assert_equal {0} lindex $info 5
+    info = r.run("command", "info", "getkeys.command")[0]
+    assert "module movablekeys" == info[2]
+    assert "0" == info[3]
+    assert "0" == info[4]
+    assert "0" == info[5]
 
 
 def test_command_getkeys_correctly_reports_a_movable_keys_module_command(r: ValkeyTestClient) -> None:

@@ -581,7 +581,7 @@ def test_extended_redis_compatibility_config(r: ValkeyTestClient) -> None:
     }
     """
     hello = r.run("hello", 3)
-    # TODO: set version dict get $hello version
+    version = hello["version"]
     # TODO: if {[string match "11.*" $version]} {
     #       # Check that the config doesn't exist anymore.
     #       assert_error "ERR Unknown*" {r config set extended-redis-compatibility yes}

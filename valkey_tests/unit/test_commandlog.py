@@ -146,7 +146,6 @@ def test_commandlog_max_entries_is_correctly_handled(r: ValkeyTestClient) -> Non
     assert r.run("commandlog", "len", "large-reply") == 10
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_commandlog_get_optional_argument_to_limit_output_len_works(r: ValkeyTestClient) -> None:
     """
     test {COMMANDLOG - GET optional argument to limit output len works} {
@@ -163,15 +162,15 @@ def test_commandlog_get_optional_argument_to_limit_output_len_works(r: ValkeyTes
         assert_equal 10 [llength [r commandlog get 20 large-reply]]
     }
     """
-    # TODO: assert_equal 5 llength [r commandlog get 5 slow]
-    # TODO: assert_equal 10 llength [r commandlog get -1 slow]
-    # TODO: assert_equal 10 llength [r commandlog get 20 slow]
-    # TODO: assert_equal 5 llength [r commandlog get 5 large-request]
-    # TODO: assert_equal 10 llength [r commandlog get -1 large-request]
-    # TODO: assert_equal 10 llength [r commandlog get 20 large-request]
-    # TODO: assert_equal 5 llength [r commandlog get 5 large-reply]
-    # TODO: assert_equal 10 llength [r commandlog get -1 large-reply]
-    # TODO: assert_equal 10 llength [r commandlog get 20 large-reply]
+    assert 5 == len(r.run("commandlog", "get", 5, "slow"))
+    assert 10 == len(r.run("commandlog", "get", -1, "slow"))
+    assert 10 == len(r.run("commandlog", "get", 20, "slow"))
+    assert 5 == len(r.run("commandlog", "get", 5, "large-request"))
+    assert 10 == len(r.run("commandlog", "get", -1, "large-request"))
+    assert 10 == len(r.run("commandlog", "get", 20, "large-request"))
+    assert 5 == len(r.run("commandlog", "get", 5, "large-reply"))
+    assert 10 == len(r.run("commandlog", "get", -1, "large-reply"))
+    assert 10 == len(r.run("commandlog", "get", 20, "large-reply"))
 
 
 def test_commandlog_reset_subcommand_works(r: ValkeyTestClient) -> None:
@@ -261,47 +260,50 @@ def test_commandlog_logged_entry_sanity_check(r: ValkeyTestClient) -> None:
     """
     r.run("client", "setname", "foobar")
     r.run("debug", "sleep", 0.2)
-    # TODO: set e lindex [r commandlog get -1 slow] 0
-    # TODO: assert_equal llength $e 6
+    e = r.run("commandlog", "get", -1, "slow")[0]
+    assert len(e) == 6
     # TODO: if {!$::external} {
     #       assert_equal [lindex $e 0] 118
     #   }
     # TODO: assert_equal expr {[lindex $e 2] > 100000} 1
-    # TODO: assert_equal lindex $e 3 {debug sleep 0.2}
-    # TODO: assert_equal {foobar} lindex $e 5
+    assert e[3] == "debug sleep 0.2"
+    assert "foobar" == e[5]
     # TODO: set value string repeat A 1024
     # TODO: r set testkey value
-    # TODO: set e lindex [r commandlog get -1 large-request] 0
-    # TODO: assert_equal llength $e 6
+    e = r.run("commandlog", "get", -1, "large-request")[0]
+    assert len(e) == 6
     # TODO: if {!$::external} {
     #       assert_equal [lindex $e 0] 118
     #   }
     # TODO: assert_equal expr {[lindex $e 2] > 1024} 1
-    # TODO: assert_equal lindex $e 3 {set testkey {AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA... (896 more bytes)}}
-    # TODO: assert_equal {foobar} lindex $e 5
-    # TODO: set copy_avoid lindex [r config get min-string-size-avoid-copy-reply] 1
+    assert (
+        e[3]
+        == "set testkey {AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA... (896 more bytes)}"
+    )
+    assert "foobar" == e[5]
+    copy_avoid = r.run("config", "get", "min-string-size-avoid-copy-reply")[1]
     # TODO: if {!$::external} {
     #       assert_morethan $copy_avoid 1024
     #   }
     r.run("get", "testkey")
-    # TODO: set e lindex [r commandlog get -1 large-reply] 0
-    # TODO: assert_equal llength $e 6
+    e = r.run("commandlog", "get", -1, "large-reply")[0]
+    assert len(e) == 6
     # TODO: if {!$::external} {
     #       assert_equal [lindex $e 0] 117
     #   }
     # TODO: assert_equal expr {[lindex $e 2] > 1024} 1
-    # TODO: assert_equal lindex $e 3 {get testkey}
-    # TODO: assert_equal {foobar} lindex $e 5
+    assert e[3] == "get testkey"
+    assert "foobar" == e[5]
     r.run("config", "set", "min-string-size-avoid-copy-reply", 1)
     r.run("get", "testkey")
-    # TODO: set e lindex [r commandlog get -1 large-reply] 0
-    # TODO: assert_equal llength $e 6
+    e = r.run("commandlog", "get", -1, "large-reply")[0]
+    assert len(e) == 6
     # TODO: if {!$::external} {
     #       assert_equal [lindex $e 0] 118
     #   }
     # TODO: assert_equal expr {[lindex $e 2] > 1024} 1
-    # TODO: assert_equal lindex $e 3 {get testkey}
-    # TODO: assert_equal {foobar} lindex $e 5
+    assert e[3] == "get testkey"
+    assert "foobar" == e[5]
     # TODO: r config set min-string-size-avoid-copy-reply copy _avoid
     assert False
 
@@ -459,18 +461,18 @@ def test_commandlog_slow_rewritten_commands_are_logged_as_their_original_command
     r.run("sadd", "set", "a", "b", "c", "d", "e")
     r.run("commandlog", "reset", "slow")
     r.run("spop", "set", 10)
-    # TODO: assert_equal {spop set 10} lindex [lindex [r commandlog get -1 slow] 0] 3
+    assert "spop set 10" == r.run("commandlog", "get", -1, "slow")[0][3]
     r.run("commandlog", "reset", "slow")
     r.run("geoadd", "cool-cities", -122.33207, 47.60621, "Seattle")
-    # TODO: assert_equal {geoadd cool-cities -122.33207 47.60621 Seattle} lindex [lindex [r commandlog get -1 slow] 0] 3
+    assert "geoadd cool-cities -122.33207 47.60621 Seattle" == r.run("commandlog", "get", -1, "slow")[0][3]
     r.run("set", "A", 5)
     r.run("commandlog", "reset", "slow")
     r.run("getset", "a", 5)
-    # TODO: assert_equal {getset a 5} lindex [lindex [r commandlog get -1 slow] 0] 3
+    assert "getset a 5" == r.run("commandlog", "get", -1, "slow")[0][3]
     r.run("set", "A", 0)
     r.run("commandlog", "reset", "slow")
     r.run("INCRBYFLOAT", "A", 1.0)
-    # TODO: assert_equal {INCRBYFLOAT A 1.0} lindex [lindex [r commandlog get -1 slow] 0] 3
+    assert "INCRBYFLOAT A 1.0" == r.run("commandlog", "get", -1, "slow")[0][3]
     # TODO: set rd valkey_deferring_client
     # TODO: $rd blpop l 0
     # TODO: wait_for_blocked_clients_count 1 50 100
@@ -480,10 +482,9 @@ def test_commandlog_slow_rewritten_commands_are_logged_as_their_original_command
     r.run("exec")
     # TODO: $rd read
     # TODO: $rd close
-    # TODO: assert_equal {blpop l 0} lindex [lindex [r commandlog get -1 slow] 0] 3
+    assert "blpop l 0" == r.run("commandlog", "get", -1, "slow")[0][3]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_commandlog_slow_commands_with_too_many_arguments_are_trimmed(r: ValkeyTestClient) -> None:
     """
     test {COMMANDLOG slow - commands with too many arguments are trimmed} {
@@ -531,9 +532,11 @@ def test_commandlog_slow_commands_with_too_many_arguments_are_trimmed(r: ValkeyT
         32,
         33,
     )
-    # TODO: set e lindex [r commandlog get -1 slow] end-1
-    # TODO: lindex e 3
-    assert False
+    e = r.run("commandlog", "get", -1, "slow")["end-1"]
+    assert (
+        e[3]
+        == "sadd set 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 {... (2 more arguments)}"
+    )
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -552,9 +555,11 @@ def test_commandlog_slow_too_long_arguments_are_trimmed(r: ValkeyTestClient) -> 
     r.run("commandlog", "reset", "slow")
     # TODO: set arg string repeat A 129
     # TODO: r sadd set foo arg
-    # TODO: set e lindex [r commandlog get -1 slow] end-1
-    # TODO: lindex e 3
-    assert False
+    e = r.run("commandlog", "get", -1, "slow")["end-1"]
+    assert (
+        e[3]
+        == "sadd set foo {AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA... (1 more bytes)}"
+    )
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -579,7 +584,7 @@ def test_commandlog_slow_exec_is_not_logged_just_executed_commands(r: ValkeyTest
     r.run("debug", "sleep", 0.2)
     r.run("exec")
     assert r.run("commandlog", "len", "slow") == 1
-    # TODO: set e lindex [r commandlog get -1 slow] 0
+    e = r.run("commandlog", "get", -1, "slow")[0]
     # TODO: assert_equal lindex $e 3 {debug sleep 0.2}
     assert False
 
@@ -600,7 +605,7 @@ def test_commandlog_slow_can_clean_older_entries(r: ValkeyTestClient) -> None:
     r.run("config", "set", "commandlog-slow-execution-max-len", 1)
     r.run("debug", "sleep", 0.2)
     # TODO: assert {[llength [r commandlog get -1 slow]] == 1}
-    # TODO: set e lindex [r commandlog get -1 slow] 0
+    e = r.run("commandlog", "get", -1, "slow")[0]
     # TODO: assert_equal {lastentry_client} lindex $e 5
     assert False
 
@@ -645,7 +650,6 @@ def test_commandlog_slow_count_must_be_1(r: ValkeyTestClient) -> None:
         r.run("commandlog", "get", -222, "slow")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_commandlog_slow_get_all_slow_logs(r: ValkeyTestClient) -> None:
     """
     test {COMMANDLOG slow - get all slow logs} {
@@ -673,10 +677,10 @@ def test_commandlog_slow_get_all_slow_logs(r: ValkeyTestClient) -> None:
     r.run("incr", "num")
     r.run("lpush", "list", "a")
     assert r.run("commandlog", "len", "slow") == 3
-    # TODO: assert_equal 0 llength [r commandlog get 0 slow]
-    # TODO: assert_equal 1 llength [r commandlog get 1 slow]
-    # TODO: assert_equal 3 llength [r commandlog get -1 slow]
-    # TODO: assert_equal 3 llength [r commandlog get 3 slow]
+    assert 0 == len(r.run("commandlog", "get", 0, "slow"))
+    assert 1 == len(r.run("commandlog", "get", 1, "slow"))
+    assert 3 == len(r.run("commandlog", "get", -1, "slow"))
+    assert 3 == len(r.run("commandlog", "get", 3, "slow"))
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -819,7 +823,7 @@ def test_commandlog_large_reply_byte_tracking_with_copy_avoidance(r: ValkeyTestC
         r del testkey
     }
     """
-    # TODO: set copy_avoid lindex [r config get min-string-size-avoid-copy-reply] 1
+    copy_avoid = r.run("config", "get", "min-string-size-avoid-copy-reply")[1]
     r.run("config", "set", "min-string-size-avoid-copy-reply", 1)
     r.run("config", "set", "commandlog-reply-larger-than", -1)
     r.run("commandlog", "reset", "large-reply")
@@ -831,8 +835,8 @@ def test_commandlog_large_reply_byte_tracking_with_copy_avoidance(r: ValkeyTestC
     r.run("commandlog", "reset", "large-reply")
     r.run("get", "testkey")
     assert r.run("commandlog", "len", "large-reply") == 1
-    # TODO: set e lindex [r commandlog get -1 large-reply] 0
-    # TODO: assert_equal lindex $e 3 {get testkey}
-    # TODO: assert_equal lindex $e 2 2057
+    e = r.run("commandlog", "get", -1, "large-reply")[0]
+    assert e[3] == "get testkey"
+    assert e[2] == 2057
     # TODO: r config set min-string-size-avoid-copy-reply copy _avoid
     r.run("del", "testkey")

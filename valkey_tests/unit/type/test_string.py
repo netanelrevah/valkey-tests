@@ -1529,37 +1529,40 @@ def test_lcs_len(r: ValkeyTestClient) -> None:
     r.run("LCS", "virus1{t}", "virus2{t}", "LEN")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_lcs_indexes(r: ValkeyTestClient) -> None:
     """
     test {LCS indexes} {
         dict get [r LCS virus1{t} virus2{t} IDX] matches
     } {{{238 238} {239 239}} {{236 236} {238 238}} {{229 230} {236 237}} {{224 224} {235 235}} {{1 222} {13 234}}}
     """
-    # TODO: dict get r LCS virus1{t} virus2{t} IDX matches
-    assert False
+    assert (
+        r.run("LCS", "virus1{t}", "virus2{t}", "IDX")["matches"]
+        == "{{238 238} {239 239}} {{236 236} {238 238}} {{229 230} {236 237}} {{224 224} {235 235}} {{1 222} {13 234}}"
+    )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_lcs_indexes_with_match_len(r: ValkeyTestClient) -> None:
     """
     test {LCS indexes with match len} {
         dict get [r LCS virus1{t} virus2{t} IDX WITHMATCHLEN] matches
     } {{{238 238} {239 239} 1} {{236 236} {238 238} 1} {{229 230} {236 237} 2} {{224 224} {235 235} 1} {{1 222} {13 234} 222}}
     """
-    # TODO: dict get r LCS virus1{t} virus2{t} IDX WITHMATCHLEN matches
-    assert False
+    assert (
+        r.run("LCS", "virus1{t}", "virus2{t}", "IDX", "WITHMATCHLEN")["matches"]
+        == "{{238 238} {239 239} 1} {{236 236} {238 238} 1} {{229 230} {236 237} 2} {{224 224} {235 235} 1} {{1 222} {13 234} 222}"
+    )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_lcs_indexes_with_match_len_and_minimum_match_len(r: ValkeyTestClient) -> None:
     """
     test {LCS indexes with match len and minimum match len} {
         dict get [r LCS virus1{t} virus2{t} IDX WITHMATCHLEN MINMATCHLEN 5] matches
     } {{{1 222} {13 234} 222}}
     """
-    # TODO: dict get r LCS virus1{t} virus2{t} IDX WITHMATCHLEN MINMATCHLEN 5 matches
-    assert False
+    assert (
+        r.run("LCS", "virus1{t}", "virus2{t}", "IDX", "WITHMATCHLEN", "MINMATCHLEN", 5)["matches"]
+        == "{{1 222} {13 234} 222}"
+    )
 
 
 @pytest.mark.xfail(reason="not implemented")

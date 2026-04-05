@@ -298,13 +298,13 @@ def test_tls_working_with_an_encrypted_keyfile(r: ValkeyTestClient) -> None:
         r config set tls-key-file $keyfile_encrypted
     }
     """
-    # TODO: set keyfile lindex [r config get tls-key-file] 1
+    keyfile = r.run("config", "get", "tls-key-file")[1]
     # TODO: set keyfile_encrypted "$keyfile.encrypted"
     # TODO: exec -ignorestderr openssl rsa -in keyfile -out keyfile _encrypted -aes256 -passout pass:1234 2>/dev/null
     # TODO: catch {r config set tls-key-file $keyfile_encrypted} e
     # TODO: assert_match {*Unable to update TLS*} e
     r.run("config", "set", "tls-key-file-pass", 1234)
-    # TODO: r config set tls-key-file keyfile _encrypted
+    r.run("config", "set", "tls-key-file", keyfile, "_encrypted")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -431,8 +431,8 @@ def test_tls_auto_reload_detects_changes(r: ValkeyTestClient) -> None:
     #       # Auto-reload requires built-in TLS
     #       skip "Not supported with TLS built as a module"
     #   }
-    # TODO: set orig_server_crt lindex [r config get tls-cert-file] 1
-    # TODO: set orig_server_key lindex [r config get tls-key-file] 1
+    orig_server_crt = r.run("config", "get", "tls-cert-file")[1]
+    orig_server_key = r.run("config", "get", "tls-key-file")[1]
     # TODO: set temp_crt "$orig_server_crt.temp"
     # TODO: set temp_key "$orig_server_key.temp"
     # TODO: file copy -force orig _server_crt temp _crt
@@ -539,7 +539,7 @@ def test_tls_auto_reload_skips_unchanged_materials(r: ValkeyTestClient) -> None:
     #       # Auto-reload requires built-in TLS
     #       skip "Not supported with TLS built as a module"
     #   }
-    # TODO: set orig_loglevel lindex [r config get loglevel] 1
+    orig_loglevel = r.run("config", "get", "loglevel")[1]
     # TODO: try {
     #       # Enable auto-reload with 1 second interval
     #       r CONFIG SET loglevel debug
@@ -645,7 +645,7 @@ def test_tls_auto_reload_with_ca_cert_directory(r: ValkeyTestClient) -> None:
     #       # Auto-reload requires built-in TLS
     #       skip "Not supported with TLS built as a module"
     #   }
-    # TODO: set ca_cert_dir lindex [r config get tls-ca-cert-dir] 1
+    ca_cert_dir = r.run("config", "get", "tls-ca-cert-dir")[1]
     # TODO: if {$ca_cert_dir ne ""} {
     #       # Touch a file in the directory to trigger change detection
     #       set test_file "$ca_cert_dir/test_marker"

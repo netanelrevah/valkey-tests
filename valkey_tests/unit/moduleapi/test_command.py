@@ -11,7 +11,6 @@ set testmodule file normalize tests/modules/basics.so
 pytestmark = [pytest.mark.modules]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_command_caches_response(r: ValkeyTestClient) -> None:
     """
     test {COMMAND caches response} {
@@ -23,7 +22,7 @@ def test_command_caches_response(r: ValkeyTestClient) -> None:
     """
     cmd1 = r.run("command")
     cmd2 = r.run("command")
-    # TODO: assert_equal llength $cmd1 llength $cmd2
+    assert len(cmd1) == len(cmd2)
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -91,7 +90,6 @@ def test_command_cache_is_invalidated_on_module_load(r: ValkeyTestClient) -> Non
     # TODO: assert {$module_commands_found > 0}
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_command_info_works_with_module_commands(r: ValkeyTestClient) -> None:
     """
     test {COMMAND INFO works with module commands} {
@@ -102,8 +100,8 @@ def test_command_info_works_with_module_commands(r: ValkeyTestClient) -> None:
     }
     """
     info = r.run("command", "info", "test.basics")
-    # TODO: assert_equal llength $info 1
-    # TODO: assert_equal lindex [lindex $info 0] 0 "test.basics"
+    assert len(info) == 1
+    assert info[0][0] == "test.basics"
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -185,7 +183,6 @@ def test_command_cache_is_invalidated_on_module_unload(r: ValkeyTestClient) -> N
     # TODO: assert_equal module _commands_found 0
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_command_info_returns_empty_for_unloaded_module_commands(r: ValkeyTestClient) -> None:
     """
     test {COMMAND INFO returns empty for unloaded module commands} {
@@ -197,8 +194,8 @@ def test_command_info_returns_empty_for_unloaded_module_commands(r: ValkeyTestCl
     }
     """
     info = r.run("command", "info", "test.basics")
-    # TODO: assert_equal llength $info 1
-    # TODO: assert_equal lindex $info 0 {}
+    assert len(info) == 1
+    assert info[0] == ""
 
 
 pytestmark = [pytest.mark.modules]

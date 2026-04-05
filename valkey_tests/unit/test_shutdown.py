@@ -1,3 +1,4 @@
+# ruff: noqa: F841
 import time
 
 import pytest
@@ -51,7 +52,7 @@ def test_temp_rdb_will_be_deleted_if_we_use_bg_unlink_when_shutdown(r: ValkeyTes
     #       fail "bgsave did not start in time"
     #   }
     time.sleep(100 / 1000)
-    # TODO: set dir lindex [r config get dir] 1
+    dir = r.run("config", "get", "dir")[1]
     # TODO: set child_pid get_child_pid 0
     # TODO: set temp_rdb file join [lindex [r config get dir] 1] temp-${child_pid}.rdb
     # TODO: assert {[file exists $temp_rdb]}

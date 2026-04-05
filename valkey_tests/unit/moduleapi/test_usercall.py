@@ -1,5 +1,7 @@
 # ruff: noqa: PLR2004, RUF043
 
+from fnmatch import fnmatch
+
 import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
@@ -71,7 +73,6 @@ def test_test_module_check_regular_valkey_command_with_user(r: ValkeyTestClient)
     assert r.run("usercall.reset_user") == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_module_check_regular_valkey_command_with_user_and_acl(r: ValkeyTestClient) -> None:
     """
     test {test module check regular valkey command with user and acl} {
@@ -107,16 +108,15 @@ def test_test_module_check_regular_valkey_command_with_user_and_acl(r: ValkeyTes
     with pytest.raises(Exception, match=".*NOPERM\\ User\\ module_user\\ has\\ no\\ permissions.*"):
         r.run("usercall.call_with_user_flag", "C", "set", "x", 10)
     assert r.run("usercall.call_with_user_flag", "C", "get", "x") == 5
-    # TODO: set entry lindex [r ACL LOG] 0
-    # TODO: assert_equal dict get $entry username {module_user}
-    # TODO: assert_equal dict get $entry context {module}
-    # TODO: assert_equal dict get $entry object {set}
-    # TODO: assert_equal dict get $entry reason {command}
-    # TODO: assert_match {*cmd=usercall.call_with_user_flag*} dict get $entry client-info
+    entry = r.run("ACL", "LOG")[0]
+    assert entry["username"] == "module_user"
+    assert entry["context"] == "module"
+    assert entry["object"] == "set"
+    assert entry["reason"] == "command"
+    assert fnmatch(str(entry["client-info"]), "*cmd=usercall.call_with_user_flag*")
     assert r.run("usercall.reset_user") == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_module_check_regular_valkey_command_with_user_and_acl_from_blocked_background_thread(
     r: ValkeyTestClient,
 ) -> None:
@@ -151,12 +151,12 @@ def test_test_module_check_regular_valkey_command_with_user_and_acl_from_blocked
     with pytest.raises(Exception, match=".*NOPERM\\ User\\ module_user\\ has\\ no\\ permissions.*"):
         r.run("usercall.call_with_user_bg", "C", "set", "x", 10)
     assert r.run("usercall.call_with_user_bg", "C", "get", "x") == 5
-    # TODO: set entry lindex [r ACL LOG] 0
-    # TODO: assert_equal dict get $entry username {module_user}
-    # TODO: assert_equal dict get $entry context {module}
-    # TODO: assert_equal dict get $entry object {set}
-    # TODO: assert_equal dict get $entry reason {command}
-    # TODO: assert_match {*cmd=NULL*} dict get $entry client-info
+    entry = r.run("ACL", "LOG")[0]
+    assert entry["username"] == "module_user"
+    assert entry["context"] == "module"
+    assert entry["object"] == "set"
+    assert entry["reason"] == "command"
+    assert fnmatch(str(entry["client-info"]), "*cmd=NULL*")
     assert r.run("usercall.reset_user") == "OK"
 
 
@@ -237,12 +237,12 @@ def test_test_module_check_eval_script_with_user_and_acl(r: ValkeyTestClient) ->
     # TODO: catch {r usercall.call_with_user_flag C evalsha $sha_set 0} e
     # TODO: assert_match {*ERR ACL failure in script*} e
     # TODO: assert_equal r usercall.call_with_user_flag C evalsha $sha_get 0 1
-    # TODO: set entry lindex [r ACL LOG] 0
-    # TODO: assert_equal dict get $entry username {module_user}
-    # TODO: assert_equal dict get $entry context {lua}
-    # TODO: assert_equal dict get $entry object {set}
-    # TODO: assert_equal dict get $entry reason {command}
-    # TODO: assert_match {*cmd=usercall.call_with_user_flag*} dict get $entry client-info
+    entry = r.run("ACL", "LOG")[0]
+    assert entry["username"] == "module_user"
+    assert entry["context"] == "lua"
+    assert entry["object"] == "set"
+    assert entry["reason"] == "command"
+    assert fnmatch(str(entry["client-info"]), "*cmd=usercall.call_with_user_flag*")
 
 
 """

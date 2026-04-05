@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, RUF043
+# ruff: noqa: PLR2004, F841, RUF043
 
 import pytest
 
@@ -39,7 +39,7 @@ def test_test_module_check_acl_for_command_perm(r: ValkeyTestClient) -> None:
     r.run("acl", "setuser", "default", "-set")
     # TODO: catch {r aclcheck.rm_call.check.cmd set x 5} e
     # TODO: assert_match {*DENIED CMD*} e
-    # TODO: set entry lindex [r ACL LOG] 0
+    entry = r.run("ACL", "LOG")[0]
     # TODO: assert {[dict get $entry username] eq {default}}
     # TODO: assert {[dict get $entry context] eq {module}}
     # TODO: assert {[dict get $entry object] eq {set}}
@@ -172,7 +172,7 @@ def test_test_module_check_acl_in_rm_call(r: ValkeyTestClient) -> None:
         r.run("aclcheck.rm_call", "set", "z", 6, "get")
     with pytest.raises(Exception, match=".*NOPERM.*No\\ permissions\\ to\\ access\\ a\\ key.*"):
         r.run("aclcheck.rm_call_with_errors", "set", "z", 6, "get")
-    # TODO: set entry lindex [r ACL LOG] 0
+    entry = r.run("ACL", "LOG")[0]
     # TODO: assert {[dict get $entry username] eq {default}}
     # TODO: assert {[dict get $entry context] eq {module}}
     # TODO: assert {[dict get $entry object] eq {z}}
@@ -182,7 +182,7 @@ def test_test_module_check_acl_in_rm_call(r: ValkeyTestClient) -> None:
         r.run("aclcheck.rm_call", "set", "x", 5)
     with pytest.raises(Exception, match=".*NOPERM.*has\\ no\\ permissions\\ to\\ run\\ the\\ 'set'\\ command.*"):
         r.run("aclcheck.rm_call_with_errors", "set", "x", 5)
-    # TODO: set entry lindex [r ACL LOG] 0
+    entry = r.run("ACL", "LOG")[0]
     # TODO: assert {[dict get $entry username] eq {default}}
     # TODO: assert {[dict get $entry context] eq {module}}
     # TODO: assert {[dict get $entry object] eq {set}}
@@ -274,7 +274,7 @@ def test_test_module_comprehensive_acl_check(r: ValkeyTestClient) -> None:
     r.run("acl", "setuser", "testuser", "-set")
     # TODO: catch {r aclcheck.check.permissions 0 set y 10} e
     # TODO: assert_match {*NOPERM*} e
-    # TODO: set entry lindex [r ACL LOG] 0
+    entry = r.run("ACL", "LOG")[0]
     # TODO: assert {[dict get $entry username] eq {testuser}}
     # TODO: assert {[dict get $entry context] eq {module}}
     # TODO: assert {[dict get $entry object] eq {set}}
@@ -284,7 +284,7 @@ def test_test_module_comprehensive_acl_check(r: ValkeyTestClient) -> None:
     assert r.run("aclcheck.check.permissions", 0, "set", "allowed_key", "value") == "OK"
     # TODO: catch {r aclcheck.check.permissions 0 set denied_key value} e
     # TODO: assert_match {*NOPERM*} e
-    # TODO: set entry lindex [r ACL LOG] 0
+    entry = r.run("ACL", "LOG")[0]
     # TODO: assert {[dict get $entry username] eq {testuser}}
     # TODO: assert {[dict get $entry context] eq {module}}
     # TODO: assert {[dict get $entry reason] eq {key}}
@@ -293,7 +293,7 @@ def test_test_module_comprehensive_acl_check(r: ValkeyTestClient) -> None:
     assert r.run("aclcheck.check.permissions", 0, "publish", "ch1", "msg") == 0
     # TODO: catch {r aclcheck.check.permissions 0 publish ch2 msg} e
     # TODO: assert_match {*NOPERM*} e
-    # TODO: set entry lindex [r ACL LOG] 0
+    entry = r.run("ACL", "LOG")[0]
     # TODO: assert {[dict get $entry username] eq {testuser}}
     # TODO: assert {[dict get $entry context] eq {module}}
     # TODO: assert {[dict get $entry reason] eq {channel}}
@@ -303,7 +303,7 @@ def test_test_module_comprehensive_acl_check(r: ValkeyTestClient) -> None:
     assert r.run("aclcheck.check.permissions", 1, "set", "testkey", "val") == "OK"
     # TODO: catch {r aclcheck.check.permissions 3 set testkey val} e
     # TODO: assert_match {*NOPERM*} e
-    # TODO: set entry lindex [r ACL LOG] 0
+    entry = r.run("ACL", "LOG")[0]
     # TODO: assert {[dict get $entry username] eq {testuser}}
     # TODO: assert {[dict get $entry context] eq {module}}
     # TODO: assert {[dict get $entry reason] eq {database}}

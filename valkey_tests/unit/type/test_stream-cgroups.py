@@ -1,4 +1,4 @@
-# ruff: noqa: F841, RUF043
+# ruff: noqa: PLR2004, F841, RUF043
 import time
 
 import pytest
@@ -257,8 +257,8 @@ def test_xpending_with_exclusive_range_intervals_works_as_expected(r: ValkeyTest
     """
     pending = r.run("XPENDING", "mystream", "mygroup", "-", "+", 10)
     # TODO: assert {[llength $pending] == 4}
-    # TODO: set startid lindex [lindex $pending 0] 0
-    # TODO: set endid lindex [lindex $pending 3] 0
+    startid = pending[0][0]
+    endid = pending[3][0]
     expending = r.run("XPENDING", "mystream", "mygroup", "($startid", "($endid", 10)
     # TODO: assert {[llength $expending] == 2}
     # TODO: for {set j 0} {$j < 2} {incr j} {
@@ -1421,9 +1421,9 @@ def test_xautoclaim_can_claim_pel_items_from_another_consumer(r: ValkeyTestClien
     # TODO: assert_equal lindex $reply 0 1 0 1 {a 1}
     time.sleep(200 / 1000)
     reply = r.run("XAUTOCLAIM", "mystream", "mygroup", "consumer2", 10, "-", "COUNT", 1)
-    # TODO: assert_equal llength $reply 3
-    # TODO: assert_equal lindex $reply 0 "0-0"
-    # TODO: assert_equal llength [lindex $reply 1] 1
+    assert len(reply) == 3
+    assert reply[0] == "0-0"
+    assert len(reply[1]) == 1
     # TODO: assert_equal llength [lindex $reply 1 0] 2
     # TODO: assert_equal llength [lindex $reply 1 0 1] 2
     # TODO: assert_equal lindex $reply 1 0 1 {a 1}
@@ -1431,21 +1431,21 @@ def test_xautoclaim_can_claim_pel_items_from_another_consumer(r: ValkeyTestClien
     time.sleep(200 / 1000)
     r.run("XDEL", "mystream", id2)
     reply = r.run("XAUTOCLAIM", "mystream", "mygroup", "consumer2", 10, "-", "COUNT", 3)
-    # TODO: assert_equal llength $reply 3
-    # TODO: assert_equal lindex $reply 0 id4
-    # TODO: assert_equal llength [lindex $reply 1] 2
+    assert len(reply) == 3
+    assert reply[0] == id4
+    assert len(reply[1]) == 2
     # TODO: assert_equal llength [lindex $reply 1 0] 2
     # TODO: assert_equal llength [lindex $reply 1 0 1] 2
     # TODO: assert_equal lindex $reply 1 0 1 {a 1}
     # TODO: assert_equal lindex $reply 1 1 1 {c 3}
-    # TODO: assert_equal llength [lindex $reply 2] 1
+    assert len(reply[2]) == 1
     # TODO: assert_equal llength [lindex $reply 2 0] 1
     time.sleep(200 / 1000)
     r.run("XDEL", "mystream", id4)
     reply = r.run("XAUTOCLAIM", "mystream", "mygroup", "consumer2", 10, "-", "JUSTID")
-    # TODO: assert_equal llength $reply 3
-    # TODO: assert_equal lindex $reply 0 {0-0}
-    # TODO: assert_equal llength [lindex $reply 1] 2
+    assert len(reply) == 3
+    assert reply[0] == "0-0"
+    assert len(reply[1]) == 2
     # TODO: assert_equal lindex $reply 1 0 id1
     # TODO: assert_equal lindex $reply 1 1 id3
 
@@ -1507,24 +1507,24 @@ def test_xautoclaim_as_an_iterator(r: ValkeyTestClient) -> None:
     r.run("XREADGROUP", "GROUP", "mygroup", "consumer1", "count", 90, "STREAMS", "mystream", ">")
     time.sleep(200 / 1000)
     reply = r.run("XAUTOCLAIM", "mystream", "mygroup", "consumer2", 10, "-", "COUNT", 2)
-    # TODO: assert_equal llength $reply 3
-    # TODO: set cursor lindex $reply 0
-    # TODO: assert_equal cursor id3
-    # TODO: assert_equal llength [lindex $reply 1] 2
+    assert len(reply) == 3
+    cursor = reply[0]
+    assert cursor == id3
+    assert len(reply[1]) == 2
     # TODO: assert_equal llength [lindex $reply 1 0 1] 2
     # TODO: assert_equal lindex $reply 1 0 1 {a 1}
-    # TODO: set reply r XAUTOCLAIM mystream mygroup consumer2 10 $cursor COUNT 2
-    # TODO: assert_equal llength $reply 3
-    # TODO: set cursor lindex $reply 0
-    # TODO: assert_equal cursor id5
-    # TODO: assert_equal llength [lindex $reply 1] 2
+    reply = r.run("XAUTOCLAIM", "mystream", "mygroup", "consumer2", 10, cursor, "COUNT", 2)
+    assert len(reply) == 3
+    cursor = reply[0]
+    assert cursor == id5
+    assert len(reply[1]) == 2
     # TODO: assert_equal llength [lindex $reply 1 0 1] 2
     # TODO: assert_equal lindex $reply 1 0 1 {c 3}
-    # TODO: set reply r XAUTOCLAIM mystream mygroup consumer2 10 $cursor COUNT 1
-    # TODO: assert_equal llength $reply 3
-    # TODO: set cursor lindex $reply 0
-    # TODO: assert_equal cursor {0-0}
-    # TODO: assert_equal llength [lindex $reply 1] 1
+    reply = r.run("XAUTOCLAIM", "mystream", "mygroup", "consumer2", 10, cursor, "COUNT", 1)
+    assert len(reply) == 3
+    cursor = reply[0]
+    assert cursor == "0-0"
+    assert len(reply[1]) == 1
     # TODO: assert_equal llength [lindex $reply 1 0 1] 2
     # TODO: assert_equal lindex $reply 1 0 1 {e 5}
 
@@ -1753,25 +1753,25 @@ def test_xinfo_full_output(r: ValkeyTestClient) -> None:
     r.run("XREADGROUP", "GROUP", "g2", "Charlie", "COUNT", 4, "STREAMS", "x", ">")
     r.run("XDEL", "x", 103)
     reply = r.run("XINFO", "STREAM", "x", "FULL")
-    # TODO: assert_equal llength $reply 18
-    # TODO: assert_equal dict get $reply length 4
-    # TODO: assert_equal dict get $reply entries "{100-0 {a 1}} {101-0 {b 1}} {102-0 {c 1}} {104-0 {f 1}}"
-    # TODO: set group lindex [dict get $reply groups] 0
-    # TODO: assert_equal dict get $group name "g1"
+    assert len(reply) == 18
+    assert reply["length"] == 4
+    assert reply["entries"] == "{100-0 {a 1}} {101-0 {b 1}} {102-0 {c 1}} {104-0 {f 1}}"
+    group = reply["groups"][0]
+    assert group["name"] == "g1"
     # TODO: assert_equal lindex [dict get $group pending] 0 0 "100-0"
-    # TODO: set consumer lindex [dict get $group consumers] 0
-    # TODO: assert_equal dict get $consumer name "Alice"
+    consumer = group["consumers"][0]
+    assert consumer["name"] == "Alice"
     # TODO: assert_equal lindex [dict get $consumer pending] 0 0 "100-0"
-    # TODO: set group lindex [dict get $reply groups] 1
-    # TODO: assert_equal dict get $group name "g2"
-    # TODO: set consumer lindex [dict get $group consumers] 0
-    # TODO: assert_equal dict get $consumer name "Charlie"
+    group = reply["groups"][1]
+    assert group["name"] == "g2"
+    consumer = group["consumers"][0]
+    assert consumer["name"] == "Charlie"
     # TODO: assert_equal lindex [dict get $consumer pending] 0 0 "100-0"
     # TODO: assert_equal lindex [dict get $consumer pending] 1 0 "101-0"
     reply = r.run("XINFO", "STREAM", "x", "FULL", "COUNT", 1)
-    # TODO: assert_equal llength $reply 18
-    # TODO: assert_equal dict get $reply length 4
-    # TODO: assert_equal dict get $reply entries "{100-0 {a 1}}"
+    assert len(reply) == 18
+    assert reply["length"] == 4
+    assert reply["entries"] == "{100-0 {a 1}}"
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1827,33 +1827,33 @@ def test_consumer_seen_time_and_active_time(r: ValkeyTestClient) -> None:
     r.run("XREADGROUP", "GROUP", "mygroup", "Alice", "COUNT", 1, "STREAMS", "mystream", ">")
     time.sleep(100 / 1000)
     reply = r.run("xinfo", "consumers", "mystream", "mygroup")
-    # TODO: set consumer_info lindex $reply 0
+    consumer_info = reply[0]
     # TODO: assert {[dict get $consumer_info idle] >= 100}
     # TODO: assert_equal dict get $consumer_info inactive "-1"
     r.run("XADD", "mystream", "*", "f", "v")
     r.run("XREADGROUP", "GROUP", "mygroup", "Alice", "COUNT", 1, "STREAMS", "mystream", ">")
     reply = r.run("xinfo", "consumers", "mystream", "mygroup")
-    # TODO: set consumer_info lindex $reply 0
+    consumer_info = reply[0]
     # TODO: assert_equal lindex $consumer_info 1 "Alice"
     # TODO: assert {[dict get $consumer_info idle] < 300}
     # TODO: assert {[dict get $consumer_info inactive] < 300}
     time.sleep(100 / 1000)
     r.run("XREADGROUP", "GROUP", "mygroup", "Alice", "COUNT", 1, "STREAMS", "mystream", ">")
     reply = r.run("xinfo", "consumers", "mystream", "mygroup")
-    # TODO: set consumer_info lindex $reply 0
+    consumer_info = reply[0]
     # TODO: assert {[dict get $consumer_info idle] < 300}
     # TODO: assert {[dict get $consumer_info inactive] >= 100}
     reply = r.run("XINFO", "STREAM", "mystream", "FULL")
-    # TODO: set group lindex [dict get $reply groups] 0
-    # TODO: set consumer lindex [dict get $group consumers] 0
-    # TODO: set prev_seen dict get $consumer seen-time
-    # TODO: set prev_active dict get $consumer active-time
+    group = reply["groups"][0]
+    consumer = group["consumers"][0]
+    prev_seen = consumer["seen-time"]
+    prev_active = consumer["active-time"]
     dump = r.run("DUMP", "mystream")
     r.run("DEL", "mystream")
     r.run("RESTORE", "mystream", 0, dump)
     reply = r.run("XINFO", "STREAM", "mystream", "FULL")
-    # TODO: set group lindex [dict get $reply groups] 0
-    # TODO: set consumer lindex [dict get $group consumers] 0
+    group = reply["groups"][0]
+    consumer = group["consumers"][0]
     # TODO: assert_equal prev _seen dict get $consumer seen-time
     # TODO: assert_equal prev _active dict get $consumer active-time
 
@@ -1907,29 +1907,29 @@ def test_xgroup_createconsumer_create_consumer_if_does_not_exist(r: ValkeyTestCl
     # TODO: r XGROUP CREATE mystream mygroup  MKSTREAM
     r.run("XADD", "mystream", "*", "f", "v")
     reply = r.run("xinfo", "groups", "mystream")
-    # TODO: set group_info lindex $reply 0
+    group_info = reply[0]
     # TODO: set n_consumers lindex $group_info 3
     # TODO: assert_equal n _consumers 0
     r.run("XREADGROUP", "GROUP", "mygroup", "Alice", "COUNT", 1, "STREAMS", "mystream", ">")
     reply = r.run("xinfo", "groups", "mystream")
-    # TODO: set group_info lindex $reply 0
+    group_info = reply[0]
     # TODO: set n_consumers lindex $group_info 3
     # TODO: assert_equal n _consumers 1
     reply = r.run("xinfo", "consumers", "mystream", "mygroup")
-    # TODO: set consumer_info lindex $reply 0
+    consumer_info = reply[0]
     # TODO: assert_equal lindex $consumer_info 1 "Alice"
     created = r.run("XGROUP", "CREATECONSUMER", "mystream", "mygroup", "Alice")
     assert created == 0
     created = r.run("XGROUP", "CREATECONSUMER", "mystream", "mygroup", "Bob")
     assert created == 1
     reply = r.run("xinfo", "groups", "mystream")
-    # TODO: set group_info lindex $reply 0
+    group_info = reply[0]
     # TODO: set n_consumers lindex $group_info 3
     # TODO: assert_equal n _consumers 2
     reply = r.run("xinfo", "consumers", "mystream", "mygroup")
-    # TODO: set consumer_info lindex $reply 0
+    consumer_info = reply[0]
     # TODO: assert_equal lindex $consumer_info 1 "Alice"
-    # TODO: set consumer_info lindex $reply 1
+    consumer_info = reply[1]
     # TODO: assert_equal lindex $consumer_info 1 "Bob"
 
 
@@ -1998,7 +1998,6 @@ start_server {tags {"stream needs:debug"} overrides {appendonly yes aof-use-rdb-
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_consumer_group_read_counter_and_lag_in_empty_streams(r: ValkeyTestClient) -> None:
     """
     test {Consumer group read counter and lag in empty streams} {
@@ -2026,22 +2025,21 @@ def test_consumer_group_read_counter_and_lag_in_empty_streams(r: ValkeyTestClien
     r.run("DEL", "x")
     r.run("XGROUP", "CREATE", "x", "g1", 0, "MKSTREAM")
     reply = r.run("XINFO", "STREAM", "x", "FULL")
-    # TODO: set group lindex [dict get $reply groups] 0
-    # TODO: assert_equal dict get $reply max-deleted-entry-id "0-0"
-    # TODO: assert_equal dict get $reply entries-added 0
-    # TODO: assert_equal dict get $group entries-read {}
-    # TODO: assert_equal dict get $group lag 0
+    group = reply["groups"][0]
+    assert reply["max-deleted-entry-id"] == "0-0"
+    assert reply["entries-added"] == 0
+    assert group["entries-read"] == ""
+    assert group["lag"] == 0
     r.run("XADD", "x", "1-0", "data", "a")
     r.run("XDEL", "x", "1-0")
     reply = r.run("XINFO", "STREAM", "x", "FULL")
-    # TODO: set group lindex [dict get $reply groups] 0
-    # TODO: assert_equal dict get $reply max-deleted-entry-id "1-0"
-    # TODO: assert_equal dict get $reply entries-added 1
-    # TODO: assert_equal dict get $group entries-read {}
-    # TODO: assert_equal dict get $group lag 0
+    group = reply["groups"][0]
+    assert reply["max-deleted-entry-id"] == "1-0"
+    assert reply["entries-added"] == 1
+    assert group["entries-read"] == ""
+    assert group["lag"] == 0
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_consumer_group_read_counter_and_lag_sanity(r: ValkeyTestClient) -> None:
     """
     test {Consumer group read counter and lag sanity} {
@@ -2104,24 +2102,24 @@ def test_consumer_group_read_counter_and_lag_sanity(r: ValkeyTestClient) -> None
     r.run("XADD", "x", "5-0", "data", "e")
     r.run("XGROUP", "CREATE", "x", "g1", 0)
     reply = r.run("XINFO", "STREAM", "x", "FULL")
-    # TODO: set group lindex [dict get $reply groups] 0
-    # TODO: assert_equal dict get $group entries-read {}
-    # TODO: assert_equal dict get $group lag 5
+    group = reply["groups"][0]
+    assert group["entries-read"] == ""
+    assert group["lag"] == 5
     r.run("XREADGROUP", "GROUP", "g1", "c11", "COUNT", 1, "STREAMS", "x", ">")
     reply = r.run("XINFO", "STREAM", "x", "FULL")
-    # TODO: set group lindex [dict get $reply groups] 0
-    # TODO: assert_equal dict get $group entries-read 1
-    # TODO: assert_equal dict get $group lag 4
+    group = reply["groups"][0]
+    assert group["entries-read"] == 1
+    assert group["lag"] == 4
     r.run("XREADGROUP", "GROUP", "g1", "c12", "COUNT", 10, "STREAMS", "x", ">")
     reply = r.run("XINFO", "STREAM", "x", "FULL")
-    # TODO: set group lindex [dict get $reply groups] 0
-    # TODO: assert_equal dict get $group entries-read 5
-    # TODO: assert_equal dict get $group lag 0
+    group = reply["groups"][0]
+    assert group["entries-read"] == 5
+    assert group["lag"] == 0
     r.run("XADD", "x", "6-0", "data", "f")
     reply = r.run("XINFO", "STREAM", "x", "FULL")
-    # TODO: set group lindex [dict get $reply groups] 0
-    # TODO: assert_equal dict get $group entries-read 5
-    # TODO: assert_equal dict get $group lag 1
+    group = reply["groups"][0]
+    assert group["entries-read"] == 5
+    assert group["lag"] == 1
     r.run("XADD", "x", "7-0", "data", "g")
     r.run("XADD", "x", "8-0", "data", "h")
     r.run("XADD", "x", "9-0", "data", "i")
@@ -2129,17 +2127,16 @@ def test_consumer_group_read_counter_and_lag_sanity(r: ValkeyTestClient) -> None
     r.run("XREADGROUP", "GROUP", "g1", "c11", "COUNT", 3, "STREAMS", "x", ">")
     r.run("XDEL", "x", "9-0")
     reply = r.run("XINFO", "STREAM", "x", "FULL")
-    # TODO: set group lindex [dict get $reply groups] 0
-    # TODO: assert_equal dict get $group entries-read 8
-    # TODO: assert_equal dict get $group lag {}
+    group = reply["groups"][0]
+    assert group["entries-read"] == 8
+    assert group["lag"] == ""
     r.run("XREADGROUP", "GROUP", "g1", "c12", "COUNT", 1, "STREAMS", "x", ">")
     reply = r.run("XINFO", "STREAM", "x", "FULL")
-    # TODO: set group lindex [dict get $reply groups] 0
-    # TODO: assert_equal dict get $group entries-read 10
-    # TODO: assert_equal dict get $group lag 0
+    group = reply["groups"][0]
+    assert group["entries-read"] == 10
+    assert group["lag"] == 0
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_consumer_group_lag_with_xdels(r: ValkeyTestClient) -> None:
     """
     test {Consumer group lag with XDELs} {
@@ -2217,53 +2214,52 @@ def test_consumer_group_lag_with_xdels(r: ValkeyTestClient) -> None:
     r.run("XGROUP", "CREATE", "x", "g1", 0)
     r.run("XGROUP", "CREATE", "x", "g2", 0)
     reply = r.run("XINFO", "STREAM", "x", "FULL")
-    # TODO: set group lindex [dict get $reply groups] 0
-    # TODO: assert_equal dict get $group entries-read {}
-    # TODO: assert_equal dict get $group lag {}
+    group = reply["groups"][0]
+    assert group["entries-read"] == ""
+    assert group["lag"] == ""
     r.run("XREADGROUP", "GROUP", "g1", "c11", "COUNT", 1, "STREAMS", "x", ">")
     reply = r.run("XINFO", "STREAM", "x", "FULL")
-    # TODO: set group lindex [dict get $reply groups] 0
-    # TODO: assert_equal dict get $group entries-read {}
-    # TODO: assert_equal dict get $group lag {}
+    group = reply["groups"][0]
+    assert group["entries-read"] == ""
+    assert group["lag"] == ""
     r.run("XREADGROUP", "GROUP", "g1", "c11", "COUNT", 1, "STREAMS", "x", ">")
     reply = r.run("XINFO", "STREAM", "x", "FULL")
-    # TODO: set group lindex [dict get $reply groups] 0
-    # TODO: assert_equal dict get $group entries-read {}
-    # TODO: assert_equal dict get $group lag {}
+    group = reply["groups"][0]
+    assert group["entries-read"] == ""
+    assert group["lag"] == ""
     r.run("XREADGROUP", "GROUP", "g1", "c11", "COUNT", 1, "STREAMS", "x", ">")
     reply = r.run("XINFO", "STREAM", "x", "FULL")
-    # TODO: set group lindex [dict get $reply groups] 0
-    # TODO: assert_equal dict get $group entries-read {}
-    # TODO: assert_equal dict get $group lag {}
+    group = reply["groups"][0]
+    assert group["entries-read"] == ""
+    assert group["lag"] == ""
     r.run("XREADGROUP", "GROUP", "g1", "c11", "COUNT", 1, "STREAMS", "x", ">")
     reply = r.run("XINFO", "STREAM", "x", "FULL")
-    # TODO: set group lindex [dict get $reply groups] 0
-    # TODO: assert_equal dict get $group entries-read 5
-    # TODO: assert_equal dict get $group lag 0
+    group = reply["groups"][0]
+    assert group["entries-read"] == 5
+    assert group["lag"] == 0
     r.run("XADD", "x", "6-0", "data", "f")
     reply = r.run("XINFO", "STREAM", "x", "FULL")
-    # TODO: set group lindex [dict get $reply groups] 0
-    # TODO: assert_equal dict get $group entries-read 5
-    # TODO: assert_equal dict get $group lag 1
+    group = reply["groups"][0]
+    assert group["entries-read"] == 5
+    assert group["lag"] == 1
     r.run("XTRIM", "x", "MINID", "=", "3-0")
     reply = r.run("XINFO", "STREAM", "x", "FULL")
-    # TODO: set group lindex [dict get $reply groups] 0
-    # TODO: assert_equal dict get $group entries-read 5
-    # TODO: assert_equal dict get $group lag 1
-    # TODO: set group lindex [dict get $reply groups] 1
-    # TODO: assert_equal dict get $group entries-read {}
-    # TODO: assert_equal dict get $group lag 3
+    group = reply["groups"][0]
+    assert group["entries-read"] == 5
+    assert group["lag"] == 1
+    group = reply["groups"][1]
+    assert group["entries-read"] == ""
+    assert group["lag"] == 3
     r.run("XTRIM", "x", "MINID", "=", "5-0")
     reply = r.run("XINFO", "STREAM", "x", "FULL")
-    # TODO: set group lindex [dict get $reply groups] 0
-    # TODO: assert_equal dict get $group entries-read 5
-    # TODO: assert_equal dict get $group lag 1
-    # TODO: set group lindex [dict get $reply groups] 1
-    # TODO: assert_equal dict get $group entries-read {}
-    # TODO: assert_equal dict get $group lag 2
+    group = reply["groups"][0]
+    assert group["entries-read"] == 5
+    assert group["lag"] == 1
+    group = reply["groups"][1]
+    assert group["entries-read"] == ""
+    assert group["lag"] == 2
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_consumer_group_lag_with_xtrim(r: ValkeyTestClient) -> None:
     """
     test {Consumer group lag with XTRIM} {
@@ -2339,51 +2335,50 @@ def test_consumer_group_lag_with_xtrim(r: ValkeyTestClient) -> None:
     r.run("XGROUP", "CREATE", "x", "g1", 0)
     r.run("XGROUP", "CREATE", "x", "g2", 0)
     reply = r.run("XINFO", "STREAM", "x", "FULL")
-    # TODO: set group lindex [dict get $reply groups] 0
-    # TODO: assert_equal dict get $group entries-read {}
-    # TODO: assert_equal dict get $group lag {}
+    group = reply["groups"][0]
+    assert group["entries-read"] == ""
+    assert group["lag"] == ""
     r.run("XREADGROUP", "GROUP", "g1", "c11", "COUNT", 1, "STREAMS", "x", ">")
     reply = r.run("XINFO", "STREAM", "x", "FULL")
-    # TODO: set group lindex [dict get $reply groups] 0
-    # TODO: assert_equal dict get $group entries-read {}
-    # TODO: assert_equal dict get $group lag {}
+    group = reply["groups"][0]
+    assert group["entries-read"] == ""
+    assert group["lag"] == ""
     r.run("XREADGROUP", "GROUP", "g1", "c11", "COUNT", 1, "STREAMS", "x", ">")
     reply = r.run("XINFO", "STREAM", "x", "FULL")
-    # TODO: set group lindex [dict get $reply groups] 0
-    # TODO: assert_equal dict get $group entries-read {}
-    # TODO: assert_equal dict get $group lag {}
+    group = reply["groups"][0]
+    assert group["entries-read"] == ""
+    assert group["lag"] == ""
     r.run("XREADGROUP", "GROUP", "g1", "c11", "COUNT", 1, "STREAMS", "x", ">")
     reply = r.run("XINFO", "STREAM", "x", "FULL")
-    # TODO: set group lindex [dict get $reply groups] 0
-    # TODO: assert_equal dict get $group entries-read {}
-    # TODO: assert_equal dict get $group lag {}
+    group = reply["groups"][0]
+    assert group["entries-read"] == ""
+    assert group["lag"] == ""
     r.run("XREADGROUP", "GROUP", "g1", "c11", "COUNT", 1, "STREAMS", "x", ">")
     reply = r.run("XINFO", "STREAM", "x", "FULL")
-    # TODO: set group lindex [dict get $reply groups] 0
-    # TODO: assert_equal dict get $group entries-read 5
-    # TODO: assert_equal dict get $group lag 0
+    group = reply["groups"][0]
+    assert group["entries-read"] == 5
+    assert group["lag"] == 0
     r.run("XADD", "x", "6-0", "data", "f")
     r.run("XADD", "x", "7-0", "data", "g")
     reply = r.run("XINFO", "STREAM", "x", "FULL")
-    # TODO: set group lindex [dict get $reply groups] 0
-    # TODO: assert_equal dict get $group entries-read 5
-    # TODO: assert_equal dict get $group lag 2
+    group = reply["groups"][0]
+    assert group["entries-read"] == 5
+    assert group["lag"] == 2
     r.run("XTRIM", "x", "MINID", "=", "7-0")
     reply = r.run("XINFO", "STREAM", "x", "FULL")
-    # TODO: set group lindex [dict get $reply groups] 0
-    # TODO: assert_equal dict get $group entries-read 5
-    # TODO: assert_equal dict get $group lag 2
-    # TODO: set group lindex [dict get $reply groups] 1
-    # TODO: assert_equal dict get $group entries-read {}
-    # TODO: assert_equal dict get $group lag 1
+    group = reply["groups"][0]
+    assert group["entries-read"] == 5
+    assert group["lag"] == 2
+    group = reply["groups"][1]
+    assert group["entries-read"] == ""
+    assert group["lag"] == 1
     r.run("XREADGROUP", "GROUP", "g1", "c11", "STREAMS", "x", ">")
     reply = r.run("XINFO", "STREAM", "x", "FULL")
-    # TODO: set group lindex [dict get $reply groups] 0
-    # TODO: assert_equal dict get $group entries-read 7
-    # TODO: assert_equal dict get $group lag 0
+    group = reply["groups"][0]
+    assert group["entries-read"] == 7
+    assert group["lag"] == 0
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_consumer_group_lag_with_xadd_trimming(r: ValkeyTestClient) -> None:
     """
     test {Consumer group lag with XADD trimming} {
@@ -2459,48 +2454,48 @@ def test_consumer_group_lag_with_xadd_trimming(r: ValkeyTestClient) -> None:
     r.run("XGROUP", "CREATE", "x", "g1", 0)
     r.run("XGROUP", "CREATE", "x", "g2", 0)
     reply = r.run("XINFO", "STREAM", "x", "FULL")
-    # TODO: set group lindex [dict get $reply groups] 0
-    # TODO: assert_equal dict get $group entries-read {}
-    # TODO: assert_equal dict get $group lag {}
+    group = reply["groups"][0]
+    assert group["entries-read"] == ""
+    assert group["lag"] == ""
     r.run("XREADGROUP", "GROUP", "g1", "c11", "COUNT", 1, "STREAMS", "x", ">")
     reply = r.run("XINFO", "STREAM", "x", "FULL")
-    # TODO: set group lindex [dict get $reply groups] 0
-    # TODO: assert_equal dict get $group entries-read {}
-    # TODO: assert_equal dict get $group lag {}
+    group = reply["groups"][0]
+    assert group["entries-read"] == ""
+    assert group["lag"] == ""
     r.run("XREADGROUP", "GROUP", "g1", "c11", "COUNT", 1, "STREAMS", "x", ">")
     reply = r.run("XINFO", "STREAM", "x", "FULL")
-    # TODO: set group lindex [dict get $reply groups] 0
-    # TODO: assert_equal dict get $group entries-read {}
-    # TODO: assert_equal dict get $group lag {}
+    group = reply["groups"][0]
+    assert group["entries-read"] == ""
+    assert group["lag"] == ""
     r.run("XREADGROUP", "GROUP", "g1", "c11", "COUNT", 1, "STREAMS", "x", ">")
     reply = r.run("XINFO", "STREAM", "x", "FULL")
-    # TODO: set group lindex [dict get $reply groups] 0
-    # TODO: assert_equal dict get $group entries-read {}
-    # TODO: assert_equal dict get $group lag {}
+    group = reply["groups"][0]
+    assert group["entries-read"] == ""
+    assert group["lag"] == ""
     r.run("XREADGROUP", "GROUP", "g1", "c11", "COUNT", 1, "STREAMS", "x", ">")
     reply = r.run("XINFO", "STREAM", "x", "FULL")
-    # TODO: set group lindex [dict get $reply groups] 0
-    # TODO: assert_equal dict get $group entries-read 5
-    # TODO: assert_equal dict get $group lag 0
+    group = reply["groups"][0]
+    assert group["entries-read"] == 5
+    assert group["lag"] == 0
     r.run("XADD", "x", "6-0", "data", "f")
     r.run("XADD", "x", "7-0", "data", "g")
     reply = r.run("XINFO", "STREAM", "x", "FULL")
-    # TODO: set group lindex [dict get $reply groups] 0
-    # TODO: assert_equal dict get $group entries-read 5
-    # TODO: assert_equal dict get $group lag 2
+    group = reply["groups"][0]
+    assert group["entries-read"] == 5
+    assert group["lag"] == 2
     r.run("XADD", "x", "MINID", "=", "7-0", "8-0", "data", "h")
     reply = r.run("XINFO", "STREAM", "x", "FULL")
-    # TODO: set group lindex [dict get $reply groups] 0
-    # TODO: assert_equal dict get $group entries-read 5
-    # TODO: assert_equal dict get $group lag 3
-    # TODO: set group lindex [dict get $reply groups] 1
-    # TODO: assert_equal dict get $group entries-read {}
-    # TODO: assert_equal dict get $group lag 2
+    group = reply["groups"][0]
+    assert group["entries-read"] == 5
+    assert group["lag"] == 3
+    group = reply["groups"][1]
+    assert group["entries-read"] == ""
+    assert group["lag"] == 2
     r.run("XREADGROUP", "GROUP", "g1", "c11", "STREAMS", "x", ">")
     reply = r.run("XINFO", "STREAM", "x", "FULL")
-    # TODO: set group lindex [dict get $reply groups] 0
-    # TODO: assert_equal dict get $group entries-read 8
-    # TODO: assert_equal dict get $group lag 0
+    group = reply["groups"][0]
+    assert group["entries-read"] == 8
+    assert group["lag"] == 0
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -2537,14 +2532,14 @@ def test_loading_from_legacy_redis_v6_2_x_rdb_ver_10_persistence(r: ValkeyTestCl
     r.run("DEL", "x")
     # TODO: r RESTORE x 0 "\x0F\x01\x10\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\xC3\x40\x4A\x40\x57\x16\x57\x00\x00\x00\x23\x00\x02\x01\x04\x01\x01\x01\x84\x64\x61\x74\x61\x05\x00\x01\x03\x01\x00\x20\x01\x03\x81\x61\x02\x04\x20\x0A\x00\x01\x40\x0A\x00\x62\x60\x0A\x00\x02\x40\x0A\x00\x63\x60\x0A\x40\x22\x01\x81\x64\x20\x0A\x40\x39\x20\x0A\x00\x65\x60\x0A\x00\x05\x40\x0A\x00\x66\x20\x0A\x00\xFF\x02\x06\x00\x02\x02\x67\x31\x05\x00\x04\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x3E\xF7\x83\x43\x7A\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x3E\xF7\x83\x43\x7A\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x3E\xF7\x83\x43\x7A\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x05\x00\x00\x00\x00\x00\x00\x00\x00\x3E\xF7\x83\x43\x7A\x01\x00\x00\x01\x01\x03\x63\x31\x31\x3E\xF7\x83\x43\x7A\x01\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x05\x00\x00\x00\x00\x00\x00\x00\x00\x02\x67\x32\x00\x00\x00\x00\x09\x00\x3D\x52\xEF\x68\x67\x52\x1D\xFA"
     reply = r.run("XINFO", "STREAM", "x", "FULL")
-    # TODO: assert_equal dict get $reply max-deleted-entry-id "0-0"
-    # TODO: assert_equal dict get $reply entries-added 2
-    # TODO: set group lindex [dict get $reply groups] 0
-    # TODO: assert_equal dict get $group entries-read 1
-    # TODO: assert_equal dict get $group lag 1
-    # TODO: set group lindex [dict get $reply groups] 1
-    # TODO: assert_equal dict get $group entries-read 0
-    # TODO: assert_equal dict get $group lag 2
+    assert reply["max-deleted-entry-id"] == "0-0"
+    assert reply["entries-added"] == 2
+    group = reply["groups"][0]
+    assert group["entries-read"] == 1
+    assert group["lag"] == 1
+    group = reply["groups"][1]
+    assert group["entries-read"] == 0
+    assert group["lag"] == 2
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -2567,9 +2562,9 @@ def test_loading_from_legacy_redis_v7_0_x_rdb_ver_11_persistence(r: ValkeyTestCl
     r.run("DEL", "x")
     # TODO: r RESTORE x 0 "\x13\x01\x10\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x01\x1D\x1D\x00\x00\x00\x0A\x00\x01\x01\x00\x01\x01\x01\x81\x66\x02\x00\x01\x02\x01\x00\x01\x00\x01\x81\x76\x02\x04\x01\xFF\x01\x01\x01\x01\x01\x00\x00\x01\x01\x01\x67\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x01\xF5\x5A\x71\xC7\x84\x01\x00\x00\x01\x01\x05\x41\x6C\x69\x63\x65\xF5\x5A\x71\xC7\x84\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x01\x0B\x00\xA7\xA9\x14\xA5\x27\xFF\x9B\x9B"
     reply = r.run("XINFO", "STREAM", "x", "FULL")
-    # TODO: set group lindex [dict get $reply groups] 0
-    # TODO: set consumer lindex [dict get $group consumers] 0
-    # TODO: assert_equal dict get $consumer seen-time dict get $consumer active-time
+    group = reply["groups"][0]
+    consumer = group["consumers"][0]
+    assert consumer["seen-time"] == consumer["active-time"]
 
 
 """

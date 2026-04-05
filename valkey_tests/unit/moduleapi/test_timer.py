@@ -62,8 +62,8 @@ def test_rm_gettimer_basic_sanity(r: ValkeyTestClient) -> None:
     assert "" == r.run("test.gettimer", 0)
     id = r.run("test.createtimer", 10000, "timer-incr-key")
     info = r.run("test.gettimer", id)
-    # TODO: assert_equal "timer-incr-key" lindex $info 0
-    # TODO: set remaining lindex $info 1
+    assert "timer-incr-key" == info[0]
+    remaining = info[1]
     # TODO: assert {$remaining < 10000 && $remaining > 1}
     assert 1 == r.run("test.stoptimer", id)
 

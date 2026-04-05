@@ -45,7 +45,6 @@ proc generate_cmd_on_list_key {key} {
 pytestmark = [pytest.mark.list_ziplist]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_explicit_regression_for_a_list_bug(r: ValkeyTestClient) -> None:
     """
     test {Explicit regression for a list bug} {
@@ -59,10 +58,10 @@ def test_explicit_regression_for_a_list_bug(r: ValkeyTestClient) -> None:
     """
     mylist = "49376042582 {BkG2o\\pIC]4YYJa9cJ4GWZalG[4tin;1D2whSkCOW`mX;SFXGyS8sedcff3fQI^tgPCC@^Nu1J6o]meM@Lko]t_jRyo<xSJ1oObDYd`ppZuW6P@fS278YaOx=s6lvdFlMbP0[SbkI^Kr\\HBXtuFaA^mDx:yzS4a[skiiPWhT<nNfAf=aQVfclcuwDrfe;iVuKdNvB9kbfq>tK?tH[\\EvWqS]b`o2OCtjg:?nUTwdjpcUm]y:pg5q24q7LlCOwQE^}"
     r.run("del", "l")
-    # TODO: r rpush l lindex $mylist 0
-    # TODO: r rpush l lindex $mylist 1
-    # TODO: assert_equal r lindex l 0 lindex $mylist 0
-    # TODO: assert_equal r lindex l 1 lindex $mylist 1
+    r.run("rpush", "l", mylist[0])
+    r.run("rpush", "l", mylist[1])
+    assert r.run("lindex", "l", 0) == mylist[0]
+    assert r.run("lindex", "l", 1) == mylist[1]
 
 
 @pytest.mark.xfail(reason="not implemented")

@@ -1,4 +1,4 @@
-# ruff: noqa: F841
+# ruff: noqa: PLR2004, F841
 
 from fnmatch import fnmatch
 
@@ -18,7 +18,6 @@ r module load testmodule
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_key_specs_no_spec_only_legacy_triple(r: ValkeyTestClient) -> None:
     """
     test "Module key specs: No spec, only legacy triple" {
@@ -35,18 +34,20 @@ def test_module_key_specs_no_spec_only_legacy_triple(r: ValkeyTestClient) -> Non
         assert_equal [r command getkeys kspec.none key1 val1 key2 val2] {key1 key2}
     }
     """
-    # TODO: set reply lindex [r command info kspec.none] 0
-    # TODO: assert_equal lindex $reply 2 {module}
-    # TODO: assert_equal lindex $reply 3 1
-    # TODO: assert_equal lindex $reply 4 -1
-    # TODO: assert_equal lindex $reply 5 2
-    # TODO: set keyspecs lindex $reply 8
-    # TODO: assert_equal llength $keyspecs 1
-    # TODO: assert_equal lindex $keyspecs 0 {flags {RW access update} begin_search {type index spec {index 1}} find_keys {type range spec {lastkey -1 keystep 2 limit 0}}}
+    reply = r.run("command", "info", "kspec.none")[0]
+    assert reply[2] == "module"
+    assert reply[3] == 1
+    assert reply[4] == -1
+    assert reply[5] == 2
+    keyspecs = reply[8]
+    assert len(keyspecs) == 1
+    assert (
+        keyspecs[0]
+        == "flags {RW access update} begin_search {type index spec {index 1}} find_keys {type range spec {lastkey -1 keystep 2 limit 0}}"
+    )
     assert r.run("command", "getkeys", "kspec.none", "key1", "val1", "key2", "val2") == "key1 key2"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_key_specs_no_spec_only_legacy_triple_with_getkeys_api(r: ValkeyTestClient) -> None:
     """
     test "Module key specs: No spec, only legacy triple with getkeys-api" {
@@ -63,18 +64,20 @@ def test_module_key_specs_no_spec_only_legacy_triple_with_getkeys_api(r: ValkeyT
         assert_equal [r command getkeys kspec.nonewithgetkeys key1 val1 key2 val2] {key1 key2}
     }
     """
-    # TODO: set reply lindex [r command info kspec.nonewithgetkeys] 0
-    # TODO: assert_equal lindex $reply 2 {module movablekeys}
-    # TODO: assert_equal lindex $reply 3 1
-    # TODO: assert_equal lindex $reply 4 -1
-    # TODO: assert_equal lindex $reply 5 2
-    # TODO: set keyspecs lindex $reply 8
-    # TODO: assert_equal llength $keyspecs 1
-    # TODO: assert_equal lindex $keyspecs 0 {flags {RW access update variable_flags} begin_search {type index spec {index 1}} find_keys {type range spec {lastkey -1 keystep 2 limit 0}}}
+    reply = r.run("command", "info", "kspec.nonewithgetkeys")[0]
+    assert reply[2] == "module movablekeys"
+    assert reply[3] == 1
+    assert reply[4] == -1
+    assert reply[5] == 2
+    keyspecs = reply[8]
+    assert len(keyspecs) == 1
+    assert (
+        keyspecs[0]
+        == "flags {RW access update variable_flags} begin_search {type index spec {index 1}} find_keys {type range spec {lastkey -1 keystep 2 limit 0}}"
+    )
     assert r.run("command", "getkeys", "kspec.nonewithgetkeys", "key1", "val1", "key2", "val2") == "key1 key2"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_key_specs_two_ranges(r: ValkeyTestClient) -> None:
     """
     test "Module key specs: Two ranges" {
@@ -91,18 +94,23 @@ def test_module_key_specs_two_ranges(r: ValkeyTestClient) -> None:
         assert_equal [r command getkeys kspec.tworanges foo bar baz quux] {foo bar}
     }
     """
-    # TODO: set reply lindex [r command info kspec.tworanges] 0
-    # TODO: assert_equal lindex $reply 2 {module}
-    # TODO: assert_equal lindex $reply 3 1
-    # TODO: assert_equal lindex $reply 4 2
-    # TODO: assert_equal lindex $reply 5 1
-    # TODO: set keyspecs lindex $reply 8
-    # TODO: assert_equal lindex $keyspecs 0 {flags {RO access} begin_search {type index spec {index 1}} find_keys {type range spec {lastkey 0 keystep 1 limit 0}}}
-    # TODO: assert_equal lindex $keyspecs 1 {flags {RW update} begin_search {type index spec {index 2}} find_keys {type range spec {lastkey 0 keystep 1 limit 0}}}
+    reply = r.run("command", "info", "kspec.tworanges")[0]
+    assert reply[2] == "module"
+    assert reply[3] == 1
+    assert reply[4] == 2
+    assert reply[5] == 1
+    keyspecs = reply[8]
+    assert (
+        keyspecs[0]
+        == "flags {RO access} begin_search {type index spec {index 1}} find_keys {type range spec {lastkey 0 keystep 1 limit 0}}"
+    )
+    assert (
+        keyspecs[1]
+        == "flags {RW update} begin_search {type index spec {index 2}} find_keys {type range spec {lastkey 0 keystep 1 limit 0}}"
+    )
     assert r.run("command", "getkeys", "kspec.tworanges", "foo", "bar", "baz", "quux") == "foo bar"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_key_specs_two_ranges_with_gap(r: ValkeyTestClient) -> None:
     """
     test "Module key specs: Two ranges with gap" {
@@ -119,18 +127,23 @@ def test_module_key_specs_two_ranges_with_gap(r: ValkeyTestClient) -> None:
         assert_equal [r command getkeys kspec.tworangeswithgap foo bar baz quux] {foo baz}
     }
     """
-    # TODO: set reply lindex [r command info kspec.tworangeswithgap] 0
-    # TODO: assert_equal lindex $reply 2 {module movablekeys}
-    # TODO: assert_equal lindex $reply 3 1
-    # TODO: assert_equal lindex $reply 4 1
-    # TODO: assert_equal lindex $reply 5 1
-    # TODO: set keyspecs lindex $reply 8
-    # TODO: assert_equal lindex $keyspecs 0 {flags {RO access} begin_search {type index spec {index 1}} find_keys {type range spec {lastkey 0 keystep 1 limit 0}}}
-    # TODO: assert_equal lindex $keyspecs 1 {flags {RW update} begin_search {type index spec {index 3}} find_keys {type range spec {lastkey 0 keystep 1 limit 0}}}
+    reply = r.run("command", "info", "kspec.tworangeswithgap")[0]
+    assert reply[2] == "module movablekeys"
+    assert reply[3] == 1
+    assert reply[4] == 1
+    assert reply[5] == 1
+    keyspecs = reply[8]
+    assert (
+        keyspecs[0]
+        == "flags {RO access} begin_search {type index spec {index 1}} find_keys {type range spec {lastkey 0 keystep 1 limit 0}}"
+    )
+    assert (
+        keyspecs[1]
+        == "flags {RW update} begin_search {type index spec {index 3}} find_keys {type range spec {lastkey 0 keystep 1 limit 0}}"
+    )
     assert r.run("command", "getkeys", "kspec.tworangeswithgap", "foo", "bar", "baz", "quux") == "foo baz"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_key_specs_keyword_only_spec_clears_the_legacy_triple(r: ValkeyTestClient) -> None:
     """
     test "Module key specs: Keyword-only spec clears the legacy triple" {
@@ -146,17 +159,19 @@ def test_module_key_specs_keyword_only_spec_clears_the_legacy_triple(r: ValkeyTe
         assert_equal [r command getkeys kspec.keyword foo KEYS bar baz] {bar baz}
     }
     """
-    # TODO: set reply lindex [r command info kspec.keyword] 0
-    # TODO: assert_equal lindex $reply 2 {module movablekeys}
-    # TODO: assert_equal lindex $reply 3 0
-    # TODO: assert_equal lindex $reply 4 0
-    # TODO: assert_equal lindex $reply 5 0
-    # TODO: set keyspecs lindex $reply 8
-    # TODO: assert_equal lindex $keyspecs 0 {flags {RO access} begin_search {type keyword spec {keyword KEYS startfrom 1}} find_keys {type range spec {lastkey -1 keystep 1 limit 0}}}
+    reply = r.run("command", "info", "kspec.keyword")[0]
+    assert reply[2] == "module movablekeys"
+    assert reply[3] == 0
+    assert reply[4] == 0
+    assert reply[5] == 0
+    keyspecs = reply[8]
+    assert (
+        keyspecs[0]
+        == "flags {RO access} begin_search {type keyword spec {keyword KEYS startfrom 1}} find_keys {type range spec {lastkey -1 keystep 1 limit 0}}"
+    )
     assert r.run("command", "getkeys", "kspec.keyword", "foo", "KEYS", "bar", "baz") == "bar baz"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_key_specs_complex_specs_case_1(r: ValkeyTestClient) -> None:
     """
     test "Module key specs: Complex specs, case 1" {
@@ -174,22 +189,30 @@ def test_module_key_specs_complex_specs_case_1(r: ValkeyTestClient) -> None:
         assert_equal [r command getkeys kspec.complex1 foo dummy KEYS 1 bar baz STORE quux] {foo quux bar}
     }
     """
-    # TODO: set reply lindex [r command info kspec.complex1] 0
-    # TODO: assert_equal lindex $reply 2 {module movablekeys}
-    # TODO: assert_equal lindex $reply 3 1
-    # TODO: assert_equal lindex $reply 4 1
-    # TODO: assert_equal lindex $reply 5 1
-    # TODO: set keyspecs lindex $reply 8
-    # TODO: assert_equal lindex $keyspecs 0 {flags RO begin_search {type index spec {index 1}} find_keys {type range spec {lastkey 0 keystep 1 limit 0}}}
-    # TODO: assert_equal lindex $keyspecs 1 {flags {RW update} begin_search {type keyword spec {keyword STORE startfrom 2}} find_keys {type range spec {lastkey 0 keystep 1 limit 0}}}
-    # TODO: assert_equal lindex $keyspecs 2 {flags {RO access} begin_search {type keyword spec {keyword KEYS startfrom 2}} find_keys {type keynum spec {keynumidx 0 firstkey 1 keystep 1}}}
+    reply = r.run("command", "info", "kspec.complex1")[0]
+    assert reply[2] == "module movablekeys"
+    assert reply[3] == 1
+    assert reply[4] == 1
+    assert reply[5] == 1
+    keyspecs = reply[8]
+    assert (
+        keyspecs[0]
+        == "flags RO begin_search {type index spec {index 1}} find_keys {type range spec {lastkey 0 keystep 1 limit 0}}"
+    )
+    assert (
+        keyspecs[1]
+        == "flags {RW update} begin_search {type keyword spec {keyword STORE startfrom 2}} find_keys {type range spec {lastkey 0 keystep 1 limit 0}}"
+    )
+    assert (
+        keyspecs[2]
+        == "flags {RO access} begin_search {type keyword spec {keyword KEYS startfrom 2}} find_keys {type keynum spec {keynumidx 0 firstkey 1 keystep 1}}"
+    )
     assert (
         r.run("command", "getkeys", "kspec.complex1", "foo", "dummy", "KEYS", 1, "bar", "baz", "STORE", "quux")
         == "foo quux bar"
     )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_key_specs_complex_specs_case_2(r: ValkeyTestClient) -> None:
     """
     test "Module key specs: Complex specs, case 2" {
@@ -209,17 +232,32 @@ def test_module_key_specs_complex_specs_case_2(r: ValkeyTestClient) -> None:
         assert_equal [r command getkeys kspec.complex2 foo bar 2 baz quux banana STORE dst dummy MOREKEYS hey ho] {dst foo bar baz quux hey ho}
     }
     """
-    # TODO: set reply lindex [r command info kspec.complex2] 0
-    # TODO: assert_equal lindex $reply 2 {module movablekeys}
-    # TODO: assert_equal lindex $reply 3 1
-    # TODO: assert_equal lindex $reply 4 2
-    # TODO: assert_equal lindex $reply 5 1
-    # TODO: set keyspecs lindex $reply 8
-    # TODO: assert_equal lindex $keyspecs 0 {flags {RW update} begin_search {type keyword spec {keyword STORE startfrom 5}} find_keys {type range spec {lastkey 0 keystep 1 limit 0}}}
-    # TODO: assert_equal lindex $keyspecs 1 {flags {RO access} begin_search {type index spec {index 1}} find_keys {type range spec {lastkey 0 keystep 1 limit 0}}}
-    # TODO: assert_equal lindex $keyspecs 2 {flags {RO access} begin_search {type index spec {index 2}} find_keys {type range spec {lastkey 0 keystep 1 limit 0}}}
-    # TODO: assert_equal lindex $keyspecs 3 {flags {RW update} begin_search {type index spec {index 3}} find_keys {type keynum spec {keynumidx 0 firstkey 1 keystep 1}}}
-    # TODO: assert_equal lindex $keyspecs 4 {flags {RW update} begin_search {type keyword spec {keyword MOREKEYS startfrom 5}} find_keys {type range spec {lastkey -1 keystep 1 limit 0}}}
+    reply = r.run("command", "info", "kspec.complex2")[0]
+    assert reply[2] == "module movablekeys"
+    assert reply[3] == 1
+    assert reply[4] == 2
+    assert reply[5] == 1
+    keyspecs = reply[8]
+    assert (
+        keyspecs[0]
+        == "flags {RW update} begin_search {type keyword spec {keyword STORE startfrom 5}} find_keys {type range spec {lastkey 0 keystep 1 limit 0}}"
+    )
+    assert (
+        keyspecs[1]
+        == "flags {RO access} begin_search {type index spec {index 1}} find_keys {type range spec {lastkey 0 keystep 1 limit 0}}"
+    )
+    assert (
+        keyspecs[2]
+        == "flags {RO access} begin_search {type index spec {index 2}} find_keys {type range spec {lastkey 0 keystep 1 limit 0}}"
+    )
+    assert (
+        keyspecs[3]
+        == "flags {RW update} begin_search {type index spec {index 3}} find_keys {type keynum spec {keynumidx 0 firstkey 1 keystep 1}}"
+    )
+    assert (
+        keyspecs[4]
+        == "flags {RW update} begin_search {type keyword spec {keyword MOREKEYS startfrom 5}} find_keys {type range spec {lastkey -1 keystep 1 limit 0}}"
+    )
     assert (
         r.run(
             "command",

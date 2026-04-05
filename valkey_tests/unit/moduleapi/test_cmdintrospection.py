@@ -1,3 +1,5 @@
+# ruff: noqa: F841
+
 import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
@@ -36,8 +38,8 @@ def test_module_command_introspection_via_command_info(r: ValkeyTestClient) -> N
         }
     }
     """
-    # TODO: set redis_reply lindex [r command info xadd] 0
-    # TODO: set module_reply lindex [r command info cmdintrospection.xadd] 0
+    redis_reply = r.run("command", "info", "xadd")[0]
+    module_reply = r.run("command", "info", "cmdintrospection.xadd")[0]
     # TODO: for {set i 1} {$i < [llength $redis_reply]} {incr i} {
     #       if {$i == 2} {
     #           # Remove the "module" flag

@@ -632,7 +632,6 @@ def test_georadius_with_count_desc(r: ValkeyTestClient) -> None:
     assert r.run("georadius", "nyc", -73.9798091, 40.7598464, 10, "km", "COUNT", 2, "DESC") == "{wtc one} q4"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_georadius_huge_issue_2767(r: ValkeyTestClient) -> None:
     """
     test {GEORADIUS HUGE, issue #2767} {
@@ -641,8 +640,7 @@ def test_georadius_huge_issue_2767(r: ValkeyTestClient) -> None:
     } {1}
     """
     r.run("geoadd", "users", -47.271613776683807, -54.534504198047678, "user_000000")
-    # TODO: llength r GEORADIUS users 0 0 50000 km WITHCOORD
-    assert False
+    assert len(r.run("GEORADIUS", "users", 0, 0, 50000, "km", "WITHCOORD")) == "1"
 
 
 def test_georadiusbymember_simple_sorted(r: ValkeyTestClient) -> None:
@@ -875,7 +873,6 @@ def test_georadiusbymember_withdist_sorted(r: ValkeyTestClient) -> None:
     )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_geohash_is_able_to_return_geohash_strings(r: ValkeyTestClient) -> None:
     """
     test {GEOHASH is able to return geohash strings} {
@@ -887,8 +884,7 @@ def test_geohash_is_able_to_return_geohash_strings(r: ValkeyTestClient) -> None:
     """
     r.run("del", "points")
     r.run("geoadd", "points", -5.6, 42.6, "test")
-    # TODO: lindex r geohash points test 0
-    assert False
+    assert r.run("geohash", "points", "test")[0] == "ezs42e44yx0"
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -931,7 +927,6 @@ def test_geopos_simple(r: ValkeyTestClient) -> None:
     # TODO: assert {abs($y2 - 40) < 0.001}
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_geopos_missing_element(r: ValkeyTestClient) -> None:
     """
     test {GEOPOS missing element} {
@@ -942,8 +937,7 @@ def test_geopos_missing_element(r: ValkeyTestClient) -> None:
     """
     r.run("del", "points")
     r.run("geoadd", "points", 10, 20, "a", 30, 40, "b")
-    # TODO: lindex r geopos points a x b 1
-    assert False
+    assert r.run("geopos", "points", "a", "x", "b")[1] == ""
 
 
 @pytest.mark.xfail(reason="not implemented")

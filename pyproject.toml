@@ -74,3 +74,4 @@ lint.ignore = [
 [tool.ruff.lint.per-file-ignores]
 "**/{tests}/*" = ["ANN", "PLR2004", "PLR0913", "E501"]
 "valkey_tests/**" = ["E501"]
+"valkey_tests_generator/**" = ["PLR2004"]

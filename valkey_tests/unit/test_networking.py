@@ -159,11 +159,11 @@ def test_default_bind_address_configuration_handling(r: ValkeyTestClient) -> Non
         r ping
     } {PONG}
     """
-    # TODO: assert_equal "* -::*" lindex [r CONFIG GET bind] 1
+    assert "* -::*" == r.run("CONFIG", "GET", "bind")[1]
     r.run("CONFIG", "REWRITE")
     # TODO: assert_equal 0 count_message_lines [srv 0 config_file] bind
     r.run("CONFIG", "SET", "bind", "")
-    # TODO: assert_equal "" lindex [r CONFIG GET bind] 1
+    assert "" == r.run("CONFIG", "GET", "bind")[1]
     # TODO: catch {valkey_client} err
     # TODO: assert_match {*connection refused*} err
     r.run("CONFIG", "REWRITE")

@@ -84,7 +84,6 @@ def test_slowlog_max_entries_is_correctly_handled(r: ValkeyTestClient) -> None:
     assert r.run("slowlog", "len") == "10"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_slowlog_get_optional_argument_to_limit_output_len_works(r: ValkeyTestClient) -> None:
     """
     test {SLOWLOG - GET optional argument to limit output len works} {
@@ -93,9 +92,9 @@ def test_slowlog_get_optional_argument_to_limit_output_len_works(r: ValkeyTestCl
         assert_equal 10 [llength [r slowlog get 20]]
     }
     """
-    # TODO: assert_equal 5 llength [r slowlog get 5]
-    # TODO: assert_equal 10 llength [r slowlog get -1]
-    # TODO: assert_equal 10 llength [r slowlog get 20]
+    assert 5 == len(r.run("slowlog", "get", 5))
+    assert 10 == len(r.run("slowlog", "get", -1))
+    assert 10 == len(r.run("slowlog", "get", 20))
 
 
 def test_slowlog_reset_subcommand_works(r: ValkeyTestClient) -> None:
@@ -129,13 +128,13 @@ def test_slowlog_logged_entry_sanity_check(r: ValkeyTestClient) -> None:
     """
     r.run("client", "setname", "foobar")
     r.run("debug", "sleep", 0.2)
-    # TODO: set e lindex [r slowlog get] 0
-    # TODO: assert_equal llength $e 6
+    e = r.run("slowlog", "get")[0]
+    assert len(e) == 6
     # TODO: if {!$::external} {
     #       assert_equal [lindex $e 0] 106
     #   }
     # TODO: assert_equal expr {[lindex $e 2] > 100000} 1
-    # TODO: assert_equal lindex $e 3 {debug sleep 0.2}
+    assert e[3] == "debug sleep 0.2"
     # TODO: assert_equal {foobar} lindex $e 5
     assert False
 
@@ -293,18 +292,18 @@ def test_slowlog_rewritten_commands_are_logged_as_their_original_command(r: Valk
     r.run("sadd", "set", "a", "b", "c", "d", "e")
     r.run("slowlog", "reset")
     r.run("spop", "set", 10)
-    # TODO: assert_equal {spop set 10} lindex [lindex [r slowlog get] 0] 3
+    assert "spop set 10" == r.run("slowlog", "get")[0][3]
     r.run("slowlog", "reset")
     r.run("geoadd", "cool-cities", -122.33207, 47.60621, "Seattle")
-    # TODO: assert_equal {geoadd cool-cities -122.33207 47.60621 Seattle} lindex [lindex [r slowlog get] 0] 3
+    assert "geoadd cool-cities -122.33207 47.60621 Seattle" == r.run("slowlog", "get")[0][3]
     r.run("set", "A", 5)
     r.run("slowlog", "reset")
     r.run("getset", "a", 5)
-    # TODO: assert_equal {getset a 5} lindex [lindex [r slowlog get] 0] 3
+    assert "getset a 5" == r.run("slowlog", "get")[0][3]
     r.run("set", "A", 0)
     r.run("slowlog", "reset")
     r.run("INCRBYFLOAT", "A", 1.0)
-    # TODO: assert_equal {INCRBYFLOAT A 1.0} lindex [lindex [r slowlog get] 0] 3
+    assert "INCRBYFLOAT A 1.0" == r.run("slowlog", "get")[0][3]
     # TODO: set rd valkey_deferring_client
     # TODO: $rd blpop l 0
     # TODO: wait_for_blocked_clients_count 1 50 100
@@ -314,10 +313,9 @@ def test_slowlog_rewritten_commands_are_logged_as_their_original_command(r: Valk
     r.run("exec")
     # TODO: $rd read
     # TODO: $rd close
-    # TODO: assert_equal {blpop l 0} lindex [lindex [r slowlog get] 0] 3
+    assert "blpop l 0" == r.run("slowlog", "get")[0][3]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_slowlog_commands_with_too_many_arguments_are_trimmed(r: ValkeyTestClient) -> None:
     """
     test {SLOWLOG - commands with too many arguments are trimmed} {
@@ -365,9 +363,11 @@ def test_slowlog_commands_with_too_many_arguments_are_trimmed(r: ValkeyTestClien
         32,
         33,
     )
-    # TODO: set e lindex [r slowlog get] end-1
-    # TODO: lindex e 3
-    assert False
+    e = r.run("slowlog", "get")["end-1"]
+    assert (
+        e[3]
+        == "sadd set 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 {... (2 more arguments)}"
+    )
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -386,9 +386,11 @@ def test_slowlog_too_long_arguments_are_trimmed(r: ValkeyTestClient) -> None:
     r.run("slowlog", "reset")
     # TODO: set arg string repeat A 129
     # TODO: r sadd set foo arg
-    # TODO: set e lindex [r slowlog get] end-1
-    # TODO: lindex e 3
-    assert False
+    e = r.run("slowlog", "get")["end-1"]
+    assert (
+        e[3]
+        == "sadd set foo {AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA... (1 more bytes)}"
+    )
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -413,7 +415,7 @@ def test_slowlog_exec_is_not_logged_just_executed_commands(r: ValkeyTestClient) 
     r.run("debug", "sleep", 0.2)
     r.run("exec")
     assert r.run("slowlog", "len") == 1
-    # TODO: set e lindex [r slowlog get] 0
+    e = r.run("slowlog", "get")[0]
     # TODO: assert_equal lindex $e 3 {debug sleep 0.2}
     assert False
 
@@ -434,7 +436,7 @@ def test_slowlog_can_clean_older_entries(r: ValkeyTestClient) -> None:
     r.run("config", "set", "slowlog-max-len", 1)
     r.run("debug", "sleep", 0.2)
     # TODO: assert {[llength [r slowlog get]] == 1}
-    # TODO: set e lindex [r slowlog get] 0
+    e = r.run("slowlog", "get")[0]
     # TODO: assert_equal {lastentry_client} lindex $e 5
     assert False
 
@@ -479,7 +481,6 @@ def test_slowlog_count_must_be_1(r: ValkeyTestClient) -> None:
         r.run("slowlog", "get", -222)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_slowlog_get_all_slow_logs(r: ValkeyTestClient) -> None:
     """
     test {SLOWLOG - get all slow logs} {
@@ -507,10 +508,10 @@ def test_slowlog_get_all_slow_logs(r: ValkeyTestClient) -> None:
     r.run("incr", "num")
     r.run("lpush", "list", "a")
     assert r.run("slowlog", "len") == 3
-    # TODO: assert_equal 0 llength [r slowlog get 0]
-    # TODO: assert_equal 1 llength [r slowlog get 1]
-    # TODO: assert_equal 3 llength [r slowlog get -1]
-    # TODO: assert_equal 3 llength [r slowlog get 3]
+    assert 0 == len(r.run("slowlog", "get", 0))
+    assert 1 == len(r.run("slowlog", "get", 1))
+    assert 3 == len(r.run("slowlog", "get", -1))
+    assert 3 == len(r.run("slowlog", "get", 3))
 
 
 @pytest.mark.xfail(reason="not implemented")

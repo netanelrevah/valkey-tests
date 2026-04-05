@@ -673,7 +673,6 @@ def test_pfcount_multiple_keys_merge_returns_cardinality_of_union_2(r: ValkeyTes
     # TODO: assert {$err < (double($card)/100)*5}
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_pfdebug_getreg_returns_the_hyperloglog_raw_registers(r: ValkeyTestClient) -> None:
     """
     test {PFDEBUG GETREG returns the HyperLogLog raw registers} {
@@ -684,8 +683,7 @@ def test_pfdebug_getreg_returns_the_hyperloglog_raw_registers(r: ValkeyTestClien
     """
     r.run("del", "hll")
     r.run("pfadd", "hll", 1, 2, 3)
-    # TODO: llength r pfdebug getreg hll
-    assert False
+    assert len(r.run("pfdebug", "getreg", "hll")) == "16384"
 
 
 @pytest.mark.xfail(reason="not implemented")

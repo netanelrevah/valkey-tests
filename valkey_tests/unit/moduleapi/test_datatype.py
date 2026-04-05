@@ -240,7 +240,7 @@ def test_scan_module_datatype(r: ValkeyTestClient) -> None:
     #       lappend keys {*}$k
     #       if {$cur == 0} break
     #   }
-    # TODO: assert_equal 1 llength $keys
+    assert 1 == len(keys)
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -277,7 +277,7 @@ def test_scan_module_datatype_with_case_sensitive(r: ValkeyTestClient) -> None:
     #       lappend keys {*}$k
     #       if {$cur == 0} break
     #   }
-    # TODO: assert_equal 1 llength $keys
+    assert 1 == len(keys)
 
 
 @pytest.mark.xfail(reason="not implemented")

@@ -315,7 +315,7 @@ def test_test_module_clientinfo_api(r: ValkeyTestClient) -> None:
     # TODO: assert { "readonly" ni $flags }
     r.run("multi")
     r.run("test.clientinfo")
-    # TODO: set info lindex [r exec] 0
+    info = r.run("exec")[0]
     # TODO: set flags parse_client_flags [dict get $info flags]
     # TODO: assert { "multi" in $flags }
     # TODO: assert { "authenticated" in $flags }

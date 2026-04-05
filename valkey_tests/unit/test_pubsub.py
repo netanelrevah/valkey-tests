@@ -904,7 +904,6 @@ def test_keyspace_notifications_evicted_events(r: ValkeyTestClient) -> None:
     assert r.run("config", "set", "maxmemory-policy", "noeviction") == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_keyspace_notifications_test_config_get_or_set_of_event_flags(r: ValkeyTestClient) -> None:
     """
     test "Keyspace notifications: test CONFIG GET/SET of event flags" {
@@ -919,13 +918,13 @@ def test_keyspace_notifications_test_config_get_or_set_of_event_flags(r: ValkeyT
     }
     """
     r.run("config", "set", "notify-keyspace-events", "gKE")
-    # TODO: assert_equal {gKE} lindex [r config get notify-keyspace-events] 1
+    assert "gKE" == r.run("config", "get", "notify-keyspace-events")[1]
     r.run("config", "set", "notify-keyspace-events", "$lshzxeKE")
-    # TODO: assert_equal {$lshzxeKE} lindex [r config get notify-keyspace-events] 1
+    assert "$lshzxeKE" == r.run("config", "get", "notify-keyspace-events")[1]
     r.run("config", "set", "notify-keyspace-events", "KA")
-    # TODO: assert_equal {AK} lindex [r config get notify-keyspace-events] 1
+    assert "AK" == r.run("config", "get", "notify-keyspace-events")[1]
     r.run("config", "set", "notify-keyspace-events", "EA")
-    # TODO: assert_equal {AE} lindex [r config get notify-keyspace-events] 1
+    assert "AE" == r.run("config", "get", "notify-keyspace-events")[1]
 
 
 @pytest.mark.xfail(reason="not implemented")

@@ -718,7 +718,7 @@ def test_copy_basic_usage_for_skiplist_sorted_set(r: ValkeyTestClient) -> None:
     }
     """
     r.run("del", "zset2{t}", "newzset2{t}")
-    # TODO: set original_max lindex [r config get zset-max-ziplist-entries] 1
+    original_max = r.run("config", "get", "zset-max-ziplist-entries")[1]
     r.run("config", "set", "zset-max-ziplist-entries", 0)
     # TODO: for {set j 0} {$j < 130} {incr j} {
     #       r zadd zset2{t} [randomInt 50] ele-[randomInt 10]
@@ -784,7 +784,7 @@ def test_copy_basic_usage_for_hashtable_hash(r: ValkeyTestClient) -> None:
     }
     """
     r.run("del", "hash2{t}", "newhash2{t}")
-    # TODO: set original_max lindex [r config get hash-max-ziplist-entries] 1
+    original_max = r.run("config", "get", "hash-max-ziplist-entries")[1]
     r.run("config", "set", "hash-max-ziplist-entries", 0)
     # TODO: for {set i 0} {$i < 64} {incr i} {
     #       r hset hash2{t} [randomValue] [randomValue]

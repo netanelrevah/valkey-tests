@@ -632,8 +632,8 @@ def test_memory_database_and_pubsub_overhead_and_rehashing_dict_count(r: ValkeyT
     r.run("info", "memory")
     r.run("memory", "stats")
     res = r.run("exec")
-    # TODO: set info_mem lindex $res end-1
-    # TODO: set mem_stats lindex $res end
+    info_mem = res["end-1"]
+    mem_stats = res["end"]
     # TODO: assert_range getInfoProperty $info_mem mem_overhead_db_hashtable_rehashing 1 64
     # TODO: assert_range dict get $mem_stats overhead.db.hashtable.lut 1 300
     # TODO: assert_range dict get $mem_stats overhead.db.hashtable.rehashing 1 64

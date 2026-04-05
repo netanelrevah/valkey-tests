@@ -1,5 +1,6 @@
 # ruff: noqa: F841, RUF043
 import time
+from fnmatch import fnmatch
 
 import pytest
 
@@ -1572,7 +1573,7 @@ def test_multi_propagation_of_script_load(r: ValkeyTestClient) -> None:
     r.run("script", "load", "redis.call('set', KEYS[1], 'foo')")
     r.run("set", "foo", "bar")
     res = r.run("exec")
-    # TODO: set sha lindex $res 0
+    sha = res[0]
     # TODO: assert_replication_stream repl {
     #       {select *}
     #       {set foo bar}
@@ -1690,7 +1691,7 @@ def test_multi_with_bgrewriteaof(r: ValkeyTestClient) -> None:
     r.run("set", "foo", "bar")
     r.run("BGREWRITEAOF")
     res = r.run("exec")
-    # TODO: assert_match "*rewriting scheduled*" lindex $res 1
+    assert fnmatch(str(res[1]), "*rewriting scheduled*")
     # TODO: wait_for_condition 50 100 {
     #       [s total_forks] > $forks
     #   } else {

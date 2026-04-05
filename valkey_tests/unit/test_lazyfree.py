@@ -1,5 +1,3 @@
-# ruff: noqa: F841
-
 import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
@@ -146,8 +144,8 @@ def test_lazy_free_a_stream_with_all_types_of_metadata(r: ValkeyTestClient) -> N
     #   }
     r.run("xgroup", "create", "stream", "mygroup", 0)
     records = r.run("xreadgroup", "GROUP", "mygroup", "Alice", "COUNT", 2, "STREAMS", "stream", ">")
-    # TODO: r xdel stream lindex [lindex [lindex [lindex $records 0] 1] 1] 0
-    # TODO: r xack stream mygroup lindex [lindex [lindex [lindex $records 0] 1] 0] 0
+    r.run("xdel", "stream", records[0][1][1][0])
+    r.run("xack", "stream", "mygroup", records[0][1][0][0])
     r.run("unlink", "stream")
     # TODO: wait_for_condition 50 100 {
     #       [s lazyfree_pending_objects] == 0

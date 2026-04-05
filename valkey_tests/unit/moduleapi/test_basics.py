@@ -1,5 +1,3 @@
-# ruff: noqa: F841
-
 from fnmatch import fnmatch
 
 import pytest
@@ -27,7 +25,6 @@ def test_test_module_api_basics(r: ValkeyTestClient) -> None:
     assert r.run("test.basics") == "ALL TESTS PASSED"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_rm_call_auto_mode(r: ValkeyTestClient) -> None:
     """
     test {test rm_call auto mode} {
@@ -45,14 +42,14 @@ def test_test_rm_call_auto_mode(r: ValkeyTestClient) -> None:
     """
     r.run("hello", 2)
     reply = r.run("test.rmcallautomode")
-    # TODO: assert_equal lindex $reply 0 f1
-    # TODO: assert_equal lindex $reply 1 v1
-    # TODO: assert_equal lindex $reply 2 f2
-    # TODO: assert_equal lindex $reply 3 v2
+    assert reply[0] == "f1"
+    assert reply[1] == "v1"
+    assert reply[2] == "f2"
+    assert reply[3] == "v2"
     r.run("hello", 3)
     reply = r.run("test.rmcallautomode")
-    # TODO: assert_equal dict get $reply f1 v1
-    # TODO: assert_equal dict get $reply f2 v2
+    assert reply["f1"] == "v1"
+    assert reply["f2"] == "v2"
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -97,7 +94,6 @@ def test_busy_module_name(r: ValkeyTestClient) -> None:
     # TODO: verify_log_message 0 "*Module name is busy*" 0
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_latency(r: ValkeyTestClient) -> None:
     """
     test "test latency" {
@@ -125,7 +121,7 @@ def test_test_latency(r: ValkeyTestClient) -> None:
     assert "" == r.run("latency", "history", "test")
     r.run("config", "set", "latency-monitor-threshold", 1)
     r.run("test.latency", 0)
-    # TODO: assert_equal 0 llength [r latency history test]
+    assert 0 == len(r.run("latency", "history", "test"))
     r.run("test.latency", 1)
     assert fnmatch(str(r.run("latency", "latest")), "*test * 1 1*")
     r.run("test.latency", 2)

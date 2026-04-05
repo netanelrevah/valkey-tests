@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841
+# ruff: noqa: PLR2004
 
 import pytest
 
@@ -72,7 +72,6 @@ def test_datatype2_test_del_and_unlink(r: ValkeyTestClient) -> None:
     assert 1 == r.run("del", "k2")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_datatype2_test_read_and_write(r: ValkeyTestClient) -> None:
     """
     test "datatype2: test read and write" {
@@ -88,7 +87,7 @@ def test_datatype2_test_read_and_write(r: ValkeyTestClient) -> None:
     r.run("flushall")
     assert 3 == r.run("mem.alloc", "k1", 3)
     data = "datatype2"
-    # TODO: assert_equal string length $data r mem.write k1 0 $data
+    assert len(data) == r.run("mem.write", "k1", 0, data)
     assert data == r.run("mem.read", "k1", 0)
 
 
@@ -133,17 +132,17 @@ def test_datatype2_test_rdb_save_and_load(r: ValkeyTestClient) -> None:
     r.run("select", 0)
     data = "k1"
     assert 3 == r.run("mem.alloc", "k1", 3)
-    # TODO: assert_equal string length $data r mem.write k1 1 $data
+    assert len(data) == r.run("mem.write", "k1", 1, data)
     data = "k2"
     assert 2 == r.run("mem.alloc", "k2", 2)
-    # TODO: assert_equal string length $data r mem.write k2 0 $data
+    assert len(data) == r.run("mem.write", "k2", 0, data)
     r.run("select", 1)
     data = "k3"
     assert 3 == r.run("mem.alloc", "k3", 3)
-    # TODO: assert_equal string length $data r mem.write k3 1 $data
+    assert len(data) == r.run("mem.write", "k3", 1, data)
     data = "k4"
     assert 2 == r.run("mem.alloc", "k4", 2)
-    # TODO: assert_equal string length $data r mem.write k4 0 $data
+    assert len(data) == r.run("mem.write", "k4", 0, data)
     r.run("bgsave")
     # TODO: waitForBgsave r
     r.run("debug", "reload")
@@ -196,17 +195,17 @@ def test_datatype2_test_aof_rewrite(r: ValkeyTestClient) -> None:
     r.run("select", 0)
     data = "k1"
     assert 3 == r.run("mem.alloc", "k1", 3)
-    # TODO: assert_equal string length $data r mem.write k1 1 $data
+    assert len(data) == r.run("mem.write", "k1", 1, data)
     data = "k2"
     assert 2 == r.run("mem.alloc", "k2", 2)
-    # TODO: assert_equal string length $data r mem.write k2 0 $data
+    assert len(data) == r.run("mem.write", "k2", 0, data)
     r.run("select", 1)
     data = "k3"
     assert 3 == r.run("mem.alloc", "k3", 3)
-    # TODO: assert_equal string length $data r mem.write k3 1 $data
+    assert len(data) == r.run("mem.write", "k3", 1, data)
     data = "k4"
     assert 2 == r.run("mem.alloc", "k4", 2)
-    # TODO: assert_equal string length $data r mem.write k4 0 $data
+    assert len(data) == r.run("mem.write", "k4", 0, data)
     r.run("bgrewriteaof")
     # TODO: waitForBgrewriteaof r
     r.run("debug", "loadaof")
@@ -218,7 +217,6 @@ def test_datatype2_test_aof_rewrite(r: ValkeyTestClient) -> None:
     assert "k4" == r.run("mem.read", "k4", 0)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_datatype2_test_copy(r: ValkeyTestClient) -> None:
     """
     test "datatype2: test copy" {
@@ -263,19 +261,19 @@ def test_datatype2_test_copy(r: ValkeyTestClient) -> None:
     r.run("select", 0)
     data = "k1"
     assert 3 == r.run("mem.alloc", "k1", 3)
-    # TODO: assert_equal string length $data r mem.write k1 1 $data
+    assert len(data) == r.run("mem.write", "k1", 1, data)
     assert data == r.run("mem.read", "k1", 1)
     data = "k2"
     assert 2 == r.run("mem.alloc", "k2", 2)
-    # TODO: assert_equal string length $data r mem.write k2 0 $data
+    assert len(data) == r.run("mem.write", "k2", 0, data)
     assert data == r.run("mem.read", "k2", 0)
     r.run("select", 1)
     data = "k3"
     assert 3 == r.run("mem.alloc", "k3", 3)
-    # TODO: assert_equal string length $data r mem.write k3 1 $data
+    assert len(data) == r.run("mem.write", "k3", 1, data)
     data = "k4"
     assert 2 == r.run("mem.alloc", "k4", 2)
-    # TODO: assert_equal string length $data r mem.write k4 0 $data
+    assert len(data) == r.run("mem.write", "k4", 0, data)
     assert "total 5 used 2" == r.run("mem.usage", 0)
     assert "total 5 used 2" == r.run("mem.usage", 1)
     r.run("select", 0)
@@ -289,7 +287,6 @@ def test_datatype2_test_copy(r: ValkeyTestClient) -> None:
     assert "total 7 used 3" == r.run("mem.usage", 1)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_datatype2_test_swapdb(r: ValkeyTestClient) -> None:
     """
     test "datatype2: test swapdb" {
@@ -327,19 +324,19 @@ def test_datatype2_test_swapdb(r: ValkeyTestClient) -> None:
     r.run("select", 0)
     data = "k1"
     assert 5 == r.run("mem.alloc", "k1", 5)
-    # TODO: assert_equal string length $data r mem.write k1 1 $data
+    assert len(data) == r.run("mem.write", "k1", 1, data)
     assert data == r.run("mem.read", "k1", 1)
     data = "k2"
     assert 4 == r.run("mem.alloc", "k2", 4)
-    # TODO: assert_equal string length $data r mem.write k2 0 $data
+    assert len(data) == r.run("mem.write", "k2", 0, data)
     assert data == r.run("mem.read", "k2", 0)
     r.run("select", 1)
     data = "k1"
     assert 3 == r.run("mem.alloc", "k3", 3)
-    # TODO: assert_equal string length $data r mem.write k3 1 $data
+    assert len(data) == r.run("mem.write", "k3", 1, data)
     data = "k2"
     assert 2 == r.run("mem.alloc", "k4", 2)
-    # TODO: assert_equal string length $data r mem.write k4 0 $data
+    assert len(data) == r.run("mem.write", "k4", 0, data)
     assert "total 9 used 2" == r.run("mem.usage", 0)
     assert "total 5 used 2" == r.run("mem.usage", 1)
     assert "OK" == r.run("swapdb", 0, 1)
@@ -388,20 +385,20 @@ def test_datatype2_test_digest(r: ValkeyTestClient) -> None:
     r.run("select", 0)
     data = "k1"
     assert 3 == r.run("mem.alloc", "k1", 3)
-    # TODO: assert_equal string length $data r mem.write k1 1 $data
+    assert len(data) == r.run("mem.write", "k1", 1, data)
     assert data == r.run("mem.read", "k1", 1)
     data = "k2"
     assert 2 == r.run("mem.alloc", "k2", 2)
-    # TODO: assert_equal string length $data r mem.write k2 0 $data
+    assert len(data) == r.run("mem.write", "k2", 0, data)
     assert data == r.run("mem.read", "k2", 0)
     r.run("select", 1)
     data = "k1"
     assert 3 == r.run("mem.alloc", "k1", 3)
-    # TODO: assert_equal string length $data r mem.write k1 1 $data
+    assert len(data) == r.run("mem.write", "k1", 1, data)
     assert data == r.run("mem.read", "k1", 1)
     data = "k2"
     assert 2 == r.run("mem.alloc", "k2", 2)
-    # TODO: assert_equal string length $data r mem.write k2 0 $data
+    assert len(data) == r.run("mem.write", "k2", 0, data)
     assert data == r.run("mem.read", "k2", 0)
     r.run("select", 0)
     # TODO: set digest0 debug_digest
@@ -432,10 +429,10 @@ def test_datatype2_test_memusage(r: ValkeyTestClient) -> None:
     r.run("flushall")
     data = "k1"
     assert 3 == r.run("mem.alloc", "k1", 3)
-    # TODO: assert_equal string length $data r mem.write k1 1 $data
+    assert len(data) == r.run("mem.write", "k1", 1, data)
     assert data == r.run("mem.read", "k1", 1)
     data = "k2"
     assert 3 == r.run("mem.alloc", "k2", 3)
-    # TODO: assert_equal string length $data r mem.write k2 0 $data
+    assert len(data) == r.run("mem.write", "k2", 0, data)
     assert data == r.run("mem.read", "k2", 0)
     # TODO: assert_equal memory_usage k1 memory_usage k2

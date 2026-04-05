@@ -15,6 +15,14 @@ uv run ruff check .       # Lint
 uv run mypy valkeytests/  # Type check
 ```
 
+To regenerate test files and check translation stats, use the PowerShell script:
+
+```powershell
+pwsh scripts/generate.ps1 --valkey-directory "C:\data\gitrepositories\github.com\valkey-io\valkey" --skip-errors --stats
+```
+
+
+
 ## Workflow
 
 **Always run pre-commit before committing and fix all failures before proceeding:**
@@ -49,12 +57,10 @@ Python emission lives only in `valkeytests/`; pytcl is extended only to add rich
 
 ### How to continue in a new session
 
-1. Run `uv run python -m valkeytests.create_test_files generate $VALKEY_DIRECTORY --stats` to see coverage
+1. Run `pwsh scripts/generate.ps1 --valkey-directory "C:\data\gitrepositories\github.com\valkey-io\valkey" --skip-errors --stats` to see coverage
 2. Check `git log` on both repos to see what was last added
 3. Pick the next phase item or the top untranslated command from `--stats`
 4. Follow the iterative loop: add typed node to pytcl → add emission rule → add test → re-run stats
-
-`VALKEY_DIRECTORY` = `C:\data\gitrepositories\github.com\valkey-io\valkey` on this machine.
 
 ### Architecture
 

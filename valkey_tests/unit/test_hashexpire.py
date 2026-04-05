@@ -2709,8 +2709,8 @@ def test_hpexpiretime_check_with_multiple_fields(r: ValkeyTestClient) -> None:
     result = r.run("HPEXPIRETIME", "myhash", "FIELDS", 3, "f1", "f2", "f3")
     # TODO: assert {[llength $result] == 3}
     # TODO: assert_equal ts lindex $result 0
-    # TODO: assert_equal -1 lindex $result 1
-    # TODO: assert_equal -2 lindex $result 2
+    assert -1 == result[1]
+    assert -2 == result[2]
 
 
 def test_hpersist_field_does_not_exist(r: ValkeyTestClient) -> None:
