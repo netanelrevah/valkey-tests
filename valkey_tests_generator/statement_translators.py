@@ -202,7 +202,7 @@ class TCLBodyTranslator:
 
 
 _BINARY_OPERATORS = {"==", "!=", "<", ">", "<=", ">=", "+", "-", "*", "/", "%", "**", "<<", ">>", "|", "&", "^"}
-_BINARY_OPERATOR_MAP = {"||": "or", "&&": "and", **{op: op for op in _BINARY_OPERATORS}}
+_BINARY_OPERATOR_MAP = {"||": "or", "&&": "and", "eq": "==", "ne": "!=", **{op: op for op in _BINARY_OPERATORS}}
 _ALL_OPERATORS = _BINARY_OPERATOR_MAP | {"!": "not ", "~": "~"}
 
 

@@ -350,10 +350,17 @@ def test_generate_file__if_elseif_in_body():
     assert _IF_ELSEIF_IN_BODY_EXPECTED in generate(_IF_ELSEIF_IN_BODY_TCL)
 
 
-def test_generate_file__if_untranslatable_condition_falls_back():
+_IF_NE_IN_BODY_EXPECTED = """
+    x = r.run('get', 'key')
+    if x != 'hello':
+        r.run('set', 'key', 2)
+"""
+
+
+def test_generate_file__if_ne_condition_translates():
     output = generate(_IF_UNTRANSLATABLE_TCL)
-    assert "@pytest.mark.xfail(reason='not implemented')" in output
-    assert "# TODO: if" in output
+    assert "@pytest.mark.xfail" not in output
+    assert _IF_NE_IN_BODY_EXPECTED in output
 
 
 _CATCH_WITH_VAR_TCL = """
@@ -420,10 +427,31 @@ _EMPTY_EXPECTED_LAST_ASSERT_EXPECTED = """
 """
 
 
+_ASSERT_EQ_TCL = """
+    start_server {tags {}} {
+        test {assert eq test} {
+            set name [r get user]
+            assert {$name eq {alice}}
+        }
+    }
+"""
+
+_ASSERT_EQ_EXPECTED = """
+    name = r.run('get', 'user')
+    assert name == 'alice'
+"""
+
+
 def test_generate_file__assert_braces():
     output = generate(_ASSERT_BRACES_TCL)
     assert "@pytest.mark.xfail" not in output
     assert _ASSERT_BRACES_EXPECTED in output
+
+
+def test_generate_file__assert_eq_operator():
+    output = generate(_ASSERT_EQ_TCL)
+    assert "@pytest.mark.xfail" not in output
+    assert _ASSERT_EQ_EXPECTED in output
 
 
 def test_generate_file__empty_expected_with_last_assert():
