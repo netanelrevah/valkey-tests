@@ -636,11 +636,24 @@ def test_migrate_can_correctly_transfer_large_values(r: ValkeyTestClient) -> Non
     """
     # TODO: set first srv 0 client
     r.run("del", "key")
-    # TODO: for {set j 0} {$j < 40000} {incr j} {
-    #       r rpush key 1 2 3 4 5 6 7 8 9 10
-    #       r rpush key "item 1" "item 2" "item 3" "item 4" "item 5" \
-    #                   "item 6" "item 7" "item 8" "item 9" "item 10"
-    #   }
+    j = 0
+    while j < 40000:
+        r.run("rpush", "key", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+        r.run(
+            "rpush",
+            "key",
+            "item 1",
+            "item 2",
+            "item 3",
+            "item 4",
+            "item 5",
+            "item 6",
+            "item 7",
+            "item 8",
+            "item 9",
+            "item 10",
+        )
+        j += 1
     # TODO: assert {[string length [r dump key]] > (1024*64)}
     # TODO: start_server {tags {"repl"}} {
     #       set second [srv 0 client]
@@ -683,8 +696,22 @@ def test_migrate_can_correctly_transfer_hashes(r: ValkeyTestClient) -> None:
     """
     # TODO: set first srv 0 client
     r.run("del", "key")
-    r.run("hmset", "key", "field1", "item 1", "field2", "item 2", "field3", "item 3", "\\")
-    # TODO: field4 "item 4" field5 "item 5" field6 "item 6"
+    r.run(
+        "hmset",
+        "key",
+        "field1",
+        "item 1",
+        "field2",
+        "item 2",
+        "field3",
+        "item 3",
+        "field4",
+        "item 4",
+        "field5",
+        "item 5",
+        "field6",
+        "item 6",
+    )
     # TODO: start_server {tags {"repl"}} {
     #       set second [srv 0 client]
     #       set second_host [srv 0 host]

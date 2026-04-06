@@ -6321,11 +6321,13 @@ def test_command_active_expiry_reclaims_memory_efficiently_across_multiple_large
     #       }
     #   }
     total_mem_before = 0
-    # TODO: for {set i 1} {$i <= 5} {incr i} {
-    #       set mem [r MEMORY USAGE myhash$i]
-    #       if {$mem eq ""} {set mem 0}
-    #       incr total_mem_before $mem
-    #   }
+    i = 1
+    while i <= 5:
+        mem = r.run("MEMORY", "USAGE", "myhash$i")
+        if mem == "":
+            mem = 0
+        total_mem_before += mem
+        i += 1
     # TODO: for {set i 1} {$i <= 5} {incr i} {
     #       assert_equal {1 1 1 1 1} [r $command myhash$i [get_short_expire_value $command] FIELDS 5 f1 f2 f3 f4 f5]
     #   }
@@ -6338,11 +6340,13 @@ def test_command_active_expiry_reclaims_memory_efficiently_across_multiple_large
     #       fail "25 fields should expire across 5 keys"
     #   }
     total_mem_after = 0
-    # TODO: for {set i 1} {$i <= 5} {incr i} {
-    #       set mem [r MEMORY USAGE myhash$i]
-    #       if {$mem eq ""} {set mem 0}
-    #       incr total_mem_after $mem
-    #   }
+    i = 1
+    while i <= 5:
+        mem = r.run("MEMORY", "USAGE", "myhash$i")
+        if mem == "":
+            mem = 0
+        total_mem_after += mem
+        i += 1
     # TODO: if {$total_mem_before > 0} {
     #       assert_morethan [expr {$total_mem_before - $total_mem_after}] 10000
     #   }

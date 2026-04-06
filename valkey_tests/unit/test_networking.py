@@ -395,7 +395,7 @@ def test_prefetch_works_as_expected_when_changing_the_batch_size_while_executing
     # TODO: for {set i 0} {$i < 16} {incr i} {
     #       assert_equal {OK} [[set rd$i] read]
     #   }
-    # TODO: assert {[r config get prefetch-batch-max-size] eq "prefetch-batch-max-size 1"}
+    assert r.run("config", "get", "prefetch-batch-max-size") == "prefetch-batch-max-size 1"
 
 
 @pytest.mark.xfail(reason="not implemented")

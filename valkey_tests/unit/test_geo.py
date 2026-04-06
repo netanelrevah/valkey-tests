@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841
+# ruff: noqa: PLR2004
 
 from fnmatch import fnmatch
 
@@ -342,7 +342,6 @@ def test_geoadd_update_with_invalid_option(r: ValkeyTestClient) -> None:
     assert err == "ERR *syntax*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_geoadd_invalid_coordinates(r: ValkeyTestClient) -> None:
     """
     test {GEOADD invalid coordinates} {
@@ -353,12 +352,11 @@ def test_geoadd_invalid_coordinates(r: ValkeyTestClient) -> None:
         set err
     } {*valid*}
     """
-    # TODO: catch {
-    #       r geoadd nyc -73.9454966 40.747533 "lic market" \
-    #           foo bar "luck market"
-    #   } err
-    # TODO: set err
-    assert False
+    try:
+        err = r.run("geoadd", "nyc", -73.9454966, 40.747533, "lic market", "foo", "bar", "luck market")
+    except Exception as _catch_err:
+        err = str(_catch_err)
+    assert err == "*valid*"
 
 
 def test_geoadd_multi_add(r: ValkeyTestClient) -> None:
@@ -903,7 +901,6 @@ def test_geohash_is_able_to_return_geohash_strings(r: ValkeyTestClient) -> None:
     assert r.run("geohash", "points", "test")[0] == "ezs42e44yx0"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_geohash_with_only_key_as_argument(r: ValkeyTestClient) -> None:
     """
     test {GEOHASH with only key as argument} {
@@ -916,7 +913,7 @@ def test_geohash_with_only_key_as_argument(r: ValkeyTestClient) -> None:
     r.run("del", "points")
     r.run("geoadd", "points", 10, 20, "a", 30, 40, "b")
     result = r.run("geohash", "points")
-    # TODO: assert {$result eq {}}
+    assert result == ""
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -957,7 +954,6 @@ def test_geopos_missing_element(r: ValkeyTestClient) -> None:
     # TODO: lindex r geopos points a x b 1
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_geopos_with_only_key_as_argument(r: ValkeyTestClient) -> None:
     """
     test {GEOPOS with only key as argument} {
@@ -970,10 +966,9 @@ def test_geopos_with_only_key_as_argument(r: ValkeyTestClient) -> None:
     r.run("del", "points")
     r.run("geoadd", "points", 10, 20, "a", 30, 40, "b")
     result = r.run("geopos", "points")
-    # TODO: assert {$result eq {}}
+    assert result == ""
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_geodist_simple_unit(r: ValkeyTestClient) -> None:
     """
     test {GEODIST simple & unit} {
@@ -989,17 +984,15 @@ def test_geodist_simple_unit(r: ValkeyTestClient) -> None:
     }
     """
     r.run("del", "points")
-    r.run("geoadd", "points", 13.361389, 38.115556, "Palermo", "\\")
-    # TODO: 15.087269 37.502669 "Catania"
+    r.run("geoadd", "points", 13.361389, 38.115556, "Palermo", 15.087269, 37.502669, "Catania")
     m = r.run("geodist", "points", "Palermo", "Catania")
     assert (m > 166274) and (m < 166275)
     km = r.run("geodist", "points", "Palermo", "Catania", "km")
     assert (km > 166.2) and (km < 166.3)
     dist = r.run("geodist", "points", "Palermo", "Palermo")
-    # TODO: assert {$dist eq 0.0000}
+    assert dist == 0.0000
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_geodist_missing_elements(r: ValkeyTestClient) -> None:
     """
     test {GEODIST missing elements} {
@@ -1015,17 +1008,15 @@ def test_geodist_missing_elements(r: ValkeyTestClient) -> None:
     }
     """
     r.run("del", "points")
-    r.run("geoadd", "points", 13.361389, 38.115556, "Palermo", "\\")
-    # TODO: 15.087269 37.502669 "Catania"
+    r.run("geoadd", "points", 13.361389, 38.115556, "Palermo", 15.087269, 37.502669, "Catania")
     m = r.run("geodist", "points", "Palermo", "Agrigento")
-    # TODO: assert {$m eq {}}
+    assert m == ""
     m = r.run("geodist", "points", "Ragusa", "Agrigento")
-    # TODO: assert {$m eq {}}
+    assert m == ""
     m = r.run("geodist", "empty_key", "Palermo", "Catania")
-    # TODO: assert {$m eq {}}
+    assert m == ""
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_georadius_store_option_syntax_error(r: ValkeyTestClient) -> None:
     """
     test {GEORADIUS STORE option: syntax error} {
@@ -1037,8 +1028,7 @@ def test_georadius_store_option_syntax_error(r: ValkeyTestClient) -> None:
     } {*ERR*syntax*}
     """
     r.run("del", "points{t}")
-    r.run("geoadd", "points{t}", 13.361389, 38.115556, "Palermo", "\\")
-    # TODO: 15.087269 37.502669 "Catania"
+    r.run("geoadd", "points{t}", 13.361389, 38.115556, "Palermo", 15.087269, 37.502669, "Catania")
     try:
         e = r.run("georadius", "points{t}", 13.361389, 38.115556, 50, "km", "store")
     except Exception as _catch_err:
@@ -1072,7 +1062,6 @@ def test_geosearchstore_store_option_syntax_error(r: ValkeyTestClient) -> None:
     assert e == "*ERR*syntax*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_georange_store_option_incompatible_options(r: ValkeyTestClient) -> None:
     """
     test {GEORANGE STORE option: incompatible options} {
@@ -1088,8 +1077,7 @@ def test_georange_store_option_incompatible_options(r: ValkeyTestClient) -> None
     }
     """
     r.run("del", "points{t}")
-    r.run("geoadd", "points{t}", 13.361389, 38.115556, "Palermo", "\\")
-    # TODO: 15.087269 37.502669 "Catania"
+    r.run("geoadd", "points{t}", 13.361389, 38.115556, "Palermo", 15.087269, 37.502669, "Catania")
     try:
         e = r.run("georadius", "points{t}", 13.361389, 38.115556, 50, "km", "store", "points2{t}", "withdist")
     except Exception as _catch_err:
@@ -1107,7 +1095,6 @@ def test_georange_store_option_incompatible_options(r: ValkeyTestClient) -> None
     assert fnmatch(str(e), "*ERR*")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_georange_store_option_plain_usage(r: ValkeyTestClient) -> None:
     """
     test {GEORANGE STORE option: plain usage} {
@@ -1119,8 +1106,7 @@ def test_georange_store_option_plain_usage(r: ValkeyTestClient) -> None:
     }
     """
     r.run("del", "points{t}")
-    r.run("geoadd", "points{t}", 13.361389, 38.115556, "Palermo", "\\")
-    # TODO: 15.087269 37.502669 "Catania"
+    r.run("geoadd", "points{t}", 13.361389, 38.115556, "Palermo", 15.087269, 37.502669, "Catania")
     r.run("georadius", "points{t}", 13.361389, 38.115556, 500, "km", "store", "points2{t}")
     assert r.run("zrange", "points{t}", 0, -1) == r.run("zrange", "points2{t}", 0, -1)
 
@@ -1164,7 +1150,6 @@ def test_geosearchstore_store_option_plain_usage(r: ValkeyTestClient) -> None:
     assert r.run("zrange", "points{t}", 0, -1) == r.run("zrange", "points2{t}", 0, -1)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_georange_storedist_option_plain_usage(r: ValkeyTestClient) -> None:
     """
     test {GEORANGE STOREDIST option: plain usage} {
@@ -1179,8 +1164,7 @@ def test_georange_storedist_option_plain_usage(r: ValkeyTestClient) -> None:
     }
     """
     r.run("del", "points{t}")
-    r.run("geoadd", "points{t}", 13.361389, 38.115556, "Palermo", "\\")
-    # TODO: 15.087269 37.502669 "Catania"
+    r.run("geoadd", "points{t}", 13.361389, 38.115556, "Palermo", 15.087269, 37.502669, "Catania")
     r.run("georadius", "points{t}", 13.361389, 38.115556, 500, "km", "storedist", "points2{t}")
     res = r.run("zrange", "points2{t}", 0, -1, "withscores")
     assert res[1] < 1
@@ -1216,7 +1200,6 @@ def test_geosearchstore_storedist_option_plain_usage(r: ValkeyTestClient) -> Non
     assert res[3] < 167
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_georange_storedist_option_count_asc_and_desc(r: ValkeyTestClient) -> None:
     """
     test {GEORANGE STOREDIST option: COUNT ASC and DESC} {
@@ -1235,16 +1218,15 @@ def test_georange_storedist_option_count_asc_and_desc(r: ValkeyTestClient) -> No
     }
     """
     r.run("del", "points{t}")
-    r.run("geoadd", "points{t}", 13.361389, 38.115556, "Palermo", "\\")
-    # TODO: 15.087269 37.502669 "Catania"
+    r.run("geoadd", "points{t}", 13.361389, 38.115556, "Palermo", 15.087269, 37.502669, "Catania")
     r.run("georadius", "points{t}", 13.361389, 38.115556, 500, "km", "storedist", "points2{t}", "asc", "count", 1)
     assert r.run("zcard", "points2{t}") == 1
     res = r.run("zrange", "points2{t}", 0, -1, "withscores")
-    # TODO: assert {[lindex $res 0] eq "Palermo"}
+    assert res[0] == "Palermo"
     r.run("georadius", "points{t}", 13.361389, 38.115556, 500, "km", "storedist", "points2{t}", "desc", "count", 1)
     assert r.run("zcard", "points2{t}") == 1
     res = r.run("zrange", "points2{t}", 0, -1, "withscores")
-    # TODO: assert {[lindex $res 0] eq "Catania"}
+    assert res[0] == "Catania"
 
 
 def test_geosearch_the_box_spans_180_or_180(r: ValkeyTestClient) -> None:

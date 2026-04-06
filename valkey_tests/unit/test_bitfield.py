@@ -1,5 +1,4 @@
-# ruff: noqa: F841
-
+# ruff: noqa: PLR2004, F841
 from fnmatch import fnmatch
 
 import pytest
@@ -75,7 +74,6 @@ def test_bitfield_unsigned_with_set_get_and_incrby_arguments(r: ValkeyTestClient
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitfield_with_only_key_as_argument(r: ValkeyTestClient) -> None:
     """
     test {BITFIELD with only key as argument} {
@@ -86,7 +84,7 @@ def test_bitfield_with_only_key_as_argument(r: ValkeyTestClient) -> None:
     """
     r.run("del", "bits")
     result = r.run("bitfield", "bits")
-    # TODO: assert {$result eq {}}
+    assert result == ""
 
 
 def test_bitfield_idx_form(r: ValkeyTestClient) -> None:
@@ -457,7 +455,6 @@ def test_bitfield_regression_for_3221(r: ValkeyTestClient) -> None:
     assert r.run("bitfield", "bits", "get", "u1", 0) == "0"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitfield_regression_for_3564(r: ValkeyTestClient) -> None:
     """
     test {BITFIELD regression for #3564} {
@@ -469,15 +466,15 @@ def test_bitfield_regression_for_3564(r: ValkeyTestClient) -> None:
         r del mystring
     }
     """
-    # TODO: for {set j 0} {$j < 10} {incr j} {
-    #       r del mystring
-    #       set res [r BITFIELD mystring SET i8 0 10 SET i8 64 10 INCRBY i8 10 99900]
-    #       assert {$res eq {0 0 60}}
-    #   }
+    j = 0
+    while j < 10:
+        r.run("del", "mystring")
+        res = r.run("BITFIELD", "mystring", "SET", "i8", 0, 10, "SET", "i8", 64, 10, "INCRBY", "i8", 10, 99900)
+        assert res == "0 0 60"
+        j += 1
     r.run("del", "mystring")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitfield_ro_with_only_key_as_argument(r: ValkeyTestClient) -> None:
     """
     test {BITFIELD_RO with only key as argument} {
@@ -486,7 +483,7 @@ def test_bitfield_ro_with_only_key_as_argument(r: ValkeyTestClient) -> None:
     }
     """
     res = r.run("bitfield_ro", "bits")
-    # TODO: assert {$res eq {}}
+    assert res == ""
 
 
 def test_bitfield_ro_fails_when_write_option_is_used(r: ValkeyTestClient) -> None:

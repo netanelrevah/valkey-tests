@@ -289,8 +289,7 @@ def test_append_basics(r: ValkeyTestClient) -> None:
     } {3 bar 6 bar100}
     """
     r.run("del", "foo")
-    # TODO: list r append foo bar r get foo \
-    # TODO: [r append foo 100] r get foo
+    # TODO: list r append foo bar r get foo r append foo 100 r get foo
     assert False
 
 

@@ -1458,7 +1458,6 @@ def test_set_exat_or_pxat_expiration_time_is_expired(r: ValkeyTestClient) -> Non
     # TODO: close_replication_stream repl
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_extended_set_using_multiple_options_at_once(r: ValkeyTestClient) -> None:
     """
     test {Extended SET using multiple options at once} {
@@ -1469,7 +1468,7 @@ def test_extended_set_using_multiple_options_at_once(r: ValkeyTestClient) -> Non
     }
     """
     r.run("set", "foo", "val")
-    # TODO: assert {[r set foo bar xx px 10000] eq {OK}}
+    assert r.run("set", "foo", "bar", "xx", "px", 10000) == "OK"
     ttl = r.run("ttl", "foo")
     assert (ttl <= 10) and (ttl > 5)
 

@@ -237,7 +237,6 @@ def test_latency_doctor_produces_some_output(r: ValkeyTestClient) -> None:
     assert len(r.run("latency", "doctor")) > 0
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_latency_reset_is_able_to_reset_events(r: ValkeyTestClient) -> None:
     """
     test {LATENCY RESET is able to reset events} {
@@ -246,7 +245,7 @@ def test_latency_reset_is_able_to_reset_events(r: ValkeyTestClient) -> None:
     }
     """
     assert r.run("latency", "reset") > 0
-    # TODO: assert {[r latency latest] eq {}}
+    assert r.run("latency", "latest") == ""
 
 
 def test_latency_help_should_not_have_unexpected_options(r: ValkeyTestClient) -> None:

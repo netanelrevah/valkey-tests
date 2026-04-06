@@ -1,5 +1,4 @@
 # ruff: noqa: F841, RUF043
-
 from fnmatch import fnmatch
 
 import pytest
@@ -18,7 +17,6 @@ r module load testmodule
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_datatype_test_module_is_sane_get_or_set_work(r: ValkeyTestClient) -> None:
     """
     test {DataType: Test module is sane, GET/SET work.} {
@@ -27,7 +25,7 @@ def test_datatype_test_module_is_sane_get_or_set_work(r: ValkeyTestClient) -> No
     }
     """
     r.run("datatype.set", "dtkey", 100, "stringval")
-    # TODO: assert {[r datatype.get dtkey] eq {100 stringval}}
+    assert r.run("datatype.get", "dtkey") == "100 stringval"
 
 
 def test_test_blocking_of_datatype_creation_outside_of_onload(r: ValkeyTestClient) -> None:
@@ -39,7 +37,6 @@ def test_test_blocking_of_datatype_creation_outside_of_onload(r: ValkeyTestClien
     assert r.run("block.create.datatype.outside.onload") == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_datatype_rm_savedatatypetostring_rm_loaddatatypefromstringencver_work(r: ValkeyTestClient) -> None:
     """
     test {DataType: RM_SaveDataTypeToString(), RM_LoadDataTypeFromStringEncver() work} {
@@ -52,8 +49,8 @@ def test_datatype_rm_savedatatypetostring_rm_loaddatatypefromstringencver_work(r
     """
     r.run("datatype.set", "dtkey", -1111, "MyString")
     encoded = r.run("datatype.dump", "dtkey")
-    # TODO: assert {[r datatype.restore dtkeycopy $encoded 4] eq {4}}
-    # TODO: assert {[r datatype.get dtkeycopy] eq {-1111 MyString}}
+    assert r.run("datatype.restore", "dtkeycopy", encoded, 4) == "4"
+    assert r.run("datatype.get", "dtkeycopy") == "-1111 MyString"
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -76,7 +73,6 @@ def test_datatype_handle_truncated_rm_loaddatatypefromstringencver(r: ValkeyTest
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_datatype_moduletypereplacevalue_happy_path_works(r: ValkeyTestClient) -> None:
     """
     test {DataType: ModuleTypeReplaceValue() happy path works} {
@@ -90,9 +86,9 @@ def test_datatype_moduletypereplacevalue_happy_path_works(r: ValkeyTestClient) -
     """
     r.run("datatype.set", "key-a", 1, "AAA")
     r.run("datatype.set", "key-b", 2, "BBB")
-    # TODO: assert {[r datatype.swap key-a key-b] eq {OK}}
-    # TODO: assert {[r datatype.get key-a] eq {2 BBB}}
-    # TODO: assert {[r datatype.get key-b] eq {1 AAA}}
+    assert r.run("datatype.swap", "key-a", "key-b") == "OK"
+    assert r.run("datatype.get", "key-a") == "2 BBB"
+    assert r.run("datatype.get", "key-b") == "1 AAA"
 
 
 def test_datatype_moduletypereplacevalue_fails_on_non_module_keys(r: ValkeyTestClient) -> None:

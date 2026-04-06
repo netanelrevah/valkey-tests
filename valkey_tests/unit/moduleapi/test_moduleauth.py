@@ -134,10 +134,10 @@ def test_test_non_blocking_module_auth(r: ValkeyTestClient) -> None:
     # TODO: assert_match {*calls=6,*,rejected_calls=0,failed_calls=3} cmdstat auth
     assert "OK" == r.run("AUTH", "foo", "nomatch")
     entry = r.run("ACL", "LOG")[0]
-    # TODO: assert {[dict get $entry username] eq {foo}}
-    # TODO: assert {[dict get $entry context] eq {module}}
-    # TODO: assert {[dict get $entry reason] eq {auth}}
-    # TODO: assert {[dict get $entry object] eq {Module Auth}}
+    assert entry["username"] == "foo"
+    assert entry["context"] == "module"
+    assert entry["reason"] == "auth"
+    assert entry["object"] == "Module Auth"
     assert fnmatch(str(entry["client-info"]), "*cmd=auth*")
     r.run("ACL", "LOG", "RESET")
 
@@ -192,10 +192,10 @@ def test_test_non_blocking_module_hello_auth(r: ValkeyTestClient) -> None:
         r.run("HELLO", 3, "AUTH", "foo", "nomatch")
     # TODO: assert_match {*calls=8,*,rejected_calls=0,failed_calls=4} cmdstat hello
     entry = r.run("ACL", "LOG")[1]
-    # TODO: assert {[dict get $entry username] eq {foo}}
-    # TODO: assert {[dict get $entry context] eq {module}}
-    # TODO: assert {[dict get $entry reason] eq {auth}}
-    # TODO: assert {[dict get $entry object] eq {Module Auth}}
+    assert entry["username"] == "foo"
+    assert entry["context"] == "module"
+    assert entry["reason"] == "auth"
+    assert entry["object"] == "Module Auth"
     assert fnmatch(str(entry["client-info"]), "*cmd=hello*")
     r.run("ACL", "LOG", "RESET")
 
@@ -224,17 +224,17 @@ def test_test_non_blocking_module_hello_auth_setname(r: ValkeyTestClient) -> Non
     r.run("config", "resetstat")
     r.run("acl", "setuser", "foo", ">pwd", "on", "~*", "&*", "+@all")
     # TODO: assert_equal hello2 _response r HELLO 2 AUTH foo pwd setname client1
-    # TODO: assert {[r client getname] eq {client1}}
+    assert r.run("client", "getname") == "client1"
     # TODO: assert_equal hello2 _response r HELLO 2 AUTH foo allow setname client2
-    # TODO: assert {[r client getname] eq {client2}}
+    assert r.run("client", "getname") == "client2"
     r.run("client", "setname", "client0")
     with pytest.raises(Exception, match=".*Auth\\ denied\\ by\\ Misc\\ Module.*"):
         r.run("HELLO", 2, "AUTH", "foo", "deny", "setname", "client1")
-    # TODO: assert {[r client getname] eq {client0}}
+    assert r.run("client", "getname") == "client0"
     # TODO: assert_match {*calls=3,*,rejected_calls=0,failed_calls=1} cmdstat hello
     with pytest.raises(Exception, match=".*WRONGPASS.*"):
         r.run("HELLO", 2, "AUTH", "foo", "nomatch", "setname", "client2")
-    # TODO: assert {[r client getname] eq {client0}}
+    assert r.run("client", "getname") == "client0"
     # TODO: assert_match {*calls=4,*,rejected_calls=0,failed_calls=2} cmdstat hello
 
 
@@ -292,10 +292,10 @@ def test_test_blocking_module_auth(r: ValkeyTestClient) -> None:
     # TODO: regexp "usec_per_call=(\[0-9]{1,})\.*," stats all usec_per_call
     # TODO: assert {$usec_per_call >= 500000}
     entry = r.run("ACL", "LOG")[0]
-    # TODO: assert {[dict get $entry username] eq {foo}}
-    # TODO: assert {[dict get $entry context] eq {module}}
-    # TODO: assert {[dict get $entry reason] eq {auth}}
-    # TODO: assert {[dict get $entry object] eq {Module Auth}}
+    assert entry["username"] == "foo"
+    assert entry["context"] == "module"
+    assert entry["reason"] == "auth"
+    assert entry["object"] == "Module Auth"
     assert fnmatch(str(entry["client-info"]), "*cmd=auth*")
     r.run("ACL", "LOG", "RESET")
 
@@ -357,10 +357,10 @@ def test_test_blocking_module_hello_auth(r: ValkeyTestClient) -> None:
     # TODO: regexp "usec_per_call=(\[0-9]{1,})\.*," stats all usec_per_call
     # TODO: assert {$usec_per_call >= 500000}
     entry = r.run("ACL", "LOG")[1]
-    # TODO: assert {[dict get $entry username] eq {foo}}
-    # TODO: assert {[dict get $entry context] eq {module}}
-    # TODO: assert {[dict get $entry reason] eq {auth}}
-    # TODO: assert {[dict get $entry object] eq {Module Auth}}
+    assert entry["username"] == "foo"
+    assert entry["context"] == "module"
+    assert entry["reason"] == "auth"
+    assert entry["object"] == "Module Auth"
     assert fnmatch(str(entry["client-info"]), "*cmd=hello*")
     r.run("ACL", "LOG", "RESET")
 
@@ -393,17 +393,17 @@ def test_test_blocking_module_hello_auth_setname(r: ValkeyTestClient) -> None:
     r.run("config", "resetstat")
     r.run("acl", "setuser", "foo", ">pwd", "on", "~*", "&*", "+@all")
     # TODO: assert_equal hello2 _response r HELLO 2 AUTH foo pwd setname client1
-    # TODO: assert {[r client getname] eq {client1}}
+    assert r.run("client", "getname") == "client1"
     # TODO: assert_equal hello2 _response r HELLO 2 AUTH foo block_allow setname client2
-    # TODO: assert {[r client getname] eq {client2}}
+    assert r.run("client", "getname") == "client2"
     r.run("client", "setname", "client0")
     with pytest.raises(Exception, match=".*Auth\\ denied\\ by\\ Misc\\ Module.*"):
         r.run("HELLO", 2, "AUTH", "foo", "block_deny", "setname", "client1")
-    # TODO: assert {[r client getname] eq {client0}}
+    assert r.run("client", "getname") == "client0"
     # TODO: assert_match {*calls=3,*,rejected_calls=0,failed_calls=1} cmdstat hello
     with pytest.raises(Exception, match=".*WRONGPASS.*"):
         r.run("HELLO", 2, "AUTH", "foo", "nomatch", "setname", "client2")
-    # TODO: assert {[r client getname] eq {client0}}
+    assert r.run("client", "getname") == "client0"
     # TODO: assert_match {*calls=4,*,rejected_calls=0,failed_calls=2} cmdstat hello
     # TODO: set stats cmdstat hello
     # TODO: regexp "usec_per_call=(\[0-9]{1,})\.*," stats all usec_per_call

@@ -9,7 +9,6 @@ from tests.valkey_test_client import ValkeyTestClient
 pytestmark = [pytest.mark.keyspace]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_del_against_a_single_item(r: ValkeyTestClient) -> None:
     """
     test {DEL against a single item} {
@@ -20,7 +19,7 @@ def test_del_against_a_single_item(r: ValkeyTestClient) -> None:
     } {}
     """
     r.run("set", "x", "foo")
-    # TODO: assert {[r get x] eq "foo"}
+    assert r.run("get", "x") == "foo"
     r.run("del", "x")
     r.run("get", "x")
 
@@ -572,7 +571,6 @@ def test_copy_for_string_does_not_copy_data_to_no_integer_db(r: ValkeyTestClient
     assert e == "ERR value is not an integer or out of range"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_copy_can_copy_key_expire_metadata_as_well(r: ValkeyTestClient) -> None:
     """
     test {COPY can copy key expire metadata as well} {
@@ -585,10 +583,9 @@ def test_copy_can_copy_key_expire_metadata_as_well(r: ValkeyTestClient) -> None:
     r.run("set", "mykey{t}", "foobar", "ex", 100)
     r.run("copy", "mykey{t}", "mynewkey{t}", "REPLACE")
     assert (r.run("ttl", "mynewkey{t}") > 0) and (r.run("ttl", "mynewkey{t}") <= 100)
-    # TODO: assert {[r get mynewkey{t}] eq "foobar"}
+    assert r.run("get", "mynewkey{t}") == "foobar"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_copy_does_not_create_an_expire_if_it_does_not_exist(r: ValkeyTestClient) -> None:
     """
     test {COPY does not create an expire if it does not exist} {
@@ -603,7 +600,7 @@ def test_copy_does_not_create_an_expire_if_it_does_not_exist(r: ValkeyTestClient
     assert r.run("ttl", "mykey{t}") == -1
     r.run("copy", "mykey{t}", "mynewkey{t}", "REPLACE")
     assert r.run("ttl", "mynewkey{t}") == -1
-    # TODO: assert {[r get mynewkey{t}] eq "foobar"}
+    assert r.run("get", "mynewkey{t}") == "foobar"
 
 
 """
@@ -952,7 +949,6 @@ def test_move_against_non_integer_db_1428(r: ValkeyTestClient) -> None:
     assert e == "ERR value is not an integer or out of range"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_move_can_move_key_expire_metadata_as_well(r: ValkeyTestClient) -> None:
     """
     test {MOVE can move key expire metadata as well} {
@@ -976,11 +972,10 @@ def test_move_can_move_key_expire_metadata_as_well(r: ValkeyTestClient) -> None:
     assert r.run("ttl", "mykey") == -2
     r.run("select", 10)
     assert (r.run("ttl", "mykey") > 0) and (r.run("ttl", "mykey") <= 100)
-    # TODO: assert {[r get mykey] eq "foo"}
+    assert r.run("get", "mykey") == "foo"
     assert r.run("select", 9) == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_move_does_not_create_an_expire_if_it_does_not_exist(r: ValkeyTestClient) -> None:
     """
     test {MOVE does not create an expire if it does not exist} {
@@ -1004,7 +999,7 @@ def test_move_does_not_create_an_expire_if_it_does_not_exist(r: ValkeyTestClient
     assert r.run("ttl", "mykey") == -2
     r.run("select", 10)
     assert r.run("ttl", "mykey") == -1
-    # TODO: assert {[r get mykey] eq "foo"}
+    assert r.run("get", "mykey") == "foo"
     assert r.run("select", 9) == "OK"
 
 
@@ -1071,15 +1066,14 @@ def test_randomkey(r: ValkeyTestClient) -> None:
     r.run("set", "bar", "y")
     foo_seen = 0
     bar_seen = 0
-    # TODO: for {set i 0} {$i < 100} {incr i} {
-    #       set rkey [r randomkey]
-    #       if {$rkey eq {foo}} {
-    #           set foo_seen 1
-    #       }
-    #       if {$rkey eq {bar}} {
-    #           set bar_seen 1
-    #       }
-    #   }
+    i = 0
+    while i < 100:
+        rkey = r.run("randomkey")
+        if rkey == "foo":
+            foo_seen = 1
+        if rkey == "bar":
+            bar_seen = 1
+        i += 1
     # TODO: list foo _seen bar _seen
     assert False
 

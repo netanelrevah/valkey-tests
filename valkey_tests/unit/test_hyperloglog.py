@@ -180,7 +180,6 @@ def test_hyperloglogs_are_promote_from_sparse_to_dense(r: ValkeyTestClient) -> N
     #   }
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_change_hll_sparse_max_bytes(r: ValkeyTestClient) -> None:
     """
     test {Change hll-sparse-max-bytes} {
@@ -196,10 +195,10 @@ def test_change_hll_sparse_max_bytes(r: ValkeyTestClient) -> None:
     r.run("config", "set", "hll-sparse-max-bytes", 3000)
     r.run("del", "hll")
     r.run("pfadd", "hll", "a", "b", "c", "d", "e", "d", "g", "h", "i", "j", "k")
-    # TODO: assert {[r pfdebug encoding hll] eq {sparse}}
+    assert r.run("pfdebug", "encoding", "hll") == "sparse"
     r.run("config", "set", "hll-sparse-max-bytes", 30)
     r.run("pfadd", "hll", "new_element")
-    # TODO: assert {[r pfdebug encoding hll] eq {dense}}
+    assert r.run("pfdebug", "encoding", "hll") == "dense"
 
 
 @pytest.mark.xfail(reason="not implemented")

@@ -235,7 +235,6 @@ def test_xpending_with_idle(r: ValkeyTestClient) -> None:
     assert len(pending) == 4
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_xpending_with_exclusive_range_intervals_works_as_expected(r: ValkeyTestClient) -> None:
     """
     test {XPENDING with exclusive range intervals works as expected} {
@@ -258,11 +257,12 @@ def test_xpending_with_exclusive_range_intervals_works_as_expected(r: ValkeyTest
     endid = pending[3][0]
     expending = r.run("XPENDING", "mystream", "mygroup", "($startid", "($endid", 10)
     assert len(expending) == 2
-    # TODO: for {set j 0} {$j < 2} {incr j} {
-    #       set itemid [lindex [lindex $expending $j] 0]
-    #       assert {$itemid ne $startid}
-    #       assert {$itemid ne $endid}
-    #   }
+    j = 0
+    while j < 2:
+        itemid = expending[j][0]
+        assert itemid != startid
+        assert itemid != endid
+        j += 1
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1291,7 +1291,7 @@ def test_xclaim_without_justid_increments_delivery_count(r: ValkeyTestClient) ->
     time.sleep(200 / 1000)
     reply = r.run("XCLAIM", "mystream", "mygroup", "consumer3", 10, id1, "JUSTID")
     assert len(reply) == 1
-    # TODO: assert {[lindex $reply 0] eq $id1}
+    assert reply[0] == id1
     reply = r.run("XPENDING", "mystream", "mygroup", "-", "+", 10)
     assert len(reply[0]) == 4
     # TODO: assert {[lindex $reply 0 3] == 2}
