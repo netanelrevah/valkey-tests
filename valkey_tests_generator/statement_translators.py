@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import re
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 from pytcl.commands import TCLBracesWord, TCLScript
 from pytcl.words import (
@@ -12,11 +15,9 @@ from pytcl.words import (
     TCLWord,
 )
 
-from valkey_tests_generator.argument_translators import (
-    _translate_argument,
-    _translate_command_expr,
-    _translate_r_arguments,
-)
+from valkey_tests_generator.argument_translators import ArgumentTranslator, ExpressionTranslator
+
+StatementTranslatorType = type["StatementTranslator"]
 
 
 class StatementTranslator:
@@ -25,13 +26,30 @@ class StatementTranslator:
     def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
         raise NotImplementedError
 
+    @classmethod
+    def register(cls, key: str) -> Callable[[StatementTranslatorType], StatementTranslatorType]:
+        def decorator(translator_cls: StatementTranslatorType) -> StatementTranslatorType:
+            cls.MAPPING[key] = translator_cls()
+            return translator_cls
 
+        return decorator
+
+    @classmethod
+    def translate(cls, command: TCLCommandWord, defined_vars: set[str]) -> list[str] | None:
+        translator = cls.MAPPING.get(command.name)
+        if translator is None:
+            return None
+        return translator.get_statement(command.args, defined_vars)
+
+
+@StatementTranslator.register("r")
 class RStatementTranslator(StatementTranslator):
     def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
-        expr = _translate_r_arguments(arguments, defined_vars)
+        expr = ArgumentTranslator.translate_r(arguments, defined_vars)
         return None if expr is None else [expr]
 
 
+@StatementTranslator.register("set")
 class SetStatementTranslator(StatementTranslator):
     def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
         if not arguments[1:]:
@@ -39,28 +57,31 @@ class SetStatementTranslator(StatementTranslator):
         name_argument = arguments[0]
         if not isinstance(name_argument, TCLWord) or "(" in name_argument.value:
             return None
-        val = _translate_argument(arguments[1], defined_vars)
+        val = ArgumentTranslator.translate(arguments[1], defined_vars)
         return None if val is None else [f"{name_argument.value} = {val}"]
 
 
+@StatementTranslator.register("assert_equal")
 class AssertEqualStatementTranslator(StatementTranslator):
     def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
         if not arguments[1:]:
             return None
-        a = _translate_argument(arguments[0], defined_vars)
-        b = _translate_argument(arguments[1], defined_vars)
+        a = ArgumentTranslator.translate(arguments[0], defined_vars)
+        b = ArgumentTranslator.translate(arguments[1], defined_vars)
         return None if a is None or b is None else [f"assert {a} == {b}"]
 
 
+@StatementTranslator.register("assert_match")
 class AssertMatchStatementTranslator(StatementTranslator):
     def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
         if not arguments[1:]:
             return None
-        pat = _translate_argument(arguments[0], defined_vars)
-        val = _translate_argument(arguments[1], defined_vars)
+        pat = ArgumentTranslator.translate(arguments[0], defined_vars)
+        val = ArgumentTranslator.translate(arguments[1], defined_vars)
         return None if pat is None or val is None else [f"assert fnmatch(str({val}), str({pat}))"]
 
 
+@StatementTranslator.register("assert")
 class AssertStatementTranslator(StatementTranslator):
     def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
         if not arguments or not isinstance(arguments[0], TCLBracketWord):
@@ -68,10 +89,11 @@ class AssertStatementTranslator(StatementTranslator):
         inner = [c for c in arguments[0].script.commands if c.name]
         if len(inner) != 1:
             return None
-        expr = _translate_command_expr(inner[0], defined_vars)
+        expr = ExpressionTranslator.translate(inner[0], defined_vars)
         return None if expr is None else [f"assert {expr}"]
 
 
+@StatementTranslator.register("incr")
 class IncrStatementTranslator(StatementTranslator):
     def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
         if not arguments or not isinstance(arguments[0], TCLWord):
@@ -80,11 +102,12 @@ class IncrStatementTranslator(StatementTranslator):
         if name not in defined_vars:
             return None
         if len(arguments) > 1:
-            amount = _translate_argument(arguments[1], defined_vars)
+            amount = ArgumentTranslator.translate(arguments[1], defined_vars)
             return None if amount is None else [f"{name} += {amount}"]
         return [f"{name} += 1"]
 
 
+@StatementTranslator.register("assert_error")
 class AssertErrorStatementTranslator(StatementTranslator):
     def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
         if not arguments[1:]:
@@ -100,7 +123,7 @@ class AssertErrorStatementTranslator(StatementTranslator):
             return None
         body_lines: list[str] = []
         for command in body_commands:
-            statement = _translate_command_statement(command, defined_vars)
+            statement = StatementTranslator.translate(command, defined_vars)
             if statement is None:
                 return None
             body_lines.extend(statement)
@@ -114,39 +137,19 @@ class AssertErrorStatementTranslator(StatementTranslator):
         )
 
 
+@StatementTranslator.register("after")
 class AfterStatementTranslator(StatementTranslator):
     def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
         if not arguments:
             return None
-        ms = _translate_argument(arguments[0], defined_vars)
+        ms = ArgumentTranslator.translate(arguments[0], defined_vars)
         return None if ms is None else [f"time.sleep({ms} / 1000)"]
 
 
+@StatementTranslator.register("puts")
 class PutsStatementTranslator(StatementTranslator):
     def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
         return []
-
-
-StatementTranslator.MAPPING.update(
-    {
-        "r": RStatementTranslator(),
-        "set": SetStatementTranslator(),
-        "assert_equal": AssertEqualStatementTranslator(),
-        "assert_match": AssertMatchStatementTranslator(),
-        "assert": AssertStatementTranslator(),
-        "incr": IncrStatementTranslator(),
-        "assert_error": AssertErrorStatementTranslator(),
-        "after": AfterStatementTranslator(),
-        "puts": PutsStatementTranslator(),
-    }
-)
-
-
-def _translate_command_statement(command: TCLCommandWord, defined_vars: set[str]) -> list[str] | None:
-    translator = StatementTranslator.MAPPING.get(command.name)
-    if translator is None:
-        return None
-    return translator.get_statement(command.args, defined_vars)
 
 
 class TCLBodyTranslator:
@@ -164,12 +167,12 @@ class TCLBodyTranslator:
             is_last = i == len(commands) - 1
 
             if is_last and expected is not None:
-                expr = _translate_command_expr(command, defined_vars)
+                expr = ExpressionTranslator.translate(command, defined_vars)
                 if expr is not None:
                     lines.append(f"assert {expr} == {expected!r}")
                     continue
             else:
-                statement = _translate_command_statement(command, defined_vars)
+                statement = StatementTranslator.translate(command, defined_vars)
                 if statement is not None:
                     lines.extend(statement)
                     if command.name == "set" and isinstance(command.args[0], TCLWord):
