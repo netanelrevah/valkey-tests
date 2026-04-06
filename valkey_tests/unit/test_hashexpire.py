@@ -960,7 +960,6 @@ def test_hsetex_keepttl_preserves_existing_ttl_of_field(r: ValkeyTestClient) -> 
     assert "newval" == r.run("HGET", "myhash", "field1")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hsetex_ex_fields_0_returns_error(r: ValkeyTestClient) -> None:
     """
     test {HSETEX EX - FIELDS 0 returns error} {
@@ -970,12 +969,13 @@ def test_hsetex_ex_fields_0_returns_error(r: ValkeyTestClient) -> None:
     } {ERR *}
     """
     r.run("FLUSHALL")
-    # TODO: catch {r HSETEX myhash EX 10 FIELDS 0} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("HSETEX", "myhash", "EX", 10, "FIELDS", 0)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR *"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hsetex_ex_test_negative_ttl(r: ValkeyTestClient) -> None:
     """
     test {HSETEX EX - test negative ttl} {
@@ -985,12 +985,13 @@ def test_hsetex_ex_test_negative_ttl(r: ValkeyTestClient) -> None:
     } {ERR invalid expire time in 'hsetex' command}
     """
     ttl = -10
-    # TODO: catch {r HSETEX myhash EX $ttl FIELDS 1 field1 val1} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("HSETEX", "myhash", "EX", ttl, "FIELDS", 1, "field1", "val1")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR invalid expire time in 'hsetex' command"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hsetex_ex_test_non_numeric_ttl(r: ValkeyTestClient) -> None:
     """
     test {HSETEX EX - test non-numeric ttl} {
@@ -1000,9 +1001,11 @@ def test_hsetex_ex_test_non_numeric_ttl(r: ValkeyTestClient) -> None:
     } {ERR value is not an integer or out of range}
     """
     ttl = "abc"
-    # TODO: catch {r HSETEX myhash EX $ttl FIELDS 1 field1 val1} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("HSETEX", "myhash", "EX", ttl, "FIELDS", 1, "field1", "val1")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR value is not an integer or out of range"
 
 
 def test_hsetex_ex_overwrite_field_resets_ttl(r: ValkeyTestClient) -> None:
@@ -1044,7 +1047,6 @@ def test_hsetex_ex_test_mix_of_expiring_and_persistent_fields(r: ValkeyTestClien
     assert 1 == r.run("HEXISTS", "myhash", "field2")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hsetex_ex_test_missing_ttl(r: ValkeyTestClient) -> None:
     """
     test {HSETEX EX - test missing TTL} {
@@ -1052,12 +1054,13 @@ def test_hsetex_ex_test_missing_ttl(r: ValkeyTestClient) -> None:
         set e
     } {ERR *}
     """
-    # TODO: catch {r HSETEX myhash EX FIELDS 1 field1 val1} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("HSETEX", "myhash", "EX", "FIELDS", 1, "field1", "val1")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR *"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hsetex_ex_mismatched_field_or_value_count(r: ValkeyTestClient) -> None:
     """
     test {HSETEX EX - mismatched field/value count} {
@@ -1065,9 +1068,11 @@ def test_hsetex_ex_mismatched_field_or_value_count(r: ValkeyTestClient) -> None:
         set e
     } {ERR *}
     """
-    # TODO: catch {r HSETEX myhash EX 10 FIELDS 2 field1 val1} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("HSETEX", "myhash", "EX", 10, "FIELDS", 2, "field1", "val1")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR *"
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1116,7 +1121,6 @@ def test_hsetex_command_0_or_past_time_works_correctly_with_2_fields(r: ValkeyTe
     # TODO: $rd close
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hsetex_px_test_negative_ttl(r: ValkeyTestClient) -> None:
     """
     test {HSETEX PX - test negative ttl} {
@@ -1126,12 +1130,13 @@ def test_hsetex_px_test_negative_ttl(r: ValkeyTestClient) -> None:
     } {ERR invalid expire time in 'hsetex' command}
     """
     ttl = -50
-    # TODO: catch {r HSETEX myhash PX $ttl FIELDS 1 field1 val1} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("HSETEX", "myhash", "PX", ttl, "FIELDS", 1, "field1", "val1")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR invalid expire time in 'hsetex' command"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hsetex_px_test_non_numeric_ttl(r: ValkeyTestClient) -> None:
     """
     test {HSETEX PX - test non-numeric ttl} {
@@ -1141,9 +1146,11 @@ def test_hsetex_px_test_non_numeric_ttl(r: ValkeyTestClient) -> None:
     } {ERR value is not an integer or out of range}
     """
     ttl = "xyz"
-    # TODO: catch {r HSETEX myhash PX $ttl FIELDS 1 field1 val1} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("HSETEX", "myhash", "PX", ttl, "FIELDS", 1, "field1", "val1")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR value is not an integer or out of range"
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1207,7 +1214,6 @@ def test_hsetex_px_test_mix_of_expiring_and_persistent_fields(r: ValkeyTestClien
     assert 1 == r.run("HEXISTS", "myhash", "field2")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hsetex_px_test_missing_ttl(r: ValkeyTestClient) -> None:
     """
     test {HSETEX PX - test missing TTL} {
@@ -1215,9 +1221,11 @@ def test_hsetex_px_test_missing_ttl(r: ValkeyTestClient) -> None:
         set e
     } {ERR *}
     """
-    # TODO: catch {r HSETEX myhash PX FIELDS 1 field1 val1} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("HSETEX", "myhash", "PX", "FIELDS", 1, "field1", "val1")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR *"
 
 
 def test_hsetex_px_mismatched_field_or_value_count(r: ValkeyTestClient) -> None:
@@ -1401,7 +1409,6 @@ def test_hsetex_px_fxx_one_field_missing_returns_0(r: ValkeyTestClient) -> None:
     assert 0 == r.run("HEXISTS", "myhash", "b")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hsetex_ex_fnx_and_fxx_conflict_error(r: ValkeyTestClient) -> None:
     """
     test {HSETEX EX - FNX and FXX conflict error} {
@@ -1409,9 +1416,11 @@ def test_hsetex_ex_fnx_and_fxx_conflict_error(r: ValkeyTestClient) -> None:
         set e
     } {ERR *}
     """
-    # TODO: catch {r HSETEX myhash EX 10 FNX FXX FIELDS 1 x y} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("HSETEX", "myhash", "EX", 10, "FNX", "FXX", "FIELDS", 1, "x", "y")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR *"
 
 
 def test_hsetex_ex_fxx_does_not_create_object_in_case_key_does_not_exist(r: ValkeyTestClient) -> None:
@@ -1622,7 +1631,6 @@ def test_hexpire_ttl_0_deletes_field(r: ValkeyTestClient) -> None:
     assert 0 == r.run("HEXISTS", "myhash", "field1")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hexpire_negative_ttl_returns_error(r: ValkeyTestClient) -> None:
     """
     test {HEXPIRE - negative TTL returns error} {
@@ -1634,12 +1642,13 @@ def test_hexpire_negative_ttl_returns_error(r: ValkeyTestClient) -> None:
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "field1", "val")
-    # TODO: catch {r HEXPIRE myhash -5 FIELDS 1 field1} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("HEXPIRE", "myhash", -5, "FIELDS", 1, "field1")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR invalid expire time in 'hexpire' command"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hexpire_wrong_type_key_returns_error(r: ValkeyTestClient) -> None:
     """
     test {HEXPIRE - wrong type key returns error} {
@@ -1651,9 +1660,11 @@ def test_hexpire_wrong_type_key_returns_error(r: ValkeyTestClient) -> None:
     """
     r.run("FLUSHALL")
     r.run("SET", "myhash", "notahash")
-    # TODO: catch {r HEXPIRE myhash 10 FIELDS 1 field1} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("HEXPIRE", "myhash", 10, "FIELDS", 1, "field1")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "WRONGTYPE Operation against a key holding the wrong kind of value"
 
 
 def test_hexpire_nx_only_set_when_field_has_no_ttl(r: ValkeyTestClient) -> None:
@@ -1837,7 +1848,6 @@ def test_hexpire_on_a_non_existent_field_should_not_issue_notifications(r: Valke
     # TODO: $rd close
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hexpire_conflicting_conditions_error(r: ValkeyTestClient) -> None:
     """
     test {HEXPIRE - conflicting conditions error} {
@@ -1849,12 +1859,13 @@ def test_hexpire_conflicting_conditions_error(r: ValkeyTestClient) -> None:
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "field1", "val")
-    # TODO: catch {r HEXPIRE myhash 10 NX XX FIELDS 1 field1} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("HEXPIRE", "myhash", 10, "NX", "XX", "FIELDS", 1, "field1")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR NX and XX, GT or LT options at the same time are not compatible"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hexpire_missing_fields_error(r: ValkeyTestClient) -> None:
     """
     test {HEXPIRE - missing FIELDS error} {
@@ -1866,12 +1877,13 @@ def test_hexpire_missing_fields_error(r: ValkeyTestClient) -> None:
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "field1", "val")
-    # TODO: catch {r HEXPIRE myhash 10} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("HEXPIRE", "myhash", 10)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR wrong number of arguments for 'hexpire' command"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hexpire_no_fields_after_fields_keyword(r: ValkeyTestClient) -> None:
     """
     test {HEXPIRE - no fields after FIELDS keyword} {
@@ -1883,12 +1895,13 @@ def test_hexpire_no_fields_after_fields_keyword(r: ValkeyTestClient) -> None:
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "field1", "val")
-    # TODO: catch {r HEXPIRE myhash 10 FIELDS 0} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("HEXPIRE", "myhash", 10, "FIELDS", 0)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR wrong number of arguments for 'hexpire' command"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hexpire_non_integer_ttl_error(r: ValkeyTestClient) -> None:
     """
     test {HEXPIRE - non-integer TTL error} {
@@ -1900,9 +1913,11 @@ def test_hexpire_non_integer_ttl_error(r: ValkeyTestClient) -> None:
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "field1", "val")
-    # TODO: catch {r HEXPIRE myhash abc FIELDS 1 field1} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("HEXPIRE", "myhash", "abc", "FIELDS", 1, "field1")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR value is not an integer or out of range"
 
 
 def test_hexpire_non_existing_key_returns_2(r: ValkeyTestClient) -> None:
@@ -2344,7 +2359,6 @@ def test_hexpireat_no_fields_after_fields(r: ValkeyTestClient) -> None:
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hexpireat_non_integer_timestamp(r: ValkeyTestClient) -> None:
     """
     test {HEXPIREAT - non-integer timestamp} {
@@ -2356,9 +2370,11 @@ def test_hexpireat_non_integer_timestamp(r: ValkeyTestClient) -> None:
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "field1", "val")
-    # TODO: catch {r HEXPIREAT myhash tomorrow FIELDS 1 field1} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("HEXPIREAT", "myhash", "tomorrow", "FIELDS", 1, "field1")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR value is not an integer or out of range"
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -2461,7 +2477,6 @@ def test_hexpiretime_multiple_fields_mixed_cases(r: ValkeyTestClient) -> None:
     # TODO: assert_equal list [expr {$now + 100}] -1 -2 out
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hexpiretime_no_fields_keyword(r: ValkeyTestClient) -> None:
     """
     test {HEXPIRETIME - no FIELDS keyword} {
@@ -2473,12 +2488,13 @@ def test_hexpiretime_no_fields_keyword(r: ValkeyTestClient) -> None:
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "a")
-    # TODO: catch {r HEXPIRETIME myhash} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("HEXPIRETIME", "myhash")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR wrong number of arguments for 'hexpiretime' command"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hexpiretime_fields_0(r: ValkeyTestClient) -> None:
     """
     test {HEXPIRETIME - FIELDS 0} {
@@ -2490,12 +2506,13 @@ def test_hexpiretime_fields_0(r: ValkeyTestClient) -> None:
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "a")
-    # TODO: catch {r HEXPIRETIME myhash FIELDS 0} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("HEXPIRETIME", "myhash", "FIELDS", 0)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR wrong number of arguments for 'hexpiretime' command"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hexpiretime_wrong_fields_count(r: ValkeyTestClient) -> None:
     """
     test {HEXPIRETIME - wrong FIELDS count} {
@@ -2507,12 +2524,13 @@ def test_hexpiretime_wrong_fields_count(r: ValkeyTestClient) -> None:
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "a")
-    # TODO: catch {r HEXPIRETIME myhash FIELDS 1} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("HEXPIRETIME", "myhash", "FIELDS", 1)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR wrong number of arguments for 'hexpiretime' command"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hexpiretime_wrong_type_key(r: ValkeyTestClient) -> None:
     """
     test {HEXPIRETIME - wrong type key} {
@@ -2524,9 +2542,11 @@ def test_hexpiretime_wrong_type_key(r: ValkeyTestClient) -> None:
     """
     r.run("FLUSHALL")
     r.run("SET", "myhash", "not a hash")
-    # TODO: catch {r HEXPIRETIME myhash FIELDS 1 f1} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("HEXPIRETIME", "myhash", "FIELDS", 1, "f1")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "WRONGTYPE Operation against a key holding the wrong kind of value"
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -2655,7 +2675,6 @@ def test_hpexpireat_gt_and_lt_options_with_success_and_failure_cases(r: ValkeyTe
     # TODO: assert_equal {1} res _lt_pass
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hpexpireat_invalid_inputs(r: ValkeyTestClient) -> None:
     """
     test {HPEXPIREAT - invalid inputs} {
@@ -2670,10 +2689,16 @@ def test_hpexpireat_invalid_inputs(r: ValkeyTestClient) -> None:
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "a")
-    # TODO: catch {r HPEXPIREAT myhash abc FIELDS 1 f1} e
-    # TODO: assert_match {*not an integer*} e
-    # TODO: catch {r HPEXPIREAT myhash 12345 NX XX FIELDS 1 f1} e2
-    # TODO: assert_match {ERR NX and XX, GT or LT options at the same time are not compatible} e2
+    try:
+        e = r.run("HPEXPIREAT", "myhash", "abc", "FIELDS", 1, "f1")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*not an integer*")
+    try:
+        e2 = r.run("HPEXPIREAT", "myhash", 12345, "NX", "XX", "FIELDS", 1, "f1")
+    except Exception as _catch_err:
+        e2 = str(_catch_err)
+    assert fnmatch(str(e2), "ERR NX and XX, GT or LT options at the same time are not compatible")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -4057,7 +4082,6 @@ def test_ensure_that_key_level_persist_on_the_key_don_t_affect_field_ttl(r: Valk
     # TODO: assert_equal 1 get_keys_with_volatile_items r
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_verify_error_when_hash_expire_commands_num_fields_is_not_provided(r: ValkeyTestClient) -> None:
     """
     test {Verify error when hash expire commands num fields is not provided} {
@@ -4071,12 +4095,21 @@ def test_verify_error_when_hash_expire_commands_num_fields_is_not_provided(r: Va
     }
     """
     r.run("FLUSHALL")
-    # TODO: catch {r hsetex myhash KEEPTTL KEEPTTL KEEPTTL FIELDS} e
-    # TODO: assert_match e {ERR numfields should be greater than 0 and match the provided number of fields}
-    # TODO: catch {r hexpire myhash 10 NX NX FIELDS} e
-    # TODO: assert_match e {ERR numfields should be greater than 0 and match the provided number of fields}
-    # TODO: catch {r hgetex myhash PERSIST PERSIST FIELDS} e
-    # TODO: assert_match e {ERR numfields should be greater than 0 and match the provided number of fields}
+    try:
+        e = r.run("hsetex", "myhash", "KEEPTTL", "KEEPTTL", "KEEPTTL", "FIELDS")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch("ERR numfields should be greater than 0 and match the provided number of fields", str(e))
+    try:
+        e = r.run("hexpire", "myhash", 10, "NX", "NX", "FIELDS")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch("ERR numfields should be greater than 0 and match the provided number of fields", str(e))
+    try:
+        e = r.run("hgetex", "myhash", "PERSIST", "PERSIST", "FIELDS")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch("ERR numfields should be greater than 0 and match the provided number of fields", str(e))
 
 
 pytestmark = [pytest.mark.hash_ttl_info_external_skip]

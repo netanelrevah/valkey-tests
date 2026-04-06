@@ -56,7 +56,10 @@ def test_temp_rdb_will_be_deleted_if_we_use_bg_unlink_when_shutdown(r: ValkeyTes
     # TODO: set child_pid get_child_pid 0
     # TODO: set temp_rdb file join [lindex [r config get dir] 1] temp-${child_pid}.rdb
     # TODO: assert {[file exists $temp_rdb]}
-    # TODO: catch {r shutdown nosave}
+    try:
+        r.run("shutdown", "nosave")
+    except Exception:
+        pass
     # TODO: catch {set rd [valkey_deferring_client]} e
     # TODO: assert_match {*connection refused*} e
     # TODO: assert {![file exists $temp_rdb]}

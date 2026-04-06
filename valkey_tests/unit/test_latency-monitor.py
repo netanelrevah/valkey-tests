@@ -251,7 +251,6 @@ def test_latency_reset_is_able_to_reset_events(r: ValkeyTestClient) -> None:
     # TODO: assert {[r latency latest] eq {}}
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_latency_help_should_not_have_unexpected_options(r: ValkeyTestClient) -> None:
     """
     test {LATENCY HELP should not have unexpected options} {
@@ -259,8 +258,11 @@ def test_latency_help_should_not_have_unexpected_options(r: ValkeyTestClient) ->
         assert_match "*wrong number of arguments for 'latency|help' command" $e
     }
     """
-    # TODO: catch {r LATENCY help xxx} e
-    # TODO: assert_match "*wrong number of arguments for 'latency|help' command" e
+    try:
+        e = r.run("LATENCY", "help", "xxx")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*wrong number of arguments for 'latency|help' command")
 
 
 """

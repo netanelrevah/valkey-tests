@@ -1,5 +1,7 @@
 # ruff: noqa: F841, RUF043
 
+from fnmatch import fnmatch
+
 import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
@@ -93,7 +95,6 @@ def test_datatype_moduletypereplacevalue_happy_path_works(r: ValkeyTestClient) -
     # TODO: assert {[r datatype.get key-b] eq {1 AAA}}
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_datatype_moduletypereplacevalue_fails_on_non_module_keys(r: ValkeyTestClient) -> None:
     """
     test {DataType: ModuleTypeReplaceValue() fails on non-module keys} {
@@ -106,12 +107,13 @@ def test_datatype_moduletypereplacevalue_fails_on_non_module_keys(r: ValkeyTestC
     """
     r.run("datatype.set", "key-a", 1, "AAA")
     r.run("set", "key-b", "RedisString")
-    # TODO: catch {r datatype.swap key-a key-b} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("datatype.swap", "key-a", "key-b")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "*ERR*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_datatype_copy_command_works_for_modules(r: ValkeyTestClient) -> None:
     """
     test {DataType: Copy command works for modules} {
@@ -129,8 +131,11 @@ def test_datatype_copy_command_works_for_modules(r: ValkeyTestClient) -> None:
     } {1234 AAA/sourcekey/targetkey}
     """
     r.run("datatype.set", "answer-to-universe", 42, "AAA")
-    # TODO: catch {r copy answer-to-universe answer2} e
-    # TODO: assert_match {*module key failed to copy*} e
+    try:
+        e = r.run("copy", "answer-to-universe", "answer2")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*module key failed to copy*")
     r.run("datatype.set", "sourcekey", 1234, "AAA")
     r.run("copy", "sourcekey", "targetkey")
     assert r.run("datatype.get", "targetkey") == "1234 AAA/sourcekey/targetkey"

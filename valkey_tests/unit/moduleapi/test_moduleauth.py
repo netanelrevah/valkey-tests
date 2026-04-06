@@ -1,4 +1,5 @@
 # ruff: noqa: F841, RUF043
+
 from fnmatch import fnmatch
 
 import pytest
@@ -766,8 +767,11 @@ def test_module_unload_during_blocking_module_auth(r: ValkeyTestClient) -> None:
     r.run("acl", "setuser", "foo", ">pwd", "on", "~*", "&*", "+@all")
     # TODO: $rd AUTH foo block_allow
     # TODO: wait_for_blocked_clients_count 1
-    # TODO: catch {r module unload testacl} e
-    # TODO: assert_match {*the module has blocked clients*} e
+    try:
+        e = r.run("module", "unload", "testacl")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*the module has blocked clients*")
     assert "OK" == r.run("module", "unload", "moduleauthtwo")
     assert "OK" == r.run("module", "unload", "misc")
     # TODO: wait_for_blocked_clients_count 0 500 10

@@ -1,3 +1,5 @@
+# ruff: noqa: F841
+
 from fnmatch import fnmatch
 
 import pytest
@@ -15,7 +17,10 @@ def test_auth_fails_if_there_is_no_password_configured_server_side(r: ValkeyTest
         set _ $err
     } {ERR *any password*}
     """
-    # TODO: catch {r auth foo} err
+    try:
+        err = r.run("auth", "foo")
+    except Exception as _catch_err:
+        err = str(_catch_err)
     # TODO: set _ err
     assert False
 
@@ -28,7 +33,10 @@ def test_arity_check_for_auth_command(r: ValkeyTestClient) -> None:
         set _ $err
     } {*syntax error*}
     """
-    # TODO: catch {r auth a b c} err
+    try:
+        err = r.run("auth", "a", "b", "c")
+    except Exception as _catch_err:
+        err = str(_catch_err)
     # TODO: set _ err
     assert False
 
@@ -44,7 +52,10 @@ def test_auth_fails_when_a_wrong_password_is_given(r: ValkeyTestClient) -> None:
         set _ $err
     } {WRONGPASS*}
     """
-    # TODO: catch {r auth wrong!} err
+    try:
+        err = r.run("auth", "wrong!")
+    except Exception as _catch_err:
+        err = str(_catch_err)
     # TODO: set _ err
     assert False
 
@@ -57,7 +68,10 @@ def test_arbitrary_command_gives_an_error_when_auth_is_required(r: ValkeyTestCli
         set _ $err
     } {NOAUTH*}
     """
-    # TODO: catch {r set foo bar} err
+    try:
+        err = r.run("set", "foo", "bar")
+    except Exception as _catch_err:
+        err = str(_catch_err)
     # TODO: set _ err
     assert False
 

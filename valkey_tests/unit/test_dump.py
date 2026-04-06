@@ -118,10 +118,12 @@ def test_restore_with_absttl_in_the_past(r: ValkeyTestClient) -> None:
     # TODO: set now clock milliseconds
     r.run("debug", "set-active-expire", 0)
     # TODO: r restore foo expr $now-3000 encoded absttl REPLACE
-    # TODO: catch {r debug object foo} e
+    try:
+        e = r.run("debug", "object", "foo")
+    except Exception as _catch_err:
+        e = str(_catch_err)
     r.run("debug", "set-active-expire", 1)
-    # TODO: set e
-    assert False
+    assert e == "ERR no such key"
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -178,7 +180,6 @@ def test_restore_can_set_lfu(r: ValkeyTestClient) -> None:
     assert r.run("config", "set", "maxmemory-policy", "noeviction") == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_restore_returns_an_error_of_the_key_already_exists(r: ValkeyTestClient) -> None:
     """
     test {RESTORE returns an error of the key already exists} {
@@ -190,9 +191,11 @@ def test_restore_returns_an_error_of_the_key_already_exists(r: ValkeyTestClient)
     """
     r.run("set", "foo", "bar")
     e = ""
-    # TODO: catch {r restore foo 0 "..."} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("restore", "foo", 0, "...")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "*BUSYKEY*"
 
 
 def test_restore_can_overwrite_an_existing_key_with_replace(r: ValkeyTestClient) -> None:
@@ -218,7 +221,6 @@ def test_restore_can_overwrite_an_existing_key_with_replace(r: ValkeyTestClient)
     assert r.run("get", "foo") == "bar2"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_restore_can_detect_a_syntax_error_for_unrecognized_options(r: ValkeyTestClient) -> None:
     """
     test {RESTORE can detect a syntax error for unrecognized options} {
@@ -226,9 +228,11 @@ def test_restore_can_detect_a_syntax_error_for_unrecognized_options(r: ValkeyTes
         set e
     } {*syntax*}
     """
-    # TODO: catch {r restore foo 0 "..." invalid-option} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("restore", "foo", 0, "...", "invalid-option")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "*syntax*"
 
 
 @pytest.mark.xfail(reason="not implemented")

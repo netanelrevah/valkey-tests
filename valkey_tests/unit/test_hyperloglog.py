@@ -1,5 +1,7 @@
 # ruff: noqa: PLR2004, F841, RUF043
 
+from fnmatch import fnmatch
+
 import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
@@ -52,7 +54,6 @@ def test_cve_2025_32023_sparse_hll_xzero_overflow_triggers_crash(r: ValkeyTestCl
 pytestmark = [pytest.mark.hll]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hyperloglog_self_test_passes(r: ValkeyTestClient) -> None:
     """
     test {HyperLogLog self test passes} {
@@ -60,9 +61,11 @@ def test_hyperloglog_self_test_passes(r: ValkeyTestClient) -> None:
         set e
     } {OK} {needs:pfdebug}
     """
-    # TODO: catch {r pfselftest} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("pfselftest")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "OK"
 
 
 def test_pfadd_without_arguments_creates_an_hll_value(r: ValkeyTestClient) -> None:
@@ -132,8 +135,7 @@ def test_pfcount_returns_approximated_cardinality_of_set(r: ValkeyTestClient) ->
     # TODO: lappend res r pfcount hll
     r.run("pfadd", "hll", 6, 7, 8, 8, 9, 10)
     # TODO: lappend res r pfcount hll
-    # TODO: set res
-    assert False
+    assert res == "5 10"
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -290,7 +292,6 @@ def test_hyperloglog_sparse_encoding_stress_test(r: ValkeyTestClient) -> None:
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_corrupted_sparse_hyperloglogs_are_detected_additional_at_tail(r: ValkeyTestClient) -> None:
     """
     test {Corrupted sparse HyperLogLogs are detected: Additional at tail} {
@@ -306,12 +307,13 @@ def test_corrupted_sparse_hyperloglogs_are_detected_additional_at_tail(r: Valkey
     r.run("pfadd", "hll", "a", "b", "c")
     r.run("append", "hll", "hello")
     e = ""
-    # TODO: catch {r pfcount hll} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("pfcount", "hll")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "*INVALIDOBJ*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_corrupted_sparse_hyperloglogs_are_detected_broken_magic(r: ValkeyTestClient) -> None:
     """
     test {Corrupted sparse HyperLogLogs are detected: Broken magic} {
@@ -327,12 +329,13 @@ def test_corrupted_sparse_hyperloglogs_are_detected_broken_magic(r: ValkeyTestCl
     r.run("pfadd", "hll", "a", "b", "c")
     r.run("setrange", "hll", 0, "0123")
     e = ""
-    # TODO: catch {r pfcount hll} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("pfcount", "hll")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "*WRONGTYPE*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_corrupted_sparse_hyperloglogs_are_detected_invalid_encoding(r: ValkeyTestClient) -> None:
     """
     test {Corrupted sparse HyperLogLogs are detected: Invalid encoding} {
@@ -348,9 +351,11 @@ def test_corrupted_sparse_hyperloglogs_are_detected_invalid_encoding(r: ValkeyTe
     r.run("pfadd", "hll", "a", "b", "c")
     r.run("setrange", "hll", 4, "x")
     e = ""
-    # TODO: catch {r pfcount hll} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("pfcount", "hll")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "*WRONGTYPE*"
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -369,9 +374,11 @@ def test_corrupted_dense_hyperloglogs_are_detected_wrong_length(r: ValkeyTestCli
     r.run("pfadd", "hll", "a", "b", "c")
     # TODO: r setrange hll 4 "\x00"
     e = ""
-    # TODO: catch {r pfcount hll} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("pfcount", "hll")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "*WRONGTYPE*"
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -432,7 +439,6 @@ def test_fuzzing_dense_or_sparse_encoding_server_should_always_detect_errors(r: 
     #   }
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_pfadd_pfcount_pfmerge_type_checking_works(r: ValkeyTestClient) -> None:
     """
     test {PFADD, PFCOUNT, PFMERGE type checking works} {
@@ -448,14 +454,26 @@ def test_pfadd_pfcount_pfmerge_type_checking_works(r: ValkeyTestClient) -> None:
     }
     """
     r.run("set", "foo{t}", "bar")
-    # TODO: catch {r pfadd foo{t} 1} e
-    # TODO: assert_match {*WRONGTYPE*} e
-    # TODO: catch {r pfcount foo{t}} e
-    # TODO: assert_match {*WRONGTYPE*} e
-    # TODO: catch {r pfmerge bar{t} foo{t}} e
-    # TODO: assert_match {*WRONGTYPE*} e
-    # TODO: catch {r pfmerge foo{t} bar{t}} e
-    # TODO: assert_match {*WRONGTYPE*} e
+    try:
+        e = r.run("pfadd", "foo{t}", 1)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*WRONGTYPE*")
+    try:
+        e = r.run("pfcount", "foo{t}")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*WRONGTYPE*")
+    try:
+        e = r.run("pfmerge", "bar{t}", "foo{t}")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*WRONGTYPE*")
+    try:
+        e = r.run("pfmerge", "foo{t}", "bar{t}")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*WRONGTYPE*")
 
 
 def test_pfmerge_results_on_the_cardinality_of_union_of_sets(r: ValkeyTestClient) -> None:

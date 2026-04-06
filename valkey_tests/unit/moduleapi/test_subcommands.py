@@ -1,5 +1,7 @@
 # ruff: noqa: F841
 
+from fnmatch import fnmatch
+
 import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
@@ -47,7 +49,6 @@ def test_module_subcommands_via_command(r: ValkeyTestClient) -> None:
     # TODO: assert_equal dict get $subcmds_in_cmd_docs "subcommands.bitarray|set" {group module module subcommands}
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_pure_container_command_fails_on_arity_error(r: ValkeyTestClient) -> None:
     """
     test "Module pure-container command fails on arity error" {
@@ -62,11 +63,17 @@ def test_module_pure_container_command_fails_on_arity_error(r: ValkeyTestClient)
         assert_match {*wrong number of arguments for 'subcommands.bitarray|get' command} $e
     }
     """
-    # TODO: catch {r subcommands.bitarray} e
-    # TODO: assert_match {*wrong number of arguments for 'subcommands.bitarray' command} e
+    try:
+        e = r.run("subcommands.bitarray")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*wrong number of arguments for 'subcommands.bitarray' command")
     assert r.run("subcommands.bitarray", "get", "k1") == "OK"
-    # TODO: catch {r subcommands.bitarray get k1 8 90} e
-    # TODO: assert_match {*wrong number of arguments for 'subcommands.bitarray|get' command} e
+    try:
+        e = r.run("subcommands.bitarray", "get", "k1", 8, 90)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*wrong number of arguments for 'subcommands.bitarray|get' command")
 
 
 def test_module_get_current_command_fullname(r: ValkeyTestClient) -> None:

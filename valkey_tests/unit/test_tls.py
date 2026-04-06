@@ -1,5 +1,7 @@
 # ruff: noqa: F841
 
+from fnmatch import fnmatch
+
 import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
@@ -301,8 +303,11 @@ def test_tls_working_with_an_encrypted_keyfile(r: ValkeyTestClient) -> None:
     keyfile = r.run("config", "get", "tls-key-file")[1]
     # TODO: set keyfile_encrypted "$keyfile.encrypted"
     # TODO: exec -ignorestderr openssl rsa -in keyfile -out keyfile _encrypted -aes256 -passout pass:1234 2>/dev/null
-    # TODO: catch {r config set tls-key-file $keyfile_encrypted} e
-    # TODO: assert_match {*Unable to update TLS*} e
+    try:
+        e = r.run("config", "set", "tls-key-file", keyfile, "_encrypted")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*Unable to update TLS*")
     r.run("config", "set", "tls-key-file-pass", 1234)
     r.run("config", "set", "tls-key-file", keyfile, "_encrypted")
 

@@ -1,5 +1,7 @@
 # ruff: noqa: F841
 
+from fnmatch import fnmatch
+
 import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
@@ -24,8 +26,7 @@ def test_bitfield_signed_set_and_get_basics(r: ValkeyTestClient) -> None:
     # TODO: lappend results r bitfield bits set i8 0 -100
     # TODO: lappend results r bitfield bits set i8 0 101
     # TODO: lappend results r bitfield bits get i8 0
-    # TODO: set results
-    assert False
+    assert results == "0 -100 101"
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -45,8 +46,7 @@ def test_bitfield_unsigned_set_and_get_basics(r: ValkeyTestClient) -> None:
     # TODO: lappend results r bitfield bits set u8 0 255
     # TODO: lappend results r bitfield bits set u8 0 100
     # TODO: lappend results r bitfield bits get u8 0
-    # TODO: set results
-    assert False
+    assert results == "0 255 100"
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -125,8 +125,7 @@ def test_bitfield_basic_incrby_form(r: ValkeyTestClient) -> None:
     r.run("bitfield", "bits", "set", "u8", "#0", 10)
     # TODO: lappend results r bitfield bits incrby u8 #0 100
     # TODO: lappend results r bitfield bits incrby u8 #0 100
-    # TODO: set results
-    assert False
+    assert results == "110 210"
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -144,8 +143,7 @@ def test_bitfield_chaining_of_multiple_commands(r: ValkeyTestClient) -> None:
     results = ""
     r.run("bitfield", "bits", "set", "u8", "#0", 10)
     # TODO: lappend results r bitfield bits incrby u8 #0 100 incrby u8 #0 100
-    # TODO: set results
-    assert False
+    assert results == "{110 210}"
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -491,7 +489,6 @@ def test_bitfield_ro_with_only_key_as_argument(r: ValkeyTestClient) -> None:
     # TODO: assert {$res eq {}}
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitfield_ro_fails_when_write_option_is_used(r: ValkeyTestClient) -> None:
     """
     test {BITFIELD_RO fails when write option is used} {
@@ -499,8 +496,11 @@ def test_bitfield_ro_fails_when_write_option_is_used(r: ValkeyTestClient) -> Non
         assert_match {*ERR BITFIELD_RO only supports the GET subcommand*} $err
     }
     """
-    # TODO: catch {r bitfield_ro bits set u8 0 100 get u8 0} err
-    # TODO: assert_match {*ERR BITFIELD_RO only supports the GET subcommand*} err
+    try:
+        err = r.run("bitfield_ro", "bits", "set", "u8", 0, 100, "get", "u8", 0)
+    except Exception as _catch_err:
+        err = str(_catch_err)
+    assert fnmatch(str(err), "*ERR BITFIELD_RO only supports the GET subcommand*")
 
 
 pytestmark = [pytest.mark.repl_external_skip]

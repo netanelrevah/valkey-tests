@@ -428,7 +428,6 @@ def test_publish_to_self_inside_rm_call(r: ValkeyTestClient) -> None:
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_module_get_or_set_client_name_by_id_api(r: ValkeyTestClient) -> None:
     """
     test {test module get/set client name by id api} {
@@ -443,11 +442,17 @@ def test_test_module_get_or_set_client_name_by_id_api(r: ValkeyTestClient) -> No
         assert_equal somebody [r client getname]
     }
     """
-    # TODO: catch { r test.getname } e
-    # TODO: assert_equal "-ERR No name" e
+    try:
+        e = r.run("test.getname")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert "-ERR No name" == e
     r.run("client", "setname", "nobody")
-    # TODO: catch { r test.setname "name with spaces" } e
-    # TODO: assert_match "*Invalid argument*" e
+    try:
+        e = r.run("test.setname", "name with spaces")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*Invalid argument*")
     assert "nobody" == r.run("client", "getname")
     assert "nobody" == r.run("test.getname")
     r.run("test.setname", "somebody")
@@ -1080,7 +1085,6 @@ r module load testmodule
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_dry_run_ok_oom_or_acl(r: ValkeyTestClient) -> None:
     """
     test {test Dry Run - OK OOM/ACL} {
@@ -1093,12 +1097,14 @@ def test_test_dry_run_ok_oom_or_acl(r: ValkeyTestClient) -> None:
     """
     x = 5
     r.run("set", "x", x)
-    # TODO: catch {r test.rm_call_flags DMC set x 10} e
-    # TODO: assert_match {*NULL reply returned*} e
+    try:
+        e = r.run("test.rm_call_flags", "DMC", "set", "x", 10)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*NULL reply returned*")
     assert r.run("get", "x") == 5
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_dry_run_fail_oom(r: ValkeyTestClient) -> None:
     """
     test {test Dry Run - Fail OOM} {
@@ -1114,13 +1120,15 @@ def test_test_dry_run_fail_oom(r: ValkeyTestClient) -> None:
     x = 5
     r.run("set", "x", x)
     r.run("config", "set", "maxmemory", 1)
-    # TODO: catch {r test.rm_call_flags DM set x 10} e
-    # TODO: assert_match {*OOM*} e
+    try:
+        e = r.run("test.rm_call_flags", "DM", "set", "x", 10)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*OOM*")
     assert r.run("get", "x") == x
     assert r.run("config", "set", "maxmemory", 0) == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_dry_run_fail_acl(r: ValkeyTestClient) -> None:
     """
     test {test Dry Run - Fail ACL} {
@@ -1138,8 +1146,11 @@ def test_test_dry_run_fail_acl(r: ValkeyTestClient) -> None:
     x = 5
     r.run("set", "x", x)
     r.run("acl", "setuser", "default", "resetkeys")
-    # TODO: catch {r test.rm_call_flags DC set x 10} e
-    # TODO: assert_match {*NOPERM No permissions to access a key*} e
+    try:
+        e = r.run("test.rm_call_flags", "DC", "set", "x", 10)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*NOPERM No permissions to access a key*")
     r.run("acl", "setuser", "default", "+@all", "~*")
     assert r.run("get", "x") == x
 

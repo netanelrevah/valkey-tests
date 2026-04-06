@@ -139,10 +139,16 @@ def test_exec_fails_if_there_are_errors_while_queueing_commands_1(r: ValkeyTestC
     r.run("del", "foo1{t}", "foo2{t}")
     r.run("multi")
     r.run("set", "foo1{t}", "bar1")
-    # TODO: catch {r non-existing-command}
+    try:
+        r.run("non-existing-command")
+    except Exception:
+        pass
     r.run("set", "foo2{t}", "bar2")
-    # TODO: catch {r exec} e
-    # TODO: assert_match {EXECABORT*} e
+    try:
+        e = r.run("exec")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "EXECABORT*")
     # TODO: list r exists foo1{t} r exists foo2{t}
     assert False
 
@@ -173,18 +179,23 @@ def test_exec_fails_if_there_are_errors_while_queueing_commands_2(r: ValkeyTestC
     r.run("set", "foo1{t}", "bar1")
     # TODO: $rd config set maxmemory 1
     # TODO: assert {[$rd read] eq {OK}}
-    # TODO: catch {r lpush mylist{t} myvalue}
+    try:
+        r.run("lpush", "mylist{t}", "myvalue")
+    except Exception:
+        pass
     # TODO: $rd config set maxmemory 0
     # TODO: assert {[$rd read] eq {OK}}
     r.run("set", "foo2{t}", "bar2")
-    # TODO: catch {r exec} e
-    # TODO: assert_match {EXECABORT*} e
+    try:
+        e = r.run("exec")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "EXECABORT*")
     # TODO: $rd close
     # TODO: list r exists foo1{t} r exists foo2{t}
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_if_exec_aborts_the_client_multi_state_is_cleared(r: ValkeyTestClient) -> None:
     """
     test {If EXEC aborts, the client MULTI state is cleared} {
@@ -201,10 +212,16 @@ def test_if_exec_aborts_the_client_multi_state_is_cleared(r: ValkeyTestClient) -
     r.run("del", "foo1{t}", "foo2{t}")
     r.run("multi")
     r.run("set", "foo1{t}", "bar1")
-    # TODO: catch {r non-existing-command}
+    try:
+        r.run("non-existing-command")
+    except Exception:
+        pass
     r.run("set", "foo2{t}", "bar2")
-    # TODO: catch {r exec} e
-    # TODO: assert_match {EXECABORT*} e
+    try:
+        e = r.run("exec")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "EXECABORT*")
     assert r.run("ping") == "PONG"
 
 
@@ -706,7 +723,6 @@ def test_swapdb_does_not_touch_stale_key_replaced_with_another_stale_key(r: Valk
     assert r.run("debug", "set-active-expire", 1) == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_watch_is_able_to_remember_the_db_a_key_belongs_to(r: ValkeyTestClient) -> None:
     """
     test {WATCH is able to remember the DB a key belongs to} {
@@ -734,8 +750,7 @@ def test_watch_is_able_to_remember_the_db_a_key_belongs_to(r: ValkeyTestClient) 
     r.run("ping")
     res = r.run("exec")
     r.run("select", 9)
-    # TODO: set res
-    assert False
+    assert res == "PONG"
 
 
 def test_watch_will_consider_touched_keys_target_of_expire(r: ValkeyTestClient) -> None:
@@ -1090,8 +1105,11 @@ def test_multi_or_exec_with_replicaof(r: ValkeyTestClient) -> None:
     r.run("replicaof", "localhost", 9999)
     r.run("set", "foo3", "bar")
     r.run("exec")
-    # TODO: catch {r set foo4 bar} e
-    # TODO: assert_match {READONLY*} e
+    try:
+        e = r.run("set", "foo4", "bar")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "READONLY*")
     # TODO: assert_replication_stream repl {
     #       {select *}
     #       {set foo bar}
@@ -1121,8 +1139,11 @@ def test_discard_should_not_fail_during_oom(r: ValkeyTestClient) -> None:
     # TODO: $rd config set maxmemory 1
     # TODO: assert {[$rd read] eq {OK}}
     r.run("multi")
-    # TODO: catch {r set x 1} e
-    # TODO: assert_match {OOM*} e
+    try:
+        e = r.run("set", "x", 1)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "OOM*")
     r.run("discard")
     # TODO: $rd config set maxmemory 0
     # TODO: assert {[$rd read] eq {OK}}
@@ -1348,8 +1369,11 @@ def test_exec_with_write_commands_and_state_change(r: ValkeyTestClient) -> None:
     r.run("multi")
     r.run("incr", "xx")
     # TODO: $r1 config set min-replicas-to-write 2
-    # TODO: catch {r exec} e
-    # TODO: assert_match {*EXECABORT*NOREPLICAS*} e
+    try:
+        e = r.run("exec")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*EXECABORT*NOREPLICAS*")
     xx = r.run("get", "xx")
     # TODO: assert { $xx == 1}
     # TODO: $r1 config set min-replicas-to-write 0
@@ -1399,14 +1423,20 @@ def test_exec_with_read_commands_and_stale_replica_state_change(r: ValkeyTestCli
     r.run("multi")
     r.run("get", "xx")
     # TODO: $r1 replicaof localhost_ 0
-    # TODO: catch {r exec} e
-    # TODO: assert_match {*EXECABORT*MASTERDOWN*} e
+    try:
+        e = r.run("exec")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*EXECABORT*MASTERDOWN*")
     # TODO: $r1 replicaof no one
     r.run("multi")
     r.run("ping")
     # TODO: $r1 replicaof localhost_ 0
-    # TODO: catch {r exec} e
-    # TODO: assert_match {*EXECABORT*MASTERDOWN*} e
+    try:
+        e = r.run("exec")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*EXECABORT*MASTERDOWN*")
     r.run("multi")
     # TODO: $r1 replicaof no one
     r.run("get", "xx")
@@ -1477,8 +1507,11 @@ def test_exec_with_at_least_one_use_memory_command_should_fail(r: ValkeyTestClie
     r.run("set", "x", 1)
     r.run("get", "x")
     # TODO: $r2 config set maxmemory 1
-    # TODO: catch {r exec} e
-    # TODO: assert_match {EXECABORT*OOM*} e
+    try:
+        e = r.run("exec")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "EXECABORT*OOM*")
     # TODO: $r2 config set maxmemory 0
     # TODO: $r2 close
     assert False

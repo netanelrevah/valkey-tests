@@ -178,7 +178,10 @@ def test_slowlog_certain_commands_are_omitted_that_contain_sensitive_information
     r.run("config", "set", "slowlog-max-len", 100)
     r.run("config", "set", "slowlog-log-slower-than", 0)
     r.run("slowlog", "reset")
-    # TODO: catch {r acl setuser "slowlog test user" +get +set} _
+    try:
+        _ = r.run("acl", "setuser", "slowlog test user", "+get", "+set")
+    except Exception as _catch_err:
+        _ = str(_catch_err)
     r.run("config", "set", "primaryuser", "")
     r.run("config", "set", "primaryauth", "")
     r.run("config", "set", "requirepass", "")

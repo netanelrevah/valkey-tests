@@ -528,7 +528,6 @@ def test_sort_with_by_constant_and_store_should_still_order_output(r: ValkeyTest
     assert r.run("lrange", "mylist", 0, -1) == "a aa aaa azz b c d e f g h i l m n o p q r s t u v z"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_sort_will_complain_with_numerical_sorting_and_bad_doubles_1(r: ValkeyTestClient) -> None:
     """
     test "SORT will complain with numerical sorting and bad doubles (1)" {
@@ -542,12 +541,13 @@ def test_sort_will_complain_with_numerical_sorting_and_bad_doubles_1(r: ValkeyTe
     r.run("del", "myset")
     r.run("sadd", "myset", 1, 2, 3, 4, "not-a-double")
     e = ""
-    # TODO: catch {r sort myset} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("sort", "myset")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "*ERR*double*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_sort_will_complain_with_numerical_sorting_and_bad_doubles_2(r: ValkeyTestClient) -> None:
     """
     test "SORT will complain with numerical sorting and bad doubles (2)" {
@@ -563,9 +563,11 @@ def test_sort_will_complain_with_numerical_sorting_and_bad_doubles_2(r: ValkeyTe
     r.run("sadd", "myset", 1, 2, 3, 4)
     r.run("mset", "score:1", 10, "score:2", 20, "score:3", 30, "score:4", "not-a-double")
     e = ""
-    # TODO: catch {r sort myset by score:*} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("sort", "myset", "by", "score:*")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "*ERR*double*"
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -684,7 +686,6 @@ def test_sort_ro_successful_case(r: ValkeyTestClient) -> None:
     assert r.run("sort_ro", "mylist", "by", "nosort", "get", "x:*->") == "100"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_sort_ro_cannot_run_with_store_arg(r: ValkeyTestClient) -> None:
     """
     test "SORT_RO - Cannot run with STORE arg" {
@@ -692,9 +693,11 @@ def test_sort_ro_cannot_run_with_store_arg(r: ValkeyTestClient) -> None:
         set e
     } {ERR syntax error}
     """
-    # TODO: catch {r sort_ro foolist STORE bar} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("sort_ro", "foolist", "STORE", "bar")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR syntax error"
 
 
 @pytest.mark.xfail(reason="not implemented")

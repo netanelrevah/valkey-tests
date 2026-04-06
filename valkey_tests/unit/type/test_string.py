@@ -264,7 +264,6 @@ def test_getex_no_option(r: ValkeyTestClient) -> None:
     assert "bar" == r.run("getex", "foo")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_getex_syntax_errors(r: ValkeyTestClient) -> None:
     """
     test "GETEX syntax errors" {
@@ -274,9 +273,11 @@ def test_getex_syntax_errors(r: ValkeyTestClient) -> None:
     } {*syntax*}
     """
     ex = ""
-    # TODO: catch {r getex foo non-existent-option} ex
-    # TODO: set ex
-    assert False
+    try:
+        ex = r.run("getex", "foo", "non-existent-option")
+    except Exception as _catch_err:
+        ex = str(_catch_err)
+    assert ex == "*syntax*"
 
 
 def test_getex_and_get_expired_key_or_not_exist(r: ValkeyTestClient) -> None:
@@ -296,7 +297,6 @@ def test_getex_and_get_expired_key_or_not_exist(r: ValkeyTestClient) -> None:
     assert "" == r.run("get", "foo")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_getex_no_arguments(r: ValkeyTestClient) -> None:
     """
     test "GETEX no arguments" {
@@ -306,9 +306,11 @@ def test_getex_no_arguments(r: ValkeyTestClient) -> None:
     } {*wrong number of arguments for 'getex' command}
     """
     ex = ""
-    # TODO: catch {r getex} ex
-    # TODO: set ex
-    assert False
+    try:
+        ex = r.run("getex")
+    except Exception as _catch_err:
+        ex = str(_catch_err)
+    assert ex == "*wrong number of arguments for 'getex' command"
 
 
 def test_getdel_command(r: ValkeyTestClient) -> None:
@@ -1051,7 +1053,6 @@ def test_trim_on_set_with_big_value(r: ValkeyTestClient) -> None:
     # TODO: assert {[r memory usage key] < 42000}
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_extended_set_can_detect_syntax_errors(r: ValkeyTestClient) -> None:
     """
     test {Extended SET can detect syntax errors} {
@@ -1061,9 +1062,11 @@ def test_extended_set_can_detect_syntax_errors(r: ValkeyTestClient) -> None:
     } {*syntax*}
     """
     e = ""
-    # TODO: catch {r set foo bar non-existing-option} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("set", "foo", "bar", "non-existing-option")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "*syntax*"
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1210,7 +1213,6 @@ def test_extended_set_get_option_with_nx_and_previous_value(r: ValkeyTestClient)
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_extended_set_get_with_incorrect_type_should_result_in_wrong_type_error(r: ValkeyTestClient) -> None:
     """
     test {Extended SET GET with incorrect type should result in wrong type error} {
@@ -1223,10 +1225,12 @@ def test_extended_set_get_with_incorrect_type_should_result_in_wrong_type_error(
     """
     r.run("del", "foo")
     r.run("rpush", "foo", "waffle")
-    # TODO: catch {r set foo bar GET} err1
+    try:
+        err1 = r.run("set", "foo", "bar", "GET")
+    except Exception as _catch_err:
+        err1 = str(_catch_err)
     assert "waffle" == r.run("rpop", "foo")
-    # TODO: set err1
-    assert False
+    assert err1 == "*WRONGTYPE*"
 
 
 def test_set_with_ifeq_conditional(r: ValkeyTestClient) -> None:

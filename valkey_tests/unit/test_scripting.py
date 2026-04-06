@@ -2083,7 +2083,6 @@ foreach is_eval {0 1} {
 pytestmark = [pytest.mark.scripting]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_shebang_support_for_lua_engine(r: ValkeyTestClient) -> None:
     """
     test "Shebang support for lua engine" {
@@ -2099,16 +2098,14 @@ def test_shebang_support_for_lua_engine(r: ValkeyTestClient) -> None:
         } 0] 1
     }
     """
-    # TODO: catch {
-    #       r eval {#!not-lua
-    #           return 1
-    #       } 0
-    #   } e
-    # TODO: assert_match {*Could not find scripting engine*} e
+    try:
+        e = r.run("eval", "#!not-lua\n                return 1\n            ", 0)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*Could not find scripting engine*")
     assert r.run("eval", "#!lua            return 1        ", 0) == 1
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_unknown_shebang_option(r: ValkeyTestClient) -> None:
     """
     test "Unknown shebang option" {
@@ -2120,15 +2117,13 @@ def test_unknown_shebang_option(r: ValkeyTestClient) -> None:
         assert_match {*Unknown lua shebang option*} $e
     }
     """
-    # TODO: catch {
-    #       r eval {#!lua badger=data
-    #           return 1
-    #       } 0
-    #   } e
-    # TODO: assert_match {*Unknown lua shebang option*} e
+    try:
+        e = r.run("eval", "#!lua badger=data\n                return 1\n            ", 0)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*Unknown lua shebang option*")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_unknown_shebang_flag(r: ValkeyTestClient) -> None:
     """
     test "Unknown shebang flag" {
@@ -2140,12 +2135,11 @@ def test_unknown_shebang_flag(r: ValkeyTestClient) -> None:
         assert_match {*Unexpected flag in script shebang*} $e
     }
     """
-    # TODO: catch {
-    #       r eval {#!lua flags=allow-oom,what?
-    #           return 1
-    #       } 0
-    #   } e
-    # TODO: assert_match {*Unexpected flag in script shebang*} e
+    try:
+        e = r.run("eval", "#!lua flags=allow-oom,what?\n                return 1\n            ", 0)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*Unexpected flag in script shebang*")
 
 
 def test_allow_oom_shebang_flag(r: ValkeyTestClient) -> None:

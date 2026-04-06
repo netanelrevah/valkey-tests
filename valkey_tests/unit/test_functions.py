@@ -183,9 +183,10 @@ def test_function_test_function_delete(r: ValkeyTestClient) -> None:
     } {*Function not found*}
     """
     r.run("function", "delete", "test")
-    # TODO: catch {
-    #       r fcall test 0
-    #   } e
+    try:
+        e = r.run("fcall", "test", 0)
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -202,9 +203,10 @@ def test_function_test_fcall_bad_arguments(r: ValkeyTestClient) -> None:
     } {*Bad number of keys provided*}
     """
     # TODO: r function load get_function_code LUA test test {return 'hello'}
-    # TODO: catch {
-    #       r fcall test bad_arg
-    #   } e
+    try:
+        e = r.run("fcall", "test", "bad_arg")
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -219,9 +221,10 @@ def test_function_test_fcall_bad_number_of_keys_arguments(r: ValkeyTestClient) -
         set _ $e
     } {*Number of keys can't be greater than number of args*}
     """
-    # TODO: catch {
-    #       r fcall test 10 key1
-    #   } e
+    try:
+        e = r.run("fcall", "test", 10, "key1")
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -236,9 +239,10 @@ def test_function_test_fcall_negative_number_of_keys(r: ValkeyTestClient) -> Non
         set _ $e
     } {*Number of keys can't be negative*}
     """
-    # TODO: catch {
-    #       r fcall test -1 key1
-    #   } e
+    try:
+        e = r.run("fcall", "test", -1, "key1")
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -253,9 +257,10 @@ def test_function_test_delete_on_not_exiting_library(r: ValkeyTestClient) -> Non
         set _ $e
     } {*Library not found*}
     """
-    # TODO: catch {
-    #       r function delete test1
-    #   } e
+    try:
+        e = r.run("function", "delete", "test1")
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -270,9 +275,10 @@ def test_function_test_function_kill_when_function_is_not_running(r: ValkeyTestC
         set _ $e
     } {*No scripts in execution*}
     """
-    # TODO: catch {
-    #       r function kill
-    #   } e
+    try:
+        e = r.run("function", "kill")
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -287,9 +293,10 @@ def test_function_test_wrong_subcommand(r: ValkeyTestClient) -> None:
         set _ $e
     } {*unknown subcommand*}
     """
-    # TODO: catch {
-    #       r function bad_subcommand
-    #   } e
+    try:
+        e = r.run("function", "bad_subcommand")
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -305,7 +312,6 @@ def test_function_test_loading_from_rdb(r: ValkeyTestClient) -> None:
     assert r.run("fcall", "test", 0) == "hello"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_test_debug_reload_different_options(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - test debug reload different options} {
@@ -315,8 +321,11 @@ def test_function_test_debug_reload_different_options(r: ValkeyTestClient) -> No
         r function list
     } {{library_name test engine LUA functions {{name test description {} flags {}}}}} {needs:debug}
     """
-    # TODO: catch {r debug reload noflush} e
-    # TODO: assert_match "*Error trying to load the RDB*" e
+    try:
+        e = r.run("debug", "reload", "noflush")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*Error trying to load the RDB*")
     r.run("debug", "reload", "noflush", "merge")
     assert r.run("function", "list") == "{library_name test engine LUA functions {{name test description {} flags {}}}}"
 
@@ -424,8 +433,11 @@ def test_function_test_function_dump_and_restore_with_append_argument(r: ValkeyT
     r.run("function", "flush")
     assert fnmatch(str(r.run("function", "list")), "")
     # TODO: r function load get_function_code lua test test {return 'hello1'}
-    # TODO: catch {r function restore $e APPEND} err
-    # TODO: assert_match {*already exists*} err
+    try:
+        err = r.run("function", "restore", e, "APPEND")
+    except Exception as _catch_err:
+        err = str(_catch_err)
+    assert fnmatch(str(err), "*already exists*")
     r.run("function", "flush")
     # TODO: r function load get_function_code lua test1 test1 {return 'hello1'}
     r.run("function", "restore", e, "APPEND")
@@ -472,8 +484,11 @@ def test_function_test_function_restore_with_bad_payload_do_not_drop_existing_fu
     """
     r.run("function", "flush")
     # TODO: r function load get_function_code LUA test test {return 'hello'}
-    # TODO: catch {r function restore bad_payload} e
-    # TODO: assert_match {*payload version or checksum are wrong*} e
+    try:
+        e = r.run("function", "restore", "bad_payload")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*payload version or checksum are wrong*")
     assert r.run("function", "list") == "{library_name test engine LUA functions {{name test description {} flags {}}}}"
 
 
@@ -485,7 +500,10 @@ def test_function_test_function_restore_with_wrong_number_of_arguments(r: Valkey
         set _ $e
     } {*unknown subcommand or wrong number of arguments for 'restore'. Try FUNCTION HELP.}
     """
-    # TODO: catch {r function restore arg1 args2 arg3} e
+    try:
+        e = r.run("function", "restore", "arg1", "args2", "arg3")
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -500,7 +518,10 @@ def test_function_test_fcall_ro_with_write_command(r: ValkeyTestClient) -> None:
     } {*Write commands are not allowed from read-only scripts*}
     """
     # TODO: r function load REPLACE get_no_writes_function_code lua test test {return redis.call('set', 'x', '1')}
-    # TODO: catch { r fcall_ro test 1 x } e
+    try:
+        e = r.run("fcall_ro", "test", 1, "x")
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -575,8 +596,11 @@ def test_function_test_function_kill(r: ValkeyTestClient) -> None:
     # TODO: r function load REPLACE get_function_code lua test test {local a = 1 while true do a = a + 1 end}
     # TODO: $rd fcall test 0
     time.sleep(200 / 1000)
-    # TODO: catch {r ping} e
-    # TODO: assert_match {BUSY*} e
+    try:
+        e = r.run("ping")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "BUSY*")
     assert fnmatch(
         str(r.run("FUNCTION", "STATS")), "running_script {name test command {fcall test 0} duration_ms *} engines {*}"
     )
@@ -612,10 +636,16 @@ def test_function_test_script_kill_not_working_on_function(r: ValkeyTestClient) 
     # TODO: r function load REPLACE get_function_code lua test test {local a = 1 while true do a = a + 1 end}
     # TODO: $rd fcall test 0
     time.sleep(200 / 1000)
-    # TODO: catch {r ping} e
-    # TODO: assert_match {BUSY*} e
-    # TODO: catch {r script kill} e
-    # TODO: assert_match {BUSY*} e
+    try:
+        e = r.run("ping")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "BUSY*")
+    try:
+        e = r.run("script", "kill")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "BUSY*")
     r.run("function", "kill")
     time.sleep(200 / 1000)
     assert r.run("ping") == "PONG"
@@ -646,10 +676,16 @@ def test_function_test_function_kill_not_working_on_eval(r: ValkeyTestClient) ->
     r.run("config", "set", "busy-reply-threshold", 10)
     # TODO: $rd eval {local a = 1 while true do a = a + 1 end} 0
     time.sleep(200 / 1000)
-    # TODO: catch {r ping} e
-    # TODO: assert_match {BUSY*} e
-    # TODO: catch {r function kill} e
-    # TODO: assert_match {BUSY*} e
+    try:
+        e = r.run("ping")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "BUSY*")
+    try:
+        e = r.run("function", "kill")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "BUSY*")
     r.run("script", "kill")
     time.sleep(200 / 1000)
     assert r.run("ping") == "PONG"
@@ -768,7 +804,6 @@ def test_function_test_loading_function_during_the_flush_async(r: ValkeyTestClie
     r.run("function", "flush")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_test_function_wrong_argument(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - test function wrong argument} {
@@ -779,10 +814,16 @@ def test_function_test_function_wrong_argument(r: ValkeyTestClient) -> None:
         assert_match {*unknown subcommand or wrong number of arguments for 'flush'. Try FUNCTION HELP.} $e
     }
     """
-    # TODO: catch {r function flush bad_arg} e
-    # TODO: assert_match {*only supports SYNC|ASYNC*} e
-    # TODO: catch {r function flush sync extra_arg} e
-    # TODO: assert_match {*unknown subcommand or wrong number of arguments for 'flush'. Try FUNCTION HELP.} e
+    try:
+        e = r.run("function", "flush", "bad_arg")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*only supports SYNC|ASYNC*")
+    try:
+        e = r.run("function", "flush", "sync", "extra_arg")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*unknown subcommand or wrong number of arguments for 'flush'. Try FUNCTION HELP.")
 
 
 pytestmark = [pytest.mark.scripting_repl_external_skip]
@@ -1009,7 +1050,6 @@ def test_libraries_usage_and_code_sharing(r: ValkeyTestClient) -> None:
     assert r.run("function", "list") == "{library_name lib1 engine LUA functions {*}}"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_libraries_test_registration_failure_revert_the_entire_load(r: ValkeyTestClient) -> None:
     """
     test {LIBRARIES - test registration failure revert the entire load} {
@@ -1035,29 +1075,20 @@ def test_libraries_test_registration_failure_revert_the_entire_load(r: ValkeyTes
         assert_equal [r fcall f2 0] {3}
     }
     """
-    # TODO: catch {
-    #       r function load replace {#!lua name=lib1
-    #           local function add1(a)
-    #               return a + 2
-    #           end
-    #           server.register_function(
-    #               'f1',
-    #               function(keys, args)
-    #                   return add1(1)
-    #               end
-    #           )
-    #           server.register_function(
-    #               'f2',
-    #               'not a function'
-    #           )
-    #       }
-    #   } e
-    # TODO: assert_match {*second argument to server.register_function must be a function*} e
+    try:
+        e = r.run(
+            "function",
+            "load",
+            "replace",
+            "#!lua name=lib1\n                local function add1(a)\n                    return a + 2\n                end\n                server.register_function(\n                    'f1',\n                    function(keys, args)\n                        return add1(1)\n                    end\n                )\n                server.register_function(\n                    'f2',\n                    'not a function'\n                )\n            ",
+        )
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*second argument to server.register_function must be a function*")
     assert r.run("fcall", "f1", 0) == "2"
     assert r.run("fcall", "f2", 0) == "3"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_libraries_test_registration_function_name_collision(r: ValkeyTestClient) -> None:
     """
     test {LIBRARIES - test registration function name collision} {
@@ -1076,17 +1107,16 @@ def test_libraries_test_registration_function_name_collision(r: ValkeyTestClient
         assert_equal [r fcall f2 0] {3}
     }
     """
-    # TODO: catch {
-    #       r function load replace {#!lua name=lib2
-    #           server.register_function(
-    #               'f1',
-    #               function(keys, args)
-    #                   return 1
-    #               end
-    #           )
-    #       }
-    #   } e
-    # TODO: assert_match {*Function f1 already exists*} e
+    try:
+        e = r.run(
+            "function",
+            "load",
+            "replace",
+            "#!lua name=lib2\n                server.register_function(\n                    'f1',\n                    function(keys, args)\n                        return 1\n                    end\n                )\n            ",
+        )
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*Function f1 already exists*")
     assert r.run("fcall", "f1", 0) == "2"
     assert r.run("fcall", "f2", 0) == "3"
 
@@ -1114,22 +1144,15 @@ def test_libraries_test_registration_function_name_collision_on_same_library(r: 
         set _ $e
     } {*Function already exists in the library*}
     """
-    # TODO: catch {
-    #       r function load replace {#!lua name=lib2
-    #           server.register_function(
-    #               'f1',
-    #               function(keys, args)
-    #                   return 1
-    #               end
-    #           )
-    #           server.register_function(
-    #               'f1',
-    #               function(keys, args)
-    #                   return 1
-    #               end
-    #           )
-    #       }
-    #   } e
+    try:
+        e = r.run(
+            "function",
+            "load",
+            "replace",
+            "#!lua name=lib2\n                server.register_function(\n                    'f1',\n                    function(keys, args)\n                        return 1\n                    end\n                )\n                server.register_function(\n                    'f1',\n                    function(keys, args)\n                        return 1\n                    end\n                )\n            ",
+        )
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -1146,11 +1169,12 @@ def test_libraries_test_registration_with_no_argument(r: ValkeyTestClient) -> No
         set _ $e
     } {*wrong number of arguments to server.register_function*}
     """
-    # TODO: catch {
-    #       r function load replace {#!lua name=lib2
-    #           server.register_function()
-    #       }
-    #   } e
+    try:
+        e = r.run(
+            "function", "load", "replace", "#!lua name=lib2\n                server.register_function()\n            "
+        )
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -1167,11 +1191,15 @@ def test_libraries_test_registration_with_only_name(r: ValkeyTestClient) -> None
         set _ $e
     } {*calling server.register_function with a single argument is only applicable to Lua table*}
     """
-    # TODO: catch {
-    #       r function load replace {#!lua name=lib2
-    #           server.register_function('f1')
-    #       }
-    #   } e
+    try:
+        e = r.run(
+            "function",
+            "load",
+            "replace",
+            "#!lua name=lib2\n                server.register_function('f1')\n            ",
+        )
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -1188,11 +1216,15 @@ def test_libraries_test_registration_with_to_many_arguments(r: ValkeyTestClient)
         set _ $e
     } {*wrong number of arguments to server.register_function*}
     """
-    # TODO: catch {
-    #       r function load replace {#!lua name=lib2
-    #           server.register_function('f1', function() return 1 end, {}, 'description', 'extra arg')
-    #       }
-    #   } e
+    try:
+        e = r.run(
+            "function",
+            "load",
+            "replace",
+            "#!lua name=lib2\n                server.register_function('f1', function() return 1 end, {}, 'description', 'extra arg')\n            ",
+        )
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -1209,11 +1241,15 @@ def test_libraries_test_registration_with_no_string_name(r: ValkeyTestClient) ->
         set _ $e
     } {*first argument to server.register_function must be a string*}
     """
-    # TODO: catch {
-    #       r function load replace {#!lua name=lib2
-    #           server.register_function(nil, function() return 1 end)
-    #       }
-    #   } e
+    try:
+        e = r.run(
+            "function",
+            "load",
+            "replace",
+            "#!lua name=lib2\n                server.register_function(nil, function() return 1 end)\n            ",
+        )
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -1230,11 +1266,15 @@ def test_libraries_test_registration_with_wrong_name_format(r: ValkeyTestClient)
         set _ $e
     } {*Function names can only contain letters, numbers, or underscores(_) and must be at least one character long*}
     """
-    # TODO: catch {
-    #       r function load replace {#!lua name=lib2
-    #           server.register_function('test\0test', function() return 1 end)
-    #       }
-    #   } e
+    try:
+        e = r.run(
+            "function",
+            "load",
+            "replace",
+            "#!lua name=lib2\n                server.register_function('test\\0test', function() return 1 end)\n            ",
+        )
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -1251,11 +1291,15 @@ def test_libraries_test_registration_with_empty_name(r: ValkeyTestClient) -> Non
         set _ $e
     } {*Function names can only contain letters, numbers, or underscores(_) and must be at least one character long*}
     """
-    # TODO: catch {
-    #       r function load replace {#!lua name=lib2
-    #           server.register_function('', function() return 1 end)
-    #       }
-    #   } e
+    try:
+        e = r.run(
+            "function",
+            "load",
+            "replace",
+            "#!lua name=lib2\n                server.register_function('', function() return 1 end)\n            ",
+        )
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -1272,11 +1316,10 @@ def test_libraries_math_random_from_function_load(r: ValkeyTestClient) -> None:
         set _ $e
     } {*attempted to access nonexistent global variable 'math'*}
     """
-    # TODO: catch {
-    #       r function load replace {#!lua name=lib2
-    #           return math.random()
-    #       }
-    #   } e
+    try:
+        e = r.run("function", "load", "replace", "#!lua name=lib2\n                return math.random()\n            ")
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -1293,11 +1336,12 @@ def test_libraries_redis_call_from_function_load(r: ValkeyTestClient) -> None:
         set _ $e
     } {*attempted to access nonexistent global variable 'call'*}
     """
-    # TODO: catch {
-    #       r function load replace {#!lua name=lib2
-    #           return redis.call('ping')
-    #       }
-    #   } e
+    try:
+        e = r.run(
+            "function", "load", "replace", "#!lua name=lib2\n                return redis.call('ping')\n            "
+        )
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -1314,11 +1358,12 @@ def test_libraries_redis_setresp_from_function_load(r: ValkeyTestClient) -> None
         set _ $e
     } {*attempted to access nonexistent global variable 'setresp'*}
     """
-    # TODO: catch {
-    #       r function load replace {#!lua name=lib2
-    #           return redis.setresp(3)
-    #       }
-    #   } e
+    try:
+        e = r.run(
+            "function", "load", "replace", "#!lua name=lib2\n                return redis.setresp(3)\n            "
+        )
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -1335,11 +1380,15 @@ def test_libraries_redis_set_repl_from_function_load(r: ValkeyTestClient) -> Non
         set _ $e
     } {*attempted to access nonexistent global variable 'set_repl'*}
     """
-    # TODO: catch {
-    #       r function load replace {#!lua name=lib2
-    #           return redis.set_repl(redis.REPL_NONE)
-    #       }
-    #   } e
+    try:
+        e = r.run(
+            "function",
+            "load",
+            "replace",
+            "#!lua name=lib2\n                return redis.set_repl(redis.REPL_NONE)\n            ",
+        )
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -1356,11 +1405,15 @@ def test_libraries_redis_acl_check_cmd_from_function_load(r: ValkeyTestClient) -
         set _ $e
     } {*attempted to access nonexistent global variable 'acl_check_cmd'*}
     """
-    # TODO: catch {
-    #       r function load replace {#!lua name=lib2
-    #           return redis.acl_check_cmd('set','xx',1)
-    #       }
-    #   } e
+    try:
+        e = r.run(
+            "function",
+            "load",
+            "replace",
+            "#!lua name=lib2\n                return redis.acl_check_cmd('set','xx',1)\n            ",
+        )
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -1472,7 +1525,10 @@ def test_libraries_register_function_inside_a_function(r: ValkeyTestClient) -> N
         "load",
         "#!lua name=lib\n            server.register_function(\n                'f1',\n                function(keys, args)\n                    server.register_function(\n                        'f2',\n                        function(key, args)\n                            return 2\n                        end\n                    )\n                    return 1\n                end\n            )\n        ",
     )
-    # TODO: catch {r fcall f1 0} e
+    try:
+        e = r.run("fcall", "f1", 0)
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -1491,11 +1547,10 @@ def test_libraries_register_library_with_no_functions(r: ValkeyTestClient) -> No
     } {*No functions registered*}
     """
     r.run("function", "flush")
-    # TODO: catch {
-    #       r function load {#!lua name=lib
-    #           return 1
-    #       }
-    #   } e
+    try:
+        e = r.run("function", "load", "#!lua name=lib\n                return 1\n            ")
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -1513,12 +1568,14 @@ def test_libraries_load_timeout(r: ValkeyTestClient) -> None:
         set _ $e
     } {*FUNCTION LOAD timeout*}
     """
-    # TODO: catch {
-    #       r function load {#!lua name=lib
-    #           local a = 1
-    #           while 1 do a = a + 1 end
-    #       }
-    #   } e
+    try:
+        e = r.run(
+            "function",
+            "load",
+            "#!lua name=lib\n                local a = 1\n                while 1 do a = a + 1 end\n            ",
+        )
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -1535,11 +1592,10 @@ def test_libraries_verify_global_protection_on_the_load_run(r: ValkeyTestClient)
         set _ $e
     } {*Attempt to modify a readonly table*}
     """
-    # TODO: catch {
-    #       r function load {#!lua name=lib
-    #           a = 1
-    #       }
-    #   } e
+    try:
+        e = r.run("function", "load", "#!lua name=lib\n                a = 1\n            ")
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -1588,17 +1644,15 @@ def test_libraries_named_arguments_bad_function_name(r: ValkeyTestClient) -> Non
         set _ $e
     } {*function_name argument given to server.register_function must be a string*}
     """
-    # TODO: catch {
-    #       r function load replace {#!lua name=lib
-    #           server.register_function{
-    #               function_name=function() return 1 end,
-    #               callback=function()
-    #                   return 'hello'
-    #               end,
-    #               description='some desc'
-    #           }
-    #       }
-    #   } e
+    try:
+        e = r.run(
+            "function",
+            "load",
+            "replace",
+            "#!lua name=lib\n                server.register_function{\n                    function_name=function() return 1 end,\n                    callback=function()\n                        return 'hello'\n                    end,\n                    description='some desc'\n                }\n            ",
+        )
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -1619,15 +1673,15 @@ def test_libraries_named_arguments_bad_callback_type(r: ValkeyTestClient) -> Non
         set _ $e
     } {*callback argument given to server.register_function must be a function*}
     """
-    # TODO: catch {
-    #       r function load replace {#!lua name=lib
-    #           server.register_function{
-    #               function_name='f1',
-    #               callback='bad',
-    #               description='some desc'
-    #           }
-    #       }
-    #   } e
+    try:
+        e = r.run(
+            "function",
+            "load",
+            "replace",
+            "#!lua name=lib\n                server.register_function{\n                    function_name='f1',\n                    callback='bad',\n                    description='some desc'\n                }\n            ",
+        )
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -1650,17 +1704,15 @@ def test_libraries_named_arguments_bad_description(r: ValkeyTestClient) -> None:
         set _ $e
     } {*description argument given to server.register_function must be a string*}
     """
-    # TODO: catch {
-    #       r function load replace {#!lua name=lib
-    #           server.register_function{
-    #               function_name='f1',
-    #               callback=function()
-    #                   return 'hello'
-    #               end,
-    #               description=function() return 1 end
-    #           }
-    #       }
-    #   } e
+    try:
+        e = r.run(
+            "function",
+            "load",
+            "replace",
+            "#!lua name=lib\n                server.register_function{\n                    function_name='f1',\n                    callback=function()\n                        return 'hello'\n                    end,\n                    description=function() return 1 end\n                }\n            ",
+        )
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -1684,18 +1736,15 @@ def test_libraries_named_arguments_unknown_argument(r: ValkeyTestClient) -> None
         set _ $e
     } {*unknown argument given to server.register_function*}
     """
-    # TODO: catch {
-    #       r function load replace {#!lua name=lib
-    #           server.register_function{
-    #               function_name='f1',
-    #               callback=function()
-    #                   return 'hello'
-    #               end,
-    #               description='desc',
-    #               some_unknown='unknown'
-    #           }
-    #       }
-    #   } e
+    try:
+        e = r.run(
+            "function",
+            "load",
+            "replace",
+            "#!lua name=lib\n                server.register_function{\n                    function_name='f1',\n                    callback=function()\n                        return 'hello'\n                    end,\n                    description='desc',\n                    some_unknown='unknown'\n                }\n            ",
+        )
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -1717,16 +1766,15 @@ def test_libraries_named_arguments_missing_function_name(r: ValkeyTestClient) ->
         set _ $e
     } {*server.register_function must get a function name argument*}
     """
-    # TODO: catch {
-    #       r function load replace {#!lua name=lib
-    #           server.register_function{
-    #               callback=function()
-    #                   return 'hello'
-    #               end,
-    #               description='desc'
-    #           }
-    #       }
-    #   } e
+    try:
+        e = r.run(
+            "function",
+            "load",
+            "replace",
+            "#!lua name=lib\n                server.register_function{\n                    callback=function()\n                        return 'hello'\n                    end,\n                    description='desc'\n                }\n            ",
+        )
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -1746,19 +1794,19 @@ def test_libraries_named_arguments_missing_callback(r: ValkeyTestClient) -> None
         set _ $e
     } {*server.register_function must get a callback argument*}
     """
-    # TODO: catch {
-    #       r function load replace {#!lua name=lib
-    #           server.register_function{
-    #               function_name='f1',
-    #               description='desc'
-    #           }
-    #       }
-    #   } e
+    try:
+        e = r.run(
+            "function",
+            "load",
+            "replace",
+            "#!lua name=lib\n                server.register_function{\n                    function_name='f1',\n                    description='desc'\n                }\n            ",
+        )
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_test_function_restore_with_function_name_collision(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - test function restore with function name collision} {
@@ -1855,14 +1903,20 @@ def test_function_test_function_restore_with_function_name_collision(r: ValkeyTe
         "load",
         "#!lua name=lib2\n            local function add1(a)\n                return a + 1\n            end\n            server.register_function(\n                'f4',\n                function(keys, args)\n                    return add1(4)\n                end\n            )\n            server.register_function(\n                'f5',\n                function(keys, args)\n                    return add1(5)\n                end\n            )\n            server.register_function(\n                'f3',\n                function(keys, args)\n                    return add1(3)\n                end\n            )\n        ",
     )
-    # TODO: catch {r function restore $e} error
-    # TODO: assert_match {*Library lib1 already exists*} error
+    try:
+        error = r.run("function", "restore", e)
+    except Exception as _catch_err:
+        error = str(_catch_err)
+    assert fnmatch(str(error), "*Library lib1 already exists*")
     assert r.run("fcall", "f3", 0) == "4"
     assert r.run("fcall", "f4", 0) == "5"
     assert r.run("fcall", "f5", 0) == "6"
     assert r.run("fcall", "f6", 0) == "7"
-    # TODO: catch {r function restore $e replace} error
-    # TODO: assert_match {*Function f3 already exists*} error
+    try:
+        error = r.run("function", "restore", e, "replace")
+    except Exception as _catch_err:
+        error = str(_catch_err)
+    assert fnmatch(str(error), "*Function f3 already exists*")
     assert r.run("fcall", "f3", 0) == "4"
     assert r.run("fcall", "f4", 0) == "5"
     assert r.run("fcall", "f5", 0) == "6"
@@ -1919,7 +1973,10 @@ def test_function_test_function_list_wrong_argument(r: ValkeyTestClient) -> None
         set _ $e
     } {*Unknown argument bad_argument*}
     """
-    # TODO: catch {r function list bad_argument} e
+    try:
+        e = r.run("function", "list", "bad_argument")
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -1932,7 +1989,10 @@ def test_function_test_function_list_with_bad_argument_to_library_name(r: Valkey
         set _ $e
     } {*library name argument was not given*}
     """
-    # TODO: catch {r function list libraryname} e
+    try:
+        e = r.run("function", "list", "libraryname")
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -1945,7 +2005,10 @@ def test_function_test_function_list_withcode_multiple_times(r: ValkeyTestClient
         set _ $e
     } {*Unknown argument withcode*}
     """
-    # TODO: catch {r function list withcode withcode} e
+    try:
+        e = r.run("function", "list", "withcode", "withcode")
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -1958,12 +2021,14 @@ def test_function_test_function_list_libraryname_multiple_times(r: ValkeyTestCli
         set _ $e
     } {*Unknown argument libraryname*}
     """
-    # TODO: catch {r function list withcode libraryname foo libraryname foo} e
+    try:
+        e = r.run("function", "list", "withcode", "libraryname", "foo", "libraryname", "foo")
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_verify_oom_on_function_load_and_function_restore(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - verify OOM on function load and function restore} {
@@ -1997,15 +2062,22 @@ def test_function_verify_oom_on_function_load_and_function_restore(r: ValkeyTest
     payload = r.run("function", "dump")
     r.run("config", "set", "maxmemory", 1)
     r.run("function", "flush")
-    # TODO: catch {
-    #       r function load replace {#!lua name=test
-    #                   server.register_function('f1', function() return 1 end)
-    #               }
-    #   } e
-    # TODO: assert_match {*command not allowed when used memory*} e
+    try:
+        e = r.run(
+            "function",
+            "load",
+            "replace",
+            "#!lua name=test\n            server.register_function('f1', function() return 1 end)\n        ",
+        )
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*command not allowed when used memory*")
     r.run("function", "flush")
-    # TODO: catch {r function restore $payload} e
-    # TODO: assert_match {*command not allowed when used memory*} e
+    try:
+        e = r.run("function", "restore", payload)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*command not allowed when used memory*")
     assert r.run("config", "set", "maxmemory", 0) == "OK"
 
 
@@ -2057,15 +2129,15 @@ def test_function_wrong_flags_type_named_arguments(r: ValkeyTestClient) -> None:
         set _ $e
     } {*flags argument to server.register_function must be a table representing function flags*}
     """
-    # TODO: catch {
-    #       r function load replace {#!lua name=test
-    #                   server.register_function{
-    #                       function_name = 'f1',
-    #                       callback = function() return 1 end,
-    #                       flags = 'bad flags type'
-    #                   }
-    #               }
-    #   } e
+    try:
+        e = r.run(
+            "function",
+            "load",
+            "replace",
+            "#!lua name=test\n            server.register_function{\n                function_name = 'f1',\n                callback = function() return 1 end,\n                flags = 'bad flags type'\n            }\n        ",
+        )
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -2084,15 +2156,15 @@ def test_function_wrong_flag_type(r: ValkeyTestClient) -> None:
         set _ $e
     } {*unknown flag given*}
     """
-    # TODO: catch {
-    #       r function load replace {#!lua name=test
-    #                   server.register_function{
-    #                       function_name = 'f1',
-    #                       callback = function() return 1 end,
-    #                       flags = {function() return 1 end}
-    #                   }
-    #               }
-    #   } e
+    try:
+        e = r.run(
+            "function",
+            "load",
+            "replace",
+            "#!lua name=test\n            server.register_function{\n                function_name = 'f1',\n                callback = function() return 1 end,\n                flags = {function() return 1 end}\n            }\n        ",
+        )
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -2111,15 +2183,15 @@ def test_function_unknown_flag(r: ValkeyTestClient) -> None:
         set _ $e
     } {*unknown flag given*}
     """
-    # TODO: catch {
-    #       r function load replace {#!lua name=test
-    #                   server.register_function{
-    #                       function_name = 'f1',
-    #                       callback = function() return 1 end,
-    #                       flags = {'unknown'}
-    #                   }
-    #               }
-    #   } e
+    try:
+        e = r.run(
+            "function",
+            "load",
+            "replace",
+            "#!lua name=test\n            server.register_function{\n                function_name = 'f1',\n                callback = function() return 1 end,\n                flags = {'unknown'}\n            }\n        ",
+        )
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -2144,7 +2216,10 @@ def test_function_write_script_on_fcall_ro(r: ValkeyTestClient) -> None:
         "replace",
         "#!lua name=test\n            server.register_function{\n                function_name = 'f1',\n                callback = function() return redis.call('set', 'x', 1) end\n            }\n        ",
     )
-    # TODO: catch {r fcall_ro f1 1 x} e
+    try:
+        e = r.run("fcall_ro", "f1", 1, "x")
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -2170,7 +2245,10 @@ def test_function_write_script_with_no_writes_flag(r: ValkeyTestClient) -> None:
         "replace",
         "#!lua name=test\n            server.register_function{\n                function_name = 'f1',\n                callback = function() return redis.call('set', 'x', 1) end,\n                flags = {'no-writes'}\n            }\n        ",
     )
-    # TODO: catch {r fcall f1 1 x} e
+    try:
+        e = r.run("fcall", "f1", 1, "x")
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -2362,7 +2440,6 @@ def test_function_function_stats_delete_library(r: ValkeyTestClient) -> None:
     assert r.run("function", "stats") == "running_script {} engines {LUA {libraries_count 1 functions_count 1}}"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_test_function_stats_on_loading_failure(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - test function stats on loading failure} {
@@ -2388,12 +2465,15 @@ def test_function_test_function_stats_on_loading_failure(r: ValkeyTestClient) ->
         "load",
         "#!lua name=test1\n            server.register_function('f1', function() return 1 end)\n            server.register_function('f2', function() return 1 end)\n        ",
     )
-    # TODO: catch {
-    #       r FUNCTION load {#!lua name=test1
-    #                   server.register_function('f3', function() return 1 end)
-    #               }
-    #   } e
-    # TODO: assert_match "*Library 'test1' already exists*" e
+    try:
+        e = r.run(
+            "FUNCTION",
+            "load",
+            "#!lua name=test1\n            server.register_function('f3', function() return 1 end)\n        ",
+        )
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*Library 'test1' already exists*")
     assert r.run("function", "stats") == "running_script {} engines {LUA {libraries_count 1 functions_count 2}}"
 
 
@@ -2418,11 +2498,15 @@ def test_function_function_test_empty_engine(r: ValkeyTestClient) -> None:
         set _ $e
     } {ERR Engine '' not found}
     """
-    # TODO: catch {
-    #       r function load replace {#! name=test
-    #                   server.register_function('foo', function() return 1 end)
-    #               }
-    #   } e
+    try:
+        e = r.run(
+            "function",
+            "load",
+            "replace",
+            "#! name=test\n            server.register_function('foo', function() return 1 end)\n        ",
+        )
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -2437,11 +2521,15 @@ def test_function_function_test_unknown_metadata_value(r: ValkeyTestClient) -> N
         set _ $e
     } {ERR Invalid metadata value given: foo=bar}
     """
-    # TODO: catch {
-    #       r function load replace {#!lua name=test foo=bar
-    #                   server.register_function('foo', function() return 1 end)
-    #               }
-    #   } e
+    try:
+        e = r.run(
+            "function",
+            "load",
+            "replace",
+            "#!lua name=test foo=bar\n            server.register_function('foo', function() return 1 end)\n        ",
+        )
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -2456,11 +2544,15 @@ def test_function_function_test_no_name(r: ValkeyTestClient) -> None:
         set _ $e
     } {ERR Library name was not given}
     """
-    # TODO: catch {
-    #       r function load replace {#!lua
-    #                   server.register_function('foo', function() return 1 end)
-    #               }
-    #   } e
+    try:
+        e = r.run(
+            "function",
+            "load",
+            "replace",
+            "#!lua\n            server.register_function('foo', function() return 1 end)\n        ",
+        )
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -2475,11 +2567,15 @@ def test_function_function_test_multiple_names(r: ValkeyTestClient) -> None:
         set _ $e
     } {ERR Invalid metadata value, name argument was given multiple times}
     """
-    # TODO: catch {
-    #       r function load replace {#!lua name=foo name=bar
-    #                   server.register_function('foo', function() return 1 end)
-    #               }
-    #   } e
+    try:
+        e = r.run(
+            "function",
+            "load",
+            "replace",
+            "#!lua name=foo name=bar\n            server.register_function('foo', function() return 1 end)\n        ",
+        )
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -2548,10 +2644,9 @@ def test_function_test_getmetatable_on_script_load(r: ValkeyTestClient) -> None:
     } {*Script attempted to access nonexistent global variable 'getmetatable'*}
     """
     r.run("FUNCTION", "FLUSH")
-    # TODO: catch {
-    #       r FUNCTION load {#!lua name=test1
-    #           mt = getmetatable(_G)
-    #       }
-    #   } e
+    try:
+        e = r.run("FUNCTION", "load", "#!lua name=test1\n                mt = getmetatable(_G)\n            ")
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False

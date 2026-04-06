@@ -113,7 +113,10 @@ def test_setex_wrong_time_parameter(r: ValkeyTestClient) -> None:
         set _ $e
     } {*invalid expire*}
     """
-    # TODO: catch {r setex z -10 foo} e
+    try:
+        e = r.run("setex", "z", -10, "foo")
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -542,7 +545,6 @@ def test_5_keys_in_5_keys_out(r: ValkeyTestClient) -> None:
     r.run("del", "a")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_expire_with_empty_string_as_ttl_should_report_an_error(r: ValkeyTestClient) -> None:
     """
     test {EXPIRE with empty string as TTL should report an error} {
@@ -552,12 +554,13 @@ def test_expire_with_empty_string_as_ttl_should_report_an_error(r: ValkeyTestCli
     } {*not an integer*}
     """
     r.run("set", "foo", "bar")
-    # TODO: catch {r expire foo ""} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("expire", "foo", "")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "*not an integer*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_set_with_ex_with_big_integer_should_report_an_error(r: ValkeyTestClient) -> None:
     """
     test {SET with EX with big integer should report an error} {
@@ -565,12 +568,13 @@ def test_set_with_ex_with_big_integer_should_report_an_error(r: ValkeyTestClient
         set e
     } {ERR invalid expire time in 'set' command}
     """
-    # TODO: catch {r set foo bar EX 10000000000000000} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("set", "foo", "bar", "EX", 10000000000000000)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR invalid expire time in 'set' command"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_set_with_ex_with_smallest_integer_should_report_an_error(r: ValkeyTestClient) -> None:
     """
     test {SET with EX with smallest integer should report an error} {
@@ -578,12 +582,13 @@ def test_set_with_ex_with_smallest_integer_should_report_an_error(r: ValkeyTestC
         set e
     } {ERR invalid expire time in 'set' command}
     """
-    # TODO: catch {r SET foo bar EX -9999999999999999} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("SET", "foo", "bar", "EX", -9999999999999999)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR invalid expire time in 'set' command"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_getex_with_big_integer_should_report_an_error(r: ValkeyTestClient) -> None:
     """
     test {GETEX with big integer should report an error} {
@@ -593,12 +598,13 @@ def test_getex_with_big_integer_should_report_an_error(r: ValkeyTestClient) -> N
     } {ERR invalid expire time in 'getex' command}
     """
     r.run("set", "foo", "bar")
-    # TODO: catch {r GETEX foo EX 10000000000000000} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("GETEX", "foo", "EX", 10000000000000000)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR invalid expire time in 'getex' command"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_getex_with_smallest_integer_should_report_an_error(r: ValkeyTestClient) -> None:
     """
     test {GETEX with smallest integer should report an error} {
@@ -608,9 +614,11 @@ def test_getex_with_smallest_integer_should_report_an_error(r: ValkeyTestClient)
     } {ERR invalid expire time in 'getex' command}
     """
     r.run("set", "foo", "bar")
-    # TODO: catch {r GETEX foo EX -9999999999999999} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("GETEX", "foo", "EX", -9999999999999999)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR invalid expire time in 'getex' command"
 
 
 def test_getex_with_error_expiration_time(r: ValkeyTestClient) -> None:
@@ -667,7 +675,6 @@ def test_expire_with_big_integer_overflows_when_converted_to_milliseconds(r: Val
     assert "-1" == r.run("ttl", "foo")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_pexpire_with_big_integer_overflow_when_basetime_is_added(r: ValkeyTestClient) -> None:
     """
     test {PEXPIRE with big integer overflow when basetime is added} {
@@ -677,9 +684,11 @@ def test_pexpire_with_big_integer_overflow_when_basetime_is_added(r: ValkeyTestC
     } {ERR invalid expire time in 'pexpire' command}
     """
     r.run("set", "foo", "bar")
-    # TODO: catch {r PEXPIRE foo 9223372036854770000} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("PEXPIRE", "foo", 9223372036854770000)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR invalid expire time in 'pexpire' command"
 
 
 def test_expire_with_big_negative_integer(r: ValkeyTestClient) -> None:
@@ -1370,7 +1379,6 @@ def test_expire_with_lt_and_xx_option_on_a_key_without_ttl(r: ValkeyTestClient) 
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_expire_with_conflicting_options_lt_gt(r: ValkeyTestClient) -> None:
     """
     test {EXPIRE with conflicting options: LT GT} {
@@ -1378,12 +1386,13 @@ def test_expire_with_conflicting_options_lt_gt(r: ValkeyTestClient) -> None:
         set e
     } {ERR GT and LT options at the same time are not compatible}
     """
-    # TODO: catch {r EXPIRE foo 200 LT GT} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("EXPIRE", "foo", 200, "LT", "GT")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR GT and LT options at the same time are not compatible"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_expire_with_conflicting_options_nx_gt(r: ValkeyTestClient) -> None:
     """
     test {EXPIRE with conflicting options: NX GT} {
@@ -1391,12 +1400,13 @@ def test_expire_with_conflicting_options_nx_gt(r: ValkeyTestClient) -> None:
         set e
     } {ERR NX and XX, GT or LT options at the same time are not compatible}
     """
-    # TODO: catch {r EXPIRE foo 200 NX GT} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("EXPIRE", "foo", 200, "NX", "GT")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR NX and XX, GT or LT options at the same time are not compatible"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_expire_with_conflicting_options_nx_lt(r: ValkeyTestClient) -> None:
     """
     test {EXPIRE with conflicting options: NX LT} {
@@ -1404,12 +1414,13 @@ def test_expire_with_conflicting_options_nx_lt(r: ValkeyTestClient) -> None:
         set e
     } {ERR NX and XX, GT or LT options at the same time are not compatible}
     """
-    # TODO: catch {r EXPIRE foo 200 NX LT} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("EXPIRE", "foo", 200, "NX", "LT")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR NX and XX, GT or LT options at the same time are not compatible"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_expire_with_conflicting_options_nx_xx(r: ValkeyTestClient) -> None:
     """
     test {EXPIRE with conflicting options: NX XX} {
@@ -1417,12 +1428,13 @@ def test_expire_with_conflicting_options_nx_xx(r: ValkeyTestClient) -> None:
         set e
     } {ERR NX and XX, GT or LT options at the same time are not compatible}
     """
-    # TODO: catch {r EXPIRE foo 200 NX XX} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("EXPIRE", "foo", 200, "NX", "XX")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR NX and XX, GT or LT options at the same time are not compatible"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_expire_with_unsupported_options(r: ValkeyTestClient) -> None:
     """
     test {EXPIRE with unsupported options} {
@@ -1430,12 +1442,13 @@ def test_expire_with_unsupported_options(r: ValkeyTestClient) -> None:
         set e
     } {ERR Unsupported option AB}
     """
-    # TODO: catch {r EXPIRE foo 200 AB} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("EXPIRE", "foo", 200, "AB")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR Unsupported option AB"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_expire_with_unsupported_options_1(r: ValkeyTestClient) -> None:
     """
     test {EXPIRE with unsupported options} {
@@ -1443,9 +1456,11 @@ def test_expire_with_unsupported_options_1(r: ValkeyTestClient) -> None:
         set e
     } {ERR Unsupported option AB}
     """
-    # TODO: catch {r EXPIRE foo 200 XX AB} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("EXPIRE", "foo", 200, "XX", "AB")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR Unsupported option AB"
 
 
 @pytest.mark.xfail(reason="not implemented")

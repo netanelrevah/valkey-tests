@@ -576,7 +576,6 @@ def test_bitop_with_integer_encoded_source_objects(r: ValkeyTestClient) -> None:
     assert r.run("get", "dest{t}") == "2"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitop_with_non_string_source_key(r: ValkeyTestClient) -> None:
     """
     test {BITOP with non string source key} {
@@ -592,9 +591,11 @@ def test_bitop_with_non_string_source_key(r: ValkeyTestClient) -> None:
     r.run("set", "a{t}", 1)
     r.run("set", "b{t}", 2)
     r.run("lpush", "c{t}", "foo")
-    # TODO: catch {r bitop xor dest{t} a{t} b{t} c{t} d{t}} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("bitop", "xor", "dest{t}", "a{t}", "b{t}", "c{t}", "d{t}")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "WRONGTYPE*"
 
 
 @pytest.mark.xfail(reason="not implemented")

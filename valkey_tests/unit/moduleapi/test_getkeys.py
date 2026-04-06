@@ -1,3 +1,5 @@
+# ruff: noqa: F841
+
 from fnmatch import fnmatch
 
 import pytest
@@ -122,7 +124,10 @@ def test_rm_getcommandkeys_on_non_existing_command(r: ValkeyTestClient) -> None:
         set _ $e
     } {*ENOENT*}
     """
-    # TODO: catch {r getkeys.introspect 0 non-command key1 key2} e
+    try:
+        e = r.run("getkeys.introspect", 0, "non-command", "key1", "key2")
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -199,7 +204,10 @@ def test_rm_getcommandkeys_with_bad_arity(r: ValkeyTestClient) -> None:
         set _ $e
     } {*EINVAL*}
     """
-    # TODO: catch {r getkeys.introspect 0 set key} e
+    try:
+        e = r.run("getkeys.introspect", 0, "set", "key")
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 

@@ -1,5 +1,7 @@
 # ruff: noqa: PLR2004, F841, RUF043
 
+from fnmatch import fnmatch
+
 import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
@@ -37,8 +39,11 @@ def test_test_module_check_acl_for_command_perm(r: ValkeyTestClient) -> None:
     """
     assert r.run("aclcheck.rm_call.check.cmd", "set", "x", 5) == "OK"
     r.run("acl", "setuser", "default", "-set")
-    # TODO: catch {r aclcheck.rm_call.check.cmd set x 5} e
-    # TODO: assert_match {*DENIED CMD*} e
+    try:
+        e = r.run("aclcheck.rm_call.check.cmd", "set", "x", 5)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*DENIED CMD*")
     entry = r.run("ACL", "LOG")[0]
     # TODO: assert {[dict get $entry username] eq {default}}
     # TODO: assert {[dict get $entry context] eq {module}}
@@ -46,7 +51,6 @@ def test_test_module_check_acl_for_command_perm(r: ValkeyTestClient) -> None:
     # TODO: assert {[dict get $entry reason] eq {command}}
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_module_check_acl_for_key_perm(r: ValkeyTestClient) -> None:
     """
     test {test module check acl for key perm} {
@@ -74,19 +78,31 @@ def test_test_module_check_acl_for_key_perm(r: ValkeyTestClient) -> None:
     """
     r.run("acl", "setuser", "default", "+set", "resetkeys", "~x", "%W~y", "%R~z")
     assert r.run("aclcheck.set.check.key", "*", "x", 5) == "OK"
-    # TODO: catch {r aclcheck.set.check.key "*" v 5} e
-    # TODO: assert_match "*DENIED KEY*" e
+    try:
+        e = r.run("aclcheck.set.check.key", "*", "v", 5)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*DENIED KEY*")
     assert r.run("aclcheck.set.check.key", "~", "x", 5) == "OK"
     assert r.run("aclcheck.set.check.key", "~", "y", 5) == "OK"
     assert r.run("aclcheck.set.check.key", "~", "z", 5) == "OK"
-    # TODO: catch {r aclcheck.set.check.key "~" v 5} e
-    # TODO: assert_match "*DENIED KEY*" e
+    try:
+        e = r.run("aclcheck.set.check.key", "~", "v", 5)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*DENIED KEY*")
     assert r.run("aclcheck.set.check.key", "W", "y", 5) == "OK"
-    # TODO: catch {r aclcheck.set.check.key "W" v 5} e
-    # TODO: assert_match "*DENIED KEY*" e
+    try:
+        e = r.run("aclcheck.set.check.key", "W", "v", 5)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*DENIED KEY*")
     assert r.run("aclcheck.set.check.key", "R", "z", 5) == "OK"
-    # TODO: catch {r aclcheck.set.check.key "R" v 5} e
-    # TODO: assert_match "*DENIED KEY*" e
+    try:
+        e = r.run("aclcheck.set.check.key", "R", "v", 5)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*DENIED KEY*")
 
 
 def test_test_module_check_acl_for_module_user(r: ValkeyTestClient) -> None:
@@ -99,7 +115,6 @@ def test_test_module_check_acl_for_module_user(r: ValkeyTestClient) -> None:
     assert r.run("aclcheck.rm_call.check.cmd.module.user", "set", "y", 5) == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_module_check_acl_for_channel_perm(r: ValkeyTestClient) -> None:
     """
     test {test module check acl for channel perm} {
@@ -112,9 +127,11 @@ def test_test_module_check_acl_for_channel_perm(r: ValkeyTestClient) -> None:
     """
     r.run("acl", "setuser", "default", "resetchannels", "&ch1")
     assert r.run("aclcheck.publish.check.channel", "ch1", "msg") == 0
-    # TODO: catch {r aclcheck.publish.check.channel ch2 msg} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("aclcheck.publish.check.channel", "ch2", "msg")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "*DENIED CHANNEL*"
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -166,8 +183,11 @@ def test_test_module_check_acl_in_rm_call(r: ValkeyTestClient) -> None:
         r.run("aclcheck.rm_call_with_errors", "set", "y", 5, "get")
     with pytest.raises(Exception, match=".*NOPERM.*"):
         r.run("aclcheck.rm_call", "set", "z", 5)
-    # TODO: catch {r aclcheck.rm_call_with_errors set z 5} e
-    # TODO: assert_match {*NOPERM*No permissions to access a key*} e
+    try:
+        e = r.run("aclcheck.rm_call_with_errors", "set", "z", 5)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*NOPERM*No permissions to access a key*")
     with pytest.raises(Exception, match=".*NOPERM.*"):
         r.run("aclcheck.rm_call", "set", "z", 6, "get")
     with pytest.raises(Exception, match=".*NOPERM.*No\\ permissions\\ to\\ access\\ a\\ key.*"):
@@ -272,8 +292,11 @@ def test_test_module_comprehensive_acl_check(r: ValkeyTestClient) -> None:
     assert r.run("aclcheck.check.permissions", 0, "set", "x", 5) == "OK"
     assert r.run("get", "x") == 5
     r.run("acl", "setuser", "testuser", "-set")
-    # TODO: catch {r aclcheck.check.permissions 0 set y 10} e
-    # TODO: assert_match {*NOPERM*} e
+    try:
+        e = r.run("aclcheck.check.permissions", 0, "set", "y", 10)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*NOPERM*")
     entry = r.run("ACL", "LOG")[0]
     # TODO: assert {[dict get $entry username] eq {testuser}}
     # TODO: assert {[dict get $entry context] eq {module}}
@@ -282,8 +305,11 @@ def test_test_module_comprehensive_acl_check(r: ValkeyTestClient) -> None:
     r.run("ACL", "LOG", "RESET")
     r.run("acl", "setuser", "testuser", "+set", "resetkeys", "~allowed_*")
     assert r.run("aclcheck.check.permissions", 0, "set", "allowed_key", "value") == "OK"
-    # TODO: catch {r aclcheck.check.permissions 0 set denied_key value} e
-    # TODO: assert_match {*NOPERM*} e
+    try:
+        e = r.run("aclcheck.check.permissions", 0, "set", "denied_key", "value")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*NOPERM*")
     entry = r.run("ACL", "LOG")[0]
     # TODO: assert {[dict get $entry username] eq {testuser}}
     # TODO: assert {[dict get $entry context] eq {module}}
@@ -291,8 +317,11 @@ def test_test_module_comprehensive_acl_check(r: ValkeyTestClient) -> None:
     r.run("ACL", "LOG", "RESET")
     r.run("acl", "setuser", "testuser", "resetchannels", "&ch1")
     assert r.run("aclcheck.check.permissions", 0, "publish", "ch1", "msg") == 0
-    # TODO: catch {r aclcheck.check.permissions 0 publish ch2 msg} e
-    # TODO: assert_match {*NOPERM*} e
+    try:
+        e = r.run("aclcheck.check.permissions", 0, "publish", "ch2", "msg")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*NOPERM*")
     entry = r.run("ACL", "LOG")[0]
     # TODO: assert {[dict get $entry username] eq {testuser}}
     # TODO: assert {[dict get $entry context] eq {module}}
@@ -301,19 +330,31 @@ def test_test_module_comprehensive_acl_check(r: ValkeyTestClient) -> None:
     r.run("acl", "setuser", "testuser", "allkeys", "resetdbs", "db=0,1,2")
     assert r.run("aclcheck.check.permissions", 0, "set", "testkey", "val") == "OK"
     assert r.run("aclcheck.check.permissions", 1, "set", "testkey", "val") == "OK"
-    # TODO: catch {r aclcheck.check.permissions 3 set testkey val} e
-    # TODO: assert_match {*NOPERM*} e
+    try:
+        e = r.run("aclcheck.check.permissions", 3, "set", "testkey", "val")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*NOPERM*")
     entry = r.run("ACL", "LOG")[0]
     # TODO: assert {[dict get $entry username] eq {testuser}}
     # TODO: assert {[dict get $entry context] eq {module}}
     # TODO: assert {[dict get $entry reason] eq {database}}
     r.run("ACL", "LOG", "RESET")
-    # TODO: catch {r aclcheck.check.permissions -1 set x 5} e
-    # TODO: assert_match {*invalid arguments*} e
-    # TODO: catch {r aclcheck.check.permissions 999 set x 5} e
-    # TODO: assert_match {*invalid arguments*} e
-    # TODO: catch {r aclcheck.check.permissions 0 nonexistentcmd arg1 arg2} e
-    # TODO: assert_match {*invalid arguments*} e
+    try:
+        e = r.run("aclcheck.check.permissions", -1, "set", "x", 5)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*invalid arguments*")
+    try:
+        e = r.run("aclcheck.check.permissions", 999, "set", "x", 5)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*invalid arguments*")
+    try:
+        e = r.run("aclcheck.check.permissions", 0, "nonexistentcmd", "arg1", "arg2")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*invalid arguments*")
     assert r.run("auth", "default", "") == "OK"
     r.run("acl", "deluser", "testuser")
     r.run("acl", "setuser", "default", "on", "nopass", "~*", "&*", "+@all", "alldbs")
@@ -474,13 +515,21 @@ def test_test_existing_users_without_permissions_do_not_have_access_to_module_co
     r.run("acl", "SETUSER", "j4", "on", ">password", "-@all", "+@READ")
     r.run("acl", "SETUSER", "j5", "on", ">password", "-@all", "+@WRITE")
     # TODO: assert_equal r module load $testmodule OK
-    # TODO: catch {r acl DRYRUN j4 aclcheck.module.command.aclcategories.write} e
-    # TODO: assert_equal {User j4 has no permissions to run the 'aclcheck.module.command.aclcategories.write' command} e
-    # TODO: catch {r acl DRYRUN j5 aclcheck.module.command.aclcategories.write.function.read.category} e
-    # TODO: assert_equal {User j5 has no permissions to run the 'aclcheck.module.command.aclcategories.write.function.read.category' command} e
+    try:
+        e = r.run("acl", "DRYRUN", "j4", "aclcheck.module.command.aclcategories.write")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert "User j4 has no permissions to run the 'aclcheck.module.command.aclcategories.write' command" == e
+    try:
+        e = r.run("acl", "DRYRUN", "j5", "aclcheck.module.command.aclcategories.write.function.read.category")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert (
+        "User j5 has no permissions to run the 'aclcheck.module.command.aclcategories.write.function.read.category' command"
+        == e
+    )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_users_without_permissions_do_not_have_access_to_module_commands(r: ValkeyTestClient) -> None:
     """
     test {test users without permissions, do not have access to module commands.} {
@@ -493,11 +542,20 @@ def test_test_users_without_permissions_do_not_have_access_to_module_commands(r:
     }
     """
     r.run("acl", "SETUSER", "j6", "on", ">password", "-@all", "+@READ")
-    # TODO: catch {r acl DRYRUN j6 aclcheck.module.command.aclcategories.write} e
-    # TODO: assert_equal {User j6 has no permissions to run the 'aclcheck.module.command.aclcategories.write' command} e
+    try:
+        e = r.run("acl", "DRYRUN", "j6", "aclcheck.module.command.aclcategories.write")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert "User j6 has no permissions to run the 'aclcheck.module.command.aclcategories.write' command" == e
     r.run("acl", "SETUSER", "j7", "on", ">password", "-@all", "+@WRITE")
-    # TODO: catch {r acl DRYRUN j7 aclcheck.module.command.aclcategories.write.function.read.category} e
-    # TODO: assert_equal {User j7 has no permissions to run the 'aclcheck.module.command.aclcategories.write.function.read.category' command} e
+    try:
+        e = r.run("acl", "DRYRUN", "j7", "aclcheck.module.command.aclcategories.write.function.read.category")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert (
+        "User j7 has no permissions to run the 'aclcheck.module.command.aclcategories.write.function.read.category' command"
+        == e
+    )
 
 
 def test_test_if_foocategory_acl_categories_is_added(r: ValkeyTestClient) -> None:
@@ -520,7 +578,6 @@ def test_test_if_acl_cat_output_for_the_new_category_is_correct(r: ValkeyTestCli
     assert r.run("ACL", "CAT", "foocategory") == "aclcheck.module.command.test.add.new.aclcategories"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_permission_compaction_and_simplification_for_categories_added_by_a_module(r: ValkeyTestClient) -> None:
     """
     test {test permission compaction and simplification for categories added by a module} {
@@ -531,8 +588,11 @@ def test_test_permission_compaction_and_simplification_for_categories_added_by_a
     }
     """
     r.run("acl", "SETUSER", "j9", "on", ">password", "-@all", "+@foocategory", "-@foocategory")
-    # TODO: catch {r ACL GETUSER j9} res
-    # TODO: assert_equal {-@all -@foocategory} lindex $res 5
+    try:
+        res = r.run("ACL", "GETUSER", "j9")
+    except Exception as _catch_err:
+        res = str(_catch_err)
+    assert "-@all -@foocategory" == res[5]
     assert "OK" == r.run("module", "unload", "aclcheck")
 
 

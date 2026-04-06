@@ -548,7 +548,6 @@ def test_test_multiple_clients_can_be_queued_up_and_unblocked(r: ValkeyTestClien
     #   }
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_clients_with_syntax_errors_will_get_responses_immediately(r: ValkeyTestClient) -> None:
     """
     test "Test clients with syntax errors will get responses immediately" {
@@ -559,8 +558,11 @@ def test_test_clients_with_syntax_errors_will_get_responses_immediately(r: Valke
     }
     """
     r.run("client", "PAUSE", 100000, "WRITE")
-    # TODO: catch {r set FOO} err
-    # TODO: assert_match "ERR wrong number of arguments for 'set' command" err
+    try:
+        err = r.run("set", "FOO")
+    except Exception as _catch_err:
+        err = str(_catch_err)
+    assert fnmatch(str(err), "ERR wrong number of arguments for 'set' command")
     r.run("client", "unpause")
 
 

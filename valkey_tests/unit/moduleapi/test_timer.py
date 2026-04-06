@@ -1,5 +1,6 @@
 # ruff: noqa: PLR2004, F841
 import time
+from fnmatch import fnmatch
 
 import pytest
 
@@ -140,8 +141,11 @@ def test_module_can_be_unloaded_when_timer_was_finished(r: ValkeyTestClient) -> 
     r.run("set", "timer-incr-key", 0)
     r.run("test.createtimer", 500, "timer-incr-key")
     assert 0 == r.run("get", "timer-incr-key")
-    # TODO: catch {r module unload timer} err
-    # TODO: assert_match {*the module holds timer that is not fired*} err
+    try:
+        err = r.run("module", "unload", "timer")
+    except Exception as _catch_err:
+        err = str(_catch_err)
+    assert fnmatch(str(err), "*the module holds timer that is not fired*")
     # TODO: wait_for_condition 10 500 {
     #       [r get timer-incr-key] == 1
     #   } else {
@@ -175,8 +179,11 @@ def test_module_can_be_unloaded_when_timer_was_stopped(r: ValkeyTestClient) -> N
     # TODO: r module load testmodule
     r.run("set", "timer-incr-key", 0)
     id = r.run("test.createtimer", 5000, "timer-incr-key")
-    # TODO: catch {r module unload timer} err
-    # TODO: assert_match {*the module holds timer that is not fired*} err
+    try:
+        err = r.run("module", "unload", "timer")
+    except Exception as _catch_err:
+        err = str(_catch_err)
+    assert fnmatch(str(err), "*the module holds timer that is not fired*")
     assert 1 == r.run("test.stoptimer", id)
     assert 0 == r.run("get", "timer-incr-key")
     assert "OK" == r.run("module", "unload", "timer")
