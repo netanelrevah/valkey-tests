@@ -19,6 +19,7 @@ from valkey_tests_generator.argument_translators import (
     ArgumentTranslator,
     ExpressionTranslator,
     _safe_stub_name,
+    _safe_var_name,
     collected_stubs,
 )
 
@@ -63,7 +64,7 @@ class SetStatementTranslator(StatementTranslator):
         if not isinstance(name_argument, TCLWord) or not name_argument.value.isidentifier():
             return None
         val = ArgumentTranslator.translate(arguments[1], defined_vars)
-        return None if val is None else [f"{name_argument.value} = {val}"]
+        return None if val is None else [f"{_safe_var_name(name_argument.value)} = {val}"]
 
 
 @StatementTranslator.register("assert_equal")
@@ -116,10 +117,11 @@ class IncrStatementTranslator(StatementTranslator):
         name = arguments[0].value
         if name not in defined_vars:
             return None
+        safe = _safe_var_name(name)
         if len(arguments) > 1:
             amount = ArgumentTranslator.translate(arguments[1], defined_vars)
-            return None if amount is None else [f"{name} += {amount}"]
-        return [f"{name} += 1"]
+            return None if amount is None else [f"{safe} += {amount}"]
+        return [f"{safe} += 1"]
 
 
 @StatementTranslator.register("assert_error")
@@ -291,12 +293,13 @@ class CatchStatementTranslator(StatementTranslator):
         if last_expr is None:
             return None
         if var_name is not None:
-            body_lines.append(f"{var_name} = {last_expr}")
+            safe_var = _safe_var_name(var_name)
+            body_lines.append(f"{safe_var} = {last_expr}")
             return [
                 "try:",
                 *[f"    {line}" for line in body_lines],
                 "except Exception as _catch_err:",
-                f"    {var_name} = str(_catch_err)",
+                f"    {safe_var} = str(_catch_err)",
             ]
         body_lines.append(last_expr)
         return [

@@ -13,13 +13,26 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 from pytcl.commands import TCLBracesWord, TCLCommandForEach, TCLList, TCLScript
-from pytcl.words import TCLCommandWord
+from pytcl.words import TCLCommandWord, TCLVariableSubstitutionWord
 
 import valkey_tests_generator.argument_translators as _arg_translators
+from valkey_tests_generator.argument_translators import _safe_var_name
 from valkey_tests_generator.command_generators import CommandGenerator
 from valkey_tests_generator.statement_translators import TCLBodyTranslator, _extract_todo_commands, _has_todos
 
 _TEST_NAME_TRANSLATE_TABLE = str.maketrans({"/": "_or_", **{c: "_" for c in "{}\",#: -()<>=$'.,*&@!?|+~^%"}})
+
+_KNOWN_FIXTURE_VARS = frozenset({"rd"})
+
+
+def _collect_fixture_refs(body: TCLScript) -> set[str]:
+    """Return known fixture variable names referenced directly in a TCL script body."""
+    refs: set[str] = set()
+    for command in body.commands:
+        for arg in command.args:
+            if isinstance(arg, TCLVariableSubstitutionWord) and arg.variable_name in _KNOWN_FIXTURE_VARS:
+                refs.add(arg.variable_name)
+    return refs
 
 
 def _test_name_from(raw: str) -> str:
@@ -29,16 +42,21 @@ def _test_name_from(raw: str) -> str:
     return "test_" + normalized
 
 
-def _translate_test_body(test_command: TCLCommandWord, initial_vars: set[str] | None = None) -> list[str]:
+def _translate_test_body(
+    test_command: TCLCommandWord, initial_vars: set[str] | None = None
+) -> tuple[list[str], set[str]]:
     body_arg = test_command.args[1] if len(test_command.args) > 1 else None
     expected_arg = test_command.args[2] if test_command.args[2:] else None
     body = TCLScript.read(iter(body_arg.value)) if isinstance(body_arg, TCLBracesWord) else None
     expected = expected_arg.value if isinstance(expected_arg, TCLBracesWord) else None
-    return (
-        TCLBodyTranslator().translate(body, expected, initial_vars=initial_vars)
+    fixture_refs = _collect_fixture_refs(body) - (initial_vars or set()) if body else set()
+    all_initial_vars = (initial_vars or set()) | fixture_refs
+    lines = (
+        TCLBodyTranslator().translate(body, expected, initial_vars=all_initial_vars)
         if body is not None
         else ["assert False"]
     )
+    return lines, fixture_refs
 
 
 def _format_parametrize_value(value: str | None) -> str:
@@ -71,7 +89,7 @@ class TCLTestFileGenerator:
             for value, name in zip(var_values.words, cycle(var_names)):
                 name_to_values[name].append(value)
 
-        names = ",".join(f'"{n}"' for n in name_to_values)
+        names = ",".join(f'"{_safe_var_name(n)}"' for n in name_to_values)
         tuples = ",".join(
             "(" + ",".join(_format_parametrize_value(v) for v in row) + ")"
             for row in zip_longest(*name_to_values.values(), fillvalue=None)
@@ -94,7 +112,7 @@ class TCLTestFileGenerator:
         test_name = base_name if count == 0 else f"{base_name}_{count}"
 
         initial_vars = set(parametrize_vars) if parametrize_vars else None
-        lines = _translate_test_body(test_command, initial_vars=initial_vars)
+        lines, fixture_refs = _translate_test_body(test_command, initial_vars=initial_vars)
 
         self._total_tests += 1
         if _has_todos(lines):
@@ -109,8 +127,9 @@ class TCLTestFileGenerator:
             self.output.write(f"@pytest.mark.skipif('', reason={if_expression!r})\n")
         if parametrizes:
             self.output.writelines(parametrizes)
-        extra_params = "".join(f", {v}" for v in (parametrize_vars or []))
-        self.output.write(f"def {test_name}(r: ValkeyTestClient{extra_params}) -> None:\n")
+        extra_params = "".join(f", {_safe_var_name(v)}" for v in (parametrize_vars or []))
+        fixture_params = "".join(f", {v}" for v in sorted(fixture_refs))
+        self.output.write(f"def {test_name}(r: ValkeyTestClient{extra_params}{fixture_params}) -> None:\n")
         self.output.write('    """\n')
         self.output.write(textwrap.indent(test_command.formatted(), "    ") + "\n")
         self.output.write('    """\n')
@@ -165,7 +184,7 @@ class TCLTestFileGenerator:
     def generate(self, source_file: TextIO) -> None:
         _arg_translators.collected_stubs.clear()
 
-        self.output.write("# ruff: noqa: PLR2004, PLR1714, F841, N806, RUF043, ANN001, ANN002, ANN201, N802, E741\n")
+        self.output.write("# ruff: noqa: PLR2004, PLR1714, F841, N806, RUF043, ANN001, ANN002, ANN201\n")
         self.output.write("import time\n\n")
         self.output.write("import pytest\n")
         self.output.write("from fnmatch import fnmatch\n\n")

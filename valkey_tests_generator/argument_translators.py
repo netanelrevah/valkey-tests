@@ -3,6 +3,7 @@ from __future__ import annotations
 import builtins
 import keyword
 import math
+import re
 from typing import TYPE_CHECKING, ClassVar
 
 if TYPE_CHECKING:
@@ -26,8 +27,23 @@ ExpressionTranslatorType = type["ExpressionTranslator"]
 collected_stubs: set[str] = set()
 
 
+_AMBIGUOUS_VAR_RENAMES = {"l": "L", "O": "o", "I": "i"}
+
+
+def _safe_var_name(name: str) -> str:
+    """Rename ambiguous single-letter variable names to avoid E741."""
+    return _AMBIGUOUS_VAR_RENAMES.get(name, name)
+
+
+def _to_snake_case(name: str) -> str:
+    s = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", name)
+    s = re.sub(r"([a-z\d])([A-Z])", r"\1_\2", s)
+    return s.lower()
+
+
 def _safe_stub_name(name: str) -> str:
-    """Return a Python-safe name for a stub, avoiding builtins and keywords."""
+    """Return a Python-safe snake_case name for a stub, avoiding builtins and keywords."""
+    name = _to_snake_case(name)
     if keyword.iskeyword(name) or hasattr(builtins, name):
         return name + "_"
     return name
@@ -105,7 +121,7 @@ class VariableSubstitutionArgumentTranslator(ArgumentTranslator):
         assert isinstance(argument, TCLVariableSubstitutionWord)
         if "::" in argument.variable_name or argument.variable_name not in defined_vars:
             return None
-        return argument.variable_name
+        return _safe_var_name(argument.variable_name)
 
 
 @ArgumentTranslator.register(TCLBracketWord)
@@ -172,7 +188,7 @@ class SetExpressionTranslator(ExpressionTranslator):
         if len(arguments) != 1 or not isinstance(arguments[0], TCLWord):
             return None
         name = arguments[0].value
-        return name if name in defined_vars else None
+        return _safe_var_name(name) if name in defined_vars else None
 
 
 @ExpressionTranslator.register("r")

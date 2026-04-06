@@ -540,3 +540,15 @@ def test_generate_file__for_loop():
     output = generate(_FOR_LOOP_TCL)
     assert "@pytest.mark.xfail" not in output
     assert _FOR_LOOP_EXPECTED in output
+
+
+def test_generate_file__rd_fixture_added_to_signature():
+    output = generate("""
+        start_server {tags {}} {
+            test {keyspace notification test} {
+                assert_keyevent_patterns $rd myhash hset hexpire
+            }
+        }
+    """)
+    assert "def test_keyspace_notification_test(r: ValkeyTestClient, rd)" in output
+    assert "assert_keyevent_patterns(rd, " in output
