@@ -153,11 +153,7 @@ test "SETNX" { assert_equal 1 [r setnx k v]; assert_equal "v" [r get k] }
 
 ## Code Style
 
-- No comments or docstrings — ever. Don't restate what code does; extract instead.
-- No nested `if` — use fast returns.
-- DRY: extract to variables/functions/constants when it aids readability.
-- Imports at top of file only.
-- Use `is`/direct evaluation instead of `== True`/`== False`.
+See [CODE_STYLE.md](CODE_STYLE.md).
 
 ## General
 
