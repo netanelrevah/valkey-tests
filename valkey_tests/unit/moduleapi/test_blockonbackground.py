@@ -61,20 +61,17 @@ def test_blocked_clients_time_tracking_check_blocked_command_that_uses_redismodu
     """
     r.run("slowlog", "reset")
     r.run("config", "set", "slowlog-log-slower-than", 200000)
-    # TODO: if {!$::no_latency} {
-    #       assert_equal [r slowlog len] 0
-    #   }
+    if "!$::no_latency":
+        assert r.run("slowlog", "len") == 0
     r.run("block.debug", 0, 10000)
-    # TODO: if {!$::no_latency} {
-    #       assert_equal [r slowlog len] 0
-    #   }
+    if "!$::no_latency":
+        assert r.run("slowlog", "len") == 0
     r.run("config", "resetstat")
     r.run("config", "set", "latency-tracking", "yes")
     r.run("config", "set", "latency-tracking-info-percentiles", "50.0")
     r.run("block.debug", 200, 10000)
-    # TODO: if {!$::no_latency} {
-    #       assert_equal [r slowlog len] 1
-    #   }
+    if "!$::no_latency":
+        assert r.run("slowlog", "len") == 1
     # TODO: set cmdstatline cmdrstat block.debug r
     # TODO: set latencystatline_debug latency_percentiles_usec block.debug
     # TODO: regexp "calls=1,usec=(.*?),usec_per_call=(.*?),rejected_calls=0,failed_calls=0" cmdstatline -> usec usec_per_call
@@ -114,18 +111,15 @@ def test_blocked_clients_time_tracking_check_blocked_command_that_uses_redismodu
     """
     r.run("slowlog", "reset")
     r.run("config", "set", "slowlog-log-slower-than", 200000)
-    # TODO: if {!$::no_latency} {
-    #       assert_equal [r slowlog len] 0
-    #   }
+    if "!$::no_latency":
+        assert r.run("slowlog", "len") == 0
     r.run("block.debug", 0, 20000)
-    # TODO: if {!$::no_latency} {
-    #       assert_equal [r slowlog len] 0
-    #   }
+    if "!$::no_latency":
+        assert r.run("slowlog", "len") == 0
     r.run("config", "resetstat")
     r.run("block.debug", 20000, 500)
-    # TODO: if {!$::no_latency} {
-    #       assert_equal [r slowlog len] 1
-    #   }
+    if "!$::no_latency":
+        assert r.run("slowlog", "len") == 1
     # TODO: set cmdstatline cmdrstat block.debug r
     # TODO: regexp "calls=1,usec=(.*?),usec_per_call=(.*?),rejected_calls=0,failed_calls=0" cmdstatline usec usec_per_call
     # TODO: assert {$usec >= 250000}
@@ -161,25 +155,21 @@ def test_blocked_clients_time_tracking_check_blocked_command_with_multiple_calls
     """
     r.run("slowlog", "reset")
     r.run("config", "set", "slowlog-log-slower-than", 200000)
-    # TODO: if {!$::no_latency} {
-    #       assert_equal [r slowlog len] 0
-    #   }
+    if "!$::no_latency":
+        assert r.run("slowlog", "len") == 0
     r.run("block.double_debug", 0)
-    # TODO: if {!$::no_latency} {
-    #       assert_equal [r slowlog len] 0
-    #   }
+    if "!$::no_latency":
+        assert r.run("slowlog", "len") == 0
     r.run("config", "resetstat")
     r.run("block.double_debug", 100)
-    # TODO: if {!$::no_latency} {
-    #       assert_equal [r slowlog len] 1
-    #   }
+    if "!$::no_latency":
+        assert r.run("slowlog", "len") == 1
     # TODO: set cmdstatline cmdrstat block.double_debug r
     # TODO: regexp "calls=1,usec=(.*?),usec_per_call=(.*?),rejected_calls=0,failed_calls=0" cmdstatline usec usec_per_call
     # TODO: assert {$usec >= 60000}
     # TODO: assert {$usec_per_call >= 60000}
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_blocked_clients_time_tracking_check_blocked_command_without_calling_redismodule_blockedclientmeasuretimestart_is_not_reporting_background_time(
     r: ValkeyTestClient,
 ) -> None:
@@ -199,13 +189,11 @@ def test_blocked_clients_time_tracking_check_blocked_command_without_calling_red
     """
     r.run("slowlog", "reset")
     r.run("config", "set", "slowlog-log-slower-than", 200000)
-    # TODO: if {!$::no_latency} {
-    #       assert_equal [r slowlog len] 0
-    #   }
+    if "!$::no_latency":
+        assert r.run("slowlog", "len") == 0
     r.run("block.debug_no_track", 200, 1000)
-    # TODO: if {!$::no_latency} {
-    #       assert_equal [r slowlog len] 0
-    #   }
+    if "!$::no_latency":
+        assert r.run("slowlog", "len") == 0
 
 
 @pytest.mark.xfail(reason="not implemented")
