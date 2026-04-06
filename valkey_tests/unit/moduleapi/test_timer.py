@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841
+# ruff: noqa: PLR2004
 import time
 from fnmatch import fnmatch
 
@@ -42,7 +42,6 @@ def test_rm_createtimer_a_sequence_of_timers_work(r: ValkeyTestClient) -> None:
     assert 20 == r.run("get", "timer-incr-key")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_rm_gettimer_basic_sanity(r: ValkeyTestClient) -> None:
     """
     test {RM_GetTimer: basic sanity} {
@@ -65,7 +64,7 @@ def test_rm_gettimer_basic_sanity(r: ValkeyTestClient) -> None:
     info = r.run("test.gettimer", id)
     assert "timer-incr-key" == info[0]
     remaining = info[1]
-    # TODO: assert {$remaining < 10000 && $remaining > 1}
+    assert (remaining < 10000) and (remaining > 1)
     assert 1 == r.run("test.stoptimer", id)
 
 

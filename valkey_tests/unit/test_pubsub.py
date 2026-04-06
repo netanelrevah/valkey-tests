@@ -954,7 +954,6 @@ def test_keyspace_notifications_new_key_test(r: ValkeyTestClient) -> None:
     # TODO: $rd1 close
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_publish_to_self_inside_multi(r: ValkeyTestClient) -> None:
     """
     test "publish to self inside multi" {
@@ -979,11 +978,9 @@ def test_publish_to_self_inside_multi(r: ValkeyTestClient) -> None:
     r.run("ping", "def")
     assert r.run("exec") == "abc 1 1 def"
     assert r.run("read") == "message foo bar"
-    # TODO: assert_equal r read {message foo vaz}
-    assert False
+    assert r.run("read") == "message foo vaz"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_publish_to_self_inside_script(r: ValkeyTestClient) -> None:
     """
     test "publish to self inside script" {
@@ -1009,11 +1006,9 @@ def test_publish_to_self_inside_script(r: ValkeyTestClient) -> None:
     )
     assert res == "bla"
     assert r.run("read") == "message foo bar"
-    # TODO: assert_equal r read {message foo vaz}
-    assert False
+    assert r.run("read") == "message foo vaz"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_unsubscribe_inside_multi_and_publish_to_self(r: ValkeyTestClient) -> None:
     """
     test "unsubscribe inside multi, and publish to self" {
@@ -1051,5 +1046,4 @@ def test_unsubscribe_inside_multi_and_publish_to_self(r: ValkeyTestClient) -> No
     r.run("ping", "def")
     assert r.run("exec") == "abc {unsubscribe bar 2} {unsubscribe baz 1} def"
     assert r.run("publish", "foo", "vaz") == "1"
-    # TODO: assert_equal r read {message foo vaz}
-    assert False
+    assert r.run("read") == "message foo vaz"

@@ -1,3 +1,5 @@
+# ruff: noqa: PLR2004
+
 import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
@@ -52,9 +54,9 @@ def test_modules_allocated_memory_can_be_reclaimed_in_the_background(r: ValkeyTe
     # TODO: for {set j 0} {$j < 10000} {incr j} {
     #       $rd read
     #   }
-    # TODO: assert {[r lazyfreelink.len lazykey] == 10000}
+    assert r.run("lazyfreelink.len", "lazykey") == 10000
     # TODO: set peak_mem s used_memory
-    # TODO: assert {[r unlink lazykey] == 1}
+    assert r.run("unlink", "lazykey") == 1
     # TODO: assert {$peak_mem > $orig_mem+10000}
     # TODO: wait_for_condition 50 100 {
     #       [s used_memory] < $peak_mem &&

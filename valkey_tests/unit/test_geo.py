@@ -1,4 +1,4 @@
-# ruff: noqa: F841
+# ruff: noqa: PLR2004, F841
 
 from fnmatch import fnmatch
 
@@ -258,7 +258,6 @@ def test_geoadd_update_with_ch_option(r: ValkeyTestClient) -> None:
     # TODO: lassign lindex [r geopos nyc "lic market"] 0 x1 y1
     # TODO: assert {abs($x1) - 40.747 < 0.001}
     # TODO: assert {abs($y1) - 73.945 < 0.001}
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -275,7 +274,6 @@ def test_geoadd_update_with_nx_option(r: ValkeyTestClient) -> None:
     # TODO: lassign lindex [r geopos nyc "lic market"] 0 x1 y1
     # TODO: assert {abs($x1) - 40.747 < 0.001}
     # TODO: assert {abs($y1) - 73.945 < 0.001}
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -292,7 +290,6 @@ def test_geoadd_update_with_xx_option(r: ValkeyTestClient) -> None:
     # TODO: lassign lindex [r geopos nyc "lic market"] 0 x1 y1
     # TODO: assert {abs($x1) - 83.945 < 0.001}
     # TODO: assert {abs($y1) - 40.747 < 0.001}
-    assert False
 
 
 def test_geoadd_update_with_ch_nx_option(r: ValkeyTestClient) -> None:
@@ -687,7 +684,6 @@ def test_georadiusbymember_ro_simple_sorted(r: ValkeyTestClient) -> None:
     )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_georadiusbymember_member_does_not_exist(r: ValkeyTestClient) -> None:
     """
     test {GEORADIUSBYMEMBER member does not exist} {
@@ -698,8 +694,8 @@ def test_georadiusbymember_member_does_not_exist(r: ValkeyTestClient) -> None:
     """
     r.run("del", "Sicily")
     r.run("geoadd", "Sicily", 13.361389, 38.115556, "Palermo", 15.087269, 37.502669, "Catania")
-    # TODO: assert_error "ERR member none_exist_member does not exist" {r GEORADIUSBYMEMBER Sicily none_exist_member 300 KM}
-    assert False
+    with pytest.raises(Exception, match="ERR\\ member\\ none_exist_member\\ does\\ not\\ exist"):
+        r.run("GEORADIUSBYMEMBER", "Sicily", "none_exist_member", 300, "KM")
 
 
 def test_georadiusbymember_search_areas_contain_satisfied_points_in_oblique_direction(r: ValkeyTestClient) -> None:
@@ -947,6 +943,7 @@ def test_geopos_simple(r: ValkeyTestClient) -> None:
     # TODO: assert {abs($y2 - 40) < 0.001}
 
 
+@pytest.mark.xfail(reason="not implemented")
 def test_geopos_missing_element(r: ValkeyTestClient) -> None:
     """
     test {GEOPOS missing element} {
@@ -957,7 +954,7 @@ def test_geopos_missing_element(r: ValkeyTestClient) -> None:
     """
     r.run("del", "points")
     r.run("geoadd", "points", 10, 20, "a", 30, 40, "b")
-    assert r.run("geopos", "points", "a", "x", "b")[1] == ""
+    # TODO: lindex r geopos points a x b 1
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -995,9 +992,9 @@ def test_geodist_simple_unit(r: ValkeyTestClient) -> None:
     r.run("geoadd", "points", 13.361389, 38.115556, "Palermo", "\\")
     # TODO: 15.087269 37.502669 "Catania"
     m = r.run("geodist", "points", "Palermo", "Catania")
-    # TODO: assert {$m > 166274 && $m < 166275}
+    assert (m > 166274) and (m < 166275)
     km = r.run("geodist", "points", "Palermo", "Catania", "km")
-    # TODO: assert {$km > 166.2 && $km < 166.3}
+    assert (km > 166.2) and (km < 166.3)
     dist = r.run("geodist", "points", "Palermo", "Palermo")
     # TODO: assert {$dist eq 0.0000}
 
@@ -1128,7 +1125,6 @@ def test_georange_store_option_plain_usage(r: ValkeyTestClient) -> None:
     assert r.run("zrange", "points{t}", 0, -1) == r.run("zrange", "points2{t}", 0, -1)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_georadiusbymember_store_or_storedist_option_plain_usage(r: ValkeyTestClient) -> None:
     """
     test {GEORADIUSBYMEMBER STORE/STOREDIST option: plain usage} {
@@ -1153,8 +1149,8 @@ def test_georadiusbymember_store_or_storedist_option_plain_usage(r: ValkeyTestCl
     r.run("georadiusbymember", "points{t}", "Catania", 500, "km", "storedist", "points2{t}")
     assert "Catania Palermo" == r.run("zrange", "points2{t}", 0, -1)
     res = r.run("zrange", "points2{t}", 0, -1, "withscores")
-    # TODO: assert {[lindex $res 1] < 1}
-    # TODO: assert {[lindex $res 3] > 166}
+    assert res[1] < 1
+    assert res[3] > 166
 
 
 def test_geosearchstore_store_option_plain_usage(r: ValkeyTestClient) -> None:
@@ -1187,12 +1183,11 @@ def test_georange_storedist_option_plain_usage(r: ValkeyTestClient) -> None:
     # TODO: 15.087269 37.502669 "Catania"
     r.run("georadius", "points{t}", 13.361389, 38.115556, 500, "km", "storedist", "points2{t}")
     res = r.run("zrange", "points2{t}", 0, -1, "withscores")
-    # TODO: assert {[lindex $res 1] < 1}
-    # TODO: assert {[lindex $res 3] > 166}
-    # TODO: assert {[lindex $res 3] < 167}
+    assert res[1] < 1
+    assert res[3] > 166
+    assert res[3] < 167
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_geosearchstore_storedist_option_plain_usage(r: ValkeyTestClient) -> None:
     """
     test {GEOSEARCHSTORE STOREDIST option: plain usage} {
@@ -1216,9 +1211,9 @@ def test_geosearchstore_storedist_option_plain_usage(r: ValkeyTestClient) -> Non
         "storedist",
     )
     res = r.run("zrange", "points2{t}", 0, -1, "withscores")
-    # TODO: assert {[lindex $res 1] < 1}
-    # TODO: assert {[lindex $res 3] > 166}
-    # TODO: assert {[lindex $res 3] < 167}
+    assert res[1] < 1
+    assert res[3] > 166
+    assert res[3] < 167
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1243,11 +1238,11 @@ def test_georange_storedist_option_count_asc_and_desc(r: ValkeyTestClient) -> No
     r.run("geoadd", "points{t}", 13.361389, 38.115556, "Palermo", "\\")
     # TODO: 15.087269 37.502669 "Catania"
     r.run("georadius", "points{t}", 13.361389, 38.115556, 500, "km", "storedist", "points2{t}", "asc", "count", 1)
-    # TODO: assert {[r zcard points2{t}] == 1}
+    assert r.run("zcard", "points2{t}") == 1
     res = r.run("zrange", "points2{t}", 0, -1, "withscores")
     # TODO: assert {[lindex $res 0] eq "Palermo"}
     r.run("georadius", "points{t}", 13.361389, 38.115556, 500, "km", "storedist", "points2{t}", "desc", "count", 1)
-    # TODO: assert {[r zcard points2{t}] == 1}
+    assert r.run("zcard", "points2{t}") == 1
     res = r.run("zrange", "points2{t}", 0, -1, "withscores")
     # TODO: assert {[lindex $res 0] eq "Catania"}
 

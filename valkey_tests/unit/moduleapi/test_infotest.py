@@ -64,7 +64,7 @@ def test_module_reading_info(r: ValkeyTestClient) -> None:
     assert r.run("info.getu", "infotest", "infotest_uglobal") == -2
     assert r.run("info.geti", "infotest_italian", "infotest_due") == 2
     tre = r.run("info.getd", "infotest_italian", "infotest_tre")
-    # TODO: assert {$tre > 3.2 && $tre < 3.4 }
+    assert (tre > 3.2) and (tre < 3.4)
     # TODO: catch { [r info.gets badname redis_version] } e
     # TODO: assert_match {*not found*} e
     # TODO: assert { [string match "*usec_per_call*" [r info.gets all cmdstat_info.gets] ] }

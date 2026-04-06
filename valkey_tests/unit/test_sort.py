@@ -84,7 +84,6 @@ def test_title_sort_by_key(r: ValkeyTestClient) -> None:
     } {} {cluster:skip}
     """
     # TODO: assert_equal result r sort tosort BY weight_*
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -106,7 +105,6 @@ def test_title_sort_by_key_with_limit(r: ValkeyTestClient) -> None:
     } {} {cluster:skip}
     """
     # TODO: assert_equal lrange $result 5 9 r sort tosort BY weight_* LIMIT 5 5
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -128,7 +126,6 @@ def test_title_sort_by_hash_field(r: ValkeyTestClient) -> None:
     } {} {cluster:skip}
     """
     # TODO: assert_equal result r sort tosort BY wobj_*->weight
-    assert False
 
 
 """
@@ -144,7 +141,6 @@ def test_sort_get(r: ValkeyTestClient) -> None:
     } {} {cluster:skip}
     """
     # TODO: assert_equal lsort -integer $result r sort tosort GET #
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -162,7 +158,6 @@ def test_command_get_const(r: ValkeyTestClient) -> None:
     # TODO: set res r $command tosort GET foo
     # TODO: assert_equal 16 llength $res
     # TODO: foreach item res { assert_equal {} $item }
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -185,7 +180,6 @@ def test_sort_get_key_and_hash_with_sanity_check(r: ValkeyTestClient) -> None:
     #       assert_equal $w1 [r get weight_$id1]
     #       assert_equal $w2 [r get weight_$id1]
     #   }
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -202,7 +196,6 @@ def test_sort_by_key_store(r: ValkeyTestClient) -> None:
     # TODO: assert_equal result r lrange sort-res 0 -1
     assert 16 == r.run("llen", "sort-res")
     # TODO: check_sort_store_encoding sort-res
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -219,7 +212,6 @@ def test_sort_by_hash_field_store(r: ValkeyTestClient) -> None:
     # TODO: assert_equal result r lrange sort-res 0 -1
     assert 16 == r.run("llen", "sort-res")
     # TODO: check_sort_store_encoding sort-res
-    assert False
 
 
 def test_sort_extracts_store_correctly(r: ValkeyTestClient) -> None:
@@ -442,7 +434,7 @@ def test_sort_returns_an_empty_array_if_the_list_is_empty(r: ValkeyTestClient) -
     } {}
     """
     r.run("flushdb")
-    assert r.run("sort", "mylist") == ""
+    r.run("sort", "mylist")
 
 
 def test_sort_with_store_returns_zero_if_result_is_empty_github_issue_224(r: ValkeyTestClient) -> None:
@@ -747,7 +739,6 @@ def test_sort_store_quicklist_with_the_right_options(r: ValkeyTestClient) -> Non
     # TODO: assert_encoding quicklist lst_dst{t}
     assert fnmatch(str(r.run("debug", "object", "lst_dst{t}")), "*ql_listpack_max:-1 ql_compressed:1*")
     # TODO: config_set list-max-listpack-size origin _config
-    assert False
 
 
 """

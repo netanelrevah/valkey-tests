@@ -178,7 +178,6 @@ def test_hyperloglogs_are_promote_from_sparse_to_dense(r: ValkeyTestClient) -> N
     #           assert {[r pfdebug encoding hll] eq {dense}}
     #       }
     #   }
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -201,7 +200,6 @@ def test_change_hll_sparse_max_bytes(r: ValkeyTestClient) -> None:
     r.run("config", "set", "hll-sparse-max-bytes", 30)
     r.run("pfadd", "hll", "new_element")
     # TODO: assert {[r pfdebug encoding hll] eq {dense}}
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -244,7 +242,6 @@ def test_hyperloglog_promote_to_dense_well_in_different_hll_sparse_max_bytes(r: 
     #       }
     #       assert {[r pfdebug encoding hll] eq {dense}}
     #   }
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -289,7 +286,6 @@ def test_hyperloglog_sparse_encoding_stress_test(r: ValkeyTestClient) -> None:
     #       # Cardinality estimated should match exactly.
     #       assert {[r pfcount hll1] eq [r pfcount hll2]}
     #   }
-    assert False
 
 
 def test_corrupted_sparse_hyperloglogs_are_detected_additional_at_tail(r: ValkeyTestClient) -> None:
@@ -602,15 +598,15 @@ def test_pfmerge_results_with_simd(r: ValkeyTestClient) -> None:
     # TODO: for {set x 1} {$x < 8000} {incr x} {
     #       r pfadd hll3{t} [expr rand()]
     #   }
-    # TODO: assert {[r pfcount hll1{t}] > 0}
-    # TODO: assert {[r pfcount hll2{t}] > 0}
-    # TODO: assert {[r pfcount hll3{t}] > 0}
+    assert r.run("pfcount", "hll1{t}") > 0
+    assert r.run("pfcount", "hll2{t}") > 0
+    assert r.run("pfcount", "hll3{t}") > 0
     r.run("pfdebug", "simd", "off")
     scalar = r.run("pfcount", "hll1{t}", "hll2{t}", "hll3{t}")
     r.run("pfdebug", "simd", "on")
     simd = r.run("pfcount", "hll1{t}", "hll2{t}", "hll3{t}")
-    # TODO: assert {$scalar > 0}
-    # TODO: assert {$simd > 0}
+    assert scalar > 0
+    assert simd > 0
     assert scalar == simd
     r.run("pfdebug", "simd", "off")
     r.run("pfmerge", "hllscalar{t}", "hll1{t}", "hll2{t}", "hll3{t}")
@@ -618,13 +614,12 @@ def test_pfmerge_results_with_simd(r: ValkeyTestClient) -> None:
     r.run("pfmerge", "hllsimd{t}", "hll1{t}", "hll2{t}", "hll3{t}")
     scalar = r.run("pfcount", "hllscalar{t}")
     simd = r.run("pfcount", "hllsimd{t}")
-    # TODO: assert {$scalar > 0}
-    # TODO: assert {$simd > 0}
+    assert scalar > 0
+    assert simd > 0
     assert scalar == simd
     scalar = r.run("get", "hllscalar{t}")
     simd = r.run("get", "hllsimd{t}")
-    # TODO: assert_equal scalar simd
-    assert False
+    assert scalar == simd
 
 
 @pytest.mark.xfail(reason="not implemented")

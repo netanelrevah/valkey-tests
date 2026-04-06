@@ -1,4 +1,4 @@
-# ruff: noqa: F841, RUF043
+# ruff: noqa: PLR2004, F841, RUF043
 import time
 from fnmatch import fnmatch
 
@@ -265,17 +265,17 @@ def test_expires_after_aof_reload_without_rewrite(r: ValkeyTestClient) -> None:
     time.sleep(2000 / 1000)
     r.run("debug", "loadaof")
     ttl = r.run("ttl", "x")
-    # TODO: assert {$ttl > 900 && $ttl <= 1000}
+    assert (ttl > 900) and (ttl <= 1000)
     ttl = r.run("ttl", "y")
-    # TODO: assert {$ttl > 1900 && $ttl <= 2000}
+    assert (ttl > 1900) and (ttl <= 2000)
     ttl = r.run("ttl", "z")
-    # TODO: assert {$ttl > 2900 && $ttl <= 3000}
+    assert (ttl > 2900) and (ttl <= 3000)
     ttl = r.run("ttl", "px")
-    # TODO: assert {$ttl > 900 && $ttl <= 1000}
+    assert (ttl > 900) and (ttl <= 1000)
     ttl = r.run("ttl", "py")
-    # TODO: assert {$ttl > 1900 && $ttl <= 2000}
+    assert (ttl > 1900) and (ttl <= 2000)
     ttl = r.run("ttl", "pz")
-    # TODO: assert {$ttl > 2900 && $ttl <= 3000}
+    assert (ttl > 2900) and (ttl <= 3000)
     assert r.run("config", "set", "appendonly", "no") == "OK"
 
 
@@ -354,8 +354,7 @@ def test_append_fuzzing(r: ValkeyTestClient) -> None:
     #           break
     #       }
     #   }
-    # TODO: set _ err
-    assert False
+    _ = err
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -403,7 +402,6 @@ def test_perform_a_final_save_to_leave_a_clean_db_on_disk(r: ValkeyTestClient) -
     assert r.run("save") == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_reset_clears_client_state(r: ValkeyTestClient) -> None:
     """
     test {RESET clears client state} {
@@ -421,8 +419,7 @@ def test_reset_clears_client_state(r: ValkeyTestClient) -> None:
     assert r.run("reset") == "RESET"
     client = r.run("client", "list")
     assert fnmatch(str(client), "*name= *")
-    # TODO: assert_match {*flags=N *} client
-    assert False
+    assert fnmatch(str(client), "*flags=N *")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -447,10 +444,8 @@ def test_reset_clears_monitor_state(r: ValkeyTestClient) -> None:
     # TODO: assert_equal $rd read "RESET"
     # TODO: $rd close
     # TODO: assert_no_match {*flags=O*} r client list
-    assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_reset_clears_and_discards_multi_state(r: ValkeyTestClient) -> None:
     """
     test {RESET clears and discards MULTI state} {
@@ -469,8 +464,7 @@ def test_reset_clears_and_discards_multi_state(r: ValkeyTestClient) -> None:
         err = r.run("exec")
     except Exception as _catch_err:
         err = str(_catch_err)
-    # TODO: assert_match {*EXEC without MULTI*} err
-    assert False
+    assert fnmatch(str(err), "*EXEC without MULTI*")
 
 
 def test_reset_clears_pub_or_sub_state(r: ValkeyTestClient) -> None:
@@ -488,7 +482,6 @@ def test_reset_clears_pub_or_sub_state(r: ValkeyTestClient) -> None:
     assert r.run("set", "key", "val") == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_reset_clears_authenticated_state(r: ValkeyTestClient) -> None:
     """
     test {RESET clears authenticated state} {
@@ -505,8 +498,7 @@ def test_reset_clears_authenticated_state(r: ValkeyTestClient) -> None:
     r.run("auth", "user1", "secret")
     assert r.run("acl", "whoami") == "user1"
     r.run("reset")
-    # TODO: assert_equal r acl whoami default
-    assert False
+    assert r.run("acl", "whoami") == "default"
 
 
 def test_subcommand_syntax_error_crash_issue_10070(r: ValkeyTestClient) -> None:
@@ -701,7 +693,6 @@ def test_don_t_rehash_if_server_has_child_process(r: ValkeyTestClient) -> None:
     #   } else {
     #       fail "hash table did not rehash after child process killed"
     #   }
-    assert False
 
 
 """

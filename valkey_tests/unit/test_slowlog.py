@@ -23,7 +23,6 @@ def test_slowlog_check_that_it_starts_with_an_empty_log(r: ValkeyTestClient) -> 
     assert r.run("slowlog", "len") == "0"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_slowlog_only_logs_commands_taking_more_time_than_specified(r: ValkeyTestClient) -> None:
     """
     test {SLOWLOG - only logs commands taking more time than specified} {
@@ -38,8 +37,7 @@ def test_slowlog_only_logs_commands_taking_more_time_than_specified(r: ValkeyTes
     r.run("ping")
     assert r.run("slowlog", "len") == 0
     r.run("debug", "sleep", 0.2)
-    # TODO: assert_equal r slowlog len 1
-    assert False
+    assert r.run("slowlog", "len") == 1
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -135,8 +133,7 @@ def test_slowlog_logged_entry_sanity_check(r: ValkeyTestClient) -> None:
     #   }
     # TODO: assert_equal expr {[lindex $e 2] > 100000} 1
     assert e[3] == "debug sleep 0.2"
-    # TODO: assert_equal {foobar} lindex $e 5
-    assert False
+    assert "foobar" == e[5]
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -205,7 +202,6 @@ def test_slowlog_certain_commands_are_omitted_that_contain_sensitive_information
     # TODO: assert_equal {acl getuser (redacted)} lindex [lindex $slowlog_resp 2] 3
     # TODO: assert_equal {acl deluser (redacted) (redacted)} lindex [lindex $slowlog_resp 1] 3
     # TODO: assert_equal {config set slowlog-log-slower-than 0} lindex [lindex $slowlog_resp 0] 3
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -238,7 +234,6 @@ def test_slowlog_some_commands_can_redact_sensitive_fields(r: ValkeyTestClient) 
     # TODO: assert_match {* key 9 5000} lindex [lindex $slowlog_resp 2] 3
     # TODO: assert_match {* key 9 5000 AUTH (redacted)} lindex [lindex $slowlog_resp 1] 3
     # TODO: assert_match {* key 9 5000 AUTH2 (redacted) (redacted)} lindex [lindex $slowlog_resp 0] 3
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -396,7 +391,6 @@ def test_slowlog_too_long_arguments_are_trimmed(r: ValkeyTestClient) -> None:
     )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_slowlog_exec_is_not_logged_just_executed_commands(r: ValkeyTestClient) -> None:
     """
     test {SLOWLOG - EXEC is not logged, just executed commands} {
@@ -419,11 +413,9 @@ def test_slowlog_exec_is_not_logged_just_executed_commands(r: ValkeyTestClient) 
     r.run("exec")
     assert r.run("slowlog", "len") == 1
     e = r.run("slowlog", "get")[0]
-    # TODO: assert_equal lindex $e 3 {debug sleep 0.2}
-    assert False
+    assert e[3] == "debug sleep 0.2"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_slowlog_can_clean_older_entries(r: ValkeyTestClient) -> None:
     """
     test {SLOWLOG - can clean older entries} {
@@ -438,13 +430,11 @@ def test_slowlog_can_clean_older_entries(r: ValkeyTestClient) -> None:
     r.run("client", "setname", "lastentry_client")
     r.run("config", "set", "slowlog-max-len", 1)
     r.run("debug", "sleep", 0.2)
-    # TODO: assert {[llength [r slowlog get]] == 1}
+    assert len(r.run("slowlog", "get")) == 1
     e = r.run("slowlog", "get")[0]
-    # TODO: assert_equal {lastentry_client} lindex $e 5
-    assert False
+    assert "lastentry_client" == e[5]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_slowlog_can_be_disabled(r: ValkeyTestClient) -> None:
     """
     test {SLOWLOG - can be disabled} {
@@ -467,8 +457,7 @@ def test_slowlog_can_be_disabled(r: ValkeyTestClient) -> None:
     r.run("config", "set", "slowlog-log-slower-than", -1)
     r.run("slowlog", "reset")
     r.run("debug", "sleep", 0.2)
-    # TODO: assert_equal r slowlog len 0
-    assert False
+    assert r.run("slowlog", "len") == 0
 
 
 def test_slowlog_count_must_be_1(r: ValkeyTestClient) -> None:

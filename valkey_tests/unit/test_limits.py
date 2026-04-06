@@ -1,4 +1,4 @@
-# ruff: noqa: F841
+# ruff: noqa: PLR2004
 
 import pytest
 
@@ -44,5 +44,5 @@ def test_check_if_maxclients_works_refusing_connections(r: ValkeyTestClient) -> 
     #           after 100
     #       }
     #   } e
-    # TODO: assert {$c > 8 && $c <= 10}
+    assert (c > 8) and (c <= 10)
     # TODO: set e

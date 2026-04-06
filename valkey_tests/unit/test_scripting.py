@@ -2480,7 +2480,6 @@ def test_not_enough_good_replicas_state_change_during_long_script(r: ValkeyTestC
     assert r.run("config", "set", "lua-time-limit", 5000) == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_allow_stale_shebang_flag(r: ValkeyTestClient) -> None:
     """
     test "allow-stale shebang flag" {
@@ -2569,8 +2568,7 @@ def test_allow_stale_shebang_flag(r: ValkeyTestClient) -> None:
     assert fnmatch(str(r.run("evalsha", sha, 0)), "foobar")
     r.run("replicaof", "no", "one")
     r.run("config", "set", "replica-serve-stale-data", "yes")
-    # TODO: set _ {}
-    assert False
+    _ = ""
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -2804,7 +2802,6 @@ def test_consistent_eval_error_reporting(r: ValkeyTestClient) -> None:
     # TODO: assert_equal s total_error_replies {1}
     # TODO: assert_match {calls=1*rejected_calls=0,failed_calls=1*} cmdrstat geoadd r
     # TODO: assert_match {calls=1*rejected_calls=0,failed_calls=1*} cmdrstat eval r
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -3066,8 +3063,7 @@ def test_eval_select_inside_script_affects_subsequent_commands_in_same_script(r:
     r.run("del", "testkey")
     r.run("select", 0)
     r.run("del", "testkey")
-    # TODO: set _ {}
-    assert False
+    _ = ""
 
 
 def test_don_t_stop_the_dirty_scripts_when_an_oom_occurs_midway_through_execution(r: ValkeyTestClient) -> None:

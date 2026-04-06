@@ -339,7 +339,6 @@ def test_expire_or_expireat_or_pexpire_or_pexpireat_expiration_time_is_already_e
     # TODO: assert_equal {4} s expired_keys
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_ttl_returns_time_to_live_in_seconds(r: ValkeyTestClient) -> None:
     """
     test {TTL returns time to live in seconds} {
@@ -352,10 +351,9 @@ def test_ttl_returns_time_to_live_in_seconds(r: ValkeyTestClient) -> None:
     r.run("del", "x")
     r.run("setex", "x", 10, "somevalue")
     ttl = r.run("ttl", "x")
-    # TODO: assert {$ttl > 8 && $ttl <= 10}
+    assert (ttl > 8) and (ttl <= 10)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_pttl_returns_time_to_live_in_milliseconds(r: ValkeyTestClient) -> None:
     """
     test {PTTL returns time to live in milliseconds} {
@@ -368,7 +366,7 @@ def test_pttl_returns_time_to_live_in_milliseconds(r: ValkeyTestClient) -> None:
     r.run("del", "x")
     r.run("setex", "x", 1, "somevalue")
     ttl = r.run("pttl", "x")
-    # TODO: assert {$ttl > 500 && $ttl <= 1000}
+    assert (ttl > 500) and (ttl <= 1000)
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -996,7 +994,6 @@ def test_all_ttl_in_commands_are_propagated_as_absolute_timestamp_in_replication
     #       {restore foo7 * * absttl}
     #   }
     # TODO: close_replication_stream repl
-    assert False
 
 
 """
@@ -1093,7 +1090,6 @@ def test_set_command_will_remove_expire(r: ValkeyTestClient) -> None:
     assert r.run("ttl", "foo") == "-1"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_set_use_keepttl_option_ttl_should_not_be_removed(r: ValkeyTestClient) -> None:
     """
     test {SET - use KEEPTTL option, TTL should not be removed} {
@@ -1106,10 +1102,9 @@ def test_set_use_keepttl_option_ttl_should_not_be_removed(r: ValkeyTestClient) -
     r.run("set", "foo", "bar", "EX", 100)
     r.run("set", "foo", "bar", "KEEPTTL")
     ttl = r.run("ttl", "foo")
-    # TODO: assert {$ttl <= 100 && $ttl > 90}
+    assert (ttl <= 100) and (ttl > 90)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_set_use_keepttl_option_ttl_should_not_be_removed_after_loadaof(r: ValkeyTestClient) -> None:
     """
     test {SET - use KEEPTTL option, TTL should not be removed after loadaof} {
@@ -1128,8 +1123,7 @@ def test_set_use_keepttl_option_ttl_should_not_be_removed_after_loadaof(r: Valke
     time.sleep(2000 / 1000)
     r.run("debug", "loadaof")
     ttl = r.run("ttl", "foo")
-    # TODO: assert {$ttl <= 98 && $ttl > 90}
-    assert False
+    assert (ttl <= 98) and (ttl > 90)
 
 
 def test_getex_use_of_persist_option_should_remove_ttl(r: ValkeyTestClient) -> None:
@@ -1196,7 +1190,6 @@ def test_getex_propagate_as_to_replica_as_persist_unlink_or_nothing(r: ValkeyTes
     #       {unlink foo}
     #   }
     # TODO: close_replication_stream repl
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1211,7 +1204,6 @@ def test_expire_with_nx_option_on_a_key_with_ttl(r: ValkeyTestClient) -> None:
     r.run("SET", "foo", "bar", "EX", 100)
     assert r.run("EXPIRE", "foo", 200, "NX") == 0
     # TODO: assert_range r TTL foo 50 100
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1226,7 +1218,6 @@ def test_expire_with_nx_option_on_a_key_without_ttl(r: ValkeyTestClient) -> None
     r.run("SET", "foo", "bar")
     assert r.run("EXPIRE", "foo", 200, "NX") == 1
     # TODO: assert_range r TTL foo 100 200
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1241,10 +1232,8 @@ def test_expire_with_xx_option_on_a_key_with_ttl(r: ValkeyTestClient) -> None:
     r.run("SET", "foo", "bar", "EX", 100)
     assert r.run("EXPIRE", "foo", 200, "XX") == 1
     # TODO: assert_range r TTL foo 100 200
-    assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_expire_with_xx_option_on_a_key_without_ttl(r: ValkeyTestClient) -> None:
     """
     test {EXPIRE with XX option on a key without ttl} {
@@ -1255,8 +1244,7 @@ def test_expire_with_xx_option_on_a_key_without_ttl(r: ValkeyTestClient) -> None
     """
     r.run("SET", "foo", "bar")
     assert r.run("EXPIRE", "foo", 200, "XX") == 0
-    # TODO: assert_equal r TTL foo -1
-    assert False
+    assert r.run("TTL", "foo") == -1
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1271,7 +1259,6 @@ def test_expire_with_gt_option_on_a_key_with_lower_ttl(r: ValkeyTestClient) -> N
     r.run("SET", "foo", "bar", "EX", 100)
     assert r.run("EXPIRE", "foo", 200, "GT") == 1
     # TODO: assert_range r TTL foo 100 200
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1286,10 +1273,8 @@ def test_expire_with_gt_option_on_a_key_with_higher_ttl(r: ValkeyTestClient) -> 
     r.run("SET", "foo", "bar", "EX", 200)
     assert r.run("EXPIRE", "foo", 100, "GT") == 0
     # TODO: assert_range r TTL foo 100 200
-    assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_expire_with_gt_option_on_a_key_without_ttl(r: ValkeyTestClient) -> None:
     """
     test {EXPIRE with GT option on a key without ttl} {
@@ -1300,8 +1285,7 @@ def test_expire_with_gt_option_on_a_key_without_ttl(r: ValkeyTestClient) -> None
     """
     r.run("SET", "foo", "bar")
     assert r.run("EXPIRE", "foo", 200, "GT") == 0
-    # TODO: assert_equal r TTL foo -1
-    assert False
+    assert r.run("TTL", "foo") == -1
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1316,7 +1300,6 @@ def test_expire_with_lt_option_on_a_key_with_higher_ttl(r: ValkeyTestClient) -> 
     r.run("SET", "foo", "bar", "EX", 100)
     assert r.run("EXPIRE", "foo", 200, "LT") == 0
     # TODO: assert_range r TTL foo 50 100
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1331,7 +1314,6 @@ def test_expire_with_lt_option_on_a_key_with_lower_ttl(r: ValkeyTestClient) -> N
     r.run("SET", "foo", "bar", "EX", 200)
     assert r.run("EXPIRE", "foo", 100, "LT") == 1
     # TODO: assert_range r TTL foo 50 100
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1346,7 +1328,6 @@ def test_expire_with_lt_option_on_a_key_without_ttl(r: ValkeyTestClient) -> None
     r.run("SET", "foo", "bar")
     assert r.run("EXPIRE", "foo", 100, "LT") == 1
     # TODO: assert_range r TTL foo 50 100
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1361,10 +1342,8 @@ def test_expire_with_lt_and_xx_option_on_a_key_with_ttl(r: ValkeyTestClient) -> 
     r.run("SET", "foo", "bar", "EX", 200)
     assert r.run("EXPIRE", "foo", 100, "LT", "XX") == 1
     # TODO: assert_range r TTL foo 50 100
-    assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_expire_with_lt_and_xx_option_on_a_key_without_ttl(r: ValkeyTestClient) -> None:
     """
     test {EXPIRE with LT and XX option on a key without ttl} {
@@ -1375,8 +1354,7 @@ def test_expire_with_lt_and_xx_option_on_a_key_without_ttl(r: ValkeyTestClient) 
     """
     r.run("SET", "foo", "bar")
     assert r.run("EXPIRE", "foo", 200, "LT", "XX") == 0
-    # TODO: assert_equal r TTL foo -1
-    assert False
+    assert r.run("TTL", "foo") == -1
 
 
 def test_expire_with_conflicting_options_lt_gt(r: ValkeyTestClient) -> None:
@@ -1463,7 +1441,6 @@ def test_expire_with_unsupported_options_1(r: ValkeyTestClient) -> None:
     assert e == "ERR Unsupported option AB"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_expire_with_negative_expiry(r: ValkeyTestClient) -> None:
     """
     test {EXPIRE with negative expiry} {
@@ -1474,11 +1451,9 @@ def test_expire_with_negative_expiry(r: ValkeyTestClient) -> None:
     """
     r.run("SET", "foo", "bar", "EX", 100)
     assert r.run("EXPIRE", "foo", -10, "LT") == 1
-    # TODO: assert_equal r TTL foo -2
-    assert False
+    assert r.run("TTL", "foo") == -2
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_expire_with_negative_expiry_on_a_non_valitale_key(r: ValkeyTestClient) -> None:
     """
     test {EXPIRE with negative expiry on a non-valitale key} {
@@ -1489,11 +1464,9 @@ def test_expire_with_negative_expiry_on_a_non_valitale_key(r: ValkeyTestClient) 
     """
     r.run("SET", "foo", "bar")
     assert r.run("EXPIRE", "foo", -10, "LT") == 1
-    # TODO: assert_equal r TTL foo -2
-    assert False
+    assert r.run("TTL", "foo") == -2
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_expire_with_non_existed_key(r: ValkeyTestClient) -> None:
     """
     test {EXPIRE with non-existed key} {
@@ -1506,8 +1479,7 @@ def test_expire_with_non_existed_key(r: ValkeyTestClient) -> None:
     assert r.run("EXPIRE", "none", 100, "NX") == 0
     assert r.run("EXPIRE", "none", 100, "XX") == 0
     assert r.run("EXPIRE", "none", 100, "GT") == 0
-    # TODO: assert_equal r EXPIRE none 100 LT 0
-    assert False
+    assert r.run("EXPIRE", "none", 100, "LT") == 0
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1552,8 +1524,7 @@ def test_server_should_not_propagate_the_read_command_on_lazy_expire(r: ValkeyTe
     #       {set x 1}
     #   }
     # TODO: close_replication_stream repl
-    # TODO: assert_equal r debug set-active-expire 1 {OK}
-    assert False
+    assert r.run("debug", "set-active-expire", 1) == "OK"
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1593,8 +1564,7 @@ def test_scan_lazy_expire_should_not_be_wrapped_in_multi_or_exec(r: ValkeyTestCl
     #       {unlink foo*}
     #   }
     # TODO: close_replication_stream repl
-    # TODO: assert_equal r debug set-active-expire 1 {OK}
-    assert False
+    assert r.run("debug", "set-active-expire", 1) == "OK"
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1634,8 +1604,7 @@ def test_randomkey_lazy_expire_should_not_be_wrapped_in_multi_or_exec(r: ValkeyT
     #       {unlink foo*}
     #   }
     # TODO: close_replication_stream repl
-    # TODO: assert_equal r debug set-active-expire 1 {OK}
-    assert False
+    assert r.run("debug", "set-active-expire", 1) == "OK"
 
 
 def test_import_source_can_be_closed_when_import_mode_is_off(r: ValkeyTestClient) -> None:
@@ -1706,7 +1675,6 @@ def test_import_mode_should_forbid_active_expiration(r: ValkeyTestClient) -> Non
     #   }
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_import_mode_should_forbid_lazy_expiration(r: ValkeyTestClient) -> None:
     """
     test {Import mode should forbid lazy expiration} {
@@ -1744,8 +1712,7 @@ def test_import_mode_should_forbid_lazy_expiration(r: ValkeyTestClient) -> None:
     r.run("config", "set", "import-mode", "no")
     r.run("get", "foo1")
     assert r.run("dbsize") == "0"
-    # TODO: assert_equal r debug set-active-expire 1 {OK}
-    assert False
+    assert r.run("debug", "set-active-expire", 1) == "OK"
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -2041,8 +2008,7 @@ def test_active_expiration_triggers_hashtable_shrink(r: ValkeyTestClient) -> Non
     #       puts [r debug htstats 9]
     #       fail "Table didn't shrink"
     #   }
-    # TODO: assert_equal r ping {PONG}
-    assert False
+    assert r.run("ping") == "PONG"
 
 
 """

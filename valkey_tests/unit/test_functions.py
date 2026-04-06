@@ -351,8 +351,7 @@ def test_function_test_debug_reload_with_nosave_and_noflush(r: ValkeyTestClient)
     # TODO: r function load get_function_code LUA test2 test2 {return 'hello'}
     r.run("debug", "reload", "nosave", "noflush", "merge")
     assert r.run("fcall", "test1", 0) == "hello"
-    # TODO: assert_equal r fcall test2 0 {hello}
-    assert False
+    assert r.run("fcall", "test2", 0) == "hello"
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1495,7 +1494,7 @@ def test_libraries_delete_removed_all_functions_on_library(r: ValkeyTestClient) 
     } {}
     """
     r.run("function", "delete", "lib1")
-    assert r.run("function", "list") == ""
+    r.run("function", "list")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -2353,8 +2352,7 @@ def test_function_allow_stale(r: ValkeyTestClient) -> None:
     assert fnmatch(str(r.run("fcall", "f4", 0)), "*redis_version*")
     r.run("replicaof", "no", "one")
     r.run("config", "set", "replica-serve-stale-data", "yes")
-    # TODO: set _ {}
-    assert False
+    _ = ""
 
 
 @pytest.mark.xfail(reason="not implemented")

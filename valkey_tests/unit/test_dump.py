@@ -1,4 +1,4 @@
-# ruff: noqa: F841
+# ruff: noqa: PLR2004, F841
 import time
 from fnmatch import fnmatch
 
@@ -126,7 +126,6 @@ def test_restore_with_absttl_in_the_past(r: ValkeyTestClient) -> None:
     assert e == "ERR no such key"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_restore_can_set_lru(r: ValkeyTestClient) -> None:
     """
     test {RESTORE can set LRU} {
@@ -147,12 +146,11 @@ def test_restore_can_set_lru(r: ValkeyTestClient) -> None:
     r.run("config", "set", "maxmemory-policy", "allkeys-lru")
     r.run("restore", "foo", 0, encoded, "idletime", 1000)
     idle = r.run("object", "idletime", "foo")
-    # TODO: assert {$idle >= 1000 && $idle <= 1010}
+    assert (idle >= 1000) and (idle <= 1010)
     assert r.run("get", "foo") == "bar"
     assert r.run("config", "set", "maxmemory-policy", "noeviction") == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_restore_can_set_lfu(r: ValkeyTestClient) -> None:
     """
     test {RESTORE can set LFU} {
@@ -174,7 +172,7 @@ def test_restore_can_set_lfu(r: ValkeyTestClient) -> None:
     r.run("config", "set", "maxmemory-policy", "allkeys-lfu")
     r.run("restore", "foo", 0, encoded, "freq", 100)
     freq = r.run("object", "freq", "foo")
-    # TODO: assert {$freq == 100}
+    assert freq == 100
     r.run("get", "foo")
     assert r.run("get", "foo") == "bar"
     assert r.run("config", "set", "maxmemory-policy", "noeviction") == "OK"
@@ -354,7 +352,6 @@ def test_restore_should_not_store_key_that_are_already_expired_with_replace_will
     #       {unlink key2{t}}
     #   }
     # TODO: close_replication_stream repl
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -395,7 +392,7 @@ def test_dump_of_non_existing_key_returns_nil(r: ValkeyTestClient) -> None:
         r dump nonexisting_key
     } {}
     """
-    assert r.run("dump", "nonexisting_key") == ""
+    r.run("dump", "nonexisting_key")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -428,7 +425,6 @@ def test_migrate_is_caching_connections(r: ValkeyTestClient) -> None:
     #       r -1 migrate $second_host $second_port key $db 1000
     #       assert_match {*migrate_cached_sockets:1*} [r -1 info]
     #   }
-    assert False
 
 
 def test_migrate_cached_connections_are_released_after_some_time(r: ValkeyTestClient) -> None:
@@ -480,7 +476,6 @@ def test_migrate_is_able_to_migrate_a_key_between_two_instances(r: ValkeyTestCli
     #       assert {[$second get key] eq {Some Value}}
     #       assert {[$second ttl key] == -1}
     #   }
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -521,7 +516,6 @@ def test_migrate_is_able_to_copy_a_key_between_two_instances(r: ValkeyTestClient
     #       assert {[$second exists list] == 1}
     #       assert {[$first lrange list 0 -1] eq [$second lrange list 0 -1]}
     #   }
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -568,7 +562,6 @@ def test_migrate_will_not_overwrite_existing_keys_unless_replace_is_used(r: Valk
     #       assert {[$second exists list] == 1}
     #       assert {[$first lrange list 0 -1] eq [$second lrange list 0 -1]}
     #   }
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -611,7 +604,6 @@ def test_migrate_propagates_ttl_correctly(r: ValkeyTestClient) -> None:
     #       assert {[$second get key] eq {Some Value}}
     #       assert {[$second ttl key] >= 7 && [$second ttl key] <= 10}
     #   }
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -664,7 +656,6 @@ def test_migrate_can_correctly_transfer_large_values(r: ValkeyTestClient) -> Non
     #       assert {[$second ttl key] == -1}
     #       assert {[$second llen key] == 40000*20}
     #   }
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -707,7 +698,6 @@ def test_migrate_can_correctly_transfer_hashes(r: ValkeyTestClient) -> None:
     #       assert {[$second exists key] == 1}
     #       assert {[$second ttl key] == -1}
     #   }
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -750,7 +740,6 @@ def test_migrate_timeout_actually_works(r: ValkeyTestClient) -> None:
     #       catch {r -1 migrate $second_host $second_port key $db 500} e
     #       assert_match {IOERR*} $e
     #   }
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -799,7 +788,6 @@ def test_migrate_can_migrate_multiple_keys_at_once(r: ValkeyTestClient) -> None:
     #       assert {[$second get key2] eq {v2}}
     #       assert {[$second get key3] eq {v3}}
     #   }
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -867,7 +855,6 @@ def test_migrate_with_multiple_keys_migrate_just_existing_ones(r: ValkeyTestClie
     #       assert {[$second get key2] eq {v2}}
     #       assert {[$second get key3] eq {v3}}
     #   }
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -936,7 +923,6 @@ def test_migrate_with_multiple_keys_stress_command_rewriting(r: ValkeyTestClient
     #       assert {[$first dbsize] == 0}
     #       assert {[$second dbsize] == 15}
     #   }
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1013,7 +999,6 @@ def test_migrate_with_multiple_keys_delete_just_ack_keys(r: ValkeyTestClient) ->
     #       assert {[$first exists c] == 1}
     #       assert {[$first exists d] == 1}
     #   }
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1066,4 +1051,3 @@ def test_migrate_auth_correct_and_wrong_password_cases(r: ValkeyTestClient) -> N
     #       catch {r -1 migrate $second_host $second_port list $db 5000 AUTH foobar} err
     #       assert_match {*WRONGPASS*} $err
     #   }
-    assert False

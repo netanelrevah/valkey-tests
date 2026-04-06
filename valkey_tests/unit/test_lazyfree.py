@@ -1,3 +1,5 @@
+# ruff: noqa: PLR2004
+
 import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
@@ -37,9 +39,9 @@ def test_unlink_can_reclaim_memory_in_background(r: ValkeyTestClient) -> None:
     #       lappend args $i
     #   }
     r.run("sadd", "myset", "*", args)
-    # TODO: assert {[r scard myset] == 100000}
+    assert r.run("scard", "myset") == 100000
     # TODO: set peak_mem s used_memory
-    # TODO: assert {[r unlink myset] == 1}
+    assert r.run("unlink", "myset") == 1
     # TODO: assert {$peak_mem > $orig_mem+1000000}
     # TODO: wait_for_condition 50 100 {
     #       [s used_memory] < $peak_mem &&
@@ -81,7 +83,7 @@ def test_flushdb_async_can_reclaim_memory_in_background(r: ValkeyTestClient) -> 
     #       lappend args $i
     #   }
     r.run("sadd", "myset", "*", args)
-    # TODO: assert {[r scard myset] == 100000}
+    assert r.run("scard", "myset") == 100000
     # TODO: set peak_mem s used_memory
     r.run("flushdb", "async")
     # TODO: assert {$peak_mem > $orig_mem+1000000}
@@ -153,7 +155,6 @@ def test_lazy_free_a_stream_with_all_types_of_metadata(r: ValkeyTestClient) -> N
     #       fail "lazyfree isn't done"
     #   }
     # TODO: assert_equal s lazyfreed_objects 1
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -186,4 +187,3 @@ def test_lazy_free_a_stream_with_deleted_cgroup(r: ValkeyTestClient) -> None:
     #       fail "lazyfree isn't done"
     #   }
     # TODO: assert_equal s lazyfreed_objects 0
-    assert False

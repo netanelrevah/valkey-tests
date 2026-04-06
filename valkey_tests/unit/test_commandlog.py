@@ -72,8 +72,7 @@ def test_commandlog_only_logs_commands_exceeding_the_threshold(r: ValkeyTestClie
     r.run("ping")
     assert r.run("commandlog", "len", "large-reply") == 0
     r.run("get", "testkey")
-    # TODO: assert_equal r commandlog len large-reply 1
-    assert False
+    assert r.run("commandlog", "len", "large-reply") == 1
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -374,7 +373,6 @@ def test_commandlog_slow_certain_commands_are_omitted_that_contain_sensitive_inf
     # TODO: assert_equal {acl getuser (redacted)} lindex [lindex $slowlog_resp 2] 3
     # TODO: assert_equal {acl deluser (redacted) (redacted)} lindex [lindex $slowlog_resp 1] 3
     # TODO: assert_equal {config set commandlog-execution-slower-than 0} lindex [lindex $slowlog_resp 0] 3
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -407,7 +405,6 @@ def test_commandlog_slow_some_commands_can_redact_sensitive_fields(r: ValkeyTest
     # TODO: assert_match {* key 9 5000} lindex [lindex $slowlog_resp 2] 3
     # TODO: assert_match {* key 9 5000 AUTH (redacted)} lindex [lindex $slowlog_resp 1] 3
     # TODO: assert_match {* key 9 5000 AUTH2 (redacted) (redacted)} lindex [lindex $slowlog_resp 0] 3
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -565,7 +562,6 @@ def test_commandlog_slow_too_long_arguments_are_trimmed(r: ValkeyTestClient) -> 
     )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_commandlog_slow_exec_is_not_logged_just_executed_commands(r: ValkeyTestClient) -> None:
     """
     test {COMMANDLOG slow - EXEC is not logged, just executed commands} {
@@ -588,11 +584,9 @@ def test_commandlog_slow_exec_is_not_logged_just_executed_commands(r: ValkeyTest
     r.run("exec")
     assert r.run("commandlog", "len", "slow") == 1
     e = r.run("commandlog", "get", -1, "slow")[0]
-    # TODO: assert_equal lindex $e 3 {debug sleep 0.2}
-    assert False
+    assert e[3] == "debug sleep 0.2"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_commandlog_slow_can_clean_older_entries(r: ValkeyTestClient) -> None:
     """
     test {COMMANDLOG slow - can clean older entries} {
@@ -607,13 +601,11 @@ def test_commandlog_slow_can_clean_older_entries(r: ValkeyTestClient) -> None:
     r.run("client", "setname", "lastentry_client")
     r.run("config", "set", "commandlog-slow-execution-max-len", 1)
     r.run("debug", "sleep", 0.2)
-    # TODO: assert {[llength [r commandlog get -1 slow]] == 1}
+    assert len(r.run("commandlog", "get", -1, "slow")) == 1
     e = r.run("commandlog", "get", -1, "slow")[0]
-    # TODO: assert_equal {lastentry_client} lindex $e 5
-    assert False
+    assert "lastentry_client" == e[5]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_commandlog_slow_can_be_disabled(r: ValkeyTestClient) -> None:
     """
     test {COMMANDLOG slow - can be disabled} {
@@ -636,8 +628,7 @@ def test_commandlog_slow_can_be_disabled(r: ValkeyTestClient) -> None:
     r.run("config", "set", "commandlog-execution-slower-than", -1)
     r.run("commandlog", "reset", "slow")
     r.run("debug", "sleep", 0.2)
-    # TODO: assert_equal r commandlog len slow 0
-    assert False
+    assert r.run("commandlog", "len", "slow") == 0
 
 
 def test_commandlog_slow_count_must_be_1(r: ValkeyTestClient) -> None:

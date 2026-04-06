@@ -1,4 +1,4 @@
-# ruff: noqa: F841, RUF043
+# ruff: noqa: PLR2004, F841, RUF043
 import time
 
 import pytest
@@ -930,7 +930,6 @@ def test_propagation_with_eviction_in_multi(r: ValkeyTestClient) -> None:
 pytestmark = [pytest.mark.maxmemory, pytest.mark.external_skip]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_lru_or_lfu_value_of_the_key_just_added(r: ValkeyTestClient) -> None:
     """
     test {lru/lfu value of the key just added} {
@@ -950,15 +949,15 @@ def test_lru_or_lfu_value_of_the_key_just_added(r: ValkeyTestClient) -> None:
     """
     r.run("config", "set", "maxmemory-policy", "allkeys-lru")
     r.run("set", "foo", "a")
-    # TODO: assert {[r object idletime foo] <= 2}
+    assert r.run("object", "idletime", "foo") <= 2
     r.run("del", "foo")
     r.run("set", "foo", 1)
     r.run("get", "foo")
-    # TODO: assert {[r object idletime foo] <= 2}
+    assert r.run("object", "idletime", "foo") <= 2
     r.run("config", "set", "maxmemory-policy", "allkeys-lfu")
     r.run("del", "foo")
     r.run("set", "foo", "a")
-    # TODO: assert {[r object freq foo] == 5}
+    assert r.run("object", "freq", "foo") == 5
 
 
 pytestmark = [pytest.mark.maxmemory, pytest.mark.external_skip]

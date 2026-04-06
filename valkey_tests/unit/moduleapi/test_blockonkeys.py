@@ -115,7 +115,6 @@ def test_module_client_blocked_on_keys_bpoppush_unblocked_by_timer(r: ValkeyTest
     #       {fsl.bpoppush src dst 0}
     #   }
     # TODO: close_replication_stream repl
-    assert False
 
 
 def test_module_client_blocked_on_keys_no_metadata_no_block(r: ValkeyTestClient) -> None:

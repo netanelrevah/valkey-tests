@@ -206,7 +206,9 @@ _BINARY_OPERATOR_MAP = {"||": "or", "&&": "and", **{op: op for op in _BINARY_OPE
 _ALL_OPERATORS = _BINARY_OPERATOR_MAP | {"!": "not ", "~": "~"}
 
 
-def _translate_str_literal(token: str) -> str:
+def _translate_str_literal(token: str) -> str | None:
+    if any(c in token for c in "()$"):
+        return None
     try:
         int(token)
         return token
@@ -225,7 +227,10 @@ def _translate_tcl_expression(expression: TCLExpression, defined_vars: set[str])
     for token in expression.postfix:
         if isinstance(token, str):
             if token not in _ALL_OPERATORS:
-                stack.append(_translate_str_literal(token))
+                literal = _translate_str_literal(token)
+                if literal is None:
+                    return None
+                stack.append(literal)
             elif token == "!":
                 if not stack:
                     return None

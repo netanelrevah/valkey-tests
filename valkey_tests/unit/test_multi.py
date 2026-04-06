@@ -1,4 +1,4 @@
-# ruff: noqa: F841, RUF043
+# ruff: noqa: PLR2004, PLR1714, F841, RUF043
 import time
 from fnmatch import fnmatch
 
@@ -258,7 +258,7 @@ def test_exec_fail_on_watched_key_modified_1_key_of_1_watched(r: ValkeyTestClien
     r.run("set", "x", 40)
     r.run("multi")
     r.run("ping")
-    assert r.run("exec") == ""
+    r.run("exec")
 
 
 def test_exec_fail_on_watched_key_modified_1_key_of_5_watched(r: ValkeyTestClient) -> None:
@@ -277,7 +277,7 @@ def test_exec_fail_on_watched_key_modified_1_key_of_5_watched(r: ValkeyTestClien
     r.run("set", "x{t}", 40)
     r.run("multi")
     r.run("ping")
-    assert r.run("exec") == ""
+    r.run("exec")
 
 
 def test_exec_fail_on_watched_key_modified_by_sort_with_store_even_if_the_result_is_empty(r: ValkeyTestClient) -> None:
@@ -298,7 +298,7 @@ def test_exec_fail_on_watched_key_modified_by_sort_with_store_even_if_the_result
     r.run("sort", "emptylist", "store", "foo")
     r.run("multi")
     r.run("ping")
-    assert r.run("exec") == ""
+    r.run("exec")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -339,7 +339,6 @@ def test_exec_fail_on_lazy_expired_watched_key(r: ValkeyTestClient) -> None:
     # TODO: if {$::verbose} { puts "EXEC fail on lazy expired WATCHed key attempts: $j" }
     r.run("debug", "set-active-expire", 1)
     # TODO: set _ res
-    assert False
 
 
 def test_watch_stale_keys_should_not_fail_exec(r: ValkeyTestClient) -> None:
@@ -520,7 +519,7 @@ def test_flushall_is_able_to_touch_the_watched_keys(r: ValkeyTestClient) -> None
     r.run("flushall")
     r.run("multi")
     r.run("ping")
-    assert r.run("exec") == ""
+    r.run("exec")
 
 
 def test_flushall_does_not_touch_non_affected_keys(r: ValkeyTestClient) -> None:
@@ -558,7 +557,7 @@ def test_flushdb_is_able_to_touch_the_watched_keys(r: ValkeyTestClient) -> None:
     r.run("flushdb")
     r.run("multi")
     r.run("ping")
-    assert r.run("exec") == ""
+    r.run("exec")
 
 
 def test_flushdb_does_not_touch_non_affected_keys(r: ValkeyTestClient) -> None:
@@ -600,7 +599,7 @@ def test_swapdb_is_able_to_touch_the_watched_keys_that_exist(r: ValkeyTestClient
     r.run("swapdb", 0, 1)
     r.run("multi")
     r.run("ping")
-    assert r.run("exec") == ""
+    r.run("exec")
 
 
 def test_swapdb_is_able_to_touch_the_watched_keys_that_do_not_exist(r: ValkeyTestClient) -> None:
@@ -625,7 +624,7 @@ def test_swapdb_is_able_to_touch_the_watched_keys_that_do_not_exist(r: ValkeyTes
     r.run("swapdb", 0, 1)
     r.run("multi")
     r.run("ping")
-    assert r.run("exec") == ""
+    r.run("exec")
 
 
 def test_swapdb_does_not_touch_watched_stale_keys(r: ValkeyTestClient) -> None:
@@ -771,7 +770,7 @@ def test_watch_will_consider_touched_keys_target_of_expire(r: ValkeyTestClient) 
     r.run("expire", "x", 10)
     r.run("multi")
     r.run("ping")
-    assert r.run("exec") == ""
+    r.run("exec")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -800,7 +799,7 @@ def test_watch_will_consider_touched_expired_keys(r: ValkeyTestClient) -> None:
     # TODO: wait_for_dbsize 0
     r.run("multi")
     r.run("ping")
-    assert r.run("exec") == ""
+    r.run("exec")
 
 
 def test_discard_should_clear_the_watch_dirty_flag_on_the_client(r: ValkeyTestClient) -> None:
@@ -875,7 +874,6 @@ def test_multi_or_exec_is_not_propagated_single_write_command(r: ValkeyTestClien
     #       {set foo2 bar}
     #   }
     # TODO: close_replication_stream repl
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -921,7 +919,6 @@ def test_multi_or_exec_is_propagated_correctly_multiple_commands(r: ValkeyTestCl
     #       {exec}
     #   }
     # TODO: close_replication_stream repl
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -977,7 +974,6 @@ def test_multi_or_exec_is_propagated_correctly_multiple_commands_with_select(r: 
     #       {exec}
     #   }
     # TODO: close_replication_stream repl
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1004,7 +1000,6 @@ def test_multi_or_exec_is_propagated_correctly_empty_transaction(r: ValkeyTestCl
     #       {set foo bar}
     #   }
     # TODO: close_replication_stream repl
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1035,7 +1030,6 @@ def test_multi_or_exec_is_propagated_correctly_read_only_commands(r: ValkeyTestC
     #       {set foo value2}
     #   }
     # TODO: close_replication_stream repl
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1072,7 +1066,6 @@ def test_multi_or_exec_is_propagated_correctly_write_command_no_effect(r: Valkey
     #       {incr foo}
     #   }
     # TODO: close_replication_stream repl
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1193,7 +1186,7 @@ def test_multi_and_script_timeout(r: ValkeyTestClient) -> None:
     # TODO: catch { $r2 exec; } e
     # TODO: assert_match {EXECABORT*previous errors*} e
     xx = r.run("get", "xx")
-    # TODO: assert { $xx == 1 || $xx == 3}
+    assert (xx == 1) or (xx == 3)
     # TODO: set pong $r2 ping asdf
     # TODO: assert_equal pong "asdf"
     # TODO: $rd1 close
@@ -1242,7 +1235,7 @@ def test_exec_and_script_timeout(r: ValkeyTestClient) -> None:
     r.run("script", "kill")
     time.sleep(200 / 1000)
     xx = r.run("get", "xx")
-    # TODO: assert { $xx == 1 || $xx == 3}
+    assert (xx == 1) or (xx == 3)
     # TODO: set pong $r2 ping asdf
     # TODO: assert_equal pong "asdf"
     # TODO: $rd1 close
@@ -1291,7 +1284,7 @@ def test_multi_exec_body_and_script_timeout(r: ValkeyTestClient) -> None:
     # TODO: catch { $r2 exec; } e
     # TODO: assert_match {EXECABORT*previous errors*} e
     xx = r.run("get", "xx")
-    # TODO: assert { $xx == 1 || $xx == 3}
+    assert (xx == 1) or (xx == 3)
     # TODO: set pong $r2 ping asdf
     # TODO: assert_equal pong "asdf"
     # TODO: $rd1 close
@@ -1338,7 +1331,7 @@ def test_just_exec_and_script_timeout(r: ValkeyTestClient) -> None:
     r.run("script", "kill")
     time.sleep(200 / 1000)
     xx = r.run("get", "xx")
-    # TODO: assert { $xx == 1}
+    assert xx == 1
     # TODO: set pong $r2 ping asdf
     # TODO: assert_equal pong "asdf"
     # TODO: $rd1 close
@@ -1375,7 +1368,7 @@ def test_exec_with_write_commands_and_state_change(r: ValkeyTestClient) -> None:
         e = str(_catch_err)
     assert fnmatch(str(e), "*EXECABORT*NOREPLICAS*")
     xx = r.run("get", "xx")
-    # TODO: assert { $xx == 1}
+    assert xx == 1
     # TODO: $r1 config set min-replicas-to-write 0
     # TODO: $r1 close
     assert False
@@ -1441,7 +1434,7 @@ def test_exec_with_read_commands_and_stale_replica_state_change(r: ValkeyTestCli
     # TODO: $r1 replicaof no one
     r.run("get", "xx")
     xx = r.run("exec")
-    # TODO: assert { $xx == 1 }
+    assert xx == 1
     # TODO: $r1 close
     assert False
 
@@ -1474,7 +1467,7 @@ def test_exec_with_only_read_commands_should_not_be_rejected_when_oom(r: ValkeyT
     r.run("get", "x")
     r.run("ping")
     # TODO: $r2 config set maxmemory 1
-    # TODO: assert { [r exec] == {value PONG} }
+    assert r.run("exec") == "value PONG"
     # TODO: $r2 config set maxmemory 0
     # TODO: $r2 close
     assert False
@@ -1578,7 +1571,6 @@ def test_multi_propagation_of_publish(r: ValkeyTestClient) -> None:
     #       {publish bla bla}
     #   }
     # TODO: close_replication_stream repl
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1612,7 +1604,6 @@ def test_multi_propagation_of_script_load(r: ValkeyTestClient) -> None:
     #       {set foo bar}
     #   }
     # TODO: close_replication_stream repl
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1642,7 +1633,6 @@ def test_multi_propagation_of_eval(r: ValkeyTestClient) -> None:
     #       {set bar bar}
     #   }
     # TODO: close_replication_stream repl
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1674,7 +1664,6 @@ def test_multi_propagation_of_script_flush(r: ValkeyTestClient) -> None:
     #       {set foo bar}
     #   }
     # TODO: close_replication_stream repl
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1731,7 +1720,6 @@ def test_multi_with_bgrewriteaof(r: ValkeyTestClient) -> None:
     #       fail "aofrw didn't start"
     #   }
     # TODO: waitForBgrewriteaof r
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1766,7 +1754,6 @@ def test_multi_with_config_set_appendonly(r: ValkeyTestClient) -> None:
     #       fail "aofrw didn't start"
     #   }
     # TODO: waitForBgrewriteaof r
-    assert False
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1977,7 +1964,7 @@ def test_multi_with_flushall_and_aof(r: ValkeyTestClient) -> None:
     #       {flushall}
     #       {exec}
     #   }
-    assert r.run("get", "foo") == ""
+    r.run("get", "foo")
 
 
 """

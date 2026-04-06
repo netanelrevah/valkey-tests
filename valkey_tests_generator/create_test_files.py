@@ -143,7 +143,7 @@ class TCLTestFileGenerator:
             self.generate_tests(start_server_code)
 
     def generate(self, source_file: TextIO) -> None:
-        self.output.write("# ruff: noqa: PLR2004, F841, N806, RUF043\n")
+        self.output.write("# ruff: noqa: PLR2004, PLR1714, F841, N806, RUF043\n")
         self.output.write("import time\n\n")
         self.output.write("import pytest\n")
         self.output.write("from fnmatch import fnmatch\n\n")

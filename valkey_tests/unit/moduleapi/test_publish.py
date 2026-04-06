@@ -43,7 +43,6 @@ def test_publish_and_spublish_via_a_module(r: ValkeyTestClient) -> None:
     # TODO: $rd2 close
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_publish_to_self_with_multi_message(r: ValkeyTestClient) -> None:
     """
     test {module publish to self with multi message} {
@@ -67,5 +66,4 @@ def test_module_publish_to_self_with_multi_message(r: ValkeyTestClient) -> None:
     assert r.run("read") == "message foo vaz"
     r.run("unsubscribe", "foo")
     r.run("hello", 2)
-    # TODO: set _ ""
-    assert False
+    _ = ""

@@ -171,16 +171,16 @@ def test_test_module_lru_api(r: ValkeyTestClient) -> None:
     r.run("config", "set", "maxmemory-policy", "allkeys-lru")
     r.run("set", "x", "foo")
     lru = r.run("test.getlru", "x")
-    # TODO: assert { $lru <= 1000 }
+    assert lru <= 1000
     was_set = r.run("test.setlru", "x", 100000)
     # TODO: assert { $was_set == 1 }
     idle = r.run("object", "idletime", "x")
-    # TODO: assert { $idle >= 100 }
+    assert idle >= 100
     lru = r.run("test.getlru", "x")
-    # TODO: assert { $lru >= 100000 }
+    assert lru >= 100000
     r.run("config", "set", "maxmemory-policy", "allkeys-lfu")
     lru = r.run("test.getlru", "x")
-    # TODO: assert { $lru == -1 }
+    assert lru == -1
     was_set = r.run("test.setlru", "x", 100000)
     # TODO: assert { $was_set == 0 }
 
@@ -214,16 +214,16 @@ def test_test_module_lfu_api(r: ValkeyTestClient) -> None:
     r.run("config", "set", "maxmemory-policy", "allkeys-lfu")
     r.run("set", "x", "foo")
     lfu = r.run("test.getlfu", "x")
-    # TODO: assert { $lfu >= 1 }
+    assert lfu >= 1
     was_set = r.run("test.setlfu", "x", 100)
     # TODO: assert { $was_set == 1 }
     freq = r.run("object", "freq", "x")
-    # TODO: assert { $freq <= 100 }
+    assert freq <= 100
     lfu = r.run("test.getlfu", "x")
-    # TODO: assert { $lfu <= 100 }
+    assert lfu <= 100
     r.run("config", "set", "maxmemory-policy", "allkeys-lru")
     lfu = r.run("test.getlfu", "x")
-    # TODO: assert { $lfu == -1 }
+    assert lfu == -1
     was_set = r.run("test.setlfu", "x", 100)
     # TODO: assert { $was_set == 0 }
 
@@ -303,7 +303,7 @@ def test_test_module_clientinfo_api(r: ValkeyTestClient) -> None:
     }
     """
     info = r.run("test.clientinfo")
-    # TODO: assert { [dict get $info db] == 9 }
+    assert info["db"] == 9
     # TODO: set flags parse_client_flags [dict get $info flags]
     # TODO: if {$::tls} {
     #       assert { "ssl" in $flags }
@@ -402,7 +402,6 @@ def test_tracking_with_rm_call_with_script(r: ValkeyTestClient) -> None:
     # TODO: $rd_trk close
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_publish_to_self_inside_rm_call(r: ValkeyTestClient) -> None:
     """
     test {publish to self inside rm_call} {
@@ -424,8 +423,7 @@ def test_publish_to_self_inside_rm_call(r: ValkeyTestClient) -> None:
     assert r.run("read") == "message foo bar"
     r.run("unsubscribe", "foo")
     r.run("hello", 2)
-    # TODO: set _ ""
-    assert False
+    _ = ""
 
 
 def test_test_module_get_or_set_client_name_by_id_api(r: ValkeyTestClient) -> None:
@@ -514,7 +512,6 @@ def test_unsafe_command_names_are_sanitized_in_info_output(r: ValkeyTestClient) 
     assert fnmatch(str(info), "*cmdstat_test.weird_cmd:calls=1*")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_monotonic_time(r: ValkeyTestClient) -> None:
     """
     test {test monotonic time} {
@@ -523,7 +520,7 @@ def test_test_monotonic_time(r: ValkeyTestClient) -> None:
     }
     """
     x = r.run("test.monotonic_time")
-    # TODO: assert { [r test.monotonic_time] >= $x }
+    assert r.run("test.monotonic_time") >= x
 
 
 def test_rm_call_oom(r: ValkeyTestClient) -> None:
@@ -1191,7 +1188,7 @@ def test_test_rm_call_with_large_arg_for_set_command(r: ValkeyTestClient) -> Non
     """
     # TODO: r set foo string repeat A 100000
     # TODO: r test.call_generic set bar string repeat A 33000
-    # TODO: assert {[r memory usage bar] < 42000}
+    assert r.run("memory", "usage", "bar") < 42000
 
 
 def test_unload_the_module_misc(r: ValkeyTestClient) -> None:

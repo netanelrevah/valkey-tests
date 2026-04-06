@@ -175,7 +175,7 @@ def test_xpending_is_able_to_return_pending_items(r: ValkeyTestClient) -> None:
     }
     """
     pending = r.run("XPENDING", "mystream", "mygroup", "-", "+", 10)
-    # TODO: assert {[llength $pending] == 4}
+    assert len(pending) == 4
     # TODO: for {set j 0} {$j < 4} {incr j} {
     #       set item [lindex $pending $j]
     #       if {$j < 2} {
@@ -188,7 +188,6 @@ def test_xpending_is_able_to_return_pending_items(r: ValkeyTestClient) -> None:
     #   }
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_xpending_can_return_single_consumer_items(r: ValkeyTestClient) -> None:
     """
     test {XPENDING can return single consumer items} {
@@ -197,10 +196,9 @@ def test_xpending_can_return_single_consumer_items(r: ValkeyTestClient) -> None:
     }
     """
     pending = r.run("XPENDING", "mystream", "mygroup", "-", "+", 10, "consumer-1")
-    # TODO: assert {[llength $pending] == 2}
+    assert len(pending) == 2
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_xpending_only_group(r: ValkeyTestClient) -> None:
     """
     test {XPENDING only group} {
@@ -209,10 +207,9 @@ def test_xpending_only_group(r: ValkeyTestClient) -> None:
     }
     """
     pending = r.run("XPENDING", "mystream", "mygroup")
-    # TODO: assert {[llength $pending] == 4}
+    assert len(pending) == 4
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_xpending_with_idle(r: ValkeyTestClient) -> None:
     """
     test {XPENDING with IDLE} {
@@ -229,13 +226,13 @@ def test_xpending_with_idle(r: ValkeyTestClient) -> None:
     """
     time.sleep(20 / 1000)
     pending = r.run("XPENDING", "mystream", "mygroup", "IDLE", 99999999, "-", "+", 10, "consumer-1")
-    # TODO: assert {[llength $pending] == 0}
+    assert len(pending) == 0
     pending = r.run("XPENDING", "mystream", "mygroup", "IDLE", 1, "-", "+", 10, "consumer-1")
-    # TODO: assert {[llength $pending] == 2}
+    assert len(pending) == 2
     pending = r.run("XPENDING", "mystream", "mygroup", "IDLE", 99999999, "-", "+", 10)
-    # TODO: assert {[llength $pending] == 0}
+    assert len(pending) == 0
     pending = r.run("XPENDING", "mystream", "mygroup", "IDLE", 1, "-", "+", 10)
-    # TODO: assert {[llength $pending] == 4}
+    assert len(pending) == 4
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -256,11 +253,11 @@ def test_xpending_with_exclusive_range_intervals_works_as_expected(r: ValkeyTest
     }
     """
     pending = r.run("XPENDING", "mystream", "mygroup", "-", "+", 10)
-    # TODO: assert {[llength $pending] == 4}
+    assert len(pending) == 4
     startid = pending[0][0]
     endid = pending[3][0]
     expending = r.run("XPENDING", "mystream", "mygroup", "($startid", "($endid", 10)
-    # TODO: assert {[llength $expending] == 2}
+    assert len(expending) == 2
     # TODO: for {set j 0} {$j < 2} {incr j} {
     #       set itemid [lindex [lindex $expending $j] 0]
     #       assert {$itemid ne $startid}
@@ -289,7 +286,7 @@ def test_xack_is_able_to_remove_items_from_the_consumer_or_group_pel(r: ValkeyTe
     # TODO: set id2 lindex $pending 1 0
     # TODO: assert {[r XACK mystream mygroup $id1] eq 1}
     pending = r.run("XPENDING", "mystream", "mygroup", "-", "+", 10, "consumer-1")
-    # TODO: assert {[llength $pending] == 1}
+    assert len(pending) == 1
     # TODO: set id lindex $pending 0 0
     # TODO: assert {$id eq $id2}
     global_pel = r.run("XPENDING", "mystream", "mygroup", "-", "+", 10)
@@ -409,7 +406,7 @@ def test_xreadgroup_will_not_report_data_on_empty_history_bug_5577(r: ValkeyTest
     r.run("xadd", "events", "*", "c", 3)
     r.run("xgroup", "create", "events", "mygroup", 0)
     res = r.run("xpending", "events", "mygroup", "-", "+", 10)
-    # TODO: assert {[llength $res] == 0}
+    assert len(res) == 0
     res = r.run("xreadgroup", "group", "mygroup", "myconsumer", "count", 3, "streams", "events", 0)
     # TODO: assert {[llength [lindex $res 0 1]] == 0}
     res = r.run("xreadgroup", "group", "mygroup", "myconsumer", "count", 3, "streams", "events", ">")
@@ -1209,25 +1206,25 @@ def test_xclaim_can_claim_pel_items_from_another_consumer(r: ValkeyTestClient) -
     reply = r.run("XREADGROUP", "GROUP", "mygroup", "consumer1", "count", 1, "STREAMS", "mystream", ">")
     # TODO: assert {[llength [lindex $reply 0 1 0 1]] == 2}
     # TODO: assert {[lindex $reply 0 1 0 1] eq {a 1}}
-    # TODO: assert {[llength [r XPENDING mystream mygroup - + 10]] == 1}
-    # TODO: assert {[llength [r XPENDING mystream mygroup - + 10 consumer1]] == 1}
-    # TODO: assert {[llength [r XPENDING mystream mygroup - + 10 consumer2]] == 0}
+    assert len(r.run("XPENDING", "mystream", "mygroup", "-", "+", 10)) == 1
+    assert len(r.run("XPENDING", "mystream", "mygroup", "-", "+", 10, "consumer1")) == 1
+    assert len(r.run("XPENDING", "mystream", "mygroup", "-", "+", 10, "consumer2")) == 0
     time.sleep(200 / 1000)
     reply = r.run("XCLAIM", "mystream", "mygroup", "consumer2", 10, id1)
     # TODO: assert {[llength [lindex $reply 0 1]] == 2}
     # TODO: assert {[lindex $reply 0 1] eq {a 1}}
-    # TODO: assert {[llength [r XPENDING mystream mygroup - + 10]] == 1}
-    # TODO: assert {[llength [r XPENDING mystream mygroup - + 10 consumer1]] == 0}
-    # TODO: assert {[llength [r XPENDING mystream mygroup - + 10 consumer2]] == 1}
+    assert len(r.run("XPENDING", "mystream", "mygroup", "-", "+", 10)) == 1
+    assert len(r.run("XPENDING", "mystream", "mygroup", "-", "+", 10, "consumer1")) == 0
+    assert len(r.run("XPENDING", "mystream", "mygroup", "-", "+", 10, "consumer2")) == 1
     r.run("XREADGROUP", "GROUP", "mygroup", "consumer1", "count", 2, "STREAMS", "mystream", ">")
     time.sleep(200 / 1000)
     r.run("XDEL", "mystream", id2)
     reply = r.run("XCLAIM", "mystream", "mygroup", "consumer2", 10, id2)
-    # TODO: assert {[llength $reply] == 0}
+    assert len(reply) == 0
     time.sleep(200 / 1000)
     r.run("XDEL", "mystream", id3)
     reply = r.run("XCLAIM", "mystream", "mygroup", "consumer2", 10, id3)
-    # TODO: assert {[llength $reply] == 0}
+    assert len(reply) == 0
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1289,14 +1286,14 @@ def test_xclaim_without_justid_increments_delivery_count(r: ValkeyTestClient) ->
     # TODO: assert {[llength [lindex $reply 0 1]] == 2}
     # TODO: assert {[lindex $reply 0 1] eq {a 1}}
     reply = r.run("XPENDING", "mystream", "mygroup", "-", "+", 10)
-    # TODO: assert {[llength [lindex $reply 0]] == 4}
+    assert len(reply[0]) == 4
     # TODO: assert {[lindex $reply 0 3] == 2}
     time.sleep(200 / 1000)
     reply = r.run("XCLAIM", "mystream", "mygroup", "consumer3", 10, id1, "JUSTID")
-    # TODO: assert {[llength $reply] == 1}
+    assert len(reply) == 1
     # TODO: assert {[lindex $reply 0] eq $id1}
     reply = r.run("XPENDING", "mystream", "mygroup", "-", "+", 10)
-    # TODO: assert {[llength [lindex $reply 0]] == 4}
+    assert len(reply[0]) == 4
     # TODO: assert {[lindex $reply 0 3] == 2}
 
 
@@ -1333,9 +1330,9 @@ def test_xclaim_same_consumer(r: ValkeyTestClient) -> None:
     # TODO: assert {[llength [lindex $reply 0 1 0 1]] == 2}
     # TODO: assert {[lindex $reply 0 1 0 1] eq {a 1}}
     time.sleep(200 / 1000)
-    # TODO: assert {[llength [r XCLAIM mystream mygroup consumer1 10 $id1]] == 1}
+    assert len(r.run("XCLAIM", "mystream", "mygroup", "consumer1", 10, id1)) == 1
     reply = r.run("XPENDING", "mystream", "mygroup", "-", "+", 10)
-    # TODO: assert {[llength $reply] == 1}
+    assert len(reply) == 1
     # TODO: assert {[lindex $reply 0 1] eq {consumer1}}
 
 

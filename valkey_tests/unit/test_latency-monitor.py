@@ -1,3 +1,5 @@
+# ruff: noqa: PLR2004
+
 from fnmatch import fnmatch
 
 import pytest
@@ -121,7 +123,6 @@ def test_latency_histogram_with_a_subset_of_commands(r: ValkeyTestClient) -> Non
     # TODO: assert_equal dict size $histo 2
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_latency_histogram_command(r: ValkeyTestClient) -> None:
     """
     test {LATENCY HISTOGRAM command} {
@@ -134,10 +135,9 @@ def test_latency_histogram_command(r: ValkeyTestClient) -> None:
     r.run("config", "resetstat")
     r.run("set", "a", "b")
     r.run("get", "a")
-    # TODO: assert {[llength [r latency histogram set get]] == 4}
+    assert len(r.run("latency", "histogram", "set", "get")) == 4
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_latency_histogram_with_wrong_command_name_skips_the_invalid_one(r: ValkeyTestClient) -> None:
     """
     test {LATENCY HISTOGRAM with wrong command name skips the invalid one} {
@@ -152,13 +152,13 @@ def test_latency_histogram_with_wrong_command_name_skips_the_invalid_one(r: Valk
     }
     """
     r.run("config", "resetstat")
-    # TODO: assert {[llength [r latency histogram blabla]] == 0}
-    # TODO: assert {[llength [r latency histogram blabla blabla2 set get]] == 0}
+    assert len(r.run("latency", "histogram", "blabla")) == 0
+    assert len(r.run("latency", "histogram", "blabla", "blabla2", "set", "get")) == 0
     r.run("set", "a", "b")
     r.run("get", "a")
     assert fnmatch(str(r.run("latency", "histogram", "blabla", "blabla2", "set", "get")[1]), "calls 1 histogram_usec *")
     assert fnmatch(str(r.run("latency", "histogram", "blabla", "blabla2", "set", "get")[3]), "calls 1 histogram_usec *")
-    # TODO: assert {[string length [r latency histogram blabla set get]] > 0}
+    assert len(r.run("latency", "histogram", "blabla", "set", "get")) > 0
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -217,7 +217,6 @@ def test_latency_of_expire_events_are_correctly_collected(r: ValkeyTestClient) -
     r.run("config", "set", "lazyfree-lazy-expire", "yes")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_latency_history_or_reset_with_wrong_event_name_is_fine(r: ValkeyTestClient) -> None:
     """
     test {LATENCY HISTORY / RESET with wrong event name is fine} {
@@ -225,18 +224,17 @@ def test_latency_history_or_reset_with_wrong_event_name_is_fine(r: ValkeyTestCli
         assert {[r latency reset blabla] == 0}
     }
     """
-    # TODO: assert {[llength [r latency history blabla]] == 0}
-    # TODO: assert {[r latency reset blabla] == 0}
+    assert len(r.run("latency", "history", "blabla")) == 0
+    assert r.run("latency", "reset", "blabla") == 0
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_latency_doctor_produces_some_output(r: ValkeyTestClient) -> None:
     """
     test {LATENCY DOCTOR produces some output} {
         assert {[string length [r latency doctor]] > 0}
     }
     """
-    # TODO: assert {[string length [r latency doctor]] > 0}
+    assert len(r.run("latency", "doctor")) > 0
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -247,7 +245,7 @@ def test_latency_reset_is_able_to_reset_events(r: ValkeyTestClient) -> None:
         assert {[r latency latest] eq {}}
     }
     """
-    # TODO: assert {[r latency reset] > 0}
+    assert r.run("latency", "reset") > 0
     # TODO: assert {[r latency latest] eq {}}
 
 
