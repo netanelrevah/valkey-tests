@@ -552,3 +552,22 @@ def test_generate_file__rd_fixture_added_to_signature():
     """)
     assert "def test_keyspace_notification_test(r: ValkeyTestClient, rd)" in output
     assert "assert_keyevent_patterns(rd, " in output
+
+
+def test_generate_file__vars_set_in_if_else_available_after():
+    output = generate("""
+        start_server {tags {}} {
+            foreach cmd {HINCRBY HINCRBYFLOAT} {
+                test {if else var scope} {
+                    if {$cmd eq "HINCRBY"} {
+                        set inc1 2
+                    } else {
+                        set inc1 2.5
+                    }
+                    r $cmd myhash f1 $inc1
+                }
+            }
+        }
+    """)
+    assert "@pytest.mark.xfail" not in output
+    assert "r.run(cmd, 'myhash', 'f1', inc1)" in output

@@ -169,6 +169,15 @@ class PutsStatementTranslator(StatementTranslator):
         return []
 
 
+def _collect_set_vars(script: TCLScript) -> set[str]:
+    """Return names of all top-level set-command variables in a script."""
+    result: set[str] = set()
+    for cmd in script.commands:
+        if cmd.name == "set" and cmd.args and isinstance(cmd.args[0], TCLWord):
+            result.add(cmd.args[0].value)
+    return result
+
+
 class TCLBodyTranslator:
     def translate(self, body: TCLScript, expected: str | None, initial_vars: set[str] | None = None) -> list[str]:
         commands = [c for c in body.commands if c.name]
@@ -196,6 +205,17 @@ class TCLBodyTranslator:
                         defined_vars.add(command.args[0].value)
                     elif command.name == "catch" and len(command.args) > 1 and isinstance(command.args[1], TCLWord):
                         defined_vars.add(command.args[1].value)
+                    elif command.name == "if":
+                        try:
+                            if_cmd = TCLCommandIf.build(command.args, {})
+                            _, if_body = if_cmd.if_part
+                            defined_vars.update(_collect_set_vars(if_body))
+                            for _, elif_body in if_cmd.elseif_parts:
+                                defined_vars.update(_collect_set_vars(elif_body))
+                            if if_cmd.else_part is not None:
+                                defined_vars.update(_collect_set_vars(if_cmd.else_part))
+                        except Exception:
+                            pass
                     continue
                 # Generic fallback: unknown command with translatable args → stub call
                 if command.name.isidentifier():
