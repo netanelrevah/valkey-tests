@@ -356,6 +356,53 @@ def test_generate_file__if_untranslatable_condition_falls_back():
     assert "# TODO: if" in output
 
 
+_CATCH_WITH_VAR_TCL = """
+    start_server {tags {}} {
+        test {catch test} {
+            catch {r set} ex
+            set ex
+        } {*wrong*}
+    }
+"""
+
+_CATCH_WITH_VAR_EXPECTED = """
+    try:
+        ex = r.run('set')
+    except Exception as _catch_err:
+        ex = str(_catch_err)
+    assert ex == '*wrong*'
+"""
+
+_CATCH_WITHOUT_VAR_TCL = """
+    start_server {tags {}} {
+        test {catch no var test} {
+            catch {r ping}
+            r set x 1
+        }
+    }
+"""
+
+_CATCH_WITHOUT_VAR_EXPECTED = """
+    try:
+        r.run('ping')
+    except Exception:
+        pass
+    r.run('set', 'x', 1)
+"""
+
+
+def test_generate_file__catch_with_var():
+    output = generate(_CATCH_WITH_VAR_TCL)
+    assert "@pytest.mark.xfail" not in output
+    assert _CATCH_WITH_VAR_EXPECTED in output
+
+
+def test_generate_file__catch_without_var():
+    output = generate(_CATCH_WITHOUT_VAR_TCL)
+    assert "@pytest.mark.xfail" not in output
+    assert _CATCH_WITHOUT_VAR_EXPECTED in output
+
+
 def test_generate_file__foreach_with_variable_list_becomes_comment():
     output = generate("""
         start_server {tags {}} {

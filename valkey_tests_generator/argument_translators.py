@@ -143,6 +143,15 @@ class WordArgumentTranslator(ArgumentTranslator):
         return repr(s)
 
 
+@ExpressionTranslator.register("set")
+class SetExpressionTranslator(ExpressionTranslator):
+    def get_expression(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> str | None:
+        if len(arguments) != 1 or not isinstance(arguments[0], TCLWord):
+            return None
+        name = arguments[0].value
+        return name if name in defined_vars else None
+
+
 @ExpressionTranslator.register("r")
 class RExpressionTranslator(ExpressionTranslator):
     def get_expression(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> str | None:

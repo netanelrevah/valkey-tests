@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, ClassVar
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-from pytcl.commands import TCLBracesWord, TCLCommandIf, TCLExpression, TCLScript
+from pytcl.commands import TCLBracesWord, TCLCommandCatch, TCLCommandIf, TCLExpression, TCLScript
 from pytcl.words import (
     TCLBracketWord,
     TCLCommandArguments,
@@ -177,6 +177,8 @@ class TCLBodyTranslator:
                     lines.extend(statement)
                     if command.name == "set" and isinstance(command.args[0], TCLWord):
                         defined_vars.add(command.args[0].value)
+                    elif command.name == "catch" and len(command.args) > 1 and isinstance(command.args[1], TCLWord):
+                        defined_vars.add(command.args[1].value)
                     continue
 
             formatted = command.formatted()
@@ -238,6 +240,43 @@ def _translate_tcl_expression(expression: TCLExpression, defined_vars: set[str])
         return None
     result = stack[0]
     return result[1:-1] if result.startswith("(") and result.endswith(")") else result
+
+
+@StatementTranslator.register("catch")
+class CatchStatementTranslator(StatementTranslator):
+    def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
+        try:
+            catch_command = TCLCommandCatch.build(arguments, {})
+        except ValueError:
+            return None
+        var_name = catch_command.var_name
+        body_commands = [c for c in catch_command.body.commands if c.name]
+        if not body_commands:
+            return None
+        body_lines: list[str] = []
+        for command in body_commands[:-1]:
+            statement = StatementTranslator.translate(command, defined_vars)
+            if statement is None:
+                return None
+            body_lines.extend(statement)
+        last_expr = ExpressionTranslator.translate(body_commands[-1], defined_vars)
+        if last_expr is None:
+            return None
+        if var_name is not None:
+            body_lines.append(f"{var_name} = {last_expr}")
+            return [
+                "try:",
+                *[f"    {line}" for line in body_lines],
+                "except Exception as _catch_err:",
+                f"    {var_name} = str(_catch_err)",
+            ]
+        body_lines.append(last_expr)
+        return [
+            "try:",
+            *[f"    {line}" for line in body_lines],
+            "except Exception:",
+            "    pass",
+        ]
 
 
 @StatementTranslator.register("if")
