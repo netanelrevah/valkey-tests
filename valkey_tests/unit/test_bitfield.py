@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841
+# ruff: noqa: PLR2004, F841, ANN002, ANN201
 from fnmatch import fnmatch
 
 import pytest
@@ -8,7 +8,6 @@ from tests.valkey_test_client import ValkeyTestClient
 pytestmark = [pytest.mark.bitops]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitfield_signed_set_and_get_basics(r: ValkeyTestClient) -> None:
     """
     test {BITFIELD signed SET and GET basics} {
@@ -22,13 +21,12 @@ def test_bitfield_signed_set_and_get_basics(r: ValkeyTestClient) -> None:
     """
     r.run("del", "bits")
     results = ""
-    # TODO: lappend results r bitfield bits set i8 0 -100
-    # TODO: lappend results r bitfield bits set i8 0 101
-    # TODO: lappend results r bitfield bits get i8 0
+    lappend("results", r.run("bitfield", "bits", "set", "i8", 0, -100))
+    lappend("results", r.run("bitfield", "bits", "set", "i8", 0, 101))
+    lappend("results", r.run("bitfield", "bits", "get", "i8", 0))
     assert results == "0 -100 101"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitfield_unsigned_set_and_get_basics(r: ValkeyTestClient) -> None:
     """
     test {BITFIELD unsigned SET and GET basics} {
@@ -42,9 +40,9 @@ def test_bitfield_unsigned_set_and_get_basics(r: ValkeyTestClient) -> None:
     """
     r.run("del", "bits")
     results = ""
-    # TODO: lappend results r bitfield bits set u8 0 255
-    # TODO: lappend results r bitfield bits set u8 0 100
-    # TODO: lappend results r bitfield bits get u8 0
+    lappend("results", r.run("bitfield", "bits", "set", "u8", 0, 255))
+    lappend("results", r.run("bitfield", "bits", "set", "u8", 0, 100))
+    lappend("results", r.run("bitfield", "bits", "get", "u8", 0))
     assert results == "0 255 100"
 
 
@@ -106,7 +104,6 @@ def test_bitfield_idx_form(r: ValkeyTestClient) -> None:
     assert r.run("get", "bits") == "ABC"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitfield_basic_incrby_form(r: ValkeyTestClient) -> None:
     """
     test {BITFIELD basic INCRBY form} {
@@ -121,12 +118,11 @@ def test_bitfield_basic_incrby_form(r: ValkeyTestClient) -> None:
     r.run("del", "bits")
     results = ""
     r.run("bitfield", "bits", "set", "u8", "#0", 10)
-    # TODO: lappend results r bitfield bits incrby u8 #0 100
-    # TODO: lappend results r bitfield bits incrby u8 #0 100
+    lappend("results", r.run("bitfield", "bits", "incrby", "u8", "#0", 100))
+    lappend("results", r.run("bitfield", "bits", "incrby", "u8", "#0", 100))
     assert results == "110 210"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitfield_chaining_of_multiple_commands(r: ValkeyTestClient) -> None:
     """
     test {BITFIELD chaining of multiple commands} {
@@ -140,7 +136,7 @@ def test_bitfield_chaining_of_multiple_commands(r: ValkeyTestClient) -> None:
     r.run("del", "bits")
     results = ""
     r.run("bitfield", "bits", "set", "u8", "#0", 10)
-    # TODO: lappend results r bitfield bits incrby u8 #0 100 incrby u8 #0 100
+    lappend("results", r.run("bitfield", "bits", "incrby", "u8", "#0", 100, "incrby", "u8", "#0", 100))
     assert results == "{110 210}"
 
 
@@ -160,9 +156,9 @@ def test_bitfield_unsigned_overflow_wrap(r: ValkeyTestClient) -> None:
     r.run("del", "bits")
     results = ""
     r.run("bitfield", "bits", "set", "u8", "#0", 100)
-    # TODO: lappend results r bitfield bits overflow wrap incrby u8 #0 257
-    # TODO: lappend results r bitfield bits get u8 #0
-    # TODO: lappend results r bitfield bits overflow wrap incrby u8 #0 255
+    lappend("results", r.run("bitfield", "bits", "overflow", "wrap", "incrby", "u8", "#0", 257))
+    lappend("results", r.run("bitfield", "bits", "get", "u8", "#0"))
+    lappend("results", r.run("bitfield", "bits", "overflow", "wrap", "incrby", "u8", "#0", 255))
     # TODO: lappend results r bitfield bits get u8 #0
     assert False
 
@@ -183,9 +179,9 @@ def test_bitfield_unsigned_overflow_sat(r: ValkeyTestClient) -> None:
     r.run("del", "bits")
     results = ""
     r.run("bitfield", "bits", "set", "u8", "#0", 100)
-    # TODO: lappend results r bitfield bits overflow sat incrby u8 #0 257
-    # TODO: lappend results r bitfield bits get u8 #0
-    # TODO: lappend results r bitfield bits overflow sat incrby u8 #0 -255
+    lappend("results", r.run("bitfield", "bits", "overflow", "sat", "incrby", "u8", "#0", 257))
+    lappend("results", r.run("bitfield", "bits", "get", "u8", "#0"))
+    lappend("results", r.run("bitfield", "bits", "overflow", "sat", "incrby", "u8", "#0", -255))
     # TODO: lappend results r bitfield bits get u8 #0
     assert False
 
@@ -206,9 +202,9 @@ def test_bitfield_signed_overflow_wrap(r: ValkeyTestClient) -> None:
     r.run("del", "bits")
     results = ""
     r.run("bitfield", "bits", "set", "i8", "#0", 100)
-    # TODO: lappend results r bitfield bits overflow wrap incrby i8 #0 257
-    # TODO: lappend results r bitfield bits get i8 #0
-    # TODO: lappend results r bitfield bits overflow wrap incrby i8 #0 255
+    lappend("results", r.run("bitfield", "bits", "overflow", "wrap", "incrby", "i8", "#0", 257))
+    lappend("results", r.run("bitfield", "bits", "get", "i8", "#0"))
+    lappend("results", r.run("bitfield", "bits", "overflow", "wrap", "incrby", "i8", "#0", 255))
     # TODO: lappend results r bitfield bits get i8 #0
     assert False
 
@@ -229,14 +225,13 @@ def test_bitfield_signed_overflow_sat(r: ValkeyTestClient) -> None:
     r.run("del", "bits")
     results = ""
     r.run("bitfield", "bits", "set", "u8", "#0", 100)
-    # TODO: lappend results r bitfield bits overflow sat incrby i8 #0 257
-    # TODO: lappend results r bitfield bits get i8 #0
-    # TODO: lappend results r bitfield bits overflow sat incrby i8 #0 -255
+    lappend("results", r.run("bitfield", "bits", "overflow", "sat", "incrby", "i8", "#0", 257))
+    lappend("results", r.run("bitfield", "bits", "get", "i8", "#0"))
+    lappend("results", r.run("bitfield", "bits", "overflow", "sat", "incrby", "i8", "#0", -255))
     # TODO: lappend results r bitfield bits get i8 #0
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitfield_overflow_detection_fuzzing(r: ValkeyTestClient) -> None:
     """
     test {BITFIELD overflow detection fuzzing} {
@@ -291,58 +286,14 @@ def test_bitfield_overflow_detection_fuzzing(r: ValkeyTestClient) -> None:
         }
     }
     """
-    # TODO: for {set j 0} {$j < 1000} {incr j} {
-    #       set bits [expr {[randomInt 64]+1}]
-    #       set sign [randomInt 2]
-    #       set range [expr {2**$bits}]
-    #       if {$bits == 64} {set sign 1} ; # u64 is not supported by BITFIELD.
-    #       if {$sign} {
-    #           set min [expr {-($range/2)}]
-    #           set type "i$bits"
-    #       } else {
-    #           set min 0
-    #           set type "u$bits"
-    #       }
-    #       set max [expr {$min+$range-1}]
-    #
-    #       # Compare Tcl vs the server
-    #       set range2 [expr {$range*2}]
-    #       set value [expr {($min*2)+[randomInt $range2]}]
-    #       set increment [expr {($min*2)+[randomInt $range2]}]
-    #       if {$value > 9223372036854775807} {
-    #           set value 9223372036854775807
-    #       }
-    #       if {$value < -9223372036854775808} {
-    #           set value -9223372036854775808
-    #       }
-    #       if {$increment > 9223372036854775807} {
-    #           set increment 9223372036854775807
-    #       }
-    #       if {$increment < -9223372036854775808} {
-    #           set increment -9223372036854775808
-    #       }
-    #
-    #       set overflow 0
-    #       if {$value > $max || $value < $min} {set overflow 1}
-    #       if {($value + $increment) > $max} {set overflow 1}
-    #       if {($value + $increment) < $min} {set overflow 1}
-    #
-    #       r del bits
-    #       set res1 [r bitfield bits overflow fail set $type 0 $value]
-    #       set res2 [r bitfield bits overflow fail incrby $type 0 $increment]
-    #
-    #       if {$overflow && [lindex $res1 0] ne {} &&
-    #                        [lindex $res2 0] ne {}} {
-    #           fail "OW not detected where needed: $type $value+$increment"
-    #       }
-    #       if {!$overflow && ([lindex $res1 0] eq {} ||
-    #                          [lindex $res2 0] eq {})} {
-    #           fail "OW detected where NOT needed: $type $value+$increment"
-    #       }
-    #   }
+    for_(
+        "set j 0",
+        "$j < 1000",
+        "incr j",
+        '            set bits [expr {[randomInt 64]+1}]\n            set sign [randomInt 2]\n            set range [expr {2**$bits}]\n            if {$bits == 64} {set sign 1} ; # u64 is not supported by BITFIELD.\n            if {$sign} {\n                set min [expr {-($range/2)}]\n                set type "i$bits"\n            } else {\n                set min 0\n                set type "u$bits"\n            }\n            set max [expr {$min+$range-1}]\n\n            # Compare Tcl vs the server\n            set range2 [expr {$range*2}]\n            set value [expr {($min*2)+[randomInt $range2]}]\n            set increment [expr {($min*2)+[randomInt $range2]}]\n            if {$value > 9223372036854775807} {\n                set value 9223372036854775807\n            }\n            if {$value < -9223372036854775808} {\n                set value -9223372036854775808\n            }\n            if {$increment > 9223372036854775807} {\n                set increment 9223372036854775807\n            }\n            if {$increment < -9223372036854775808} {\n                set increment -9223372036854775808\n            }\n\n            set overflow 0\n            if {$value > $max || $value < $min} {set overflow 1}\n            if {($value + $increment) > $max} {set overflow 1}\n            if {($value + $increment) < $min} {set overflow 1}\n\n            r del bits\n            set res1 [r bitfield bits overflow fail set $type 0 $value]\n            set res2 [r bitfield bits overflow fail incrby $type 0 $increment]\n\n            if {$overflow && [lindex $res1 0] ne {} &&\n                             [lindex $res2 0] ne {}} {\n                fail "OW not detected where needed: $type $value+$increment"\n            }\n            if {!$overflow && ([lindex $res1 0] eq {} ||\n                               [lindex $res2 0] eq {})} {\n                fail "OW detected where NOT needed: $type $value+$increment"\n            }\n        ',
+    )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitfield_overflow_wrap_fuzzing(r: ValkeyTestClient) -> None:
     """
     test {BITFIELD overflow wrap fuzzing} {
@@ -395,53 +346,12 @@ def test_bitfield_overflow_wrap_fuzzing(r: ValkeyTestClient) -> None:
         }
     }
     """
-    # TODO: for {set j 0} {$j < 1000} {incr j} {
-    #       set bits [expr {[randomInt 64]+1}]
-    #       set sign [randomInt 2]
-    #       set range [expr {2**$bits}]
-    #       if {$bits == 64} {set sign 1} ; # u64 is not supported by BITFIELD.
-    #       if {$sign} {
-    #           set min [expr {-($range/2)}]
-    #           set type "i$bits"
-    #       } else {
-    #           set min 0
-    #           set type "u$bits"
-    #       }
-    #       set max [expr {$min+$range-1}]
-    #
-    #       # Compare Tcl vs the server
-    #       set range2 [expr {$range*2}]
-    #       set value [expr {($min*2)+[randomInt $range2]}]
-    #       set increment [expr {($min*2)+[randomInt $range2]}]
-    #       if {$value > 9223372036854775807} {
-    #           set value 9223372036854775807
-    #       }
-    #       if {$value < -9223372036854775808} {
-    #           set value -9223372036854775808
-    #       }
-    #       if {$increment > 9223372036854775807} {
-    #           set increment 9223372036854775807
-    #       }
-    #       if {$increment < -9223372036854775808} {
-    #           set increment -9223372036854775808
-    #       }
-    #
-    #       r del bits
-    #       r bitfield bits overflow wrap set $type 0 $value
-    #       r bitfield bits overflow wrap incrby $type 0 $increment
-    #       set res [lindex [r bitfield bits get $type 0] 0]
-    #
-    #       set expected 0
-    #       if {$sign} {incr expected [expr {$max+1}]}
-    #       incr expected $value
-    #       incr expected $increment
-    #       set expected [expr {$expected % $range}]
-    #       if {$sign} {incr expected $min}
-    #
-    #       if {$res != $expected} {
-    #           fail "WRAP error: $type $value+$increment = $res, should be $expected"
-    #       }
-    #   }
+    for_(
+        "set j 0",
+        "$j < 1000",
+        "incr j",
+        '            set bits [expr {[randomInt 64]+1}]\n            set sign [randomInt 2]\n            set range [expr {2**$bits}]\n            if {$bits == 64} {set sign 1} ; # u64 is not supported by BITFIELD.\n            if {$sign} {\n                set min [expr {-($range/2)}]\n                set type "i$bits"\n            } else {\n                set min 0\n                set type "u$bits"\n            }\n            set max [expr {$min+$range-1}]\n\n            # Compare Tcl vs the server\n            set range2 [expr {$range*2}]\n            set value [expr {($min*2)+[randomInt $range2]}]\n            set increment [expr {($min*2)+[randomInt $range2]}]\n            if {$value > 9223372036854775807} {\n                set value 9223372036854775807\n            }\n            if {$value < -9223372036854775808} {\n                set value -9223372036854775808\n            }\n            if {$increment > 9223372036854775807} {\n                set increment 9223372036854775807\n            }\n            if {$increment < -9223372036854775808} {\n                set increment -9223372036854775808\n            }\n\n            r del bits\n            r bitfield bits overflow wrap set $type 0 $value\n            r bitfield bits overflow wrap incrby $type 0 $increment\n            set res [lindex [r bitfield bits get $type 0] 0]\n\n            set expected 0\n            if {$sign} {incr expected [expr {$max+1}]}\n            incr expected $value\n            incr expected $increment\n            set expected [expr {$expected % $range}]\n            if {$sign} {incr expected $min}\n\n            if {$res != $expected} {\n                fail "WRAP error: $type $value+$increment = $res, should be $expected"\n            }\n        ',
+    )
 
 
 def test_bitfield_regression_for_3221(r: ValkeyTestClient) -> None:
@@ -538,3 +448,30 @@ start_server {} {
     }
 }
 """
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def expr(*args):
+    raise NotImplementedError("expr")
+
+
+def for_(*args):
+    raise NotImplementedError("for_")
+
+
+def if_(*args):
+    raise NotImplementedError("if_")
+
+
+def incr(*args):
+    raise NotImplementedError("incr")
+
+
+def lappend(*args):
+    raise NotImplementedError("lappend")
+
+
+def random_int(*args):
+    raise NotImplementedError("random_int")

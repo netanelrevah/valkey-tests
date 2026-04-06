@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841
+# ruff: noqa: PLR2004, ANN001, ANN002, ANN201
 from fnmatch import fnmatch
 
 import pytest
@@ -69,15 +69,15 @@ assert_encoding enc tosort
 @pytest.mark.parametrize(
     ["num", "cmd", "enc", "title"],
     [
-        ("16", "lpush", "listpack", "Listpack"),
-        ("1000", "lpush", "quicklist", "Quicklist"),
-        ("10000", "lpush", "quicklist", "Big Quicklist"),
-        ("16", "sadd", "intset", "Intset"),
-        ("1000", "sadd", "hashtable", "Hash table"),
-        ("10000", "sadd", "hashtable", "Big Hash table"),
+        (16, "lpush", "listpack", "Listpack"),
+        (1000, "lpush", "quicklist", "Quicklist"),
+        (10000, "lpush", "quicklist", "Big Quicklist"),
+        (16, "sadd", "intset", "Intset"),
+        (1000, "sadd", "hashtable", "Hash table"),
+        (10000, "sadd", "hashtable", "Big Hash table"),
     ],
 )
-def test_title_sort_by_key(r: ValkeyTestClient) -> None:
+def test_title_sort_by_key(r: ValkeyTestClient, num, cmd, enc, title) -> None:
     """
     test "$title: SORT BY key" {
         assert_equal $result [r sort tosort BY weight_*]
@@ -90,15 +90,15 @@ def test_title_sort_by_key(r: ValkeyTestClient) -> None:
 @pytest.mark.parametrize(
     ["num", "cmd", "enc", "title"],
     [
-        ("16", "lpush", "listpack", "Listpack"),
-        ("1000", "lpush", "quicklist", "Quicklist"),
-        ("10000", "lpush", "quicklist", "Big Quicklist"),
-        ("16", "sadd", "intset", "Intset"),
-        ("1000", "sadd", "hashtable", "Hash table"),
-        ("10000", "sadd", "hashtable", "Big Hash table"),
+        (16, "lpush", "listpack", "Listpack"),
+        (1000, "lpush", "quicklist", "Quicklist"),
+        (10000, "lpush", "quicklist", "Big Quicklist"),
+        (16, "sadd", "intset", "Intset"),
+        (1000, "sadd", "hashtable", "Hash table"),
+        (10000, "sadd", "hashtable", "Big Hash table"),
     ],
 )
-def test_title_sort_by_key_with_limit(r: ValkeyTestClient) -> None:
+def test_title_sort_by_key_with_limit(r: ValkeyTestClient, num, cmd, enc, title) -> None:
     """
     test "$title: SORT BY key with limit" {
         assert_equal [lrange $result 5 9] [r sort tosort BY weight_* LIMIT 5 5]
@@ -111,15 +111,15 @@ def test_title_sort_by_key_with_limit(r: ValkeyTestClient) -> None:
 @pytest.mark.parametrize(
     ["num", "cmd", "enc", "title"],
     [
-        ("16", "lpush", "listpack", "Listpack"),
-        ("1000", "lpush", "quicklist", "Quicklist"),
-        ("10000", "lpush", "quicklist", "Big Quicklist"),
-        ("16", "sadd", "intset", "Intset"),
-        ("1000", "sadd", "hashtable", "Hash table"),
-        ("10000", "sadd", "hashtable", "Big Hash table"),
+        (16, "lpush", "listpack", "Listpack"),
+        (1000, "lpush", "quicklist", "Quicklist"),
+        (10000, "lpush", "quicklist", "Big Quicklist"),
+        (16, "sadd", "intset", "Intset"),
+        (1000, "sadd", "hashtable", "Hash table"),
+        (10000, "sadd", "hashtable", "Big Hash table"),
     ],
 )
-def test_title_sort_by_hash_field(r: ValkeyTestClient) -> None:
+def test_title_sort_by_hash_field(r: ValkeyTestClient, num, cmd, enc, title) -> None:
     """
     test "$title: SORT BY hash field" {
         assert_equal $result [r sort tosort BY wobj_*->weight]
@@ -143,9 +143,8 @@ def test_sort_get(r: ValkeyTestClient) -> None:
     # TODO: assert_equal lsort -integer $result r sort tosort GET #
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("SORT"), ("SORT_RO")])
-def test_command_get_const(r: ValkeyTestClient) -> None:
+def test_command_get_const(r: ValkeyTestClient, command) -> None:
     """
     test "$command GET <const>" {
         r del foo
@@ -155,12 +154,11 @@ def test_command_get_const(r: ValkeyTestClient) -> None:
     } {} {cluster:skip}
     """
     r.run("del", "foo")
-    # TODO: set res r $command tosort GET foo
-    # TODO: assert_equal 16 llength $res
-    # TODO: foreach item res { assert_equal {} $item }
+    res = r.run(command, "tosort", "GET", "foo")
+    assert 16 == len(res)
+    foreach("item", res, " assert_equal {} $item ")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_sort_get_key_and_hash_with_sanity_check(r: ValkeyTestClient) -> None:
     """
     test "SORT GET (key and hash) with sanity check" {
@@ -175,11 +173,13 @@ def test_sort_get_key_and_hash_with_sanity_check(r: ValkeyTestClient) -> None:
     """
     l1 = r.run("sort", "tosort", "GET", "#", "GET", "weight_*")
     l2 = r.run("sort", "tosort", "GET", "#", "GET", "wobj_*->weight")
-    # TODO: foreach {id1 w1} l1 {id2 w2} l2 {
-    #       assert_equal $id1 $id2
-    #       assert_equal $w1 [r get weight_$id1]
-    #       assert_equal $w2 [r get weight_$id1]
-    #   }
+    foreach(
+        "id1 w1",
+        l1,
+        "id2 w2",
+        l2,
+        "            assert_equal $id1 $id2\n            assert_equal $w1 [r get weight_$id1]\n            assert_equal $w2 [r get weight_$id1]\n        ",
+    )
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -195,7 +195,7 @@ def test_sort_by_key_store(r: ValkeyTestClient) -> None:
     r.run("sort", "tosort", "BY", "weight_*", "store", "sort-res")
     # TODO: assert_equal result r lrange sort-res 0 -1
     assert 16 == r.run("llen", "sort-res")
-    # TODO: check_sort_store_encoding sort-res
+    check_sort_store_encoding("sort-res")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -211,7 +211,7 @@ def test_sort_by_hash_field_store(r: ValkeyTestClient) -> None:
     r.run("sort", "tosort", "BY", "wobj_*->weight", "store", "sort-res")
     # TODO: assert_equal result r lrange sort-res 0 -1
     assert 16 == r.run("llen", "sort-res")
-    # TODO: check_sort_store_encoding sort-res
+    check_sort_store_encoding("sort-res")
 
 
 def test_sort_extracts_store_correctly(r: ValkeyTestClient) -> None:
@@ -406,7 +406,6 @@ def test_sort_sorted_set_inf_and_inf_handling(r: ValkeyTestClient) -> None:
     assert r.run("zrange", "zset", 0, -1) == "min c a b d max"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_sort_regression_for_issue_19_sorting_floats(r: ValkeyTestClient) -> None:
     """
     test "SORT regression for issue #19, sorting floats" {
@@ -420,10 +419,8 @@ def test_sort_regression_for_issue_19_sorting_floats(r: ValkeyTestClient) -> Non
     """
     r.run("flushdb")
     floats = "1.1 5.10 3.10 7.44 2.1 5.75 6.12 0.25 1.15"
-    # TODO: foreach x floats {
-    #       r lpush mylist $x
-    #   }
-    # TODO: assert_equal lsort -real $floats r sort mylist
+    foreach("x", floats, "            r lpush mylist $x\n        ")
+    assert lsort("-real", floats) == r.run("sort", "mylist")
 
 
 def test_sort_returns_an_empty_array_if_the_list_is_empty(r: ValkeyTestClient) -> None:
@@ -562,7 +559,6 @@ def test_sort_will_complain_with_numerical_sorting_and_bad_doubles_2(r: ValkeyTe
     assert e == "*ERR*double*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_sort_by_sub_sorts_lexicographically_if_score_is_the_same(r: ValkeyTestClient) -> None:
     """
     test "SORT BY sub-sorts lexicographically if score is the same" {
@@ -603,9 +599,7 @@ def test_sort_by_sub_sorts_lexicographically_if_score_is_the_same(r: ValkeyTestC
         "aaa",
         "azz",
     )
-    # TODO: foreach ele {a aa aaa azz b c d e f g h i l m n o p q r s t u v z} {
-    #       set score:$ele 100
-    #   }
+    foreach("ele", "a aa aaa azz b c d e f g h i l m n o p q r s t u v z", "            set score:$ele 100\n        ")
     assert r.run("sort", "myset", "by", "score:*") == "a aa aaa azz b c d e f g h i l m n o p q r s t u v z"
 
 
@@ -692,7 +686,6 @@ def test_sort_ro_cannot_run_with_store_arg(r: ValkeyTestClient) -> None:
     assert e == "ERR syntax error"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_setrange_with_huge_offset(r: ValkeyTestClient) -> None:
     """
     test {SETRANGE with huge offset} {
@@ -707,15 +700,13 @@ def test_setrange_with_huge_offset(r: ValkeyTestClient) -> None:
     }
     """
     r.run("lpush", "L", 2, 1, 0)
-    # TODO: foreach value {9223372036854775807 2147483647} {
-    #       catch {[r sort_ro L by a limit 2 $value]} res
-    #       if {![string match "2" $res] && ![string match "*out of range*" $res]} {
-    #           assert_not_equal $res "expecting an error or 2"
-    #       }
-    #   }
+    foreach(
+        "value",
+        "9223372036854775807 2147483647",
+        '            catch {[r sort_ro L by a limit 2 $value]} res\n            if {![string match "2" $res] && ![string match "*out of range*" $res]} {\n                assert_not_equal $res "expecting an error or 2"\n            }\n        ',
+    )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_sort_store_quicklist_with_the_right_options(r: ValkeyTestClient) -> None:
     """
     test {SORT STORE quicklist with the right options} {
@@ -730,15 +721,15 @@ def test_sort_store_quicklist_with_the_right_options(r: ValkeyTestClient) -> Non
         config_set list-max-listpack-size $origin_config
     } {} {needs:debug}
     """
-    # TODO: set origin_config config_get_set list-max-listpack-size -1
+    origin_config = config_get_set("list-max-listpack-size", -1)
     r.run("del", "lst{t}", "lst_dst{t}")
     r.run("config", "set", "list-max-listpack-size", -1)
     r.run("config", "set", "list-compress-depth", 12)
-    # TODO: r lpush lst{t} {*} split [string repeat "1" 6000] ""
+    r.run("lpush", "lst{t}", "*", split(string("repeat", "1", 6000), ""))
     r.run("sort", "lst{t}", "store", "lst_dst{t}")
-    # TODO: assert_encoding quicklist lst_dst{t}
+    assert_encoding("quicklist", "lst_dst{t}")
     assert fnmatch(str(r.run("debug", "object", "lst_dst{t}")), "*ql_listpack_max:-1 ql_compressed:1*")
-    # TODO: config_set list-max-listpack-size origin _config
+    config_set("list-max-listpack-size", origin_config)
 
 
 """
@@ -781,3 +772,38 @@ start_cluster 1 0 {tags {"external:skip cluster sort"}} {
     }
 }
 """
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def assert_encoding(*args):
+    raise NotImplementedError("assert_encoding")
+
+
+def check_sort_store_encoding(*args):
+    raise NotImplementedError("check_sort_store_encoding")
+
+
+def config_get_set(*args):
+    raise NotImplementedError("config_get_set")
+
+
+def config_set(*args):
+    raise NotImplementedError("config_set")
+
+
+def foreach(*args):
+    raise NotImplementedError("foreach")
+
+
+def lsort(*args):
+    raise NotImplementedError("lsort")
+
+
+def split(*args):
+    raise NotImplementedError("split")
+
+
+def string(*args):
+    raise NotImplementedError("string")

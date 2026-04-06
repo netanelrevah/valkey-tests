@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841, N806, RUF043
+# ruff: noqa: PLR2004, F841, N806, RUF043, ANN001, ANN002, ANN201
 import time
 from fnmatch import fnmatch
 
@@ -171,9 +171,8 @@ proc wait_for_active_expiry {r key expected_len initial_expired expected_increme
 pytestmark = [pytest.mark.hashexpire]
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hgetex_command_expiry(r: ValkeyTestClient) -> None:
+def test_hgetex_command_expiry(r: ValkeyTestClient, command) -> None:
     """
     test "HGETEX $command expiry" {
         r FLUSHALL
@@ -200,21 +199,21 @@ def test_hgetex_command_expiry(r: ValkeyTestClient) -> None:
     r.run("FLUSHALL")
     r.run("DEBUG", "SET-ACTIVE-EXPIRE", 0)
     r.run("HSET", "myhash", "f1", "v1")
-    # TODO: set ttl_cmd get_check_ttl_command $command
-    # TODO: set expire_time get_long_expire_value $command
-    # TODO: assert_equal "v1" r HGETEX myhash $command $expire_time FIELDS 1 f1
-    # TODO: set expire_result r $ttl_cmd myhash FIELDS 1 f1
-    # TODO: if {[regexp "AT$" $command]} {
-    #       assert_equal $expire_result $expire_time
-    #   } else {
-    #       assert_morethan $expire_result 0
-    #   }
+    ttl_cmd = get_check_ttl_command(command)
+    expire_time = get_long_expire_value(command)
+    assert "v1" == r.run("HGETEX", "myhash", command, expire_time, "FIELDS", 1, "f1")
+    expire_result = r.run(ttl_cmd, "myhash", "FIELDS", 1, "f1")
+    if_(
+        '[regexp "AT$" $command]',
+        "                assert_equal $expire_result $expire_time\n            ",
+        "else",
+        "                assert_morethan $expire_result 0\n            ",
+    )
     assert r.run("DEBUG", "SET-ACTIVE-EXPIRE", 1) == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hgetex_command_with_mix_of_existing_and_non_existing_fields(r: ValkeyTestClient) -> None:
+def test_hgetex_command_with_mix_of_existing_and_non_existing_fields(r: ValkeyTestClient, command) -> None:
     """
     test "HGETEX $command with mix of existing and non-existing fields" {
         r FLUSHALL
@@ -232,16 +231,17 @@ def test_hgetex_command_with_mix_of_existing_and_non_existing_fields(r: ValkeyTe
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "v1", "f3", "v3")
-    # TODO: assert_equal "v1 {} v3" r HGETEX myhash $command [get_long_expire_value $command] FIELDS 3 f1 f2 f3
+    assert "v1 {} v3" == r.run(
+        "HGETEX", "myhash", command, get_long_expire_value(command), "FIELDS", 3, "f1", "f2", "f3"
+    )
     assert "" == r.run("HGET", "myhash", "f2")
     assert -2 == r.run("HTTL", "myhash", "FIELDS", 1, "f2")
-    # TODO: assert_morethan r HTTL myhash FIELDS 1 f1 0
-    # TODO: assert_morethan r HTTL myhash FIELDS 1 f3 0
+    assert_morethan(r.run("HTTL", "myhash", "FIELDS", 1, "f1"), 0)
+    assert_morethan(r.run("HTTL", "myhash", "FIELDS", 1, "f3"), 0)
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hgetex_command_on_more_then_1_field(r: ValkeyTestClient) -> None:
+def test_hgetex_command_on_more_then_1_field(r: ValkeyTestClient, command) -> None:
     """
     test "HGETEX $command on more then 1 field" {
         r FLUSHALL
@@ -269,22 +269,20 @@ def test_hgetex_command_on_more_then_1_field(r: ValkeyTestClient) -> None:
     r.run("FLUSHALL")
     r.run("DEBUG", "SET-ACTIVE-EXPIRE", 0)
     r.run("HSET", "myhash", "f1", "v1", "f2", "v2")
-    # TODO: set ttl_cmd get_check_ttl_command $command
-    # TODO: set expire_time get_long_expire_value $command
-    # TODO: assert_equal "v1 v2" r HGETEX myhash $command $expire_time FIELDS 2 f1 f2
-    # TODO: if {[regexp "AT$" $command]} {
-    #       assert_equal $expire_time [r $ttl_cmd myhash FIELDS 1 f1]
-    #       assert_equal $expire_time [r $ttl_cmd myhash FIELDS 1 f2]
-    #   } else {
-    #       assert_morethan [r $ttl_cmd myhash FIELDS 1 f1] 0
-    #       assert_morethan [r $ttl_cmd myhash FIELDS 1 f2] 0
-    #   }
+    ttl_cmd = get_check_ttl_command(command)
+    expire_time = get_long_expire_value(command)
+    assert "v1 v2" == r.run("HGETEX", "myhash", command, expire_time, "FIELDS", 2, "f1", "f2")
+    if_(
+        '[regexp "AT$" $command]',
+        "                assert_equal $expire_time [r $ttl_cmd myhash FIELDS 1 f1]\n                assert_equal $expire_time [r $ttl_cmd myhash FIELDS 1 f2]\n            ",
+        "else",
+        "                assert_morethan [r $ttl_cmd myhash FIELDS 1 f1] 0\n                assert_morethan [r $ttl_cmd myhash FIELDS 1 f2] 0\n            ",
+    )
     assert r.run("DEBUG", "SET-ACTIVE-EXPIRE", 1) == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hgetex_command_persist(r: ValkeyTestClient) -> None:
+def test_hgetex_command_persist(r: ValkeyTestClient, command) -> None:
     """
     test "HGETEX $command -> PERSIST" {
         r FLUSHALL
@@ -310,22 +308,22 @@ def test_hgetex_command_persist(r: ValkeyTestClient) -> None:
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "v1")
     r.run("HSETEX", "myhash", "EX", 10000, "FIELDS", 1, "f2", "v2")
-    # TODO: set ttl_cmd get_check_ttl_command $command
-    # TODO: set expire_time get_long_expire_value $command
-    # TODO: assert_equal "v1" r HGETEX myhash $command $expire_time FIELDS 1 f1
-    # TODO: if {[regexp "AT$" $command]} {
-    #       assert_equal $expire_time [r $ttl_cmd myhash FIELDS 1 f1]
-    #   } else {
-    #       assert_morethan [r $ttl_cmd myhash FIELDS 1 f1] 0
-    #   }
+    ttl_cmd = get_check_ttl_command(command)
+    expire_time = get_long_expire_value(command)
+    assert "v1" == r.run("HGETEX", "myhash", command, expire_time, "FIELDS", 1, "f1")
+    if_(
+        '[regexp "AT$" $command]',
+        "                assert_equal $expire_time [r $ttl_cmd myhash FIELDS 1 f1]\n            ",
+        "else",
+        "                assert_morethan [r $ttl_cmd myhash FIELDS 1 f1] 0\n            ",
+    )
     assert "v1" == r.run("HGETEX", "myhash", "PERSIST", "FIELDS", 1, "f1")
     assert -1 == r.run("HTTL", "myhash", "FIELDS", 1, "f1")
-    # TODO: assert_morethan r HTTL myhash FIELDS 1 f2 100
+    assert_morethan(r.run("HTTL", "myhash", "FIELDS", 1, "f2"), 100)
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hgetex_command_on_non_exist_field(r: ValkeyTestClient) -> None:
+def test_hgetex_command_on_non_exist_field(r: ValkeyTestClient, command) -> None:
     """
     test "HGETEX $command on non-exist field" {
         r FLUSHALL
@@ -335,12 +333,11 @@ def test_hgetex_command_on_non_exist_field(r: ValkeyTestClient) -> None:
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "v1")
-    # TODO: assert_equal {{}} r HGETEX myhash $command [get_short_expire_value $command] FIELDS 1 f2
+    assert "{}" == r.run("HGETEX", "myhash", command, get_short_expire_value(command), "FIELDS", 1, "f2")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hgetex_command_on_non_exist_key(r: ValkeyTestClient) -> None:
+def test_hgetex_command_on_non_exist_key(r: ValkeyTestClient, command) -> None:
     """
     test "HGETEX $command on non-exist key" {
         r FLUSHALL
@@ -348,12 +345,13 @@ def test_hgetex_command_on_non_exist_key(r: ValkeyTestClient) -> None:
     }
     """
     r.run("FLUSHALL")
-    # TODO: assert_equal {{} {} {}} r HGETEX myhash $command [get_long_expire_value $command] FIELDS 3 f1 f2 f3
+    assert "{} {} {}" == r.run(
+        "HGETEX", "myhash", command, get_long_expire_value(command), "FIELDS", 3, "f1", "f2", "f3"
+    )
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hgetex_command_with_duplicate_field_names(r: ValkeyTestClient) -> None:
+def test_hgetex_command_with_duplicate_field_names(r: ValkeyTestClient, command) -> None:
     """
     test "HGETEX $command with duplicate field names" {
         r FLUSHALL
@@ -363,12 +361,11 @@ def test_hgetex_command_with_duplicate_field_names(r: ValkeyTestClient) -> None:
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "v1")
-    # TODO: assert_equal "v1 v1" r HGETEX myhash $command [get_long_expire_value $command] FIELDS 2 f1 f1
+    assert "v1 v1" == r.run("HGETEX", "myhash", command, get_long_expire_value(command), "FIELDS", 2, "f1", "f1")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hgetex_command_overwrites_existing_field_ttl_with_bigger_value(r: ValkeyTestClient) -> None:
+def test_hgetex_command_overwrites_existing_field_ttl_with_bigger_value(r: ValkeyTestClient, command) -> None:
     """
     test "HGETEX $command overwrites existing field TTL with bigger value" {
         r FLUSHALL
@@ -380,16 +377,15 @@ def test_hgetex_command_overwrites_existing_field_ttl_with_bigger_value(r: Valke
     }
     """
     r.run("FLUSHALL")
-    # TODO: r HSETEX myhash command get_long_expire_value $command FIELDS 1 f1 v1
+    r.run("HSETEX", "myhash", command, get_long_expire_value(command), "FIELDS", 1, "f1", "v1")
     old_ttl = r.run("HTTL", "myhash", "FIELDS", 1, "f1")
-    # TODO: r HGETEX myhash command get_longer_then_long_expire_value $command FIELDS 1 f1
+    r.run("HGETEX", "myhash", command, get_longer_then_long_expire_value(command), "FIELDS", 1, "f1")
     new_ttl = r.run("HTTL", "myhash", "FIELDS", 1, "f1")
-    # TODO: assert {$new_ttl > $old_ttl}
+    assert new_ttl > old_ttl
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hgetex_command_overwrites_existing_field_ttl_with_smaller_value(r: ValkeyTestClient) -> None:
+def test_hgetex_command_overwrites_existing_field_ttl_with_smaller_value(r: ValkeyTestClient, command) -> None:
     """
     test "HGETEX $command overwrites existing field TTL with smaller value" {
         r FLUSHALL
@@ -401,16 +397,15 @@ def test_hgetex_command_overwrites_existing_field_ttl_with_smaller_value(r: Valk
     }
     """
     r.run("FLUSHALL")
-    # TODO: r HSETEX myhash command get_long_expire_value $command FIELDS 1 f1 v1
+    r.run("HSETEX", "myhash", command, get_long_expire_value(command), "FIELDS", 1, "f1", "v1")
     old_ttl = r.run("HTTL", "myhash", "FIELDS", 1, "f1")
-    # TODO: r HGETEX myhash command get_short_expire_value $command FIELDS 1 f1
+    r.run("HGETEX", "myhash", command, get_short_expire_value(command), "FIELDS", 1, "f1")
     new_ttl = r.run("HTTL", "myhash", "FIELDS", 1, "f1")
-    # TODO: assert {$new_ttl <= $old_ttl}
+    assert new_ttl <= old_ttl
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hgetex_command_overwrites_existing_field_ttl_with_bigger_value_1(r: ValkeyTestClient) -> None:
+def test_hgetex_command_overwrites_existing_field_ttl_with_bigger_value_1(r: ValkeyTestClient, command) -> None:
     """
     test "HGETEX $command overwrites existing field TTL with bigger value" {
         r FLUSHALL
@@ -433,26 +428,31 @@ def test_hgetex_command_overwrites_existing_field_ttl_with_bigger_value_1(r: Val
     }
     """
     r.run("FLUSHALL")
-    # TODO: set config dict create \
-    #                   EX   [list setup_cmd EX setup_val 100000 bigger_val 200000] \
-    #                   PX   [list setup_cmd PX setup_val 100000000 bigger_val 200000000] \
-    #                   EXAT [list setup_cmd EX setup_val 100000 bigger_val [expr {[clock seconds] + 200000}]] \
-    #                   PXAT [list setup_cmd PX setup_val 100000000 bigger_val [expr {[clock milliseconds] + 200000000}]] \
-    #
-    # TODO: set params dict get $config $command
-    # TODO: set setup_cmd dict get $params setup_cmd
-    # TODO: set setup_val dict get $params setup_val
-    # TODO: set bigger_val dict get $params bigger_val
-    # TODO: r HSETEX myhash setup _cmd setup _val FIELDS 1 f1 v1
+    config = dict_(
+        "create",
+        "\\",
+        "EX",
+        list_("setup_cmd", "EX", "setup_val", 100000, "bigger_val", 200000),
+        "PX",
+        list_("setup_cmd", "PX", "setup_val", 100000000, "bigger_val", 200000000),
+        "EXAT",
+        list_("setup_cmd", "EX", "setup_val", 100000, "bigger_val", expr("[clock seconds] + 200000")),
+        "PXAT",
+        list_("setup_cmd", "PX", "setup_val", 100000000, "bigger_val", expr("[clock milliseconds] + 200000000")),
+    )
+    params = config[command]
+    setup_cmd = params["setup_cmd"]
+    setup_val = params["setup_val"]
+    bigger_val = params["bigger_val"]
+    r.run("HSETEX", "myhash", setup_cmd, setup_val, "FIELDS", 1, "f1", "v1")
     old_ttl = r.run("HTTL", "myhash", "FIELDS", 1, "f1")
-    # TODO: r HGETEX myhash command bigger _val FIELDS 1 f1
+    r.run("HGETEX", "myhash", command, bigger_val, "FIELDS", 1, "f1")
     new_ttl = r.run("HTTL", "myhash", "FIELDS", 1, "f1")
-    # TODO: assert {$new_ttl > $old_ttl}
+    assert new_ttl > old_ttl
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hgetex_command_overwrites_existing_field_ttl_with_smaller_value_1(r: ValkeyTestClient) -> None:
+def test_hgetex_command_overwrites_existing_field_ttl_with_smaller_value_1(r: ValkeyTestClient, command) -> None:
     """
     test "HGETEX $command overwrites existing field TTL with smaller value" {
         r FLUSHALL
@@ -475,24 +475,29 @@ def test_hgetex_command_overwrites_existing_field_ttl_with_smaller_value_1(r: Va
     }
     """
     r.run("FLUSHALL")
-    # TODO: set config dict create \
-    #                   EX   [list setup_cmd EX setup_val 100000 smaller_val 50000] \
-    #                   PX   [list setup_cmd PX setup_val 100000000 smaller_val 50000000] \
-    #                   EXAT [list setup_cmd EX setup_val 100000 smaller_val [expr {[clock seconds] + 50000}]] \
-    #                   PXAT [list setup_cmd PX setup_val 100000000 smaller_val [expr {[clock milliseconds] + 50000000}]] \
-    #
-    # TODO: set params dict get $config $command
-    # TODO: set setup_cmd dict get $params setup_cmd
-    # TODO: set setup_val dict get $params setup_val
-    # TODO: set smaller_val dict get $params smaller_val
-    # TODO: r HSETEX myhash setup _cmd setup _val FIELDS 1 f1 v1
+    config = dict_(
+        "create",
+        "\\",
+        "EX",
+        list_("setup_cmd", "EX", "setup_val", 100000, "smaller_val", 50000),
+        "PX",
+        list_("setup_cmd", "PX", "setup_val", 100000000, "smaller_val", 50000000),
+        "EXAT",
+        list_("setup_cmd", "EX", "setup_val", 100000, "smaller_val", expr("[clock seconds] + 50000")),
+        "PXAT",
+        list_("setup_cmd", "PX", "setup_val", 100000000, "smaller_val", expr("[clock milliseconds] + 50000000")),
+    )
+    params = config[command]
+    setup_cmd = params["setup_cmd"]
+    setup_val = params["setup_val"]
+    smaller_val = params["smaller_val"]
+    r.run("HSETEX", "myhash", setup_cmd, setup_val, "FIELDS", 1, "f1", "v1")
     old_ttl = r.run("HTTL", "myhash", "FIELDS", 1, "f1")
-    # TODO: r HGETEX myhash command smaller _val FIELDS 1 f1
+    r.run("HGETEX", "myhash", command, smaller_val, "FIELDS", 1, "f1")
     new_ttl = r.run("HTTL", "myhash", "FIELDS", 1, "f1")
-    # TODO: assert {$new_ttl <= $old_ttl}
+    assert new_ttl <= old_ttl
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hgetex_verify_no_change_when_field_does_not_exist(r: ValkeyTestClient) -> None:
     """
     test {HGETEX - verify no change when field does not exist} {
@@ -509,7 +514,7 @@ def test_hgetex_verify_no_change_when_field_does_not_exist(r: ValkeyTestClient) 
     mem_before = r.run("MEMORY", "USAGE", "myhash")
     assert "{}" == r.run("HGETEX", "myhash", "EX", 1, "FIELDS", 1, "f2")
     memory_after = r.run("MEMORY", "USAGE", "myhash")
-    # TODO: assert_equal mem _before memory _after
+    assert mem_before == memory_after
 
 
 def test_hgetex_ex_multiple_options_used_ex_px(r: ValkeyTestClient) -> None:
@@ -526,7 +531,6 @@ def test_hgetex_ex_multiple_options_used_ex_px(r: ValkeyTestClient) -> None:
         r.run("HGETEX", "myhash", "EX", 60, "PX", 1000, "FIELDS", 1, "f1")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hgetex_exat_multiple_options_used_exat_pxat(r: ValkeyTestClient) -> None:
     """
     test {HGETEX EXAT- multiple options used (EXAT + PXAT)} {
@@ -537,12 +541,23 @@ def test_hgetex_exat_multiple_options_used_exat_pxat(r: ValkeyTestClient) -> Non
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "v1")
-    # TODO: assert_error "ERR*" {r HGETEX myhash EXAT [expr {[clock seconds] + 100}] PXAT [expr {[clock milliseconds] + 100000}] 1000 FIELDS 1 f1}
+    with pytest.raises(Exception, match="ERR.*"):
+        r.run(
+            "HGETEX",
+            "myhash",
+            "EXAT",
+            expr("[clock seconds] + 100"),
+            "PXAT",
+            expr("[clock milliseconds] + 100000"),
+            1000,
+            "FIELDS",
+            1,
+            "f1",
+        )
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hgetex_cmd_missing_ttl_value(r: ValkeyTestClient) -> None:
+def test_hgetex_cmd_missing_ttl_value(r: ValkeyTestClient, cmd) -> None:
     """
     test "HGETEX $cmd- missing TTL value" {
         r FLUSHALL
@@ -553,14 +568,15 @@ def test_hgetex_cmd_missing_ttl_value(r: ValkeyTestClient) -> None:
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "v1")
-    # TODO: catch {r HGETEX myhash $cmd FIELDS 1 f1} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("HGETEX", "myhash", cmd, "FIELDS", 1, "f1")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR *"
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hgetex_cmd_negative_ttl(r: ValkeyTestClient) -> None:
+def test_hgetex_cmd_negative_ttl(r: ValkeyTestClient, cmd) -> None:
     """
     test "HGETEX $cmd- negative TTL" {
         r FLUSHALL
@@ -571,14 +587,15 @@ def test_hgetex_cmd_negative_ttl(r: ValkeyTestClient) -> None:
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "v1")
-    # TODO: catch {r HGETEX myhash $cmd -10 FIELDS 1 f1} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("HGETEX", "myhash", cmd, -10, "FIELDS", 1, "f1")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR invalid expire time in 'hgetex' command"
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hgetex_cmd_non_integer_ttl(r: ValkeyTestClient) -> None:
+def test_hgetex_cmd_non_integer_ttl(r: ValkeyTestClient, cmd) -> None:
     """
     test "HGETEX $cmd- non-integer TTL" {
         r FLUSHALL
@@ -589,14 +606,15 @@ def test_hgetex_cmd_non_integer_ttl(r: ValkeyTestClient) -> None:
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "v1")
-    # TODO: catch {r HGETEX myhash $cmd abc FIELDS 1 f1} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("HGETEX", "myhash", cmd, "abc", "FIELDS", 1, "f1")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR value is not an integer or out of range"
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hgetex_cmd_missing_fields_keyword(r: ValkeyTestClient) -> None:
+def test_hgetex_cmd_missing_fields_keyword(r: ValkeyTestClient, cmd) -> None:
     """
     test "HGETEX $cmd- missing FIELDS keyword" {
         r FLUSHALL
@@ -607,14 +625,15 @@ def test_hgetex_cmd_missing_fields_keyword(r: ValkeyTestClient) -> None:
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "v1")
-    # TODO: catch {r HGETEX myhash $cmd [get_short_expire_value $cmd] 1 f1} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("HGETEX", "myhash", cmd, get_short_expire_value(cmd), 1, "f1")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR *"
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hgetex_cmd_wrong_numfields_count_too_few_fields(r: ValkeyTestClient) -> None:
+def test_hgetex_cmd_wrong_numfields_count_too_few_fields(r: ValkeyTestClient, cmd) -> None:
     """
     test "HGETEX $cmd- wrong numfields count (too few fields)" {
         r FLUSHALL
@@ -625,14 +644,15 @@ def test_hgetex_cmd_wrong_numfields_count_too_few_fields(r: ValkeyTestClient) ->
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "v1", "f2", "v2")
-    # TODO: catch {r HGETEX myhash $cmd [get_short_expire_value $cmd] FIELDS 2 f1} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("HGETEX", "myhash", cmd, get_short_expire_value(cmd), "FIELDS", 2, "f1")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR *"
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hgetex_cmd_wrong_numfields_count_too_many_fields(r: ValkeyTestClient) -> None:
+def test_hgetex_cmd_wrong_numfields_count_too_many_fields(r: ValkeyTestClient, cmd) -> None:
     """
     test "HGETEX $cmd- wrong numfields count (too many fields)" {
         r FLUSHALL
@@ -643,14 +663,15 @@ def test_hgetex_cmd_wrong_numfields_count_too_many_fields(r: ValkeyTestClient) -
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "v1")
-    # TODO: catch {r HGETEX myhash $cmd [get_short_expire_value $cmd] FIELDS 1 f1 f2} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("HGETEX", "myhash", cmd, get_short_expire_value(cmd), "FIELDS", 1, "f1", "f2")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR *"
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hgetex_cmd_key_is_wrong_type_string_instead_of_hash(r: ValkeyTestClient) -> None:
+def test_hgetex_cmd_key_is_wrong_type_string_instead_of_hash(r: ValkeyTestClient, cmd) -> None:
     """
     test "HGETEX $cmd- key is wrong type (string instead of hash)" {
         r FLUSHALL
@@ -661,14 +682,15 @@ def test_hgetex_cmd_key_is_wrong_type_string_instead_of_hash(r: ValkeyTestClient
     """
     r.run("FLUSHALL")
     r.run("SET", "mystring", "v1")
-    # TODO: catch {r HGETEX mystring $cmd [get_short_expire_value $cmd] FIELDS 1 f1} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("HGETEX", "mystring", cmd, get_short_expire_value(cmd), "FIELDS", 1, "f1")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "WRONGTYPE Operation against a key holding the wrong kind of value"
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hgetex_cmd_with_fields_0(r: ValkeyTestClient) -> None:
+def test_hgetex_cmd_with_fields_0(r: ValkeyTestClient, cmd) -> None:
     """
     test "HGETEX $cmd with FIELDS 0" {
         r FLUSHALL
@@ -677,14 +699,15 @@ def test_hgetex_cmd_with_fields_0(r: ValkeyTestClient) -> None:
     } {ERR *}
     """
     r.run("FLUSHALL")
-    # TODO: catch {r HGETEX myhash $cmd [get_short_expire_value $cmd] FIELDS 0} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("HGETEX", "myhash", cmd, get_short_expire_value(cmd), "FIELDS", 0)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR *"
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hgetex_cmd_with_negative_numfields(r: ValkeyTestClient) -> None:
+def test_hgetex_cmd_with_negative_numfields(r: ValkeyTestClient, cmd) -> None:
     """
     test "HGETEX $cmd with negative numfields" {
         r FLUSHALL
@@ -693,14 +716,15 @@ def test_hgetex_cmd_with_negative_numfields(r: ValkeyTestClient) -> None:
     } {ERR *}
     """
     r.run("FLUSHALL")
-    # TODO: catch {r HGETEX myhash $cmd [get_short_expire_value $cmd] FIELDS -10} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("HGETEX", "myhash", cmd, get_short_expire_value(cmd), "FIELDS", -10)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR *"
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hgetex_cmd_with_missing_key(r: ValkeyTestClient) -> None:
+def test_hgetex_cmd_with_missing_key(r: ValkeyTestClient, cmd) -> None:
     """
     test "HGETEX $cmd with missing key" {
         r FLUSHALL
@@ -709,9 +733,11 @@ def test_hgetex_cmd_with_missing_key(r: ValkeyTestClient) -> None:
     } {ERR *}
     """
     r.run("FLUSHALL")
-    # TODO: catch {r HGETEX $cmd [get_short_expire_value $cmd] FIELDS 1 f1} e
-    # TODO: set e
-    assert False
+    try:
+        e = r.run("HGETEX", cmd, get_short_expire_value(cmd), "FIELDS", 1, "f1")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR *"
 
 
 pytestmark = [pytest.mark.hashexpire]
@@ -748,7 +774,7 @@ r config set notify-keyspace-events KEA
 
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hgetex_command_generates_hexpire_keyspace_notification(r: ValkeyTestClient) -> None:
+def test_hgetex_command_generates_hexpire_keyspace_notification(r: ValkeyTestClient, command, rd) -> None:
     """
     test "HGETEX $command generates hexpire keyspace notification" {
         r FLUSHALL
@@ -765,17 +791,17 @@ def test_hgetex_command_generates_hexpire_keyspace_notification(r: ValkeyTestCli
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "v1")
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
-    # TODO: set rd setup_single_keyspace_notification r
-    # TODO: r HGETEX myhash command get_long_expire_value $command FIELDS 1 f1
-    # TODO: assert_keyevent_patterns rd myhash hexpire
-    # TODO: assert_equal 1 get_keys_with_volatile_items r
+    assert 0 == get_keys_with_volatile_items("r")
+    rd = setup_single_keyspace_notification("r")
+    r.run("HGETEX", "myhash", command, get_long_expire_value(command), "FIELDS", 1, "f1")
+    assert_keyevent_patterns(rd, "myhash", "hexpire")
+    assert 1 == get_keys_with_volatile_items("r")
     # TODO: $rd close
 
 
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hgetex_command_with_multiple_fields_generates_single_notification(r: ValkeyTestClient) -> None:
+def test_hgetex_command_with_multiple_fields_generates_single_notification(r: ValkeyTestClient, command, rd) -> None:
     """
     test "HGETEX $command with multiple fields generates single notification" {
         r FLUSHALL
@@ -795,19 +821,19 @@ def test_hgetex_command_with_multiple_fields_generates_single_notification(r: Va
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "v1", "f2", "v2", "f3", "v3")
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
-    # TODO: set rd setup_single_keyspace_notification r
-    # TODO: r HGETEX myhash command get_long_expire_value $command FIELDS 3 f1 f2 f3
-    # TODO: assert_keyevent_patterns rd myhash hexpire
+    assert 0 == get_keys_with_volatile_items("r")
+    rd = setup_single_keyspace_notification("r")
+    r.run("HGETEX", "myhash", command, get_long_expire_value(command), "FIELDS", 3, "f1", "f2", "f3")
+    assert_keyevent_patterns(rd, "myhash", "hexpire")
     r.run("HSET", "dummy", "dummy", "dummy")
-    # TODO: assert_keyevent_patterns rd dummy hset
-    # TODO: assert_equal 1 get_keys_with_volatile_items r
+    assert_keyevent_patterns(rd, "dummy", "hset")
+    assert 1 == get_keys_with_volatile_items("r")
     # TODO: $rd close
 
 
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hgetex_command_on_non_existent_field_generates_no_notification(r: ValkeyTestClient) -> None:
+def test_hgetex_command_on_non_existent_field_generates_no_notification(r: ValkeyTestClient, command, rd) -> None:
     """
     test "HGETEX $command on non-existent field generates no notification" {
         r FLUSHALL
@@ -827,17 +853,17 @@ def test_hgetex_command_on_non_existent_field_generates_no_notification(r: Valke
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "v1")
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
-    # TODO: set rd setup_single_keyspace_notification r
-    # TODO: r HGETEX myhash command get_long_expire_value $command FIELDS 1 f2
+    assert 0 == get_keys_with_volatile_items("r")
+    rd = setup_single_keyspace_notification("r")
+    r.run("HGETEX", "myhash", command, get_long_expire_value(command), "FIELDS", 1, "f2")
     r.run("HSET", "dummy", "dummy", "dummy")
-    # TODO: assert_keyevent_patterns rd dummy hset
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
+    assert_keyevent_patterns(rd, "dummy", "hset")
+    assert 0 == get_keys_with_volatile_items("r")
     # TODO: $rd close
 
 
 @pytest.mark.xfail(reason="not implemented")
-def test_hgetex_persist_generates_hpersist_keyspace_notification(r: ValkeyTestClient) -> None:
+def test_hgetex_persist_generates_hpersist_keyspace_notification(r: ValkeyTestClient, rd) -> None:
     """
     test {HGETEX PERSIST generates hpersist keyspace notification} {
         r FLUSHALL
@@ -858,19 +884,19 @@ def test_hgetex_persist_generates_hpersist_keyspace_notification(r: ValkeyTestCl
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "v1")
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
-    # TODO: r HEXPIRE myhash get_long_expire_value HEXPIRE FIELDS 1 f1
-    # TODO: assert_equal 1 get_keys_with_volatile_items r
-    # TODO: set rd setup_single_keyspace_notification r
+    assert 0 == get_keys_with_volatile_items("r")
+    r.run("HEXPIRE", "myhash", get_long_expire_value("HEXPIRE"), "FIELDS", 1, "f1")
+    assert 1 == get_keys_with_volatile_items("r")
+    rd = setup_single_keyspace_notification("r")
     r.run("HGETEX", "myhash", "PERSIST", "FIELDS", 1, "f1")
-    # TODO: assert_keyevent_patterns rd myhash hpersist
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
+    assert_keyevent_patterns(rd, "myhash", "hpersist")
+    assert 0 == get_keys_with_volatile_items("r")
     # TODO: $rd close
 
 
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hgetex_command_0_or_past_time_works_correctly_with_1_field(r: ValkeyTestClient) -> None:
+def test_hgetex_command_0_or_past_time_works_correctly_with_1_field(r: ValkeyTestClient, command, rd) -> None:
     """
     test "HGETEX $command 0/past time works correctly with 1 field" {
         r FLUSHALL
@@ -900,21 +926,20 @@ def test_hgetex_command_0_or_past_time_works_correctly_with_1_field(r: ValkeyTes
     r.run("config", "resetstat")
     r.run("HSET", "myhash", "f1", "v1")
     assert 1 == r.run("HLEN", "myhash")
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
-    # TODO: assert_equal 1 get_keys r
-    # TODO: set rd setup_single_keyspace_notification r
-    # TODO: r HGETEX myhash command get_past_zero_expire_value $command FIELDS 1 f1
-    # TODO: assert_keyevent_patterns rd myhash hexpired del
+    assert 0 == get_keys_with_volatile_items("r")
+    assert 1 == get_keys("r")
+    rd = setup_single_keyspace_notification("r")
+    r.run("HGETEX", "myhash", command, get_past_zero_expire_value(command), "FIELDS", 1, "f1")
+    assert_keyevent_patterns(rd, "myhash", "hexpired", "del")
     assert -2 == r.run("HTTL", "myhash", "FIELDS", 1, "f1")
     assert 0 == r.run("HLEN", "myhash")
     assert 0 == r.run("EXISTS", "myhash")
-    # TODO: assert_equal 0 get_keys r
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
-    # TODO: assert_equal 1 info_field [r info stats] expired_fields
+    assert 0 == get_keys("r")
+    assert 0 == get_keys_with_volatile_items("r")
+    assert 1 == info_field(r.run("info", "stats"), "expired_fields")
     # TODO: $rd close
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hsetex_keepttl_preserves_existing_ttl_of_field(r: ValkeyTestClient) -> None:
     """
     test {HSETEX KEEPTTL - preserves existing TTL of field} {
@@ -948,15 +973,15 @@ def test_hsetex_keepttl_preserves_existing_ttl_of_field(r: ValkeyTestClient) -> 
     r.run("HSETEX", "myhash", "PX", 1000, "FIELDS", 1, "field1", "val1")
     original_pttl = r.run("HPTTL", "myhash", "FIELDS", 1, "field1")
     original_expiretime = r.run("HEXPIRETIME", "myhash", "FIELDS", 1, "field1")
-    # TODO: assert_equal 1 get_keys_with_volatile_items r
-    # TODO: assert {$original_pttl > 0}
-    # TODO: assert {$original_expiretime > [clock seconds]}
+    assert 1 == get_keys_with_volatile_items("r")
+    assert original_pttl > 0
+    assert original_expiretime > clock("seconds")
     r.run("HSETEX", "myhash", "KEEPTTL", "FIELDS", 1, "field1", "newval")
     updated_pttl = r.run("HPTTL", "myhash", "FIELDS", 1, "field1")
     updated_expiretime = r.run("HEXPIRETIME", "myhash", "FIELDS", 1, "field1")
-    # TODO: assert {$updated_pttl > 0}
-    # TODO: assert {$updated_pttl <= $original_pttl}
-    # TODO: assert_equal original _expiretime updated _expiretime
+    assert updated_pttl > 0
+    assert updated_pttl <= original_pttl
+    assert original_expiretime == updated_expiretime
     assert "newval" == r.run("HGET", "myhash", "field1")
 
 
@@ -1025,7 +1050,6 @@ def test_hsetex_ex_overwrite_field_resets_ttl(r: ValkeyTestClient) -> None:
     assert "newval" == r.run("HGET", "myhash", "field1")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hsetex_ex_test_mix_of_expiring_and_persistent_fields(r: ValkeyTestClient) -> None:
     """
     test {HSETEX EX - test mix of expiring and persistent fields} {
@@ -1041,7 +1065,7 @@ def test_hsetex_ex_test_mix_of_expiring_and_persistent_fields(r: ValkeyTestClien
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "field2", "persistent")
     r.run("HSETEX", "myhash", "EX", 1, "FIELDS", 1, "field1", "temp")
-    # TODO: assert_equal 1 get_keys_with_volatile_items r
+    assert 1 == get_keys_with_volatile_items("r")
     time.sleep(1100 / 1000)
     assert 0 == r.run("HEXISTS", "myhash", "field1")
     assert 1 == r.run("HEXISTS", "myhash", "field2")
@@ -1077,7 +1101,7 @@ def test_hsetex_ex_mismatched_field_or_value_count(r: ValkeyTestClient) -> None:
 
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hsetex_command_0_or_past_time_works_correctly_with_2_fields(r: ValkeyTestClient) -> None:
+def test_hsetex_command_0_or_past_time_works_correctly_with_2_fields(r: ValkeyTestClient, command, rd) -> None:
     """
     test "HSETEX $command 0/past time works correctly with 2 fields" {
         r FLUSHALL
@@ -1107,17 +1131,19 @@ def test_hsetex_command_0_or_past_time_works_correctly_with_2_fields(r: ValkeyTe
     r.run("config", "resetstat")
     r.run("HSET", "myhash", "f1", "v1")
     assert 1 == r.run("HLEN", "myhash")
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
-    # TODO: assert_equal 1 get_keys r
-    # TODO: set rd setup_single_keyspace_notification r
-    # TODO: assert_equal {1} r HSETEX myhash $command [get_past_zero_expire_value $command] FIELDS 2 f1 v1 f2 v2
-    # TODO: assert_keyevent_patterns rd myhash hset hexpire hexpired del
+    assert 0 == get_keys_with_volatile_items("r")
+    assert 1 == get_keys("r")
+    rd = setup_single_keyspace_notification("r")
+    assert "1" == r.run(
+        "HSETEX", "myhash", command, get_past_zero_expire_value(command), "FIELDS", 2, "f1", "v1", "f2", "v2"
+    )
+    assert_keyevent_patterns(rd, "myhash", "hset", "hexpire", "hexpired", "del")
     assert -2 == r.run("HTTL", "myhash", "FIELDS", 1, "f1")
     assert 0 == r.run("HLEN", "myhash")
     assert 0 == r.run("EXISTS", "myhash")
-    # TODO: assert_equal 0 get_keys r
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
-    # TODO: assert_equal 2 info_field [r info stats] expired_fields
+    assert 0 == get_keys("r")
+    assert 0 == get_keys_with_volatile_items("r")
+    assert 2 == info_field(r.run("info", "stats"), "expired_fields")
     # TODO: $rd close
 
 
@@ -1153,7 +1179,6 @@ def test_hsetex_px_test_non_numeric_ttl(r: ValkeyTestClient) -> None:
     assert e == "ERR value is not an integer or out of range"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hsetex_px_overwrite_field_resets_ttl(r: ValkeyTestClient) -> None:
     """
     test {HSETEX PX - overwrite field resets TTL} {
@@ -1172,7 +1197,7 @@ def test_hsetex_px_overwrite_field_resets_ttl(r: ValkeyTestClient) -> None:
     ttl = r.run("HPTTL", "myhash", "FIELDS", 1, "field1")
     assert (ttl >= 19000) and (ttl <= 20000)
     assert "newval" == r.run("HGET", "myhash", "field1")
-    # TODO: assert_equal 1 get_keys_with_volatile_items r
+    assert 1 == get_keys_with_volatile_items("r")
 
 
 def test_hsetex_px_test_zero_ttl_expires_immediately(r: ValkeyTestClient) -> None:
@@ -1540,7 +1565,6 @@ def test_hsetex_ex_xx_fxx_set_only_if_key_exists_and_all_fields_exist(r: ValkeyT
     assert 0 == r.run("HEXISTS", "myhash", "f3")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hsetex_is_not_replicating_validation_arguments(r: ValkeyTestClient) -> None:
     """
     test {HSETEX is not replicating validation arguments} {
@@ -1572,28 +1596,23 @@ def test_hsetex_is_not_replicating_validation_arguments(r: ValkeyTestClient) -> 
     }
     """
     r.run("flushall")
-    # TODO: set repl attach_to_replication_stream
-    # TODO: set exp get_longer_then_long_expire_value PXAT
-    # TODO: r HSETEX myhash NX PXAT exp FIELDS 1 f1 v1
-    # TODO: r HSETEX myhash XX PXAT exp FIELDS 1 f1 v1
-    # TODO: r HSETEX myhash FNX PXAT exp FIELDS 1 f2 v2
-    # TODO: r HSETEX myhash FXX PXAT exp FIELDS 1 f2 v2
-    # TODO: r HSETEX myhash2 nx PXAT exp FIELDS 1 f1 v1
-    # TODO: r HSETEX myhash2 xx PXAT exp FIELDS 1 f1 v1
-    # TODO: r HSETEX myhash2 fnx PXAT exp FIELDS 1 f2 v2
-    # TODO: r HSETEX myhash2 fxx PXAT exp FIELDS 1 f2 v2
-    # TODO: assert_replication_stream repl subst {
-    #               {select *}
-    #               {hsetex myhash PXAT $exp FIELDS 1 f1 v1}
-    #               {hsetex myhash PXAT $exp FIELDS 1 f1 v1}
-    #               {hsetex myhash PXAT $exp FIELDS 1 f2 v2}
-    #               {hsetex myhash PXAT $exp FIELDS 1 f2 v2}
-    #               {hsetex myhash2 PXAT $exp FIELDS 1 f1 v1}
-    #               {hsetex myhash2 PXAT $exp FIELDS 1 f1 v1}
-    #               {hsetex myhash2 PXAT $exp FIELDS 1 f2 v2}
-    #               {hsetex myhash2 PXAT $exp FIELDS 1 f2 v2}
-    #           }
-    # TODO: close_replication_stream repl
+    repl = attach_to_replication_stream()
+    exp = get_longer_then_long_expire_value("PXAT")
+    r.run("HSETEX", "myhash", "NX", "PXAT", exp, "FIELDS", 1, "f1", "v1")
+    r.run("HSETEX", "myhash", "XX", "PXAT", exp, "FIELDS", 1, "f1", "v1")
+    r.run("HSETEX", "myhash", "FNX", "PXAT", exp, "FIELDS", 1, "f2", "v2")
+    r.run("HSETEX", "myhash", "FXX", "PXAT", exp, "FIELDS", 1, "f2", "v2")
+    r.run("HSETEX", "myhash2", "nx", "PXAT", exp, "FIELDS", 1, "f1", "v1")
+    r.run("HSETEX", "myhash2", "xx", "PXAT", exp, "FIELDS", 1, "f1", "v1")
+    r.run("HSETEX", "myhash2", "fnx", "PXAT", exp, "FIELDS", 1, "f2", "v2")
+    r.run("HSETEX", "myhash2", "fxx", "PXAT", exp, "FIELDS", 1, "f2", "v2")
+    assert_replication_stream(
+        repl,
+        subst(
+            "            {select *}            {hsetex myhash PXAT $exp FIELDS 1 f1 v1}            {hsetex myhash PXAT $exp FIELDS 1 f1 v1}            {hsetex myhash PXAT $exp FIELDS 1 f2 v2}            {hsetex myhash PXAT $exp FIELDS 1 f2 v2}            {hsetex myhash2 PXAT $exp FIELDS 1 f1 v1}            {hsetex myhash2 PXAT $exp FIELDS 1 f1 v1}            {hsetex myhash2 PXAT $exp FIELDS 1 f2 v2}            {hsetex myhash2 PXAT $exp FIELDS 1 f2 v2}        "
+        ),
+    )
+    close_replication_stream(repl)
 
 
 def test_hexpire_set_ttl_on_existing_field(r: ValkeyTestClient) -> None:
@@ -1819,7 +1838,7 @@ def test_hexpire_on_a_non_existent_field_should_not_create_field(r: ValkeyTestCl
 
 
 @pytest.mark.xfail(reason="not implemented")
-def test_hexpire_on_a_non_existent_field_should_not_issue_notifications(r: ValkeyTestClient) -> None:
+def test_hexpire_on_a_non_existent_field_should_not_issue_notifications(r: ValkeyTestClient, rd) -> None:
     """
     test {HEXPIRE on a non-existent field (should not issue notifications)} {
         r FLUSHALL
@@ -1837,12 +1856,12 @@ def test_hexpire_on_a_non_existent_field_should_not_issue_notifications(r: Valke
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "v1")
-    # TODO: set rd setup_single_keyspace_notification r
+    rd = setup_single_keyspace_notification("r")
     r.run("HEXPIRE", "myhash", 1000, "FIELDS", 1, "f2")
     r.run("HEXPIRE", "myhash", 0, "FIELDS", 1, "f2")
     r.run("HSET", "dummy", "dummy", "dummy")
-    # TODO: assert_keyevent_patterns rd dummy hset
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
+    assert_keyevent_patterns(rd, "dummy", "hset")
+    assert 0 == get_keys_with_volatile_items("r")
     # TODO: $rd close
 
 
@@ -1995,7 +2014,7 @@ def test_hexpire_lt_condition_succeeds_when_field_has_no_ttl(r: ValkeyTestClient
 
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("HEXPIRE"), ("HPEXPIRE"), ("HEXPIREAT"), ("HPEXPIREAT")])
-def test_hsetex_command_0_or_past_time_works_correctly_with_1_field(r: ValkeyTestClient) -> None:
+def test_hsetex_command_0_or_past_time_works_correctly_with_1_field(r: ValkeyTestClient, command, rd) -> None:
     """
     test "HSETEX $command 0/past time works correctly with 1 field" {
         r FLUSHALL
@@ -2025,17 +2044,17 @@ def test_hsetex_command_0_or_past_time_works_correctly_with_1_field(r: ValkeyTes
     r.run("config", "resetstat")
     r.run("HSET", "myhash", "f1", "v1")
     assert 1 == r.run("HLEN", "myhash")
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
-    # TODO: assert_equal 1 get_keys r
-    # TODO: set rd setup_single_keyspace_notification r
-    # TODO: assert_equal {2} r $command myhash [get_past_zero_expire_value $command] FIELDS 1 f1
-    # TODO: assert_keyevent_patterns rd myhash hexpired del
+    assert 0 == get_keys_with_volatile_items("r")
+    assert 1 == get_keys("r")
+    rd = setup_single_keyspace_notification("r")
+    assert "2" == r.run(command, "myhash", get_past_zero_expire_value(command), "FIELDS", 1, "f1")
+    assert_keyevent_patterns(rd, "myhash", "hexpired", "del")
     assert -2 == r.run("HTTL", "myhash", "FIELDS", 1, "f1")
     assert 0 == r.run("HLEN", "myhash")
     assert 0 == r.run("EXISTS", "myhash")
-    # TODO: assert_equal 0 get_keys r
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
-    # TODO: assert_equal 1 info_field [r info stats] expired_fields
+    assert 0 == get_keys("r")
+    assert 0 == get_keys_with_volatile_items("r")
+    assert 1 == info_field(r.run("info", "stats"), "expired_fields")
     # TODO: $rd close
 
 
@@ -2076,7 +2095,6 @@ def test_httl_non_existent_key_returns_2(r: ValkeyTestClient) -> None:
     assert -2 == r.run("HTTL", "nokey", "FIELDS", 1, "field1")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hexpireat_set_absolute_expiry_on_field(r: ValkeyTestClient) -> None:
     """
     test {HEXPIREAT - set absolute expiry on field} {
@@ -2091,14 +2109,13 @@ def test_hexpireat_set_absolute_expiry_on_field(r: ValkeyTestClient) -> None:
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "field1", "hello")
-    # TODO: set now clock seconds
-    # TODO: set exp expr {$now + 30}
-    # TODO: r HEXPIREAT myhash exp FIELDS 1 field1
+    now = clock("seconds")
+    exp = expr("$now + 30")
+    r.run("HEXPIREAT", "myhash", exp, "FIELDS", 1, "field1")
     etime = r.run("HEXPIRETIME", "myhash", "FIELDS", 1, "field1")
-    # TODO: assert_equal exp etime
+    assert exp == etime
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hexpireat_timestamp_in_past_deletes_field_immediately(r: ValkeyTestClient) -> None:
     """
     test {HEXPIREAT - timestamp in past deletes field immediately} {
@@ -2112,13 +2129,12 @@ def test_hexpireat_timestamp_in_past_deletes_field_immediately(r: ValkeyTestClie
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "field1", "gone")
-    # TODO: set past expr {[clock seconds] - 1000}
-    # TODO: set res r HEXPIREAT myhash $past FIELDS 1 field1
-    # TODO: assert_equal {2} res
+    past = expr("[clock seconds] - 1000")
+    res = r.run("HEXPIREAT", "myhash", past, "FIELDS", 1, "field1")
+    assert "2" == res
     assert 0 == r.run("HEXISTS", "myhash", "field1")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hexpireat_set_ttl_on_multiple_fields_existing_non_existing(r: ValkeyTestClient) -> None:
     """
     test {HEXPIREAT - set TTL on multiple fields (existing + non-existing)} {
@@ -2131,12 +2147,11 @@ def test_hexpireat_set_ttl_on_multiple_fields_existing_non_existing(r: ValkeyTes
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "field1", "hello", "field2", "world")
-    # TODO: set exp expr {[clock seconds] + 10}
-    # TODO: set res r HEXPIREAT myhash $exp FIELDS 3 field1 field2 fieldX
-    # TODO: assert_equal {1 1 -2} res
+    exp = expr("[clock seconds] + 10")
+    res = r.run("HEXPIREAT", "myhash", exp, "FIELDS", 3, "field1", "field2", "fieldX")
+    assert "1 1 -2" == res
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hexpireat_nx_only_set_when_field_has_no_ttl(r: ValkeyTestClient) -> None:
     """
     test {HEXPIREAT NX - only set when field has no TTL} {
@@ -2153,15 +2168,14 @@ def test_hexpireat_nx_only_set_when_field_has_no_ttl(r: ValkeyTestClient) -> Non
     """
     r.run("FLUSHALL")
     r.run("HSETEX", "myhash", "EX", 100, "FIELDS", 1, "field1", "val")
-    # TODO: set exp expr {[clock seconds] + 100}
-    # TODO: set res r HEXPIREAT myhash $exp NX FIELDS 1 field1
-    # TODO: assert_equal {0} res
+    exp = expr("[clock seconds] + 100")
+    res = r.run("HEXPIREAT", "myhash", exp, "NX", "FIELDS", 1, "field1")
+    assert "0" == res
     r.run("HSET", "myhash", "field2", "val2")
-    # TODO: set res2 r HEXPIREAT myhash $exp NX FIELDS 1 field2
-    # TODO: assert_equal {1} res2
+    res2 = r.run("HEXPIREAT", "myhash", exp, "NX", "FIELDS", 1, "field2")
+    assert "1" == res2
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hexpireat_xx_only_set_when_field_has_ttl(r: ValkeyTestClient) -> None:
     """
     test {HEXPIREAT XX - only set when field has TTL} {
@@ -2176,14 +2190,13 @@ def test_hexpireat_xx_only_set_when_field_has_ttl(r: ValkeyTestClient) -> None:
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "field1", "val1", "field2", "val2")
-    # TODO: set exp1 expr {[clock seconds] + 20}
-    # TODO: r HEXPIREAT myhash exp1 FIELDS 1 field1
-    # TODO: set exp2 expr {[clock seconds] + 30}
-    # TODO: set res r HEXPIREAT myhash $exp2 XX FIELDS 2 field1 field2
-    # TODO: assert_equal {1 0} res
+    exp1 = expr("[clock seconds] + 20")
+    r.run("HEXPIREAT", "myhash", exp1, "FIELDS", 1, "field1")
+    exp2 = expr("[clock seconds] + 30")
+    res = r.run("HEXPIREAT", "myhash", exp2, "XX", "FIELDS", 2, "field1", "field2")
+    assert "1 0" == res
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hexpireat_gt_only_set_if_new_expiry_existing(r: ValkeyTestClient) -> None:
     """
     test {HEXPIREAT GT - only set if new expiry > existing} {
@@ -2203,16 +2216,15 @@ def test_hexpireat_gt_only_set_if_new_expiry_existing(r: ValkeyTestClient) -> No
     r.run("FLUSHALL")
     r.run("HSETEX", "myhash", "PX", 5000, "FIELDS", 1, "field1", "val1")
     time.sleep(10 / 1000)
-    # TODO: set now clock seconds
-    # TODO: set future expr {$now + 10}
-    # TODO: set res r HEXPIREAT myhash $future GT FIELDS 1 field1
-    # TODO: assert_equal {1} res
+    now = clock("seconds")
+    future = expr("$now + 10")
+    res = r.run("HEXPIREAT", "myhash", future, "GT", "FIELDS", 1, "field1")
+    assert "1" == res
     r.run("HSET", "myhash", "field2", "val2")
-    # TODO: set res2 r HEXPIREAT myhash $future GT FIELDS 1 field2
-    # TODO: assert_equal {0} res2
+    res2 = r.run("HEXPIREAT", "myhash", future, "GT", "FIELDS", 1, "field2")
+    assert "0" == res2
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hexpireat_lt_only_set_if_new_expiry_existing(r: ValkeyTestClient) -> None:
     """
     test {HEXPIREAT LT - only set if new expiry < existing} {
@@ -2231,16 +2243,15 @@ def test_hexpireat_lt_only_set_if_new_expiry_existing(r: ValkeyTestClient) -> No
     }
     """
     r.run("FLUSHALL")
-    # TODO: set now clock seconds
-    # TODO: set long_future_expiration expr {$now + 20000}
-    # TODO: set short_future_expiration expr {$now + 1000}
-    # TODO: r HSETEX myhash EX long _future_expiration FIELDS 1 field1 val1
-    # TODO: assert_equal {1} r HEXPIREAT myhash $short_future_expiration LT FIELDS 1 field1
+    now = clock("seconds")
+    long_future_expiration = expr("$now + 20000")
+    short_future_expiration = expr("$now + 1000")
+    r.run("HSETEX", "myhash", "EX", long_future_expiration, "FIELDS", 1, "field1", "val1")
+    assert "1" == r.run("HEXPIREAT", "myhash", short_future_expiration, "LT", "FIELDS", 1, "field1")
     r.run("HSET", "myhash", "field2", "val2")
-    # TODO: assert_equal {1} r HEXPIREAT myhash $short_future_expiration LT FIELDS 1 field2
+    assert "1" == r.run("HEXPIREAT", "myhash", short_future_expiration, "LT", "FIELDS", 1, "field2")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hexpireat_refresh_ttl_with_new_future_timestamp(r: ValkeyTestClient) -> None:
     """
     test {HEXPIREAT - refresh TTL with new future timestamp} {
@@ -2262,15 +2273,14 @@ def test_hexpireat_refresh_ttl_with_new_future_timestamp(r: ValkeyTestClient) ->
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "field1", "val1")
-    # TODO: set ts1 expr {[clock seconds] + 10}
-    # TODO: r HEXPIREAT myhash ts1 FIELDS 1 field1
-    # TODO: set ts2 expr {$ts1 + 5}
-    # TODO: r HEXPIREAT myhash ts2 FIELDS 1 field1
+    ts1 = expr("[clock seconds] + 10")
+    r.run("HEXPIREAT", "myhash", ts1, "FIELDS", 1, "field1")
+    ts2 = expr("$ts1 + 5")
+    r.run("HEXPIREAT", "myhash", ts2, "FIELDS", 1, "field1")
     actual = r.run("HEXPIRETIME", "myhash", "FIELDS", 1, "field1")
-    # TODO: assert_equal ts2 actual
+    assert ts2 == actual
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hexpireat_ttl_is_accurate_via_hexpiretime(r: ValkeyTestClient) -> None:
     """
     test {HEXPIREAT - TTL is accurate via HEXPIRETIME} {
@@ -2284,13 +2294,12 @@ def test_hexpireat_ttl_is_accurate_via_hexpiretime(r: ValkeyTestClient) -> None:
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "field1", "val1")
-    # TODO: set ts expr {[clock seconds] + 50}
-    # TODO: r HEXPIREAT myhash ts FIELDS 1 field1
+    ts = expr("[clock seconds] + 50")
+    r.run("HEXPIREAT", "myhash", ts, "FIELDS", 1, "field1")
     returned = r.run("HEXPIRETIME", "myhash", "FIELDS", 1, "field1")
-    # TODO: assert_equal ts returned
+    assert ts == returned
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hexpireat_conflicting_options_error(r: ValkeyTestClient) -> None:
     """
     test {HEXPIREAT - conflicting options error} {
@@ -2303,13 +2312,14 @@ def test_hexpireat_conflicting_options_error(r: ValkeyTestClient) -> None:
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "field1", "val")
-    # TODO: set ts expr {[clock seconds] + 5}
-    # TODO: catch {r HEXPIREAT myhash $ts NX XX FIELDS 1 field1} e
-    # TODO: set e
-    assert False
+    ts = expr("[clock seconds] + 5")
+    try:
+        e = r.run("HEXPIREAT", "myhash", ts, "NX", "XX", "FIELDS", 1, "field1")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR NX and XX, GT or LT options at the same time are not compatible"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hexpireat_missing_fields_keyword(r: ValkeyTestClient) -> None:
     """
     test {HEXPIREAT - missing FIELDS keyword} {
@@ -2322,13 +2332,14 @@ def test_hexpireat_missing_fields_keyword(r: ValkeyTestClient) -> None:
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "field1", "val")
-    # TODO: set ts expr {[clock seconds] + 5}
-    # TODO: catch {r HEXPIREAT myhash $ts} e
-    # TODO: set e
-    assert False
+    ts = expr("[clock seconds] + 5")
+    try:
+        e = r.run("HEXPIREAT", "myhash", ts)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR wrong number of arguments for 'hexpireat' command"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hexpireat_no_fields_after_fields(r: ValkeyTestClient) -> None:
     """
     test {HEXPIREAT - no fields after FIELDS} {
@@ -2341,10 +2352,12 @@ def test_hexpireat_no_fields_after_fields(r: ValkeyTestClient) -> None:
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "field1", "val")
-    # TODO: set ts expr {[clock seconds] + 5}
-    # TODO: catch {r HEXPIREAT myhash $ts FIELDS 0} e
-    # TODO: set e
-    assert False
+    ts = expr("[clock seconds] + 5")
+    try:
+        e = r.run("HEXPIREAT", "myhash", ts, "FIELDS", 0)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR wrong number of arguments for 'hexpireat' command"
 
 
 def test_hexpireat_non_integer_timestamp(r: ValkeyTestClient) -> None:
@@ -2365,7 +2378,6 @@ def test_hexpireat_non_integer_timestamp(r: ValkeyTestClient) -> None:
     assert e == "ERR value is not an integer or out of range"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hexpireat_non_existing_key_returns_2(r: ValkeyTestClient) -> None:
     """
     test {HEXPIREAT - non-existing key returns -2} {
@@ -2376,12 +2388,11 @@ def test_hexpireat_non_existing_key_returns_2(r: ValkeyTestClient) -> None:
     }
     """
     r.run("FLUSHALL")
-    # TODO: set ts expr {[clock seconds] + 5}
-    # TODO: set res r HEXPIREAT nokey $ts FIELDS 1 field1
-    # TODO: assert_equal {-2} res
+    ts = expr("[clock seconds] + 5")
+    res = r.run("HEXPIREAT", "nokey", ts, "FIELDS", 1, "field1")
+    assert "-2" == res
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hexpiretime_returns_expiry_timestamp_for_single_field_with_ttl(r: ValkeyTestClient) -> None:
     """
     test {HEXPIRETIME - returns expiry timestamp for single field with TTL} {
@@ -2395,10 +2406,10 @@ def test_hexpiretime_returns_expiry_timestamp_for_single_field_with_ttl(r: Valke
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "field1", "val")
-    # TODO: set ts expr {[clock seconds] + 3}
-    # TODO: r HEXPIREAT myhash ts FIELDS 1 field1
+    ts = expr("[clock seconds] + 3")
+    r.run("HEXPIREAT", "myhash", ts, "FIELDS", 1, "field1")
     out = r.run("HEXPIRETIME", "myhash", "FIELDS", 1, "field1")
-    # TODO: assert_equal ts out
+    assert ts == out
 
 
 def test_hexpiretime_field_has_no_ttl_returns_1(r: ValkeyTestClient) -> None:
@@ -2444,7 +2455,6 @@ def test_hexpiretime_key_does_not_exist_returns_2(r: ValkeyTestClient) -> None:
     assert -2 == out
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hexpiretime_multiple_fields_mixed_cases(r: ValkeyTestClient) -> None:
     """
     test {HEXPIRETIME - multiple fields mixed cases} {
@@ -2459,10 +2469,10 @@ def test_hexpiretime_multiple_fields_mixed_cases(r: ValkeyTestClient) -> None:
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "a", "f2", "b")
-    # TODO: set now clock seconds
-    # TODO: r HEXPIREAT myhash expr {$now + 100} FIELDS 1 f1
+    now = clock("seconds")
+    r.run("HEXPIREAT", "myhash", expr("$now + 100"), "FIELDS", 1, "f1")
     out = r.run("HEXPIRETIME", "myhash", "FIELDS", 3, "f1", "f2", "f3")
-    # TODO: assert_equal list [expr {$now + 100}] -1 -2 out
+    assert list_(expr("$now + 100"), -1, -2) == out
 
 
 def test_hexpiretime_no_fields_keyword(r: ValkeyTestClient) -> None:
@@ -2537,7 +2547,6 @@ def test_hexpiretime_wrong_type_key(r: ValkeyTestClient) -> None:
     assert e == "WRONGTYPE Operation against a key holding the wrong kind of value"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hpexpireat_set_absolute_expiry_with_ms_precision(r: ValkeyTestClient) -> None:
     """
     test {HPEXPIREAT - set absolute expiry with ms precision} {
@@ -2552,14 +2561,13 @@ def test_hpexpireat_set_absolute_expiry_with_ms_precision(r: ValkeyTestClient) -
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "field1", "val")
-    # TODO: set now clock milliseconds
-    # TODO: set future expr {$now + 123456789}
-    # TODO: r HPEXPIREAT myhash future FIELDS 1 field1
+    now = clock("milliseconds")
+    future = expr("$now + 123456789")
+    r.run("HPEXPIREAT", "myhash", future, "FIELDS", 1, "field1")
     t = r.run("HPEXPIRETIME", "myhash", "FIELDS", 1, "field1")
-    # TODO: assert_equal future t
+    assert future == t
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hpexpireat_past_timestamp_deletes_field_immediately(r: ValkeyTestClient) -> None:
     """
     test {HPEXPIREAT - past timestamp deletes field immediately} {
@@ -2573,13 +2581,12 @@ def test_hpexpireat_past_timestamp_deletes_field_immediately(r: ValkeyTestClient
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "field1", "val")
-    # TODO: set past expr {[clock milliseconds] - 10000}
-    # TODO: set res r HPEXPIREAT myhash $past FIELDS 1 field1
-    # TODO: assert_equal {2} res
+    past = expr("[clock milliseconds] - 10000")
+    res = r.run("HPEXPIREAT", "myhash", past, "FIELDS", 1, "field1")
+    assert "2" == res
     assert 0 == r.run("HEXISTS", "myhash", "field1")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hpexpireat_non_existent_key_returns_2(r: ValkeyTestClient) -> None:
     """
     test {HPEXPIREAT - non-existent key returns -2} {
@@ -2590,12 +2597,11 @@ def test_hpexpireat_non_existent_key_returns_2(r: ValkeyTestClient) -> None:
     }
     """
     r.run("FLUSHALL")
-    # TODO: set ts expr {[clock milliseconds] + 1000}
-    # TODO: set res r HPEXPIREAT nokey $ts FIELDS 1 field1
-    # TODO: assert_equal {-2} res
+    ts = expr("[clock milliseconds] + 1000")
+    res = r.run("HPEXPIREAT", "nokey", ts, "FIELDS", 1, "field1")
+    assert "-2" == res
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hpexpireat_mixed_fields(r: ValkeyTestClient) -> None:
     """
     test {HPEXPIREAT - mixed fields} {
@@ -2608,12 +2614,11 @@ def test_hpexpireat_mixed_fields(r: ValkeyTestClient) -> None:
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "a", "f2", "b")
-    # TODO: set ts expr {[clock milliseconds] + 200000}
-    # TODO: set res r HPEXPIREAT myhash $ts FIELDS 3 f1 f2 fX
-    # TODO: assert_equal {1 1 -2} res
+    ts = expr("[clock milliseconds] + 200000")
+    res = r.run("HPEXPIREAT", "myhash", ts, "FIELDS", 3, "f1", "f2", "fX")
+    assert "1 1 -2" == res
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hpexpireat_gt_and_lt_options_with_success_and_failure_cases(r: ValkeyTestClient) -> None:
     """
     test {HPEXPIREAT - GT and LT options with success and failure cases} {
@@ -2648,19 +2653,19 @@ def test_hpexpireat_gt_and_lt_options_with_success_and_failure_cases(r: ValkeyTe
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "a")
-    # TODO: set now clock milliseconds
-    # TODO: set ts1 expr {$now + 10000}
-    # TODO: set ts2 expr {$now + 20000}
-    # TODO: r HPEXPIREAT myhash ts1 FIELDS 1 f1
-    # TODO: set res_gt_pass r HPEXPIREAT myhash $ts2 GT FIELDS 1 f1
-    # TODO: assert_equal {1} res _gt_pass
-    # TODO: set res_gt_fail r HPEXPIREAT myhash $ts1 GT FIELDS 1 f1
-    # TODO: assert_equal {0} res _gt_fail
-    # TODO: set res_lt_fail r HPEXPIREAT myhash $ts2 LT FIELDS 1 f1
-    # TODO: assert_equal {0} res _lt_fail
-    # TODO: set ts0 expr {$now + 5000}
-    # TODO: set res_lt_pass r HPEXPIREAT myhash $ts0 LT FIELDS 1 f1
-    # TODO: assert_equal {1} res _lt_pass
+    now = clock("milliseconds")
+    ts1 = expr("$now + 10000")
+    ts2 = expr("$now + 20000")
+    r.run("HPEXPIREAT", "myhash", ts1, "FIELDS", 1, "f1")
+    res_gt_pass = r.run("HPEXPIREAT", "myhash", ts2, "GT", "FIELDS", 1, "f1")
+    assert "1" == res_gt_pass
+    res_gt_fail = r.run("HPEXPIREAT", "myhash", ts1, "GT", "FIELDS", 1, "f1")
+    assert "0" == res_gt_fail
+    res_lt_fail = r.run("HPEXPIREAT", "myhash", ts2, "LT", "FIELDS", 1, "f1")
+    assert "0" == res_lt_fail
+    ts0 = expr("$now + 5000")
+    res_lt_pass = r.run("HPEXPIREAT", "myhash", ts0, "LT", "FIELDS", 1, "f1")
+    assert "1" == res_lt_pass
 
 
 def test_hpexpireat_invalid_inputs(r: ValkeyTestClient) -> None:
@@ -2689,7 +2694,6 @@ def test_hpexpireat_invalid_inputs(r: ValkeyTestClient) -> None:
     assert fnmatch(str(e2), "ERR NX and XX, GT or LT options at the same time are not compatible")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hpexpiretime_check_with_multiple_fields(r: ValkeyTestClient) -> None:
     """
     test {HPEXPIRETIME - check with multiple fields} {
@@ -2717,11 +2721,11 @@ def test_hpexpiretime_check_with_multiple_fields(r: ValkeyTestClient) -> None:
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "v1", "f2", "v2")
-    # TODO: set ts expr {[clock milliseconds] + 1000}
-    # TODO: r HPEXPIREAT myhash ts FIELDS 1 f1
+    ts = expr("[clock milliseconds] + 1000")
+    r.run("HPEXPIREAT", "myhash", ts, "FIELDS", 1, "f1")
     result = r.run("HPEXPIRETIME", "myhash", "FIELDS", 3, "f1", "f2", "f3")
     assert len(result) == 3
-    # TODO: assert_equal ts lindex $result 0
+    assert ts == result[0]
     assert -1 == result[1]
     assert -2 == result[2]
 
@@ -2763,7 +2767,6 @@ def test_hpersist_field_exists_but_no_expiration(r: ValkeyTestClient) -> None:
     assert "-1" == r.run("hpersist", "myhash", "FIELDS", 1, "field1")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hpersist_field_exists_with_expiration(r: ValkeyTestClient) -> None:
     """
     test "HPERSIST - field exists with expiration" {
@@ -2778,7 +2781,7 @@ def test_hpersist_field_exists_with_expiration(r: ValkeyTestClient) -> None:
     r.run("FLUSHALL")
     r.run("hset", "myhash", "field1", "value1")
     r.run("hexpire", "myhash", 600, "FIELDS", 1, "field1")
-    # TODO: assert_morethan r httl myhash FIELDS 1 field1 0
+    assert_morethan(r.run("httl", "myhash", "FIELDS", 1, "field1"), 0)
     assert "1" == r.run("hpersist", "myhash", "FIELDS", 1, "field1")
     assert "-1" == r.run("httl", "myhash", "FIELDS", 1, "field1")
 
@@ -2804,7 +2807,6 @@ def test_hpersist_multiple_fields_with_mixed_state(r: ValkeyTestClient) -> None:
     assert "1 -1 -2" == r.run("hpersist", "myhash", "FIELDS", 3, "f1", "f2", "f4")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hpersist_then_hexpire_check_new_ttl_is_set(r: ValkeyTestClient) -> None:
     """
     test {HPERSIST, then HEXPIRE, check new TTL is set} {
@@ -2821,10 +2823,9 @@ def test_hpersist_then_hexpire_check_new_ttl_is_set(r: ValkeyTestClient) -> None
     r.run("HEXPIRE", "myhash", 1000, "FIELDS", 1, "f1")
     assert 1 == r.run("HPERSIST", "myhash", "FIELDS", 1, "f1")
     r.run("HEXPIRE", "myhash", 2000, "FIELDS", 1, "f1")
-    # TODO: assert_morethan r HTTL myhash FIELDS 1 f1 1000
+    assert_morethan(r.run("HTTL", "myhash", "FIELDS", 1, "f1"), 1000)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hrandfield_case_1_negative_count(r: ValkeyTestClient) -> None:
     """
     test "HRANDFIELD - CASE 1: negative count" {
@@ -2850,11 +2851,13 @@ def test_hrandfield_case_1_negative_count(r: ValkeyTestClient) -> None:
     assert "1" == r.run(
         "HSETEX", "myhash", "PX", 1, "fields", 5, "f1", "v1", "f2", "v2", "f3", "v3", "f4", "v4", "f5", "v5"
     )
-    # TODO: wait_for_condition 100 100 {
-    #       [r HGETALL myhash] eq {}
-    #   } else {
-    #       fail "Hash is showing expired elements"
-    #   }
+    wait_for_condition(
+        100,
+        100,
+        "            [r HGETALL myhash] eq {}\n        ",
+        "else",
+        '            fail "Hash is showing expired elements"\n        ',
+    )
     assert fnmatch(str(r.run("hrandfield", "myhash", 1)), "")
     assert "1" == r.run("HSET", "myhash", "f5", "v5")
     i = 1
@@ -2863,7 +2866,6 @@ def test_hrandfield_case_1_negative_count(r: ValkeyTestClient) -> None:
         i += 1
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hrandfield_case_2_the_number_of_requested_elements_is_greater_than_the_number_of_elements_inside_the_hash(
     r: ValkeyTestClient,
 ) -> None:
@@ -2895,23 +2897,25 @@ def test_hrandfield_case_2_the_number_of_requested_elements_is_greater_than_the_
     assert "1" == r.run(
         "HSETEX", "myhash", "PX", 1, "fields", 5, "f1", "v1", "f2", "v2", "f3", "v3", "f4", "v4", "f5", "v5"
     )
-    # TODO: wait_for_condition 100 100 {
-    #       [r HGETALL myhash] eq {}
-    #   } else {
-    #       fail "Hash is showing expired elements"
-    #   }
+    wait_for_condition(
+        100,
+        100,
+        "            [r HGETALL myhash] eq {}\n        ",
+        "else",
+        '            fail "Hash is showing expired elements"\n        ',
+    )
     assert fnmatch(str(r.run("hrandfield", "myhash", 10)), "")
     assert "3" == r.run("HSET", "myhash", "f5", "v5", "f6", "v6", "f7", "v7")
-    # TODO: for {set i 1} {$i <= 50} {incr i} {
-    #       set result [r hrandfield myhash 10]
-    #       assert_equal 3 [llength [split $result]]
-    #       assert_match {*f5*} $result
-    #       assert_match {*f6*} $result
-    #       assert_match {*f7*} $result
-    #   }
+    i = 1
+    while i <= 50:
+        result = r.run("hrandfield", "myhash", 10)
+        assert 3 == len(split(result))
+        assert fnmatch(str(result), "*f5*")
+        assert fnmatch(str(result), "*f6*")
+        assert fnmatch(str(result), "*f7*")
+        i += 1
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hrandfield_case_3_the_number_of_elements_inside_the_hash_is_not_greater_than_3_times_the_number_of_requested_elements(
     r: ValkeyTestClient,
 ) -> None:
@@ -2944,24 +2948,26 @@ def test_hrandfield_case_3_the_number_of_elements_inside_the_hash_is_not_greater
     assert "1" == r.run(
         "HSETEX", "myhash", "PX", 1, "fields", 5, "f1", "v1", "f2", "v2", "f3", "v3", "f4", "v4", "f5", "v5"
     )
-    # TODO: wait_for_condition 100 100 {
-    #       [r HGETALL myhash] eq {}
-    #   } else {
-    #       fail "Hash is showing expired elements"
-    #   }
+    wait_for_condition(
+        100,
+        100,
+        "            [r HGETALL myhash] eq {}\n        ",
+        "else",
+        '            fail "Hash is showing expired elements"\n        ',
+    )
     assert fnmatch(str(r.run("hrandfield", "myhash", 4)), "")
     assert "4" == r.run("HSET", "myhash", "f5", "v5", "f6", "v6", "f7", "v7", "f8", "v8")
-    # TODO: for {set i 1} {$i <= 50} {incr i} {
-    #       set result [r hrandfield myhash 4]
-    #       assert_equal 4 [llength [split $result]]
-    #        assert_match {*f5*} $result
-    #        assert_match {*f6*} $result
-    #        assert_match {*f7*} $result
-    #        assert_match {*f8*} $result
-    #   }
+    i = 1
+    while i <= 50:
+        result = r.run("hrandfield", "myhash", 4)
+        assert 4 == len(split(result))
+        assert fnmatch(str(result), "*f5*")
+        assert fnmatch(str(result), "*f6*")
+        assert fnmatch(str(result), "*f7*")
+        assert fnmatch(str(result), "*f8*")
+        i += 1
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hrandfield_case_4_the_number_of_elements_inside_the_hash_is_greater_than_3_times_the_number_of_requested_elements(
     r: ValkeyTestClient,
 ) -> None:
@@ -3015,23 +3021,25 @@ def test_hrandfield_case_4_the_number_of_elements_inside_the_hash_is_greater_tha
         "f8",
         "v8",
     )
-    # TODO: wait_for_condition 100 100 {
-    #       [r HGETALL myhash] eq {}
-    #   } else {
-    #       fail "Hash is showing expired elements"
-    #   }
+    wait_for_condition(
+        100,
+        100,
+        "            [r HGETALL myhash] eq {}\n        ",
+        "else",
+        '            fail "Hash is showing expired elements"\n        ',
+    )
     assert fnmatch(str(r.run("hrandfield", "myhash", 2)), "")
     assert "3" == r.run("HSET", "myhash", "f8", "v8", "f9", "v9", "f10", "v10")
-    # TODO: for {set i 1} {$i <= 50} {incr i} {
-    #       set result [r hrandfield myhash 3]
-    #       assert_equal 3 [llength [split $result]]
-    #       assert_match {*f8*} $result
-    #       assert_match {*f9*} $result
-    #       assert_match {*f10*} $result
-    #   }
+    i = 1
+    while i <= 50:
+        result = r.run("hrandfield", "myhash", 3)
+        assert 3 == len(split(result))
+        assert fnmatch(str(result), "*f8*")
+        assert fnmatch(str(result), "*f9*")
+        assert fnmatch(str(result), "*f10*")
+        i += 1
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hrandfield_returns_null_response_when_all_fields_are_expired(r: ValkeyTestClient) -> None:
     """
     test "HRANDFIELD - returns null response when all fields are expired" {
@@ -3050,18 +3058,19 @@ def test_hrandfield_returns_null_response_when_all_fields_are_expired(r: ValkeyT
     r.run("FLUSHALL")
     r.run("DEBUG", "SET-ACTIVE-EXPIRE", 0)
     assert "1" == r.run("HSETEX", "myhash", "PX", 1, "fields", 2, "f1", "v1", "f2", "v2")
-    # TODO: wait_for_condition 100 100 {
-    #       [r HGETALL myhash] eq {}
-    #   } else {
-    #       fail "Hash is showing expired elements"
-    #   }
+    wait_for_condition(
+        100,
+        100,
+        "            [r HGETALL myhash] eq {}\n        ",
+        "else",
+        '            fail "Hash is showing expired elements"\n        ',
+    )
     assert "" == r.run("hrandfield", "myhash2")
     assert r.run("DEBUG", "SET-ACTIVE-EXPIRE", 1) == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd"], [("RENAME"), ("RESTORE")])
-def test_cmd_preserves_field_ttls(r: ValkeyTestClient) -> None:
+def test_cmd_preserves_field_ttls(r: ValkeyTestClient, cmd) -> None:
     """
     test "$cmd Preserves Field TTLs" {
         r FLUSHALL
@@ -3110,32 +3119,30 @@ def test_cmd_preserves_field_ttls(r: ValkeyTestClient) -> None:
     r.run("HEXPIRE", "myhash{t}", 200, "FIELDS", 1, "f1")
     mem_before = r.run("MEMORY", "USAGE", "myhash{t}")
     assert "v1 v2" == r.run("HMGET", "myhash{t}", "f1", "f2")
-    # TODO: assert_morethan r HTTL myhash{t} FIELDS 1 f1 100
+    assert_morethan(r.run("HTTL", "myhash{t}", "FIELDS", 1, "f1"), 100)
     assert -1 == r.run("HTTL", "myhash{t}", "FIELDS", 1, "f2")
     assert 2 == r.run("HLEN", "myhash{t}")
-    # TODO: assert_equal 1 get_keys r
-    # TODO: assert_equal 1 get_keys_with_volatile_items r
-    # TODO: if {$cmd eq "RENAME"} {
-    #       r rename myhash{t} nwhash{t}
-    #       set newhash nwhash{t}
-    #   } elseif {$cmd eq "RESTORE"} {
-    #       set serialized [r DUMP myhash{t}]
-    #       r RESTORE rstrhs{t} 0 $serialized
-    #       set newhash rstrhs{t}
-    #   }
-    # TODO: set memory_after r MEMORY USAGE $newhash
-    # TODO: assert_equal "v1 v2" r HMGET $newhash f1 f2
-    # TODO: assert_morethan r HTTL $newhash FIELDS 1 f1 100
-    # TODO: assert_equal -1 r HTTL $newhash FIELDS 1 f2
-    # TODO: assert_equal 2 r HLEN $newhash
-    # TODO: if {$cmd eq "RESTORE"} {
-    #       assert_equal 2 [get_keys r]
-    #       assert_equal 2 [get_keys_with_volatile_items r]
-    #   } else {
-    #       assert_equal 1 [get_keys r]
-    #       assert_equal 1 [get_keys_with_volatile_items r]
-    #   }
-    # TODO: assert_equal mem _before memory _after
+    assert 1 == get_keys("r")
+    assert 1 == get_keys_with_volatile_items("r")
+    if cmd == "RENAME":
+        r.run("rename", "myhash{t}", "nwhash{t}")
+        newhash = "nwhash{t}"
+    elif cmd == "RESTORE":
+        serialized = r.run("DUMP", "myhash{t}")
+        r.run("RESTORE", "rstrhs{t}", 0, serialized)
+        newhash = "rstrhs{t}"
+    memory_after = r.run("MEMORY", "USAGE", newhash)
+    assert "v1 v2" == r.run("HMGET", newhash, "f1", "f2")
+    assert_morethan(r.run("HTTL", newhash, "FIELDS", 1, "f1"), 100)
+    assert -1 == r.run("HTTL", newhash, "FIELDS", 1, "f2")
+    assert 2 == r.run("HLEN", newhash)
+    if cmd == "RESTORE":
+        assert 2 == get_keys("r")
+        assert 2 == get_keys_with_volatile_items("r")
+    else:
+        assert 1 == get_keys("r")
+        assert 1 == get_keys_with_volatile_items("r")
+    assert mem_before == memory_after
 
 
 def test_copy_preserves_ttls(r: ValkeyTestClient) -> None:
@@ -3176,7 +3183,6 @@ def test_copy_preserves_ttls(r: ValkeyTestClient) -> None:
     assert r.run("HEXPIRETIME", "myhash{t}", "FIELDS", 1, "f4") == r.run("HEXPIRETIME", "nwhash{t}", "FIELDS", 1, "f4")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hash_encoding_transitions_with_ttl_add_ttl_to_existing_fields(r: ValkeyTestClient) -> None:
     """
     test {Hash Encoding Transitions with TTL - Add TTL to Existing Fields} {
@@ -3207,11 +3213,11 @@ def test_hash_encoding_transitions_with_ttl_add_ttl_to_existing_fields(r: Valkey
     r.run("flushall")
     r.run("DEBUG", "SET-ACTIVE-EXPIRE", 0)
     r.run("HSET", "myhash", "f1", "v1", "f2", "v2")
-    # TODO: set "listpack" r OBJECT ENCODING myhash
+    set_("listpack", r.run("OBJECT", "ENCODING", "myhash"))
     r.run("HEXPIRE", "myhash", 300, "FIELDS", 1, "f1")
-    # TODO: set "hashtable" r OBJECT ENCODING myhash
+    set_("hashtable", r.run("OBJECT", "ENCODING", "myhash"))
     assert "v1 v2" == r.run("HMGET", "myhash", "f1", "f2")
-    # TODO: assert_morethan r HTTL myhash FIELDS 1 f1 100
+    assert_morethan(r.run("HTTL", "myhash", "FIELDS", 1, "f1"), 100)
     assert -1 == r.run("HTTL", "myhash", "FIELDS", 1, "f2")
     assert r.run("DEBUG", "SET-ACTIVE-EXPIRE", 1) == "OK"
 
@@ -3257,22 +3263,18 @@ def test_hash_encoding_transitions_with_ttl_create_new_fields_with_ttl(r: Valkey
     r.run("flushall")
     r.run("DEBUG", "SET-ACTIVE-EXPIRE", 0)
     r.run("HSET", "myhash", "f1", "v1", "f2", "v2")
-    # TODO: set "listpack" r OBJECT ENCODING myhash
-    # TODO: for {set i 3} {$i <= 600} {incr i} {
-    #       lappend pairs "f$i" "v$i"
-    #   }
+    set_("listpack", r.run("OBJECT", "ENCODING", "myhash"))
+    for_("set i 3", "$i <= 600", "incr i", '            lappend pairs "f$i" "v$i"\n        ')
     # TODO: r HSET myhash {*} pairs
-    # TODO: set expire_time get_long_expire_value HEXPIREAT
-    # TODO: r HEXPIREAT myhash expire _time FIELDS 5 f1 f10 f100 f200 f300
-    # TODO: set "hashtable" r OBJECT ENCODING myhash
-    # TODO: for {set i 1} {$i <= 600} {incr i} {
-    #       assert_equal "v$i" [r HGET myhash "f$i"]
-    #       if {$i == 1 || $i == 10 || $i == 100 || $i == 200 || $i == 300} {
-    #           assert_equal [r HEXPIRETIME myhash FIELDS 1 "f$i"] $expire_time
-    #       } else {
-    #           assert_equal [r HTTL myhash FIELDS 1 "f$i"] -1
-    #       }
-    #   }
+    expire_time = get_long_expire_value("HEXPIREAT")
+    r.run("HEXPIREAT", "myhash", expire_time, "FIELDS", 5, "f1", "f10", "f100", "f200", "f300")
+    set_("hashtable", r.run("OBJECT", "ENCODING", "myhash"))
+    for_(
+        "set i 1",
+        "$i <= 600",
+        "incr i",
+        '            assert_equal "v$i" [r HGET myhash "f$i"]\n            if {$i == 1 || $i == 10 || $i == 100 || $i == 200 || $i == 300} {\n                assert_equal [r HEXPIRETIME myhash FIELDS 1 "f$i"] $expire_time\n            } else {\n                assert_equal [r HTTL myhash FIELDS 1 "f$i"] -1\n            }\n        ',
+    )
     assert r.run("DEBUG", "SET-ACTIVE-EXPIRE", 1) == "OK"
 
 
@@ -3307,7 +3309,6 @@ def test_hgetall_skips_expired_fields(r: ValkeyTestClient) -> None:
     assert r.run("DEBUG", "SET-ACTIVE-EXPIRE", 1) == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hscan_skips_expired_fields(r: ValkeyTestClient) -> None:
     """
     test {HSCAN skips expired fields} {
@@ -3350,20 +3351,16 @@ def test_hscan_skips_expired_fields(r: ValkeyTestClient) -> None:
     time.sleep(10 / 1000)
     cursor = 0
     allfields = ""
-    # TODO: while {1} {
-    #       set res [r HSCAN myhash $cursor]
-    #       set cursor [lindex $res 0]
-    #       set kvs [lindex $res 1]
-    #       lappend allfields {*}$kvs
-    #       if {$cursor eq "0"} break
-    #   }
-    # TODO: set fieldnames lmap {k v} $allfields { set k }
-    # TODO: set fieldnames_sorted lsort $fieldnames
-    # TODO: assert_equal {persistent1 persistent2} fieldnames _sorted
+    while_(
+        "1",
+        '            set res [r HSCAN myhash $cursor]\n            set cursor [lindex $res 0]\n            set kvs [lindex $res 1]\n            lappend allfields {*}$kvs\n            if {$cursor eq "0"} break\n        ',
+    )
+    fieldnames = lmap("k v", allfields, " set k ")
+    fieldnames_sorted = lsort(fieldnames)
+    assert "persistent1 persistent2" == fieldnames_sorted
     assert r.run("DEBUG", "SET-ACTIVE-EXPIRE", 1) == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_move_preserves_field_ttls(r: ValkeyTestClient) -> None:
     """
     test {MOVE preserves field TTLs} {
@@ -3390,14 +3387,13 @@ def test_move_preserves_field_ttls(r: ValkeyTestClient) -> None:
     r.run("SELECT", 0)
     r.run("HSETEX", "myhash", "PX", 50000, "FIELDS", 1, "field1", "val1")
     original_ttl = r.run("HPTTL", "myhash", "FIELDS", 1, "field1")
-    # TODO: assert {$original_ttl > 0}
+    assert original_ttl > 0
     assert 1 == r.run("MOVE", "myhash", 1)
     r.run("SELECT", 1)
     moved_ttl = r.run("HPTTL", "myhash", "FIELDS", 1, "field1")
-    # TODO: assert {$moved_ttl > 0 && $moved_ttl <= $original_ttl}
+    assert (moved_ttl > 0) and (moved_ttl <= original_ttl)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hset_overwrite_expired_field_without_ttl_clears_expiration(r: ValkeyTestClient) -> None:
     """
     test {HSET - overwrite expired field without TTL clears expiration} {
@@ -3434,11 +3430,13 @@ def test_hset_overwrite_expired_field_without_ttl_clears_expiration(r: ValkeyTes
     r.run("FLUSHALL")
     r.run("DEBUG", "SET-ACTIVE-EXPIRE", 0)
     r.run("HSETEX", "myhash", "PX", 10, "FIELDS", 1, "field1", "oldval")
-    # TODO: wait_for_condition 100 100 {
-    #       [r HTTL myhash FIELDS 1 field1] eq "-2"
-    #   } else {
-    #       fail "hash value was not expired after timeout"
-    #   }
+    wait_for_condition(
+        100,
+        100,
+        '            [r HTTL myhash FIELDS 1 field1] eq "-2"\n        ',
+        "else",
+        '            fail "hash value was not expired after timeout"\n        ',
+    )
     assert 1 == r.run("HLEN", "myhash")
     r.run("HSET", "myhash", "field1", "newval")
     ttl = r.run("HPTTL", "myhash", "FIELDS", 1, "field1")
@@ -3448,7 +3446,6 @@ def test_hset_overwrite_expired_field_without_ttl_clears_expiration(r: ValkeyTes
     assert r.run("DEBUG", "SET-ACTIVE-EXPIRE", 1) == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hincrby_on_expired_field(r: ValkeyTestClient) -> None:
     """
     test {HINCRBY - on expired field} {
@@ -3497,11 +3494,13 @@ def test_hincrby_on_expired_field(r: ValkeyTestClient) -> None:
     r.run("FLUSHALL")
     r.run("DEBUG", "SET-ACTIVE-EXPIRE", 0)
     r.run("HSETEX", "myhash", "PX", 10, "FIELDS", 1, "field1", 1)
-    # TODO: wait_for_condition 100 100 {
-    #       [r HTTL myhash FIELDS 1 field1] eq "-2"
-    #   } else {
-    #       fail "hash value was not expired after timeout"
-    #   }
+    wait_for_condition(
+        100,
+        100,
+        '            [r HTTL myhash FIELDS 1 field1] eq "-2"\n        ',
+        "else",
+        '            fail "hash value was not expired after timeout"\n        ',
+    )
     assert 1 == r.run("HLEN", "myhash")
     r.run("HINCRBY", "myhash", "field1", 1)
     assert 1 == r.run("HLEN", "myhash")
@@ -3509,15 +3508,14 @@ def test_hincrby_on_expired_field(r: ValkeyTestClient) -> None:
     assert -1 == ttl
     assert 1 == r.run("HGET", "myhash", "field1")
     assert 1 == r.run("HLEN", "myhash")
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
+    assert 0 == get_keys_with_volatile_items("r")
     assert 1 == r.run("HEXPIRE", "myhash", 100000000, "FIELDS", 1, "field1")
-    # TODO: assert_morethan r HPTTL myhash FIELDS 1 field1 0
+    assert_morethan(r.run("HPTTL", "myhash", "FIELDS", 1, "field1"), 0)
     assert 2 == r.run("HINCRBY", "myhash", "field1", 1)
-    # TODO: assert_morethan r HPTTL myhash FIELDS 1 field1 0
+    assert_morethan(r.run("HPTTL", "myhash", "FIELDS", 1, "field1"), 0)
     assert r.run("DEBUG", "SET-ACTIVE-EXPIRE", 1) == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hincrbyfloat_on_expired_field(r: ValkeyTestClient) -> None:
     """
     test {HINCRBYFLOAT - on expired field} {
@@ -3566,11 +3564,13 @@ def test_hincrbyfloat_on_expired_field(r: ValkeyTestClient) -> None:
     r.run("FLUSHALL")
     r.run("DEBUG", "SET-ACTIVE-EXPIRE", 0)
     r.run("HSETEX", "myhash", "PX", 10, "FIELDS", 1, "field1", 1)
-    # TODO: wait_for_condition 100 100 {
-    #       [r HTTL myhash FIELDS 1 field1] eq "-2"
-    #   } else {
-    #       fail "hash value was not expired after timeout"
-    #   }
+    wait_for_condition(
+        100,
+        100,
+        '            [r HTTL myhash FIELDS 1 field1] eq "-2"\n        ',
+        "else",
+        '            fail "hash value was not expired after timeout"\n        ',
+    )
     assert 1 == r.run("HLEN", "myhash")
     r.run("HINCRBYFLOAT", "myhash", "field1", 1)
     assert 1 == r.run("HLEN", "myhash")
@@ -3578,11 +3578,11 @@ def test_hincrbyfloat_on_expired_field(r: ValkeyTestClient) -> None:
     assert -1 == ttl
     assert 1 == r.run("HGET", "myhash", "field1")
     assert 1 == r.run("HLEN", "myhash")
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
+    assert 0 == get_keys_with_volatile_items("r")
     assert 1 == r.run("HEXPIRE", "myhash", 100000000, "FIELDS", 1, "field1")
-    # TODO: assert_morethan r HPTTL myhash FIELDS 1 field1 0
+    assert_morethan(r.run("HPTTL", "myhash", "FIELDS", 1, "field1"), 0)
     assert 2 == r.run("HINCRBYFLOAT", "myhash", "field1", 1)
-    # TODO: assert_morethan r HPTTL myhash FIELDS 1 field1 0
+    assert_morethan(r.run("HPTTL", "myhash", "FIELDS", 1, "field1"), 0)
     assert r.run("DEBUG", "SET-ACTIVE-EXPIRE", 1) == "OK"
 
 
@@ -3627,7 +3627,6 @@ def test_hset_overwrite_unexpired_field_removes_ttl(r: ValkeyTestClient) -> None
     assert r.run("DEBUG", "SET-ACTIVE-EXPIRE", 1) == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hdel_expired_field_is_removed_without_triggering_expiry_logic(r: ValkeyTestClient) -> None:
     """
     test {HDEL - expired field is removed without triggering expiry logic} {
@@ -3671,19 +3670,18 @@ def test_hdel_expired_field_is_removed_without_triggering_expiry_logic(r: Valkey
     r.run("FLUSHALL")
     r.run("DEBUG", "SET-ACTIVE-EXPIRE", 0)
     before_info = r.run("INFO", "stats")
-    # TODO: set before info_field $before_info expired_fields
+    before = info_field(before_info, "expired_fields")
     r.run("HSETEX", "myhash", "PX", 10, "FIELDS", 1, "field1", "val1")
     time.sleep(20 / 1000)
     assert 1 == r.run("HLEN", "myhash")
     r.run("HDEL", "myhash", "field1")
     assert 0 == r.run("HEXISTS", "myhash", "field1")
     after_info = r.run("INFO", "stats")
-    # TODO: set after info_field $after_info expired_fields
-    # TODO: assert_equal before after
+    after = info_field(after_info, "expired_fields")
+    assert before == after
     assert r.run("DEBUG", "SET-ACTIVE-EXPIRE", 1) == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hdel_on_field_with_ttl_then_re_add_and_check_ttl_is_gone(r: ValkeyTestClient) -> None:
     """
     test {HDEL on field with TTL, then re-add and check TTL is gone} {
@@ -3699,13 +3697,12 @@ def test_hdel_on_field_with_ttl_then_re_add_and_check_ttl_is_gone(r: ValkeyTestC
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "v1")
     r.run("HEXPIRE", "myhash", 10000, "FIELDS", 1, "f1")
-    # TODO: assert_morethan r HTTL myhash FIELDS 1 f1 0
+    assert_morethan(r.run("HTTL", "myhash", "FIELDS", 1, "f1"), 0)
     r.run("HDEL", "myhash", "f1")
     r.run("HSET", "myhash", "f1", "v2")
     assert -1 == r.run("HTTL", "myhash", "FIELDS", 1, "f1")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_expired_fields_metric_increments_by_one_when_single_hash_field_expires(r: ValkeyTestClient) -> None:
     """
     test {expired_fields metric increments by one when single hash field expires} {
@@ -3727,17 +3724,17 @@ def test_expired_fields_metric_increments_by_one_when_single_hash_field_expires(
     }
     """
     r.run("FLUSHALL")
-    # TODO: set initial_expired info_field [r info stats] expired_fields
+    initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "myhash", "f1", "v1", "f2", "v2", "f3", "v3")
     assert 3 == r.run("HLEN", "myhash")
     r.run("HPEXPIRE", "myhash", 1, "FIELDS", 1, "f1")
-    # TODO: wait_for_active_expiry r myhash 2 initial _expired 1
+    wait_for_active_expiry("r", "myhash", 2, initial_expired, 1)
     assert "{} v2 v3" == r.run("HMGET", "myhash", "f1", "f2", "f3")
 
 
 @pytest.mark.xfail(reason="not implemented")
 def test_expired_fields_metric_tracks_multiple_field_expirations_with_keyspace_notifications(
-    r: ValkeyTestClient,
+    r: ValkeyTestClient, rd
 ) -> None:
     """
     test {expired_fields metric tracks multiple field expirations with keyspace notifications} {
@@ -3784,29 +3781,33 @@ def test_expired_fields_metric_tracks_multiple_field_expirations_with_keyspace_n
     }
     """
     r.run("FLUSHALL")
-    # TODO: set initial_expired info_field [r info stats] expired_fields
-    # TODO: set rd setup_single_keyspace_notification r
+    initial_expired = info_field(r.run("info", "stats"), "expired_fields")
+    rd = setup_single_keyspace_notification("r")
     r.run("HSET", "myhash", "f1", "v1", "f2", "v2", "f3", "v3", "f4", "v4", "f5", "v5")
     r.run("HEXPIRE", "myhash", 1000, "FIELDS", 1, "f1")
     r.run("HEXPIRE", "myhash", 2000, "FIELDS", 1, "f2")
     r.run("HPEXPIRE", "myhash", 1, "FIELDS", 1, "f1")
-    # TODO: wait_for_active_expiry r myhash 4 initial _expired 1
-    # TODO: assert_equal 1 expr {[info_field [r info stats] expired_fields] - $initial_expired}
+    wait_for_active_expiry("r", "myhash", 4, initial_expired, 1)
+    assert 1 == expr("[info_field [r info stats] expired_fields] - $initial_expired")
     assert "{} v2 v3 v4 v5" == r.run("HMGET", "myhash", "f1", "f2", "f3", "f4", "f5")
     r.run("HPERSIST", "myhash", "FIELDS", 1, "f2")
     assert -1 == r.run("HTTL", "myhash", "FIELDS", 1, "f2")
-    # TODO: assert_equal 1 expr {[info_field [r info stats] expired_fields] - $initial_expired}
+    assert 1 == expr("[info_field [r info stats] expired_fields] - $initial_expired")
     r.run("HPEXPIRE", "myhash", 1, "FIELDS", 2, "f4", "f5")
-    # TODO: wait_for_active_expiry r myhash 2 initial _expired 3
-    # TODO: assert_equal 3 expr {[info_field [r info stats] expired_fields] - $initial_expired}
+    wait_for_active_expiry("r", "myhash", 2, initial_expired, 3)
+    assert 3 == expr("[info_field [r info stats] expired_fields] - $initial_expired")
     assert "{} v2 v3 {} {}" == r.run("HMGET", "myhash", "f1", "f2", "f3", "f4", "f5")
-    # TODO: assert_keyevent_patterns rd myhash hset hexpire hexpire hexpire hexpired hpersist hexpire hexpired
+    assert_keyevent_patterns(
+        rd, "myhash", "hset", "hexpire", "hexpire", "hexpire", "hexpired", "hpersist", "hexpire", "hexpired"
+    )
     # TODO: $rd close
 
 
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["time_unit"], [("s,"), ("ms")])
-def test_key_ttl_expires_before_field_ttl_entire_hash_should_be_deleted_timeunit_time_unit(r: ValkeyTestClient) -> None:
+def test_key_ttl_expires_before_field_ttl_entire_hash_should_be_deleted_timeunit_time_unit(
+    r: ValkeyTestClient, time_unit, rd
+) -> None:
     """
     test "Key TTL expires before field TTL: entire hash should be deleted timeunit: $time_unit" {
         r FLUSHALL
@@ -3845,35 +3846,38 @@ def test_key_ttl_expires_before_field_ttl_entire_hash_should_be_deleted_timeunit
     r.run("FLUSHALL")
     r.run("DEBUG", "SET-ACTIVE-EXPIRE", 0)
     r.run("config", "set", "notify-keyspace-events", "KEA")
-    # TODO: set rd valkey_deferring_client
-    # TODO: assert_equal {1} psubscribe $rd __keyevent@*
+    rd = valkey_deferring_client()
+    assert "1" == psubscribe(rd, "__keyevent@*")
     r.run("HSET", "myhash", "f1", "v1", "f2", "v2", "f3", "v3")
-    # TODO: assert_equal 1 get_keys r
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
+    assert 1 == get_keys("r")
+    assert 0 == get_keys_with_volatile_items("r")
     assert 3 == r.run("HLEN", "myhash")
-    # TODO: if {$time_unit eq "s"} {
-    #       r HEXPIRE hash1 10 FIELDS 1 f1
-    #       r EXPIRE hash1 1
-    #   } else {
-    #       r HPEXPIRE myhash 10000 FIELDS 1 f1
-    #       r PEXPIRE myhash 1000
-    #   }
-    # TODO: wait_for_condition 100 100 {
-    #       [r EXISTS myhash] eq "0"
-    #   } else {
-    #       fail "myhash still exists"
-    #   }
+    if time_unit == "s":
+        r.run("HEXPIRE", "hash1", 10, "FIELDS", 1, "f1")
+        r.run("EXPIRE", "hash1", 1)
+    else:
+        r.run("HPEXPIRE", "myhash", 10000, "FIELDS", 1, "f1")
+        r.run("PEXPIRE", "myhash", 1000)
+    wait_for_condition(
+        100,
+        100,
+        '                [r EXISTS myhash] eq "0"\n            ',
+        "else",
+        '                fail "myhash still exists"\n            ',
+    )
     assert 0 == r.run("HLEN", "myhash")
-    # TODO: assert_equal 0 get_keys r
-    # TODO: assert_keyevent_patterns rd myhash hset hexpire expire
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
+    assert 0 == get_keys("r")
+    assert_keyevent_patterns(rd, "myhash", "hset", "hexpire", "expire")
+    assert 0 == get_keys_with_volatile_items("r")
     # TODO: $rd close
     assert r.run("DEBUG", "SET-ACTIVE-EXPIRE", 1) == "OK"
 
 
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["time_unit"], [("s,"), ("ms")])
-def test_field_ttl_expires_before_key_ttl_only_the_specific_field_should_expire_time_unit(r: ValkeyTestClient) -> None:
+def test_field_ttl_expires_before_key_ttl_only_the_specific_field_should_expire_time_unit(
+    r: ValkeyTestClient, time_unit, rd
+) -> None:
     """
     test "Field TTL expires before key TTL: only the specific field should expire: $time_unit" {
         r FLUSHALL
@@ -3912,36 +3916,38 @@ def test_field_ttl_expires_before_key_ttl_only_the_specific_field_should_expire_
     """
     r.run("FLUSHALL")
     r.run("DEBUG", "SET-ACTIVE-EXPIRE", 0)
-    # TODO: set rd valkey_deferring_client
-    # TODO: assert_equal {1} psubscribe $rd __keyevent@*
+    rd = valkey_deferring_client()
+    assert "1" == psubscribe(rd, "__keyevent@*")
     r.run("HSET", "myhash", "f1", "v1", "f2", "v2", "f3", "v3")
-    # TODO: assert_equal 1 get_keys r
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
+    assert 1 == get_keys("r")
+    assert 0 == get_keys_with_volatile_items("r")
     assert 3 == r.run("HLEN", "myhash")
-    # TODO: if {$time_unit eq "s"} {
-    #       r HEXPIRE myhash 1 FIELDS 1 f1
-    #       r EXPIRE myhash 10
-    #   } else {
-    #       r HPEXPIRE myhash 1000 FIELDS 1 f1
-    #       r PEXPIRE myhash 10000
-    #   }
-    # TODO: wait_for_condition 100 100 {
-    #       [r HGET myhash f1] eq ""
-    #   } else {
-    #       fail "f1 not expired"
-    #   }
-    # TODO: assert_equal 1 get_keys r
+    if time_unit == "s":
+        r.run("HEXPIRE", "myhash", 1, "FIELDS", 1, "f1")
+        r.run("EXPIRE", "myhash", 10)
+    else:
+        r.run("HPEXPIRE", "myhash", 1000, "FIELDS", 1, "f1")
+        r.run("PEXPIRE", "myhash", 10000)
+    wait_for_condition(
+        100,
+        100,
+        '                [r HGET myhash f1] eq ""\n            ',
+        "else",
+        '                fail "f1 not expired"\n            ',
+    )
+    assert 1 == get_keys("r")
     assert 1 == r.run("EXISTS", "myhash")
     assert "{} v2 v3" == r.run("HMGET", "myhash", "f1", "f2", "f3")
-    # TODO: assert_keyevent_patterns rd myhash hset hexpire
-    # TODO: assert_equal 1 get_keys_with_volatile_items r
+    assert_keyevent_patterns(rd, "myhash", "hset", "hexpire")
+    assert 1 == get_keys_with_volatile_items("r")
     # TODO: $rd close
     assert r.run("DEBUG", "SET-ACTIVE-EXPIRE", 1) == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["time_unit"], [("s,"), ("ms")])
-def test_key_and_field_ttl_expire_simultaneously_entire_hash_should_be_deleted_time_unit(r: ValkeyTestClient) -> None:
+def test_key_and_field_ttl_expire_simultaneously_entire_hash_should_be_deleted_time_unit(
+    r: ValkeyTestClient, time_unit
+) -> None:
     """
     test "Key and field TTL expire simultaneously: entire hash should be deleted: $time_unit" {
         r FLUSHALL
@@ -3978,31 +3984,31 @@ def test_key_and_field_ttl_expire_simultaneously_entire_hash_should_be_deleted_t
     r.run("FLUSHALL")
     r.run("DEBUG", "SET-ACTIVE-EXPIRE", 0)
     r.run("HSET", "myhash", "f1", "v1", "f2", "v2", "f3", "v3")
-    # TODO: assert_equal 1 get_keys r
+    assert 1 == get_keys("r")
     assert 3 == r.run("HLEN", "myhash")
-    # TODO: if {$time_unit eq "s"} {
-    #       set expire [expr {[clock seconds] + 1}]
-    #       r HEXPIREAT myhash $expire FIELDS 1 f1
-    #       r EXPIREAT myhash $expire
-    #   } else {
-    #       set expire [expr {[clock milliseconds] + 1000}]
-    #       r HPEXPIREAT myhash $expire FIELDS 1 f1
-    #       r PEXPIREAT myhash $expire
-    #   }
-    # TODO: wait_for_condition 100 100 {
-    #       [r EXISTS myhash] eq 0
-    #   } else {
-    #       fail "myhash still exist"
-    #   }
+    if time_unit == "s":
+        expire = expr("[clock seconds] + 1")
+        r.run("HEXPIREAT", "myhash", expire, "FIELDS", 1, "f1")
+        r.run("EXPIREAT", "myhash", expire)
+    else:
+        expire = expr("[clock milliseconds] + 1000")
+        r.run("HPEXPIREAT", "myhash", expire, "FIELDS", 1, "f1")
+        r.run("PEXPIREAT", "myhash", expire)
+    wait_for_condition(
+        100,
+        100,
+        "                [r EXISTS myhash] eq 0\n            ",
+        "else",
+        '                fail "myhash still exist"\n            ',
+    )
     assert "{} {} {}" == r.run("HMGET", "myhash", "f1", "f2", "f3")
-    # TODO: assert_equal 0 get_keys r
+    assert 0 == get_keys("r")
     assert 0 == r.run("HLEN", "myhash")
     assert r.run("DEBUG", "SET-ACTIVE-EXPIRE", 1) == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["time_unit"], [("s,"), ("ms")])
-def test_millisecond_or_seconds_precision(r: ValkeyTestClient) -> None:
+def test_millisecond_or_seconds_precision(r: ValkeyTestClient, time_unit) -> None:
     """
     test {Millisecond/Seconds precision} {
         r flushall
@@ -4026,19 +4032,17 @@ def test_millisecond_or_seconds_precision(r: ValkeyTestClient) -> None:
     r.run("flushall")
     r.run("DEBUG", "SET-ACTIVE-EXPIRE", 0)
     r.run("HSET", "myhash", "f1", "v1", "f2", "v2")
-    # TODO: if {$time_unit eq "s"} {
-    #       r HEXPIRE myhash 3 FIELDS 1 f1
-    #       r EXPIRE myhash 1
-    #   } else {
-    #       r HPEXPIRE myhash 3000 FIELDS 1 f1
-    #       r PEXPIRE myhash 1000
-    #   }
+    if time_unit == "s":
+        r.run("HEXPIRE", "myhash", 3, "FIELDS", 1, "f1")
+        r.run("EXPIRE", "myhash", 1)
+    else:
+        r.run("HPEXPIRE", "myhash", 3000, "FIELDS", 1, "f1")
+        r.run("PEXPIRE", "myhash", 1000)
     time.sleep(1500 / 1000)
     assert 0 == r.run("EXISTS", "myhash")
     assert r.run("DEBUG", "SET-ACTIVE-EXPIRE", 1) == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_ensure_that_key_level_persist_on_the_key_don_t_affect_field_ttl(r: ValkeyTestClient) -> None:
     """
     test {Ensure that key-level PERSIST on the key don't affect field TTL} {
@@ -4058,14 +4062,14 @@ def test_ensure_that_key_level_persist_on_the_key_don_t_affect_field_ttl(r: Valk
     """
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "v1", "f2", "v2")
-    # TODO: assert_equal 1 get_keys r
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
+    assert 1 == get_keys("r")
+    assert 0 == get_keys_with_volatile_items("r")
     assert 2 == r.run("HLEN", "myhash")
     r.run("HEXPIRE", "myhash", 100000, "FIELDS", 1, "f1")
     r.run("PERSIST", "myhash")
     assert -1 == r.run("TTL", "myhash")
-    # TODO: assert_morethan r HTTL myhash FIELDS 1 f1 0
-    # TODO: assert_equal 1 get_keys_with_volatile_items r
+    assert_morethan(r.run("HTTL", "myhash", "FIELDS", 1, "f1"), 0)
+    assert 1 == get_keys_with_volatile_items("r")
 
 
 def test_verify_error_when_hash_expire_commands_num_fields_is_not_provided(r: ValkeyTestClient) -> None:
@@ -4101,7 +4105,6 @@ def test_verify_error_when_hash_expire_commands_num_fields_is_not_provided(r: Va
 pytestmark = [pytest.mark.hash_ttl_info_external_skip]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hash_ttl_check_command_stats(r: ValkeyTestClient) -> None:
     """
     test {Hash ttl - check command stats} {
@@ -4148,33 +4151,29 @@ def test_hash_ttl_check_command_stats(r: ValkeyTestClient) -> None:
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "v1", "f2", "v2")
     r.run("HEXPIRE", "myhash", 10, "FIELDS", 1, "f1")
-    # TODO: r HEXPIREAT myhash expr {[clock seconds] + 10} FIELDS 1 f2
+    r.run("HEXPIREAT", "myhash", expr("[clock seconds] + 10"), "FIELDS", 1, "f2")
     r.run("HEXPIRETIME", "myhash", "FIELDS", 2, "f1", "f2")
     r.run("HPEXPIRE", "myhash", 1000, "FIELDS", 1, "f1")
-    # TODO: r HPEXPIREAT myhash expr {[clock milliseconds] + 2000} FIELDS 1 f2
+    r.run("HPEXPIREAT", "myhash", expr("[clock milliseconds] + 2000"), "FIELDS", 1, "f2")
     r.run("HPEXPIRETIME", "myhash", "FIELDS", 2, "f1", "f2")
     r.run("HGETEX", "myhash", "EX", 120, "FIELDS", 1, "f1")
     r.run("HTTL", "myhash", "FIELDS", 1, "f2")
     r.run("HPTTL", "myhash", "FIELDS", 1, "f1")
     info = r.run("INFO", "commandstats")
-    # TODO: proc get_calls {info cmd} {
-    #       foreach line [split $info "\n"] {
-    #           if {[string match "cmdstat_$cmd:*" $line]} {
-    #               regexp {calls=(\d+)} $line -> count
-    #               return $count
-    #           }
-    #       }
-    #       return -1
-    #   }
-    # TODO: assert_equal 1 get_calls $info hexpire
-    # TODO: assert_equal 1 get_calls $info hexpireat
-    # TODO: assert_equal 1 get_calls $info hexpiretime
-    # TODO: assert_equal 1 get_calls $info hpexpire
-    # TODO: assert_equal 1 get_calls $info hpexpireat
-    # TODO: assert_equal 1 get_calls $info hpexpiretime
-    # TODO: assert_equal 1 get_calls $info hgetex
-    # TODO: assert_equal 1 get_calls $info httl
-    # TODO: assert_equal 1 get_calls $info hpttl
+    proc(
+        "get_calls",
+        "info cmd",
+        '            foreach line [split $info "\\n"] {\n                if {[string match "cmdstat_$cmd:*" $line]} {\n                    regexp {calls=(\\d+)} $line -> count\n                    return $count\n                }\n            }\n            return -1\n        ',
+    )
+    assert 1 == get_calls(info, "hexpire")
+    assert 1 == get_calls(info, "hexpireat")
+    assert 1 == get_calls(info, "hexpiretime")
+    assert 1 == get_calls(info, "hpexpire")
+    assert 1 == get_calls(info, "hpexpireat")
+    assert 1 == get_calls(info, "hpexpiretime")
+    assert 1 == get_calls(info, "hgetex")
+    assert 1 == get_calls(info, "httl")
+    assert 1 == get_calls(info, "hpttl")
 
 
 pytestmark = [pytest.mark.hashexpire_external_skip]
@@ -4979,9 +4978,8 @@ r config set notify-keyspace-events KEA
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hgetex_command_active_expiry_with_single_field(r: ValkeyTestClient) -> None:
+def test_hgetex_command_active_expiry_with_single_field(r: ValkeyTestClient, command) -> None:
     """
     test "HGETEX $command active expiry with single field" {
         r FLUSHALL
@@ -4999,19 +4997,18 @@ def test_hgetex_command_active_expiry_with_single_field(r: ValkeyTestClient) -> 
     }
     """
     r.run("FLUSHALL")
-    # TODO: set initial_expired info_field [r info stats] expired_fields
+    initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "myhash", "f1", "v1", "f2", "v2")
     assert 2 == r.run("HLEN", "myhash")
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
-    # TODO: assert_equal "v1" r HGETEX myhash $command [get_short_expire_value $command] FIELDS 1 f1
-    # TODO: wait_for_active_expiry r myhash 1 initial _expired 1
+    assert 0 == get_keys_with_volatile_items("r")
+    assert "v1" == r.run("HGETEX", "myhash", command, get_short_expire_value(command), "FIELDS", 1, "f1")
+    wait_for_active_expiry("r", "myhash", 1, initial_expired, 1)
     assert "{} v2" == r.run("HGETEX", "myhash", "FIELDS", 2, "f1", "f2")
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
+    assert 0 == get_keys_with_volatile_items("r")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hgetex_command_active_expiry_with_multiple_fields(r: ValkeyTestClient) -> None:
+def test_hgetex_command_active_expiry_with_multiple_fields(r: ValkeyTestClient, command) -> None:
     """
     test "HGETEX $command active expiry with multiple fields" {
         r FLUSHALL
@@ -5032,19 +5029,18 @@ def test_hgetex_command_active_expiry_with_multiple_fields(r: ValkeyTestClient) 
     }
     """
     r.run("FLUSHALL")
-    # TODO: set initial_expired info_field [r info stats] expired_fields
+    initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "myhash", "f1", "v1", "f2", "v2", "f3", "v3")
     assert 3 == r.run("HLEN", "myhash")
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
-    # TODO: assert_equal "v1 v3" r HGETEX myhash $command [get_short_expire_value $command] FIELDS 2 f1 f3
-    # TODO: wait_for_active_expiry r myhash 1 initial _expired 2
+    assert 0 == get_keys_with_volatile_items("r")
+    assert "v1 v3" == r.run("HGETEX", "myhash", command, get_short_expire_value(command), "FIELDS", 2, "f1", "f3")
+    wait_for_active_expiry("r", "myhash", 1, initial_expired, 2)
     assert "{} v2 {}" == r.run("HGETEX", "myhash", "FIELDS", 3, "f1", "f2", "f3")
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
+    assert 0 == get_keys_with_volatile_items("r")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hgetex_command_active_expiry_removes_entire_key_when_last_field_expires(r: ValkeyTestClient) -> None:
+def test_hgetex_command_active_expiry_removes_entire_key_when_last_field_expires(r: ValkeyTestClient, command) -> None:
     """
     test "HGETEX $command active expiry removes entire key when last field expires" {
         r FLUSHALL
@@ -5058,17 +5054,17 @@ def test_hgetex_command_active_expiry_removes_entire_key_when_last_field_expires
     }
     """
     r.run("FLUSHALL")
-    # TODO: set initial_expired info_field [r info stats] expired_fields
+    initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "myhash", "f1", "v1")
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
-    # TODO: assert_equal "v1" r HGETEX myhash $command [get_short_expire_value $command] FIELDS 1 f1
-    # TODO: wait_for_active_expiry r myhash 0 initial _expired 1
+    assert 0 == get_keys_with_volatile_items("r")
+    assert "v1" == r.run("HGETEX", "myhash", command, get_short_expire_value(command), "FIELDS", 1, "f1")
+    wait_for_active_expiry("r", "myhash", 0, initial_expired, 1)
     assert 0 == r.run("EXISTS", "myhash")
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
+    assert 0 == get_keys_with_volatile_items("r")
 
 
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hgetex_command_and_hpexpire(r: ValkeyTestClient) -> None:
+def test_hgetex_command_and_hpexpire(r: ValkeyTestClient, command) -> None:
     """
     test "HGETEX $command and HPEXPIRE" {
         r FLUSHALL
@@ -5091,7 +5087,6 @@ def test_hgetex_command_and_hpexpire(r: ValkeyTestClient) -> None:
     r.run("HPEXPIRE", "myhash", 1, "FIELDS", 1, "f1")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hgetex_persist_removes_expiry_and_prevents_active_expiry(r: ValkeyTestClient) -> None:
     """
     test "HGETEX PERSIST removes expiry and prevents active expiry" {
@@ -5120,17 +5115,16 @@ def test_hgetex_persist_removes_expiry_and_prevents_active_expiry(r: ValkeyTestC
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "v1", "f2", "v2")
     assert 2 == r.run("HLEN", "myhash")
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
+    assert 0 == get_keys_with_volatile_items("r")
     assert "v1" == r.run("HGETEX", "myhash", "PX", 1000, "FIELDS", 1, "f1")
     assert "v1" == r.run("HGETEX", "myhash", "PERSIST", "FIELDS", 1, "f1")
     assert -1 == r.run("HTTL", "myhash", "FIELDS", 1, "f1")
     time.sleep(200 / 1000)
     assert "v1" == r.run("HGET", "myhash", "f1")
     assert 2 == r.run("HLEN", "myhash")
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
+    assert 0 == get_keys_with_volatile_items("r")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hgetex_overwrite_existing_expiry_with_active_expiry(r: ValkeyTestClient) -> None:
     """
     test "HGETEX overwrite existing expiry with active expiry" {
@@ -5156,21 +5150,21 @@ def test_hgetex_overwrite_existing_expiry_with_active_expiry(r: ValkeyTestClient
     }
     """
     r.run("FLUSHALL")
-    # TODO: set initial_expired info_field [r info stats] expired_fields
+    initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "myhash", "f1", "v1")
     assert 1 == r.run("HLEN", "myhash")
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
-    # TODO: r HEXPIRE myhash get_long_expire_value HEXPIRE FIELDS 1 f1
-    # TODO: assert_morethan r HTTL myhash FIELDS 1 f1 5000
+    assert 0 == get_keys_with_volatile_items("r")
+    r.run("HEXPIRE", "myhash", get_long_expire_value("HEXPIRE"), "FIELDS", 1, "f1")
+    assert_morethan(r.run("HTTL", "myhash", "FIELDS", 1, "f1"), 5000)
     assert "v1" == r.run("HGETEX", "myhash", "PX", 100, "FIELDS", 1, "f1")
-    # TODO: wait_for_active_expiry r myhash 0 initial _expired 1
+    wait_for_active_expiry("r", "myhash", 0, initial_expired, 1)
     assert 0 == r.run("EXISTS", "myhash")
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
+    assert 0 == get_keys_with_volatile_items("r")
 
 
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hgetex_command_keyspace_notifications_for_active_expiry(r: ValkeyTestClient) -> None:
+def test_hgetex_command_keyspace_notifications_for_active_expiry(r: ValkeyTestClient, command, rd) -> None:
     """
     test "HGETEX $command keyspace notifications for active expiry" {
         r FLUSHALL
@@ -5193,21 +5187,21 @@ def test_hgetex_command_keyspace_notifications_for_active_expiry(r: ValkeyTestCl
     }
     """
     r.run("FLUSHALL")
-    # TODO: set initial_expired info_field [r info stats] expired_fields
+    initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "myhash", "f1", "v1", "f2", "v2")
     assert 2 == r.run("HLEN", "myhash")
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
+    assert 0 == get_keys_with_volatile_items("r")
     assert 2 == r.run("HLEN", "myhash")
-    # TODO: set rd setup_single_keyspace_notification r
-    # TODO: r HGETEX myhash command get_short_expire_value $command FIELDS 1 f1
-    # TODO: wait_for_active_expiry r myhash 1 initial _expired 1
-    # TODO: assert_keyevent_patterns rd myhash hexpire hexpired
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
+    rd = setup_single_keyspace_notification("r")
+    r.run("HGETEX", "myhash", command, get_short_expire_value(command), "FIELDS", 1, "f1")
+    wait_for_active_expiry("r", "myhash", 1, initial_expired, 1)
+    assert_keyevent_patterns(rd, "myhash", "hexpire", "hexpired")
+    assert 0 == get_keys_with_volatile_items("r")
     # TODO: $rd close
 
 
 @pytest.mark.xfail(reason="not implemented")
-def test_hgetex_keyspace_notification_when_key_deleted_with_active_expiry(r: ValkeyTestClient) -> None:
+def test_hgetex_keyspace_notification_when_key_deleted_with_active_expiry(r: ValkeyTestClient, rd) -> None:
     """
     test "HGETEX keyspace notification when key deleted with active expiry" {
         r FLUSHALL
@@ -5231,22 +5225,21 @@ def test_hgetex_keyspace_notification_when_key_deleted_with_active_expiry(r: Val
     }
     """
     r.run("FLUSHALL")
-    # TODO: set initial_expired info_field [r info stats] expired_fields
+    initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "myhash", "f1", "v1")
     assert 1 == r.run("HLEN", "myhash")
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
-    # TODO: set rd setup_single_keyspace_notification r
-    # TODO: r HGETEX myhash PX get_short_expire_value PX FIELDS 1 f1
-    # TODO: wait_for_active_expiry r myhash 0 initial _expired 1
+    assert 0 == get_keys_with_volatile_items("r")
+    rd = setup_single_keyspace_notification("r")
+    r.run("HGETEX", "myhash", "PX", get_short_expire_value("PX"), "FIELDS", 1, "f1")
+    wait_for_active_expiry("r", "myhash", 0, initial_expired, 1)
     assert 0 == r.run("EXISTS", "myhash")
-    # TODO: assert_keyevent_patterns rd myhash hexpire hexpired del
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
+    assert_keyevent_patterns(rd, "myhash", "hexpire", "hexpired", "del")
+    assert 0 == get_keys_with_volatile_items("r")
     # TODO: $rd close
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hsetex_command_single_field_expires_leaving_other_fields_intact(r: ValkeyTestClient) -> None:
+def test_hsetex_command_single_field_expires_leaving_other_fields_intact(r: ValkeyTestClient, command) -> None:
     """
     test "HSETEX $command single field expires leaving other fields intact" {
         r FLUSHALL
@@ -5262,19 +5255,18 @@ def test_hsetex_command_single_field_expires_leaving_other_fields_intact(r: Valk
     }
     """
     r.run("FLUSHALL")
-    # TODO: set initial_expired info_field [r info stats] expired_fields
+    initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "myhash", "f1", "v1", "f2", "v2")
     assert 2 == r.run("HLEN", "myhash")
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
-    # TODO: r HSETEX myhash command get_short_expire_value $command FIELDS 1 f1 v1
-    # TODO: wait_for_active_expiry r myhash 1 initial _expired 1
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
+    assert 0 == get_keys_with_volatile_items("r")
+    r.run("HSETEX", "myhash", command, get_short_expire_value(command), "FIELDS", 1, "f1", "v1")
+    wait_for_active_expiry("r", "myhash", 1, initial_expired, 1)
+    assert 0 == get_keys_with_volatile_items("r")
     assert "{} v2" == r.run("HGETEX", "myhash", "FIELDS", 2, "f1", "f2")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hsetex_command_multiple_fields_expire_leaving_non_expired_fields_intact(r: ValkeyTestClient) -> None:
+def test_hsetex_command_multiple_fields_expire_leaving_non_expired_fields_intact(r: ValkeyTestClient, command) -> None:
     """
     test "HSETEX $command multiple fields expire leaving non-expired fields intact" {
         r FLUSHALL
@@ -5291,19 +5283,18 @@ def test_hsetex_command_multiple_fields_expire_leaving_non_expired_fields_intact
     }
     """
     r.run("FLUSHALL")
-    # TODO: set initial_expired info_field [r info stats] expired_fields
+    initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "myhash", "f2", "v2")
     assert 1 == r.run("HLEN", "myhash")
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
-    # TODO: r HSETEX myhash command get_short_expire_value $command FIELDS 2 f1 v1 f3 v3
-    # TODO: wait_for_active_expiry r myhash 1 initial _expired 2
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
+    assert 0 == get_keys_with_volatile_items("r")
+    r.run("HSETEX", "myhash", command, get_short_expire_value(command), "FIELDS", 2, "f1", "v1", "f3", "v3")
+    wait_for_active_expiry("r", "myhash", 1, initial_expired, 2)
+    assert 0 == get_keys_with_volatile_items("r")
     assert "{} v2 {}" == r.run("HGETEX", "myhash", "FIELDS", 3, "f1", "f2", "f3")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hsetex_command_hash_key_deleted_when_all_fields_expire(r: ValkeyTestClient) -> None:
+def test_hsetex_command_hash_key_deleted_when_all_fields_expire(r: ValkeyTestClient, command) -> None:
     """
     test "HSETEX $command hash key deleted when all fields expire" {
         r FLUSHALL
@@ -5314,14 +5305,14 @@ def test_hsetex_command_hash_key_deleted_when_all_fields_expire(r: ValkeyTestCli
     }
     """
     r.run("FLUSHALL")
-    # TODO: set initial_expired info_field [r info stats] expired_fields
-    # TODO: r HSETEX myhash command get_short_expire_value $command FIELDS 1 f1 v1
-    # TODO: wait_for_active_expiry r myhash 0 initial _expired 1
+    initial_expired = info_field(r.run("info", "stats"), "expired_fields")
+    r.run("HSETEX", "myhash", command, get_short_expire_value(command), "FIELDS", 1, "f1", "v1")
+    wait_for_active_expiry("r", "myhash", 0, initial_expired, 1)
     assert 0 == r.run("EXISTS", "myhash")
 
 
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hsetex_command_after_hsetex_command(r: ValkeyTestClient) -> None:
+def test_hsetex_command_after_hsetex_command(r: ValkeyTestClient, command) -> None:
     """
     test "HSETEX $command after HSETEX $command" {
         r FLUSHALL
@@ -5334,7 +5325,6 @@ def test_hsetex_command_after_hsetex_command(r: ValkeyTestClient) -> None:
     r.run("HSETEX", "myhash", "PX", 10, "FIELDS", 1, "f2", "v2")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hpersist_cancels_hsetex_expiry_preventing_field_deletion(r: ValkeyTestClient) -> None:
     """
     test "HPERSIST cancels HSETEX expiry preventing field deletion" {
@@ -5356,7 +5346,7 @@ def test_hpersist_cancels_hsetex_expiry_preventing_field_deletion(r: ValkeyTestC
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f2", "v2")
     assert 1 == r.run("HLEN", "myhash")
-    # TODO: r HSETEX myhash PX get_short_expire_value PX FIELDS 1 f1 v1
+    r.run("HSETEX", "myhash", "PX", get_short_expire_value("PX"), "FIELDS", 1, "f1", "v1")
     r.run("HPERSIST", "myhash", "FIELDS", 1, "f1")
     assert -1 == r.run("HTTL", "myhash", "FIELDS", 1, "f1")
     time.sleep(200 / 1000)
@@ -5364,7 +5354,6 @@ def test_hpersist_cancels_hsetex_expiry_preventing_field_deletion(r: ValkeyTestC
     assert 2 == r.run("HLEN", "myhash")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hsetex_overwrites_existing_field_expiry_with_new_shorter_expiry(r: ValkeyTestClient) -> None:
     """
     test "HSETEX overwrites existing field expiry with new shorter expiry" {
@@ -5386,22 +5375,22 @@ def test_hsetex_overwrites_existing_field_expiry_with_new_shorter_expiry(r: Valk
     }
     """
     r.run("FLUSHALL")
-    # TODO: set initial_expired info_field [r info stats] expired_fields
+    initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "myhash", "f1", "v1")
     assert 1 == r.run("HLEN", "myhash")
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
-    # TODO: r HEXPIRE myhash get_long_expire_value HEXPIRE FIELDS 1 f1
-    # TODO: assert_equal 1 get_keys_with_volatile_items r
-    # TODO: assert_morethan r HTTL myhash FIELDS 1 f1 5000
+    assert 0 == get_keys_with_volatile_items("r")
+    r.run("HEXPIRE", "myhash", get_long_expire_value("HEXPIRE"), "FIELDS", 1, "f1")
+    assert 1 == get_keys_with_volatile_items("r")
+    assert_morethan(r.run("HTTL", "myhash", "FIELDS", 1, "f1"), 5000)
     r.run("HSETEX", "myhash", "PX", 100, "FIELDS", 1, "f1", "v1")
-    # TODO: wait_for_active_expiry r myhash 0 initial _expired 1
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
+    wait_for_active_expiry("r", "myhash", 0, initial_expired, 1)
+    assert 0 == get_keys_with_volatile_items("r")
     assert 0 == r.run("EXISTS", "myhash")
 
 
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hsetex_command_keyspace_notifications_fired_on_field_expiry(r: ValkeyTestClient) -> None:
+def test_hsetex_command_keyspace_notifications_fired_on_field_expiry(r: ValkeyTestClient, command, rd) -> None:
     """
     test "HSETEX $command - keyspace notifications fired on field expiry" {
         r FLUSHALL
@@ -5418,20 +5407,20 @@ def test_hsetex_command_keyspace_notifications_fired_on_field_expiry(r: ValkeyTe
     }
     """
     r.run("FLUSHALL")
-    # TODO: set initial_expired info_field [r info stats] expired_fields
+    initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "myhash", "f2", "v2")
     assert 1 == r.run("HLEN", "myhash")
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
-    # TODO: set rd setup_single_keyspace_notification r
-    # TODO: r HSETEX myhash command get_short_expire_value $command FIELDS 1 f1 v1
-    # TODO: wait_for_active_expiry r myhash 1 initial _expired 1
-    # TODO: assert_keyevent_patterns rd myhash hset hexpire hexpired
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
+    assert 0 == get_keys_with_volatile_items("r")
+    rd = setup_single_keyspace_notification("r")
+    r.run("HSETEX", "myhash", command, get_short_expire_value(command), "FIELDS", 1, "f1", "v1")
+    wait_for_active_expiry("r", "myhash", 1, initial_expired, 1)
+    assert_keyevent_patterns(rd, "myhash", "hset", "hexpire", "hexpired")
+    assert 0 == get_keys_with_volatile_items("r")
     # TODO: $rd close
 
 
 @pytest.mark.xfail(reason="not implemented")
-def test_hsetex_keyspace_notifications_include_del_event_when_hash_key_removed(r: ValkeyTestClient) -> None:
+def test_hsetex_keyspace_notifications_include_del_event_when_hash_key_removed(r: ValkeyTestClient, rd) -> None:
     """
     test "HSETEX - keyspace notifications include del event when hash key removed" {
         r FLUSHALL
@@ -5445,12 +5434,12 @@ def test_hsetex_keyspace_notifications_include_del_event_when_hash_key_removed(r
     }
     """
     r.run("FLUSHALL")
-    # TODO: set initial_expired info_field [r info stats] expired_fields
-    # TODO: set rd setup_single_keyspace_notification r
+    initial_expired = info_field(r.run("info", "stats"), "expired_fields")
+    rd = setup_single_keyspace_notification("r")
     r.run("HSETEX", "myhash", "PX", 100, "FIELDS", 1, "f1", "v1")
-    # TODO: wait_for_active_expiry r myhash 0 initial _expired 1
+    wait_for_active_expiry("r", "myhash", 0, initial_expired, 1)
     assert 0 == r.run("EXISTS", "myhash")
-    # TODO: assert_keyevent_patterns rd myhash hset hexpire hexpired del
+    assert_keyevent_patterns(rd, "myhash", "hset", "hexpire", "hexpired", "del")
     # TODO: $rd close
 
 
@@ -5464,8 +5453,7 @@ assert_equal {1} psubscribe $rd __keyevent@*
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
-def test_active_expiry_deletes_entire_key_when_only_field_expires(r: ValkeyTestClient) -> None:
+def test_active_expiry_deletes_entire_key_when_only_field_expires(r: ValkeyTestClient, rd) -> None:
     """
     test {Active expiry deletes entire key when only field expires} {
         r FLUSHALL
@@ -5486,22 +5474,21 @@ def test_active_expiry_deletes_entire_key_when_only_field_expires(r: ValkeyTestC
     }
     """
     r.run("FLUSHALL")
-    # TODO: set initial_expired info_field [r info stats] expired_fields
+    initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "myhash", "f1", "v1")
     assert 1 == r.run("HLEN", "myhash")
-    # TODO: assert_equal 1 get_keys r
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
+    assert 1 == get_keys("r")
+    assert 0 == get_keys_with_volatile_items("r")
     r.run("HPEXPIRE", "myhash", 100, "FIELDS", 1, "f1")
-    # TODO: wait_for_active_expiry r myhash 0 initial _expired 1
-    # TODO: assert_equal 0 get_keys r
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
+    wait_for_active_expiry("r", "myhash", 0, initial_expired, 1)
+    assert 0 == get_keys("r")
+    assert 0 == get_keys_with_volatile_items("r")
     assert "" == r.run("HGET", "myhash", "f1")
     assert 0 == r.run("EXISTS", "myhash")
-    # TODO: assert_keyevent_patterns rd myhash hset hexpire hexpired del
+    assert_keyevent_patterns(rd, "myhash", "hset", "hexpire", "hexpired", "del")
 
 
-@pytest.mark.xfail(reason="not implemented")
-def test_active_expiry_removes_only_expired_field_while_preserving_others(r: ValkeyTestClient) -> None:
+def test_active_expiry_removes_only_expired_field_while_preserving_others(r: ValkeyTestClient, rd) -> None:
     """
     test {Active expiry removes only expired field while preserving others} {
         r FLUSHALL
@@ -5526,25 +5513,27 @@ def test_active_expiry_removes_only_expired_field_while_preserving_others(r: Val
     }
     """
     r.run("FLUSHALL")
-    # TODO: set initial_expired info_field [r info stats] expired_fields
+    initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "myhash", "f1", "v1", "f2", "v2", "f3", "v3")
     assert 3 == r.run("HLEN", "myhash")
-    # TODO: assert_equal 1 get_keys r
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
+    assert 1 == get_keys("r")
+    assert 0 == get_keys_with_volatile_items("r")
     r.run("HPEXPIRE", "myhash", 100, "FIELDS", 1, "f1")
     mem_before = r.run("MEMORY", "USAGE", "myhash")
-    # TODO: wait_for_active_expiry r myhash 2 initial _expired 1
-    # TODO: assert_equal 1 get_keys r
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
+    wait_for_active_expiry("r", "myhash", 2, initial_expired, 1)
+    assert 1 == get_keys("r")
+    assert 0 == get_keys_with_volatile_items("r")
     assert "{} v2 v3" == r.run("HGETEX", "myhash", "FIELDS", 3, "f1", "f2", "f3")
     mem_after = r.run("MEMORY", "USAGE", "myhash")
-    # TODO: assert_morethan mem _before mem _after
-    # TODO: assert_keyevent_patterns rd myhash hset hexpire hexpired
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
+    assert_morethan(mem_before, mem_after)
+    assert_keyevent_patterns(rd, "myhash", "hset", "hexpire", "hexpired")
+    assert 0 == get_keys_with_volatile_items("r")
 
 
 @pytest.mark.xfail(reason="not implemented")
-def test_active_expiry_reclaims_memory_correctly_with_large_hash_containing_many_fields(r: ValkeyTestClient) -> None:
+def test_active_expiry_reclaims_memory_correctly_with_large_hash_containing_many_fields(
+    r: ValkeyTestClient, rd
+) -> None:
     """
     test {Active expiry reclaims memory correctly with large hash containing many fields} {
         r FLUSHALL
@@ -5598,48 +5587,48 @@ def test_active_expiry_reclaims_memory_correctly_with_large_hash_containing_many
     }
     """
     r.run("FLUSHALL")
-    # TODO: set initial_expired info_field [r info stats] expired_fields
-    # TODO: set value string repeat x 1024
+    initial_expired = info_field(r.run("info", "stats"), "expired_fields")
+    value = string("repeat", "x", 1024)
     num_fields = 10000
-    # TODO: for {set i 1} {$i <= $num_fields} {incr i} {
-    #       lappend pairs "f$i" $value$i
-    #   }
+    for_("set i 1", "$i <= $num_fields", "incr i", '            lappend pairs "f$i" $value$i\n        ')
     # TODO: r HSET myhash {*} pairs
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
-    # TODO: assert_equal num _fields r HLEN myhash
+    assert 0 == get_keys_with_volatile_items("r")
+    assert num_fields == r.run("HLEN", "myhash")
     mem_before_expire = r.run("MEMORY", "USAGE", "myhash")
-    # TODO: if {$mem_before_expire eq ""} {set mem_before_expire 0}
-    # TODO: assert_morethan mem _before_expire 10000000
-    # TODO: assert_equal 1 get_keys r
-    # TODO: assert_equal num _fields r HLEN myhash
+    if mem_before_expire == "":
+        mem_before_expire = 0
+    assert_morethan(mem_before_expire, 10000000)
+    assert 1 == get_keys("r")
+    assert num_fields == r.run("HLEN", "myhash")
     r.run("HPEXPIRE", "myhash", 100, "FIELDS", 1, "f1")
-    # TODO: wait_for_active_expiry r myhash expr {$num_fields - 1} initial _expired 1
-    # TODO: assert_equal 1 get_keys r
+    wait_for_active_expiry("r", "myhash", expr("$num_fields - 1"), initial_expired, 1)
+    assert 1 == get_keys("r")
     assert "" == r.run("HGET", "myhash", "f1")
-    # TODO: for {set i 2} {$i <= $num_fields} {incr i} {
-    #       assert_equal $value$i [r HGET myhash "f$i"]
-    #   }
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
+    i = 2
+    while i <= num_fields:
+        assert value == i
+        i += 1
+    assert 0 == get_keys_with_volatile_items("r")
     all_field_names = ""
-    # TODO: for {set i 2} {$i <= $num_fields} {incr i} {
-    #       lappend all_field_names "f$i"
-    #   }
-    # TODO: r HPEXPIRE myhash 100 FIELDS expr {$num_fields - 1} {*} all _field_names
-    # TODO: wait_for_active_expiry r myhash 0 initial _expired num _fields 350 100
+    for_("set i 2", "$i <= $num_fields", "incr i", '            lappend all_field_names "f$i"\n        ')
+    r.run("HPEXPIRE", "myhash", 100, "FIELDS", expr("$num_fields - 1"), "*", all_field_names)
+    wait_for_active_expiry("r", "myhash", 0, initial_expired, num_fields, 350, 100)
     mem_after_expire = r.run("MEMORY", "USAGE", "myhash")
-    # TODO: if {$mem_after_expire eq ""} {set mem_after_expire 0}
-    # TODO: assert_morethan expr {$mem_before_expire - $mem_after_expire} 10000000
-    # TODO: assert_keyevent_patterns rd myhash hset hexpire hexpired hexpire hexpired
-    # TODO: for {set i 2} {$i <= $num_fields} {incr i} {
-    #       if {[string match "pmessage __keyevent@* __keyevent@*:del myhash" [$rd read]]} {
-    #           break
-    #       }
-    #   }
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
+    if mem_after_expire == "":
+        mem_after_expire = 0
+    assert_morethan(expr("$mem_before_expire - $mem_after_expire"), 10000000)
+    assert_keyevent_patterns(rd, "myhash", "hset", "hexpire", "hexpired", "hexpire", "hexpired")
+    i = 2
+    while i <= num_fields:
+        if_(
+            '[string match "pmessage __keyevent@* __keyevent@*:del myhash" [$rd read]]',
+            "                break\n            ",
+        )
+        i += 1
+    assert 0 == get_keys_with_volatile_items("r")
 
 
-@pytest.mark.xfail(reason="not implemented")
-def test_active_expiry_handles_fields_with_different_ttl_values_correctly(r: ValkeyTestClient) -> None:
+def test_active_expiry_handles_fields_with_different_ttl_values_correctly(r: ValkeyTestClient, rd) -> None:
     """
     test {Active expiry handles fields with different TTL values correctly} {
         r FLUSHALL
@@ -5661,18 +5650,17 @@ def test_active_expiry_handles_fields_with_different_ttl_values_correctly(r: Val
     }
     """
     r.run("FLUSHALL")
-    # TODO: set initial_expired info_field [r info stats] expired_fields
+    initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "myhash", "f1", "v1", "f2", "v2", "f3", "v3")
     assert 3 == r.run("HLEN", "myhash")
-    # TODO: r HPEXPIRE myhash get_short_expire_value HPEXPIRE FIELDS 1 f1
-    # TODO: wait_for_active_expiry r myhash 2 initial _expired 1
-    # TODO: r HEXPIRE myhash get_long_expire_value HEXPIRE FIELDS 1 f2
+    r.run("HPEXPIRE", "myhash", get_short_expire_value("HPEXPIRE"), "FIELDS", 1, "f1")
+    wait_for_active_expiry("r", "myhash", 2, initial_expired, 1)
+    r.run("HEXPIRE", "myhash", get_long_expire_value("HEXPIRE"), "FIELDS", 1, "f2")
     assert 2 == r.run("HLEN", "myhash")
     assert "{} v2 v3" == r.run("HGETEX", "myhash", "FIELDS", 3, "f1", "f2", "f3")
-    # TODO: assert_keyevent_patterns rd myhash hset hexpire hexpired hexpire
+    assert_keyevent_patterns(rd, "myhash", "hset", "hexpire", "hexpired", "hexpire")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_active_expiry_removes_only_specified_fields_leaving_others_intact(r: ValkeyTestClient) -> None:
     """
     test {Active expiry removes only specified fields leaving others intact} {
@@ -5696,13 +5684,13 @@ def test_active_expiry_removes_only_specified_fields_leaving_others_intact(r: Va
     }
     """
     r.run("FLUSHALL")
-    # TODO: set initial_expired info_field [r info stats] expired_fields
+    initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "myhash", "f1", "v1", "f2", "v2", "f3", "v3", "f4", "v4", "f5", "v5")
     assert 5 == r.run("HLEN", "myhash")
     r.run("HPEXPIRE", "myhash", 100, "FIELDS", 2, "f1", "f3")
-    # TODO: wait_for_active_expiry r myhash 3 initial _expired 2
+    wait_for_active_expiry("r", "myhash", 3, initial_expired, 2)
     assert "{} v2 {} v4 v5" == r.run("HGETEX", "myhash", "FIELDS", 5, "f1", "f2", "f3", "f4", "f5")
-    # TODO: assert_equal 1 get_keys r
+    assert 1 == get_keys("r")
 
 
 """
@@ -5754,9 +5742,8 @@ def test_field_ttl_is_cleared_when_field_is_deleted_and_recreated(r: ValkeyTestC
     assert "v2" == r.run("HGET", "myhash", "f1")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("HEXPIRE"), ("HPEXPIRE"), ("HEXPIREAT"), ("HPEXPIREAT")])
-def test_command_active_expiry_on_single_field(r: ValkeyTestClient) -> None:
+def test_command_active_expiry_on_single_field(r: ValkeyTestClient, command) -> None:
     """
     test "$command active expiry on single field" {
         r FLUSHALL
@@ -5776,17 +5763,16 @@ def test_command_active_expiry_on_single_field(r: ValkeyTestClient) -> None:
     }
     """
     r.run("FLUSHALL")
-    # TODO: set initial_expired info_field [r info stats] expired_fields
+    initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "myhash", "f1", "v1", "f2", "v2")
     assert 2 == r.run("HLEN", "myhash")
-    # TODO: r command myhash get_short_expire_value $command FIELDS 1 f1
-    # TODO: wait_for_active_expiry r myhash 1 initial _expired 1
+    r.run(command, "myhash", get_short_expire_value(command), "FIELDS", 1, "f1")
+    wait_for_active_expiry("r", "myhash", 1, initial_expired, 1)
     assert "{} v2" == r.run("HGETEX", "myhash", "FIELDS", 2, "f1", "f2")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("HEXPIRE"), ("HPEXPIRE"), ("HEXPIREAT"), ("HPEXPIREAT")])
-def test_command_active_expiry_with_multiple_fields(r: ValkeyTestClient) -> None:
+def test_command_active_expiry_with_multiple_fields(r: ValkeyTestClient, command) -> None:
     """
     test "$command active expiry with multiple fields" {
         r FLUSHALL
@@ -5806,17 +5792,16 @@ def test_command_active_expiry_with_multiple_fields(r: ValkeyTestClient) -> None
     }
     """
     r.run("FLUSHALL")
-    # TODO: set initial_expired info_field [r info stats] expired_fields
+    initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "myhash", "f1", "v1", "f2", "v2", "f3", "v3", "f4", "v4")
     assert 4 == r.run("HLEN", "myhash")
-    # TODO: r command myhash get_short_expire_value $command FIELDS 3 f1 f2 f4
-    # TODO: wait_for_active_expiry r myhash 1 initial _expired 3
+    r.run(command, "myhash", get_short_expire_value(command), "FIELDS", 3, "f1", "f2", "f4")
+    wait_for_active_expiry("r", "myhash", 1, initial_expired, 3)
     assert "{} {} v3 {}" == r.run("HGETEX", "myhash", "FIELDS", 4, "f1", "f2", "f3", "f4")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("HEXPIRE"), ("HPEXPIRE"), ("HEXPIREAT"), ("HPEXPIREAT")])
-def test_command_active_expiry_removes_entire_key_when_last_field_expires(r: ValkeyTestClient) -> None:
+def test_command_active_expiry_removes_entire_key_when_last_field_expires(r: ValkeyTestClient, command) -> None:
     """
     test "$command active expiry removes entire key when last field expires" {
         r FLUSHALL
@@ -5836,17 +5821,16 @@ def test_command_active_expiry_removes_entire_key_when_last_field_expires(r: Val
     }
     """
     r.run("FLUSHALL")
-    # TODO: set initial_expired info_field [r info stats] expired_fields
+    initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "myhash", "f1", "v1")
     assert 1 == r.run("HLEN", "myhash")
-    # TODO: r command myhash get_short_expire_value $command FIELDS 1 f1
-    # TODO: wait_for_active_expiry r myhash 0 initial _expired 1
+    r.run(command, "myhash", get_short_expire_value(command), "FIELDS", 1, "f1")
+    wait_for_active_expiry("r", "myhash", 0, initial_expired, 1)
     assert 0 == r.run("EXISTS", "myhash")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("HEXPIRE"), ("HPEXPIRE"), ("HEXPIREAT"), ("HPEXPIREAT")])
-def test_command_active_expiry_with_non_existing_fields(r: ValkeyTestClient) -> None:
+def test_command_active_expiry_with_non_existing_fields(r: ValkeyTestClient, command) -> None:
     """
     test "$command active expiry with non-existing fields" {
         r FLUSHALL
@@ -5865,17 +5849,16 @@ def test_command_active_expiry_with_non_existing_fields(r: ValkeyTestClient) -> 
     }
     """
     r.run("FLUSHALL")
-    # TODO: set initial_expired info_field [r info stats] expired_fields
+    initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "myhash", "f1", "v1", "f2", "v2")
     assert 2 == r.run("HLEN", "myhash")
-    # TODO: r command myhash get_short_expire_value $command FIELDS 2 f3 f4
+    r.run(command, "myhash", get_short_expire_value(command), "FIELDS", 2, "f3", "f4")
     time.sleep(1500 / 1000)
-    # TODO: assert check_myhash_and_expired_subkeys r myhash 2 $initial_expired 0
+    assert_(check_myhash_and_expired_subkeys("r", "myhash", 2, initial_expired, 0))
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("HEXPIRE"), ("HPEXPIRE"), ("HEXPIREAT"), ("HPEXPIREAT")])
-def test_command_active_expiry_with_mixed_existing_and_non_existing_fields(r: ValkeyTestClient) -> None:
+def test_command_active_expiry_with_mixed_existing_and_non_existing_fields(r: ValkeyTestClient, command) -> None:
     """
     test "$command active expiry with mixed existing and non-existing fields" {
         r FLUSHALL
@@ -5896,17 +5879,16 @@ def test_command_active_expiry_with_mixed_existing_and_non_existing_fields(r: Va
     }
     """
     r.run("FLUSHALL")
-    # TODO: set initial_expired info_field [r info stats] expired_fields
+    initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "myhash", "f1", "v1", "f2", "v2", "f3", "v3")
     assert 3 == r.run("HLEN", "myhash")
-    # TODO: r command myhash get_short_expire_value $command FIELDS 4 f1 f4 f3 f5
-    # TODO: wait_for_active_expiry r myhash 1 initial _expired 2
+    r.run(command, "myhash", get_short_expire_value(command), "FIELDS", 4, "f1", "f4", "f3", "f5")
+    wait_for_active_expiry("r", "myhash", 1, initial_expired, 2)
     assert "{} v2 {}" == r.run("HGETEX", "myhash", "FIELDS", 3, "f1", "f2", "f3")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("HEXPIRE"), ("HPEXPIRE"), ("HEXPIREAT"), ("HPEXPIREAT")])
-def test_command_active_expiry_with_already_expired_fields(r: ValkeyTestClient) -> None:
+def test_command_active_expiry_with_already_expired_fields(r: ValkeyTestClient, command) -> None:
     """
     test "$command active expiry with already expired fields" {
         r FLUSHALL
@@ -5933,17 +5915,16 @@ def test_command_active_expiry_with_already_expired_fields(r: ValkeyTestClient) 
     }
     """
     r.run("FLUSHALL")
-    # TODO: set initial_expired info_field [r info stats] expired_fields
+    initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "myhash", "f1", "v1", "f2", "v2", "f3", "v3")
     assert 3 == r.run("HLEN", "myhash")
-    # TODO: r command myhash get_short_expire_value $command FIELDS 1 f1
-    # TODO: wait_for_active_expiry r myhash 2 initial _expired 1
-    # TODO: r command myhash get_short_expire_value $command FIELDS 2 f1 f2
-    # TODO: wait_for_active_expiry r myhash 1 initial _expired 2
+    r.run(command, "myhash", get_short_expire_value(command), "FIELDS", 1, "f1")
+    wait_for_active_expiry("r", "myhash", 2, initial_expired, 1)
+    r.run(command, "myhash", get_short_expire_value(command), "FIELDS", 2, "f1", "f2")
+    wait_for_active_expiry("r", "myhash", 1, initial_expired, 2)
     assert "{} {} v3" == r.run("HGETEX", "myhash", "FIELDS", 3, "f1", "f2", "f3")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_client_pause_write_blocks_hash_field_active_expiry_until_pause_ends(r: ValkeyTestClient) -> None:
     """
     test "CLIENT PAUSE WRITE blocks hash field active expiry until pause ends" {
@@ -5982,7 +5963,7 @@ def test_client_pause_write_blocks_hash_field_active_expiry_until_pause_ends(r: 
     }
     """
     r.run("FLUSHALL")
-    # TODO: set initial_expired info_field [r info stats] expired_fields
+    initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "myhash", "f1", "v1", "f2", "v2")
     assert 2 == r.run("HLEN", "myhash")
     r.run("multi")
@@ -5990,12 +5971,12 @@ def test_client_pause_write_blocks_hash_field_active_expiry_until_pause_ends(r: 
     r.run("CLIENT", "PAUSE", 1200, "WRITE")
     r.run("exec")
     assert 2 == r.run("HLEN", "myhash")
-    # TODO: assert_equal 0 expr {[info_field [r info stats] expired_fields] - $initial_expired}
+    assert 0 == expr("[info_field [r info stats] expired_fields] - $initial_expired")
     time.sleep(600 / 1000)
     assert 2 == r.run("HLEN", "myhash")
-    # TODO: assert_equal 0 expr {[info_field [r info stats] expired_fields] - $initial_expired}
+    assert 0 == expr("[info_field [r info stats] expired_fields] - $initial_expired")
     time.sleep(600 / 1000)
-    # TODO: wait_for_active_expiry r myhash 1 initial _expired 1 50 20
+    wait_for_active_expiry("r", "myhash", 1, initial_expired, 1, 50, 20)
     assert "{} v2" == r.run("HMGET", "myhash", "f1", "f2")
 
 
@@ -6058,9 +6039,10 @@ foreach command {HEXPIRE HPEXPIRE HEXPIREAT HPEXPIREAT} {
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("HEXPIRE"), ("HPEXPIRE"), ("HEXPIREAT"), ("HPEXPIREAT")])
-def test_command_active_expiry_processes_multiple_hash_keys_with_different_field_counts(r: ValkeyTestClient) -> None:
+def test_command_active_expiry_processes_multiple_hash_keys_with_different_field_counts(
+    r: ValkeyTestClient, command
+) -> None:
     """
     test "$command active expiry processes multiple hash keys with different field counts" {
         r FLUSHALL
@@ -6103,40 +6085,39 @@ def test_command_active_expiry_processes_multiple_hash_keys_with_different_field
     }
     """
     r.run("FLUSHALL")
-    # TODO: set initial_expired info_field [r info stats] expired_fields
+    initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     i = 1
     while i <= 5:
         r.run("HSET", "hash$i", "f1", "v1_$i", "f2", "v2_$i", "f3", "v3_$i")
         i += 1
-    # TODO: assert_equal 5 get_keys r
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
-    # TODO: r command hash1 get_short_expire_value $command FIELDS 1 f1
-    # TODO: r command hash2 get_short_expire_value $command FIELDS 2 f1 f2
-    # TODO: r command hash3 get_short_expire_value $command FIELDS 3 f1 f2 f3
-    # TODO: r command hash4 get_short_expire_value $command FIELDS 1 f2
-    # TODO: wait_for_condition 100 100 {
-    #       [r HLEN hash1] eq 2 && [r HLEN hash2] eq 1 &&
-    #       [r HLEN hash3] eq 0 && [r HLEN hash4] eq 2 && [r HLEN hash5] eq 3 &&
-    #       [expr {[info_field [r info stats] expired_fields] - $initial_expired}] eq 7
-    #   } else {
-    #       fail "Fields should expire across multiple keys"
-    #   }
+    assert 5 == get_keys("r")
+    assert 0 == get_keys_with_volatile_items("r")
+    r.run(command, "hash1", get_short_expire_value(command), "FIELDS", 1, "f1")
+    r.run(command, "hash2", get_short_expire_value(command), "FIELDS", 2, "f1", "f2")
+    r.run(command, "hash3", get_short_expire_value(command), "FIELDS", 3, "f1", "f2", "f3")
+    r.run(command, "hash4", get_short_expire_value(command), "FIELDS", 1, "f2")
+    wait_for_condition(
+        100,
+        100,
+        "                [r HLEN hash1] eq 2 && [r HLEN hash2] eq 1 &&\n                [r HLEN hash3] eq 0 && [r HLEN hash4] eq 2 && [r HLEN hash5] eq 3 &&\n                [expr {[info_field [r info stats] expired_fields] - $initial_expired}] eq 7\n            ",
+        "else",
+        '                fail "Fields should expire across multiple keys"\n            ',
+    )
     assert "{} v2_1 v3_1" == r.run("HMGET", "hash1", "f1", "f2", "f3")
     assert "{} {} v3_2" == r.run("HMGET", "hash2", "f1", "f2", "f3")
     assert 0 == r.run("EXISTS", "hash3")
     assert "v1_4 {} v3_4" == r.run("HMGET", "hash4", "f1", "f2", "f3")
     assert "v1_5 v2_5 v3_5" == r.run("HMGET", "hash5", "f1", "f2", "f3")
-    # TODO: assert_equal 4 get_keys r
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
-    # TODO: r command hash1 get_long_expire_value $command FIELDS 1 f2
-    # TODO: assert_equal 1 get_keys_with_volatile_items r
-    # TODO: r command hash2 get_long_expire_value $command FIELDS 1 f3
-    # TODO: assert_equal 2 get_keys_with_volatile_items r
+    assert 4 == get_keys("r")
+    assert 0 == get_keys_with_volatile_items("r")
+    r.run(command, "hash1", get_long_expire_value(command), "FIELDS", 1, "f2")
+    assert 1 == get_keys_with_volatile_items("r")
+    r.run(command, "hash2", get_long_expire_value(command), "FIELDS", 1, "f3")
+    assert 2 == get_keys_with_volatile_items("r")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("HEXPIRE"), ("HPEXPIRE"), ("HEXPIREAT"), ("HPEXPIREAT")])
-def test_command_handles_mixed_short_and_long_expiry_times_across_multiple_keys(r: ValkeyTestClient) -> None:
+def test_command_handles_mixed_short_and_long_expiry_times_across_multiple_keys(r: ValkeyTestClient, command) -> None:
     """
     test "$command handles mixed short and long expiry times across multiple keys" {
         r FLUSHALL
@@ -6175,37 +6156,39 @@ def test_command_handles_mixed_short_and_long_expiry_times_across_multiple_keys(
     }
     """
     r.run("FLUSHALL")
-    # TODO: set initial_expired info_field [r info stats] expired_fields
+    initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "key1", "f1", "v1", "f2", "v2", "f3", "v3")
     r.run("HSET", "key2", "f1", "v1", "f2", "v2", "f3", "v3")
     r.run("HSET", "key3", "f1", "v1", "f2", "v2", "f3", "v3")
     r.run("HSET", "key4", "f1", "v1", "f2", "v2", "f3", "v3")
-    # TODO: assert_equal 4 get_keys r
-    # TODO: assert_equal 0 get_keys_with_volatile_items r
-    # TODO: r command key2 get_long_expire_value $command FIELDS 1 f1
-    # TODO: assert_equal 1 get_keys_with_volatile_items r
-    # TODO: set short_expire get_short_expire_value $command
-    # TODO: r command key1 short _expire FIELDS 1 f1
-    # TODO: r command key3 short _expire FIELDS 2 f1 f2
-    # TODO: r command key4 short _expire FIELDS 3 f1 f2 f3
-    # TODO: wait_for_condition 100 100 {
-    #       [r HLEN key1] eq 2 && [r HLEN key3] eq 1 &&
-    #       [r HLEN key4] eq 0 && [expr {[info_field [r info stats] expired_fields] - $initial_expired}] eq 6
-    #   } else {
-    #       fail "Short expiry fields should expire"
-    #   }
+    assert 4 == get_keys("r")
+    assert 0 == get_keys_with_volatile_items("r")
+    r.run(command, "key2", get_long_expire_value(command), "FIELDS", 1, "f1")
+    assert 1 == get_keys_with_volatile_items("r")
+    short_expire = get_short_expire_value(command)
+    r.run(command, "key1", short_expire, "FIELDS", 1, "f1")
+    r.run(command, "key3", short_expire, "FIELDS", 2, "f1", "f2")
+    r.run(command, "key4", short_expire, "FIELDS", 3, "f1", "f2", "f3")
+    wait_for_condition(
+        100,
+        100,
+        "                [r HLEN key1] eq 2 && [r HLEN key3] eq 1 &&\n                [r HLEN key4] eq 0 && [expr {[info_field [r info stats] expired_fields] - $initial_expired}] eq 6\n            ",
+        "else",
+        '                fail "Short expiry fields should expire"\n            ',
+    )
     assert "{} v2 v3" == r.run("HMGET", "key1", "f1", "f2", "f3")
     assert "v1 v2 v3" == r.run("HMGET", "key2", "f1", "f2", "f3")
     assert "{} {} v3" == r.run("HMGET", "key3", "f1", "f2", "f3")
     assert 0 == r.run("EXISTS", "key4")
-    # TODO: assert_equal 3 get_keys r
-    # TODO: assert_equal 1 get_keys_with_volatile_items r
-    # TODO: assert_morethan r HTTL key2 FIELDS 1 f1 3000
+    assert 3 == get_keys("r")
+    assert 1 == get_keys_with_volatile_items("r")
+    assert_morethan(r.run("HTTL", "key2", "FIELDS", 1, "f1"), 3000)
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("HEXPIRE"), ("HPEXPIRE"), ("HEXPIREAT"), ("HPEXPIREAT")])
-def test_command_deletes_entire_keys_when_all_fields_expire_while_preserving_partial_keys(r: ValkeyTestClient) -> None:
+def test_command_deletes_entire_keys_when_all_fields_expire_while_preserving_partial_keys(
+    r: ValkeyTestClient, command
+) -> None:
     """
     test "$command deletes entire keys when all fields expire while preserving partial keys" {
         r FLUSHALL
@@ -6237,30 +6220,31 @@ def test_command_deletes_entire_keys_when_all_fields_expire_while_preserving_par
     }
     """
     r.run("FLUSHALL")
-    # TODO: set initial_expired info_field [r info stats] expired_fields
+    initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     i = 1
     while i <= 4:
         r.run("HSET", "delkey$i", "f1", "v1")
         i += 1
     r.run("HSET", "keepkey", "f1", "v1", "f2", "v2")
-    # TODO: for {set i 1} {$i <= 4} {incr i} {
-    #       r $command delkey$i [get_short_expire_value $command] FIELDS 1 f1
-    #   }
-    # TODO: r command keepkey get_short_expire_value $command FIELDS 1 f1
-    # TODO: wait_for_condition 100 100 {
-    #       [r EXISTS delkey1] eq 0 && [r EXISTS delkey2] eq 0 &&
-    #       [r EXISTS delkey3] eq 0 && [r EXISTS delkey4] eq 0 &&
-    #       [r HLEN keepkey] eq 1 &&
-    #       [info_field [r info stats] expired_fields] eq [expr {$initial_expired + 5}]
-    #   } else {
-    #       fail "Keys should be deleted when last field expires"
-    #   }
+    i = 1
+    while i <= 4:
+        r.run(command, "delkey$i", get_short_expire_value(command), "FIELDS", 1, "f1")
+        i += 1
+    r.run(command, "keepkey", get_short_expire_value(command), "FIELDS", 1, "f1")
+    wait_for_condition(
+        100,
+        100,
+        "                [r EXISTS delkey1] eq 0 && [r EXISTS delkey2] eq 0 &&\n                [r EXISTS delkey3] eq 0 && [r EXISTS delkey4] eq 0 &&\n                [r HLEN keepkey] eq 1 &&\n                [info_field [r info stats] expired_fields] eq [expr {$initial_expired + 5}]\n            ",
+        "else",
+        '                fail "Keys should be deleted when last field expires"\n            ',
+    )
     assert "{} v2" == r.run("HMGET", "keepkey", "f1", "f2")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("HEXPIRE"), ("HPEXPIRE"), ("HEXPIREAT"), ("HPEXPIREAT")])
-def test_command_active_expiry_reclaims_memory_efficiently_across_multiple_large_hash_keys(r: ValkeyTestClient) -> None:
+def test_command_active_expiry_reclaims_memory_efficiently_across_multiple_large_hash_keys(
+    r: ValkeyTestClient, command
+) -> None:
     """
     test "$command active expiry reclaims memory efficiently across multiple large hash keys" {
         r FLUSHALL
@@ -6313,13 +6297,15 @@ def test_command_active_expiry_reclaims_memory_efficiently_across_multiple_large
     }
     """
     r.run("FLUSHALL")
-    # TODO: set initial_expired info_field [r info stats] expired_fields
-    # TODO: set large_value string repeat "x" 1024
-    # TODO: for {set i 1} {$i <= 5} {incr i} {
-    #       for {set j 1} {$j <= 10} {incr j} {
-    #           r HSET myhash$i f$j $large_value$i$j
-    #       }
-    #   }
+    initial_expired = info_field(r.run("info", "stats"), "expired_fields")
+    large_value = string("repeat", "x", 1024)
+    i = 1
+    while i <= 5:
+        j = 1
+        while j <= 10:
+            r.run("HSET", "myhash$i", "f$j", large_value, i, j)
+            j += 1
+        i += 1
     total_mem_before = 0
     i = 1
     while i <= 5:
@@ -6328,17 +6314,19 @@ def test_command_active_expiry_reclaims_memory_efficiently_across_multiple_large
             mem = 0
         total_mem_before += mem
         i += 1
-    # TODO: for {set i 1} {$i <= 5} {incr i} {
-    #       assert_equal {1 1 1 1 1} [r $command myhash$i [get_short_expire_value $command] FIELDS 5 f1 f2 f3 f4 f5]
-    #   }
-    # TODO: wait_for_condition 100 100 {
-    #       [r HLEN myhash1] eq 5 && [r HLEN myhash2] eq 5 &&
-    #       [r HLEN myhash3] eq 5 && [r HLEN myhash4] eq 5 &&
-    #       [r HLEN myhash5] eq 5 &&
-    #       [info_field [r info stats] expired_fields] eq [expr {$initial_expired + 25}]
-    #   } else {
-    #       fail "25 fields should expire across 5 keys"
-    #   }
+    i = 1
+    while i <= 5:
+        assert "1 1 1 1 1" == r.run(
+            command, "myhash$i", get_short_expire_value(command), "FIELDS", 5, "f1", "f2", "f3", "f4", "f5"
+        )
+        i += 1
+    wait_for_condition(
+        100,
+        100,
+        "                [r HLEN myhash1] eq 5 && [r HLEN myhash2] eq 5 && \n                [r HLEN myhash3] eq 5 && [r HLEN myhash4] eq 5 &&\n                [r HLEN myhash5] eq 5 &&\n                [info_field [r info stats] expired_fields] eq [expr {$initial_expired + 25}]\n            ",
+        "else",
+        '                fail "25 fields should expire across 5 keys"\n            ',
+    )
     total_mem_after = 0
     i = 1
     while i <= 5:
@@ -6347,9 +6335,8 @@ def test_command_active_expiry_reclaims_memory_efficiently_across_multiple_large
             mem = 0
         total_mem_after += mem
         i += 1
-    # TODO: if {$total_mem_before > 0} {
-    #       assert_morethan [expr {$total_mem_before - $total_mem_after}] 10000
-    #   }
+    if total_mem_before > 0:
+        assert_morethan(expr("$total_mem_before - $total_mem_after"), 10000)
 
 
 """
@@ -6367,7 +6354,7 @@ if {$cmd eq "HINCRBY"} {
 
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd"], [("HINCRBY"), ("HINCRBYFLOAT")])
-def test_cmd_recreates_field_with_correct_value_after_active_expiry_deletion(r: ValkeyTestClient) -> None:
+def test_cmd_recreates_field_with_correct_value_after_active_expiry_deletion(r: ValkeyTestClient, cmd) -> None:
     """
     test "$cmd recreates field with correct value after active expiry deletion" {
         r FLUSHALL
@@ -6388,18 +6375,18 @@ def test_cmd_recreates_field_with_correct_value_after_active_expiry_deletion(r: 
     }
     """
     r.run("FLUSHALL")
-    # TODO: set initial_expired info_field [r info stats] expired_fields
+    initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "myhash", "f1", 1)
     assert 1 == r.run("HLEN", "myhash")
     r.run("HPEXPIRE", "myhash", 100, "FIELDS", 1, "f1")
-    # TODO: wait_for_active_expiry r myhash 0 initial _expired 1
+    wait_for_active_expiry("r", "myhash", 0, initial_expired, 1)
     # TODO: r cmd myhash f1 inc1
     # TODO: assert_equal inc1 r HGET myhash f1
 
 
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd"], [("HINCRBY"), ("HINCRBYFLOAT")])
-def test_cmd_preserves_existing_ttl_when_incrementing_field_value(r: ValkeyTestClient) -> None:
+def test_cmd_preserves_existing_ttl_when_incrementing_field_value(r: ValkeyTestClient, cmd) -> None:
     """
     test "$cmd preserves existing TTL when incrementing field value" {
         r FLUSHALL
@@ -6420,18 +6407,18 @@ def test_cmd_preserves_existing_ttl_when_incrementing_field_value(r: ValkeyTestC
     }
     """
     r.run("FLUSHALL")
-    # TODO: set initial_expired info_field [r info stats] expired_fields
+    initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "myhash", "f1", 1)
     assert 1 == r.run("HLEN", "myhash")
     r.run("HEXPIRE", "myhash", 100000, "FIELDS", 1, "f1")
     # TODO: r cmd myhash f1 inc1
-    # TODO: assert_equal expr {$inc1 + 1} r HGET myhash f1
-    # TODO: assert_morethan r HTTL myhash FIELDS 1 f1 90000
+    assert expr("$inc1 + 1") == r.run("HGET", "myhash", "f1")
+    assert_morethan(r.run("HTTL", "myhash", "FIELDS", 1, "f1"), 90000)
 
 
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd"], [("HINCRBY"), ("HINCRBYFLOAT")])
-def test_cmd_handles_mix_of_expired_and_existing_fields_during_increment_operations(r: ValkeyTestClient) -> None:
+def test_cmd_handles_mix_of_expired_and_existing_fields_during_increment_operations(r: ValkeyTestClient, cmd) -> None:
     """
     test "$cmd handles mix of expired and existing fields during increment operations" {
         r FLUSHALL
@@ -6456,11 +6443,11 @@ def test_cmd_handles_mix_of_expired_and_existing_fields_during_increment_operati
     }
     """
     r.run("FLUSHALL")
-    # TODO: set initial_expired info_field [r info stats] expired_fields
+    initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "myhash", "f1", 1, "f2", 2, "f3", 3)
     assert 3 == r.run("HLEN", "myhash")
     r.run("HPEXPIRE", "myhash", 100, "FIELDS", 2, "f1", "f3")
-    # TODO: wait_for_active_expiry r myhash 1 initial _expired 2
+    wait_for_active_expiry("r", "myhash", 1, initial_expired, 2)
     # TODO: r cmd myhash f1 inc1
     # TODO: r cmd myhash f2 inc2
     # TODO: r cmd myhash f3 inc3
@@ -6469,7 +6456,7 @@ def test_cmd_handles_mix_of_expired_and_existing_fields_during_increment_operati
 
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd"], [("HINCRBY"), ("HINCRBYFLOAT")])
-def test_cmd_maintains_ttl_values_when_incrementing_fields_with_existing_expiry(r: ValkeyTestClient) -> None:
+def test_cmd_maintains_ttl_values_when_incrementing_fields_with_existing_expiry(r: ValkeyTestClient, cmd) -> None:
     """
     test "$cmd maintains TTL values when incrementing fields with existing expiry" {
         r FLUSHALL
@@ -6489,16 +6476,15 @@ def test_cmd_maintains_ttl_values_when_incrementing_fields_with_existing_expiry(
     }
     """
     r.run("FLUSHALL")
-    # TODO: set initial_expired info_field [r info stats] expired_fields
+    initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "myhash", "f1", 1, "f2", 2, "f3", 3)
     assert 3 == r.run("HLEN", "myhash")
     r.run("HEXPIRE", "myhash", 100000, "FIELDS", 2, "f1", "f3")
     # TODO: r cmd myhash f1 inc1
-    # TODO: r cmd myhash f3 -$inc3
+    r.run(cmd, "myhash", "f3", "-$inc3")
     # TODO: assert_equal "[expr {$inc1+1}] 2 [expr {-$inc3+3}]" r HMGET myhash f1 f2 f3
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hdel_removes_both_expired_and_non_expired_fields_deleting_key_when_empty(r: ValkeyTestClient) -> None:
     """
     test {HDEL removes both expired and non-expired fields deleting key when empty} {
@@ -6518,10 +6504,10 @@ def test_hdel_removes_both_expired_and_non_expired_fields_deleting_key_when_empt
     }
     """
     r.run("FLUSHALL")
-    # TODO: set initial_expired info_field [r info stats] expired_fields
+    initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "myhash", "f1", "v1", "f2", "v2")
     r.run("HEXPIRE", "myhash", 1, "FIELDS", 1, "f1")
-    # TODO: wait_for_active_expiry r myhash 1 initial _expired 1
+    wait_for_active_expiry("r", "myhash", 1, initial_expired, 1)
     r.run("HDEL", "myhash", "f1", "f2", "f3")
     assert 0 == r.run("HEXISTS", "myhash", "f1")
     assert 0 == r.run("HEXISTS", "myhash", "f2")
@@ -6529,7 +6515,6 @@ def test_hdel_removes_both_expired_and_non_expired_fields_deleting_key_when_empt
     assert 0 == r.run("EXISTS", "myhash")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hpersist_returns_2_when_attempting_to_persist_already_expired_field(r: ValkeyTestClient) -> None:
     """
     test {HPERSIST returns -2 when attempting to persist already expired field} {
@@ -6544,16 +6529,15 @@ def test_hpersist_returns_2_when_attempting_to_persist_already_expired_field(r: 
     }
     """
     r.run("FLUSHALL")
-    # TODO: set initial_expired info_field [r info stats] expired_fields
+    initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "myhash", "f1", "v1")
     r.run("HPEXPIRE", "myhash", 50, "FIELDS", 1, "f1")
-    # TODO: wait_for_active_expiry r myhash 0 initial _expired 1
+    wait_for_active_expiry("r", "myhash", 0, initial_expired, 1)
     assert -2 == r.run("HPERSIST", "myhash", "FIELDS", 1, "f1")
     assert -2 == r.run("HTTL", "myhash", "FIELDS", 1, "f1")
     assert "" == r.run("HGET", "myhash", "f1")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hpexpire_works_correctly_on_field_after_hpersist_removes_its_ttl(r: ValkeyTestClient) -> None:
     """
     test {HPEXPIRE works correctly on field after HPERSIST removes its TTL} {
@@ -6568,12 +6552,12 @@ def test_hpexpire_works_correctly_on_field_after_hpersist_removes_its_ttl(r: Val
     }
     """
     r.run("FLUSHALL")
-    # TODO: set initial_expired info_field [r info stats] expired_fields
+    initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "myhash", "f1", "v1")
     r.run("HEXPIRE", "myhash", 10000, "FIELDS", 1, "f1")
     r.run("HPERSIST", "myhash", "FIELDS", 1, "f1")
     r.run("HPEXPIRE", "myhash", 150, "FIELDS", 1, "f1")
-    # TODO: wait_for_active_expiry r myhash 0 initial _expired 1
+    wait_for_active_expiry("r", "myhash", 0, initial_expired, 1)
     assert 0 == r.run("EXISTS", "myhash")
 
 
@@ -7540,7 +7524,6 @@ def test_restore_replace_clears_keys_with_volatile_items_tracking(r: ValkeyTestC
     assert "string" == r.run("TYPE", "myhash")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_zero_is_a_valid_ttl_in_hfe(r: ValkeyTestClient) -> None:
     """
     test {Zero is a valid ttl in HFE} {
@@ -7573,8 +7556,149 @@ def test_zero_is_a_valid_ttl_in_hfe(r: ValkeyTestClient) -> None:
     assert r.run("hlen", "myhash") == 3
     assert r.run("OBJECT", "ENCODING", "myhash") == "hashtable"
     r.run("config", "set", "import-mode", "no")
-    # TODO: wait_for_condition 30 100 {
-    #       [r hlen myhash] == 1
-    #   } else {
-    #       fail "field wasn't expired"
-    #   }
+    wait_for_condition(
+        30, 100, "           [r hlen myhash] == 1\n       ", "else", '           fail "field wasn\'t expired"\n       '
+    )
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def assert_(*args):
+    raise NotImplementedError("assert_")
+
+
+def assert_keyevent_patterns(*args):
+    raise NotImplementedError("assert_keyevent_patterns")
+
+
+def assert_morethan(*args):
+    raise NotImplementedError("assert_morethan")
+
+
+def assert_replication_stream(*args):
+    raise NotImplementedError("assert_replication_stream")
+
+
+def attach_to_replication_stream(*args):
+    raise NotImplementedError("attach_to_replication_stream")
+
+
+def check_myhash_and_expired_subkeys(*args):
+    raise NotImplementedError("check_myhash_and_expired_subkeys")
+
+
+def clock(*args):
+    raise NotImplementedError("clock")
+
+
+def close_replication_stream(*args):
+    raise NotImplementedError("close_replication_stream")
+
+
+def dict_(*args):
+    raise NotImplementedError("dict_")
+
+
+def expr(*args):
+    raise NotImplementedError("expr")
+
+
+def for_(*args):
+    raise NotImplementedError("for_")
+
+
+def get_calls(*args):
+    raise NotImplementedError("get_calls")
+
+
+def get_check_ttl_command(*args):
+    raise NotImplementedError("get_check_ttl_command")
+
+
+def get_keys(*args):
+    raise NotImplementedError("get_keys")
+
+
+def get_keys_with_volatile_items(*args):
+    raise NotImplementedError("get_keys_with_volatile_items")
+
+
+def get_long_expire_value(*args):
+    raise NotImplementedError("get_long_expire_value")
+
+
+def get_longer_then_long_expire_value(*args):
+    raise NotImplementedError("get_longer_then_long_expire_value")
+
+
+def get_past_zero_expire_value(*args):
+    raise NotImplementedError("get_past_zero_expire_value")
+
+
+def get_short_expire_value(*args):
+    raise NotImplementedError("get_short_expire_value")
+
+
+def if_(*args):
+    raise NotImplementedError("if_")
+
+
+def info_field(*args):
+    raise NotImplementedError("info_field")
+
+
+def list_(*args):
+    raise NotImplementedError("list_")
+
+
+def lmap(*args):
+    raise NotImplementedError("lmap")
+
+
+def lsort(*args):
+    raise NotImplementedError("lsort")
+
+
+def proc(*args):
+    raise NotImplementedError("proc")
+
+
+def psubscribe(*args):
+    raise NotImplementedError("psubscribe")
+
+
+def set_(*args):
+    raise NotImplementedError("set_")
+
+
+def setup_single_keyspace_notification(*args):
+    raise NotImplementedError("setup_single_keyspace_notification")
+
+
+def split(*args):
+    raise NotImplementedError("split")
+
+
+def string(*args):
+    raise NotImplementedError("string")
+
+
+def subst(*args):
+    raise NotImplementedError("subst")
+
+
+def valkey_deferring_client(*args):
+    raise NotImplementedError("valkey_deferring_client")
+
+
+def wait_for_active_expiry(*args):
+    raise NotImplementedError("wait_for_active_expiry")
+
+
+def wait_for_condition(*args):
+    raise NotImplementedError("wait_for_condition")
+
+
+def while_(*args):
+    raise NotImplementedError("while_")

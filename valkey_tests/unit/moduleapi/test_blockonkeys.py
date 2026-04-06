@@ -1,3 +1,5 @@
+# ruff: noqa: F841, ANN002, ANN201
+
 import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
@@ -36,15 +38,15 @@ def test_module_client_blocked_on_keys_circular_bpoppush(r: ValkeyTestClient) ->
         assert_equal {} [r fsl.getall dst]
     }
     """
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: set rd2 valkey_deferring_client
+    rd1 = valkey_deferring_client()
+    rd2 = valkey_deferring_client()
     r.run("del", "src", "dst")
     # TODO: $rd1 fsl.bpoppush src dst 0
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     # TODO: $rd2 fsl.bpoppush dst src 0
-    # TODO: wait_for_blocked_clients_count 2
+    wait_for_blocked_clients_count(2)
     r.run("fsl.push", "src", 42)
-    # TODO: wait_for_blocked_clients_count 0
+    wait_for_blocked_clients_count(0)
     assert "42" == r.run("fsl.getall", "src")
     assert "" == r.run("fsl.getall", "dst")
 
@@ -64,10 +66,10 @@ def test_module_client_blocked_on_keys_self_referential_bpoppush(r: ValkeyTestCl
         assert_equal {42} [r fsl.getall src]
     }
     """
-    # TODO: set rd1 valkey_deferring_client
+    rd1 = valkey_deferring_client()
     r.run("del", "src")
     # TODO: $rd1 fsl.bpoppush src src 0
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("fsl.push", "src", 42)
     assert "42" == r.run("fsl.getall", "src")
 
@@ -100,21 +102,19 @@ def test_module_client_blocked_on_keys_bpoppush_unblocked_by_timer(r: ValkeyTest
         close_replication_stream $repl
     } {} {needs:repl}
     """
-    # TODO: set rd1 valkey_deferring_client
+    rd1 = valkey_deferring_client()
     r.run("del", "src", "dst")
-    # TODO: set repl attach_to_replication_stream
+    repl = attach_to_replication_stream()
     # TODO: $rd1 fsl.bpoppush src dst 0
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("fsl.pushtimer", "src", 9000, 10)
-    # TODO: wait_for_blocked_clients_count 0
+    wait_for_blocked_clients_count(0)
     assert "9000" == r.run("fsl.getall", "dst")
     assert "" == r.run("fsl.getall", "src")
-    # TODO: assert_replication_stream repl {
-    #       {select *}
-    #       {fsl.push src 9000}
-    #       {fsl.bpoppush src dst 0}
-    #   }
-    # TODO: close_replication_stream repl
+    assert_replication_stream(
+        repl, "            {select *}\n            {fsl.push src 9000}\n            {fsl.bpoppush src dst 0}\n        "
+    )
+    close_replication_stream(repl)
 
 
 def test_module_client_blocked_on_keys_no_metadata_no_block(r: ValkeyTestClient) -> None:
@@ -143,7 +143,7 @@ def test_module_client_blocked_on_keys_no_metadata_timeout(r: ValkeyTestClient) 
     }
     """
     r.run("del", "k")
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd fsl.bpop k 1
     # TODO: assert_equal {Request timedout} $rd read
 
@@ -161,9 +161,9 @@ def test_module_client_blocked_on_keys_no_metadata_blocked(r: ValkeyTestClient) 
     }
     """
     r.run("del", "k")
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd fsl.bpop k 0
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("fsl.push", "k", 34)
     # TODO: assert_equal {34} $rd read
 
@@ -196,7 +196,7 @@ def test_module_client_blocked_on_keys_with_metadata_timeout(r: ValkeyTestClient
     }
     """
     r.run("del", "k")
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd client id
     # TODO: set cid $rd read
     r.run("fsl.push", "k", 33)
@@ -222,12 +222,12 @@ def test_module_client_blocked_on_keys_with_metadata_blocked_case_1(r: ValkeyTes
     }
     """
     r.run("del", "k")
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd client id
     # TODO: set cid $rd read
     r.run("fsl.push", "k", 33)
     # TODO: $rd fsl.bpopgt k 33 0
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("fsl.push", "k", 34)
     # TODO: assert_equal {34} $rd read
     # TODO: r client kill id cid
@@ -251,9 +251,9 @@ def test_module_client_blocked_on_keys_with_metadata_blocked_case_2(r: ValkeyTes
     """
     r.run("del", "k")
     r.run("fsl.push", "k", 32)
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd fsl.bpopgt k 35 0
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("fsl.push", "k", 33)
     r.run("fsl.push", "k", 34)
     r.run("fsl.push", "k", 35)
@@ -276,11 +276,11 @@ def test_module_client_blocked_on_keys_with_metadata_blocked_del(r: ValkeyTestCl
     """
     r.run("del", "k")
     r.run("fsl.push", "k", 32)
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd fsl.bpopgt k 35 0
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("del", "k")
-    # TODO: assert_error {*UNBLOCKED key no longer exists*} {$rd read}
+    assert_error("*UNBLOCKED key no longer exists*", "$rd read")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -298,11 +298,11 @@ def test_module_client_blocked_on_keys_with_metadata_blocked_flushall(r: ValkeyT
     """
     r.run("del", "k")
     r.run("fsl.push", "k", 32)
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd fsl.bpopgt k 35 0
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("flushall")
-    # TODO: assert_error {*UNBLOCKED key no longer exists*} {$rd read}
+    assert_error("*UNBLOCKED key no longer exists*", "$rd read")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -322,11 +322,11 @@ def test_module_client_blocked_on_keys_with_metadata_blocked_swapdb_no_key(r: Va
     r.run("select", 9)
     r.run("del", "k")
     r.run("fsl.push", "k", 32)
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd fsl.bpopgt k 35 0
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("swapdb", 0, 9)
-    # TODO: assert_error {*UNBLOCKED key no longer exists*} {$rd read}
+    assert_error("*UNBLOCKED key no longer exists*", "$rd read")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -354,11 +354,11 @@ def test_module_client_blocked_on_keys_with_metadata_blocked_swapdb_key_exists_c
     r.run("select", 0)
     r.run("lpush", "k", 38)
     r.run("select", 9)
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd fsl.bpopgt k 35 0
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("swapdb", 0, 9)
-    # TODO: assert_error {*UNBLOCKED key no longer exists*} {$rd read}
+    assert_error("*UNBLOCKED key no longer exists*", "$rd read")
     r.run("select", 9)
 
 
@@ -389,11 +389,11 @@ def test_module_client_blocked_on_keys_with_metadata_blocked_swapdb_key_exists_c
     r.run("select", 0)
     r.run("fsl.push", "k", 34)
     r.run("select", 9)
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd fsl.bpopgt k 35 0
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("swapdb", 0, 9)
-    # TODO: assert_equal {1} s 0 blocked_clients
+    assert "1" == s(0, "blocked_clients")
     r.run("fsl.push", "k", 38)
     # TODO: assert_equal {38} $rd read
     r.run("select", 9)
@@ -424,9 +424,9 @@ def test_module_client_blocked_on_keys_with_metadata_blocked_swapdb_key_exists_c
     r.run("select", 0)
     r.run("fsl.push", "k", 38)
     r.run("select", 9)
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd fsl.bpopgt k 35 0
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("swapdb", 0, 9)
     # TODO: assert_equal {38} $rd read
     r.run("select", 9)
@@ -448,11 +448,11 @@ def test_module_client_blocked_on_keys_with_metadata_blocked_client_kill(r: Valk
     """
     r.run("del", "k")
     r.run("fsl.push", "k", 32)
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd client id
     # TODO: set cid $rd read
     # TODO: $rd fsl.bpopgt k 35 0
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     # TODO: r client kill id cid
 
 
@@ -473,11 +473,11 @@ def test_module_client_blocked_on_keys_with_metadata_blocked_client_unblock_time
     """
     r.run("del", "k")
     r.run("fsl.push", "k", 32)
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd client id
     # TODO: set cid $rd read
     # TODO: $rd fsl.bpopgt k 35 0
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     # TODO: r client unblock cid timeout
     # TODO: assert_equal {Request timedout} $rd read
 
@@ -499,13 +499,13 @@ def test_module_client_blocked_on_keys_with_metadata_blocked_client_unblock_erro
     """
     r.run("del", "k")
     r.run("fsl.push", "k", 32)
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd client id
     # TODO: set cid $rd read
     # TODO: $rd fsl.bpopgt k 35 0
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     # TODO: r client unblock cid error
-    # TODO: assert_error "*unblocked*" {$rd read}
+    assert_error("*unblocked*", "$rd read")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -523,11 +523,11 @@ def test_module_client_blocked_on_keys_no_timeout_cb_client_unblock_timeout(r: V
     }
     """
     r.run("del", "k")
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd client id
     # TODO: set cid $rd read
     # TODO: $rd fsl.bpop k 0 NO_TO_CB
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     # TODO: assert_equal r client unblock $cid timeout {0}
     # TODO: $rd close
 
@@ -547,11 +547,11 @@ def test_module_client_blocked_on_keys_no_timeout_cb_client_unblock_error(r: Val
     }
     """
     r.run("del", "k")
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd client id
     # TODO: set cid $rd read
     # TODO: $rd fsl.bpop k 0 NO_TO_CB
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     # TODO: assert_equal r client unblock $cid error {0}
     # TODO: $rd close
 
@@ -574,9 +574,9 @@ def test_module_client_re_blocked_on_keys_after_woke_up_on_wrong_type(r: ValkeyT
     }
     """
     r.run("del", "k")
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd fsl.bpop k 0
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("lpush", "k", 12)
     r.run("lpush", "k", 13)
     r.run("lpush", "k", 14)
@@ -600,9 +600,9 @@ def test_module_client_blocked_on_keys_woken_up_by_lpush(r: ValkeyTestClient) ->
     }
     """
     r.run("del", "k")
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd blockonkeys.popall k
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("lpush", "k", 42, "squirrel", "banana")
     # TODO: assert_equal {banana squirrel 42} $rd read
     # TODO: $rd close
@@ -622,9 +622,9 @@ def test_module_client_unblocks_blpop(r: ValkeyTestClient) -> None:
     }
     """
     r.run("del", "k")
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd blpop k 3
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("blockonkeys.lpush", "k", 42)
     # TODO: assert_equal {k 42} $rd read
     # TODO: $rd close
@@ -650,9 +650,9 @@ def test_module_unblocks_module_blocked_on_non_empty_list(r: ValkeyTestClient) -
     """
     r.run("del", "k")
     r.run("lpush", "k", "aa")
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd blockonkeys.blpopn k 5
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("blockonkeys.lpush_unblock", "k", "bb", "cc")
     r.run("lpush", "k", "dd", "ee", "ff")
     r.run("blockonkeys.lpush_unblock", "k", "gg")
@@ -682,11 +682,11 @@ def test_module_explicit_unblock_when_blocked_on_keys(r: ValkeyTestClient) -> No
     """
     r.run("del", "k")
     r.run("set", "somekey", "someval")
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd blockonkeys.blpopn_or_unblock k 5 0
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("lpush", "k", "dd")
-    # TODO: wait_for_blocked_clients_count 0
+    wait_for_blocked_clients_count(0)
     # TODO: assert_equal {Action aborted} $rd read
     # TODO: $rd get somekey
     # TODO: assert_equal {someval} $rd read
@@ -740,3 +740,34 @@ start_server list overrides [list loadmodule "$testmodule"] {
     }
 }
 """
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def assert_error(*args):
+    raise NotImplementedError("assert_error")
+
+
+def assert_replication_stream(*args):
+    raise NotImplementedError("assert_replication_stream")
+
+
+def attach_to_replication_stream(*args):
+    raise NotImplementedError("attach_to_replication_stream")
+
+
+def close_replication_stream(*args):
+    raise NotImplementedError("close_replication_stream")
+
+
+def s(*args):
+    raise NotImplementedError("s")
+
+
+def valkey_deferring_client(*args):
+    raise NotImplementedError("valkey_deferring_client")
+
+
+def wait_for_blocked_clients_count(*args):
+    raise NotImplementedError("wait_for_blocked_clients_count")

@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841, RUF043
+# ruff: noqa: PLR2004, F841, RUF043, ANN001, ANN002, ANN201
 
 import pytest
 
@@ -25,29 +25,26 @@ def test_hset_or_hlen_small_hash_creation(r: ValkeyTestClient) -> None:
         list [r hlen smallhash]
     } {8}
     """
-    # TODO: array set smallhash {}
-    # TODO: for {set i 0} {$i < 8} {incr i} {
-    #       set key __avoid_collisions__[randstring 0 8 alpha]
-    #       set val __avoid_collisions__[randstring 0 8 alpha]
-    #       if {[info exists smallhash($key)]} {
-    #           incr i -1
-    #           continue
-    #       }
-    #       r hset smallhash $key $val
-    #       set smallhash($key) $val
-    #   }
+    array("set", "smallhash", "")
+    i = 0
+    while i < 8:
+        key = "__avoid_collisions__[randstring"
+        val = "__avoid_collisions__[randstring"
+        if_("[info exists smallhash($key)]", "                incr i -1\n                continue\n            ")
+        r.run("hset", "smallhash", key, val)
+        set_("smallhash($key)", val)
+        i += 1
     # TODO: list r hlen smallhash
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_is_the_small_hash_encoded_with_a_listpack(r: ValkeyTestClient) -> None:
     """
     test {Is the small hash encoded with a listpack?} {
         assert_encoding listpack smallhash
     }
     """
-    # TODO: assert_encoding listpack smallhash
+    assert_encoding("listpack", "smallhash")
 
 
 """
@@ -97,11 +94,10 @@ assert_morethan memory_usage myhash 0
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(
     ["type", "contents"], [("listpack", "{a 1} {b 2} {c 3}"), ("hashtable", "{a 1} {b 2} {[randstring 70 90 alpha] 3}")]
 )
-def test_hrandfield_type(r: ValkeyTestClient) -> None:
+def test_hrandfield_type(r: ValkeyTestClient, type, contents) -> None:
     """
     test "HRANDFIELD - $type" {
         unset -nocomplain myhash
@@ -113,17 +109,18 @@ def test_hrandfield_type(r: ValkeyTestClient) -> None:
         assert_equal [lsort [get_keys $contents]] [lsort [array names myhash]]
     }
     """
-    # TODO: unset -nocomplain myhash
-    # TODO: array set myhash {}
-    # TODO: for {set i 0} {$i < 100} {incr i} {
-    #       set key [r hrandfield myhash]
-    #       set myhash($key) 1
-    #   }
-    # TODO: assert_equal lsort [get_keys $contents] lsort [array names myhash]
+    unset("-nocomplain", "myhash")
+    array("set", "myhash", "")
+    i = 0
+    while i < 100:
+        key = r.run("hrandfield", "myhash")
+        set_("myhash($key)", 1)
+        i += 1
+    assert lsort(get_keys(contents)) == lsort(array("names", "myhash"))
 
 
 """
-r config set hash-max-ziplist-value original _max_value
+r config set hash-max-ziplist-value original_max_value
 """
 
 
@@ -215,7 +212,6 @@ r readraw 0
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(
     ["type", "contents"],
     [
@@ -223,7 +219,7 @@ r readraw 0
         ("listpack", "{a 1} {b 2} {c 3} {d 4} {e 5} {6 f} {7 g} {8 h} {9 i} {10 j}"),
     ],
 )
-def test_hrandfield_with_count_type(r: ValkeyTestClient) -> None:
+def test_hrandfield_with_count_type(r: ValkeyTestClient, type, contents) -> None:
     """
     test "HRANDFIELD with <count> - $type" {
         set original_max_value [lindex [r config get hash-max-ziplist-value] 1]
@@ -354,9 +350,9 @@ def test_hrandfield_with_count_type(r: ValkeyTestClient) -> None:
     """
     original_max_value = r.run("config", "get", "hash-max-ziplist-value")[1]
     r.run("config", "set", "hash-max-ziplist-value", 10)
-    # TODO: create_hash myhash contents
-    # TODO: assert_encoding type myhash
-    # TODO: set mydict dict create {*}[r hgetall myhash]
+    create_hash("myhash", contents)
+    assert_encoding(type, "myhash")
+    mydict = dict_("create", "*", r.run("hgetall", "myhash"))
     res = r.run("hrandfield", "myhash", -20)
     assert len(res) == 20
     res = r.run("hrandfield", "myhash", -1001)
@@ -366,88 +362,29 @@ def test_hrandfield_with_count_type(r: ValkeyTestClient) -> None:
     res = r.run("hrandfield", "myhash", -1001, "withvalues")
     assert len(res) == 2002
     res = r.run("hrandfield", "myhash", -1000)
-    # TODO: assert_lessthan chi_square_value $res 40
-    # TODO: foreach {key val} res {
-    #       assert {[dict exists $mydict $key]}
-    #   }
-    # TODO: unset -nocomplain auxset
+    assert_lessthan(chi_square_value(res), 40)
+    foreach("key val", res, "                assert {[dict exists $mydict $key]}\n            ")
+    unset("-nocomplain", "auxset")
     iterations = 1000
-    # TODO: while {$iterations != 0} {
-    #       incr iterations -1
-    #       if {[expr {$iterations % 2}] == 0} {
-    #           set res [r hrandfield myhash -3 withvalues]
-    #           foreach {key val} $res {
-    #               dict append auxset $key $val
-    #           }
-    #       } else {
-    #           set res [r hrandfield myhash -3]
-    #           foreach key $res {
-    #               dict append auxset $key $val
-    #           }
-    #       }
-    #       if {[lsort [dict keys $mydict]] eq
-    #           [lsort [dict keys $auxset]]} {
-    #           break;
-    #       }
-    #   }
+    while_(
+        "$iterations != 0",
+        "                incr iterations -1\n                if {[expr {$iterations % 2}] == 0} {\n                    set res [r hrandfield myhash -3 withvalues]\n                    foreach {key val} $res {\n                        dict append auxset $key $val\n                    }\n                } else {\n                    set res [r hrandfield myhash -3]\n                    foreach key $res {\n                        dict append auxset $key $val\n                    }\n                }\n                if {[lsort [dict keys $mydict]] eq\n                    [lsort [dict keys $auxset]]} {\n                    break;\n                }\n            ",
+    )
     assert iterations != 0
-    # TODO: foreach size {10 20} {
-    #       set res [r hrandfield myhash $size]
-    #       assert_equal [llength $res] 10
-    #       assert_equal [lsort $res] [lsort [dict keys $mydict]]
-    #
-    #       # again with WITHVALUES
-    #       set res [r hrandfield myhash $size withvalues]
-    #       assert_equal [llength $res] 20
-    #       assert_equal [lsort $res] [lsort $mydict]
-    #   }
-    # TODO: foreach size {8 2} {
-    #       set res [r hrandfield myhash $size]
-    #       assert_equal [llength $res] $size
-    #       # again with WITHVALUES
-    #       set res [r hrandfield myhash $size withvalues]
-    #       assert_equal [llength $res] [expr {$size * 2}]
-    #
-    #       # 1) Check that all the elements actually belong to the
-    #       # original set.
-    #       foreach ele [dict keys $res] {
-    #           assert {[dict exists $mydict $ele]}
-    #       }
-    #
-    #       # 2) Check that eventually all the elements are returned.
-    #       #    Use both WITHVALUES and without
-    #       unset -nocomplain auxset
-    #       unset -nocomplain allkey
-    #       set iterations [expr {1000 / $size}]
-    #       set all_ele_return false
-    #       while {$iterations != 0} {
-    #           incr iterations -1
-    #           if {[expr {$iterations % 2}] == 0} {
-    #               set res [r hrandfield myhash $size withvalues]
-    #               foreach {key value} $res {
-    #                   dict append auxset $key $value
-    #                   lappend allkey $key
-    #               }
-    #           } else {
-    #               set res [r hrandfield myhash $size]
-    #               foreach key $res {
-    #                   dict append auxset $key
-    #                   lappend allkey $key
-    #               }
-    #           }
-    #           if {[lsort [dict keys $mydict]] eq
-    #               [lsort [dict keys $auxset]]} {
-    #               set all_ele_return true
-    #           }
-    #       }
-    #       assert_equal $all_ele_return true
-    #       # df = 9, 40 means 0.00001 probability
-    #       assert_lessthan [chi_square_value $allkey] 40
-    #   }
+    foreach(
+        "size",
+        "10 20",
+        "                set res [r hrandfield myhash $size]\n                assert_equal [llength $res] 10\n                assert_equal [lsort $res] [lsort [dict keys $mydict]]\n\n                # again with WITHVALUES\n                set res [r hrandfield myhash $size withvalues]\n                assert_equal [llength $res] 20\n                assert_equal [lsort $res] [lsort $mydict]\n            ",
+    )
+    foreach(
+        "size",
+        "8 2",
+        "                set res [r hrandfield myhash $size]\n                assert_equal [llength $res] $size\n                # again with WITHVALUES\n                set res [r hrandfield myhash $size withvalues]\n                assert_equal [llength $res] [expr {$size * 2}]\n\n                # 1) Check that all the elements actually belong to the\n                # original set.\n                foreach ele [dict keys $res] {\n                    assert {[dict exists $mydict $ele]}\n                }\n\n                # 2) Check that eventually all the elements are returned.\n                #    Use both WITHVALUES and without\n                unset -nocomplain auxset\n                unset -nocomplain allkey\n                set iterations [expr {1000 / $size}]\n                set all_ele_return false\n                while {$iterations != 0} {\n                    incr iterations -1\n                    if {[expr {$iterations % 2}] == 0} {\n                        set res [r hrandfield myhash $size withvalues]\n                        foreach {key value} $res {\n                            dict append auxset $key $value\n                            lappend allkey $key\n                        }\n                    } else {\n                        set res [r hrandfield myhash $size]\n                        foreach key $res {\n                            dict append auxset $key\n                            lappend allkey $key\n                        }\n                    }\n                    if {[lsort [dict keys $mydict]] eq\n                        [lsort [dict keys $auxset]]} {\n                        set all_ele_return true\n                    }\n                }\n                assert_equal $all_ele_return true\n                # df = 9, 40 means 0.00001 probability\n                assert_lessthan [chi_square_value $allkey] 40\n            ",
+    )
 
 
 """
-r config set hash-max-ziplist-value original _max_value
+r config set hash-max-ziplist-value original_max_value
 """
 
 
@@ -469,32 +406,28 @@ def test_hset_or_hlen_big_hash_creation(r: ValkeyTestClient) -> None:
         list [r hlen bighash]
     } {1024}
     """
-    # TODO: array set bighash {}
-    # TODO: for {set i 0} {$i < 1024} {incr i} {
-    #       set key __avoid_collisions__[randstring 0 8 alpha]
-    #       set val __avoid_collisions__[randstring 0 8 alpha]
-    #       if {[info exists bighash($key)]} {
-    #           incr i -1
-    #           continue
-    #       }
-    #       r hset bighash $key $val
-    #       set bighash($key) $val
-    #   }
+    array("set", "bighash", "")
+    i = 0
+    while i < 1024:
+        key = "__avoid_collisions__[randstring"
+        val = "__avoid_collisions__[randstring"
+        if_("[info exists bighash($key)]", "                incr i -1\n                continue\n            ")
+        r.run("hset", "bighash", key, val)
+        set_("bighash($key)", val)
+        i += 1
     # TODO: list r hlen bighash
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_is_the_big_hash_encoded_with_an_hash_table(r: ValkeyTestClient) -> None:
     """
     test {Is the big hash encoded with an hash table?} {
         assert_encoding hashtable bighash
     }
     """
-    # TODO: assert_encoding hashtable bighash
+    assert_encoding("hashtable", "bighash")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hget_against_the_small_hash(r: ValkeyTestClient) -> None:
     """
     test {HGET against the small hash} {
@@ -509,16 +442,14 @@ def test_hget_against_the_small_hash(r: ValkeyTestClient) -> None:
     } {}
     """
     err = ""
-    # TODO: foreach k array names smallhash * {
-    #       if {$smallhash($k) ne [r hget smallhash $k]} {
-    #           set err "$smallhash($k) != [r hget smallhash $k]"
-    #           break
-    #       }
-    #   }
+    foreach(
+        "k",
+        array("names", "smallhash", "*"),
+        '            if {$smallhash($k) ne [r hget smallhash $k]} {\n                set err "$smallhash($k) != [r hget smallhash $k]"\n                break\n            }\n        ',
+    )
     _ = err
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hget_against_the_big_hash(r: ValkeyTestClient) -> None:
     """
     test {HGET against the big hash} {
@@ -533,12 +464,11 @@ def test_hget_against_the_big_hash(r: ValkeyTestClient) -> None:
     } {}
     """
     err = ""
-    # TODO: foreach k array names bighash * {
-    #       if {$bighash($k) ne [r hget bighash $k]} {
-    #           set err "$bighash($k) != [r hget bighash $k]"
-    #           break
-    #       }
-    #   }
+    foreach(
+        "k",
+        array("names", "bighash", "*"),
+        '            if {$bighash($k) ne [r hget bighash $k]} {\n                set err "$bighash($k) != [r hget bighash $k]"\n                break\n            }\n        ',
+    )
     _ = err
 
 
@@ -553,8 +483,8 @@ def test_hget_against_non_existing_key(r: ValkeyTestClient) -> None:
     } {{} {}}
     """
     rv = ""
-    # TODO: lappend rv r hget smallhash __123123123__
-    # TODO: lappend rv r hget bighash __123123123__
+    lappend("rv", r.run("hget", "smallhash", "__123123123__"))
+    lappend("rv", r.run("hget", "bighash", "__123123123__"))
     # TODO: set _ rv
     assert False
 
@@ -580,18 +510,18 @@ def test_hset_in_update_and_insert_mode(r: ValkeyTestClient) -> None:
     } {0 newval1 1 0 newval2 1 1 1}
     """
     rv = ""
-    # TODO: set k lindex [array names smallhash *] 0
-    # TODO: lappend rv r hset smallhash $k newval1
-    # TODO: set smallhash($k) newval1
-    # TODO: lappend rv r hget smallhash $k
-    # TODO: lappend rv r hset smallhash __foobar123__ newval
-    # TODO: set k lindex [array names bighash *] 0
-    # TODO: lappend rv r hset bighash $k newval2
-    # TODO: set bighash($k) newval2
-    # TODO: lappend rv r hget bighash $k
-    # TODO: lappend rv r hset bighash __foobar123__ newval
-    # TODO: lappend rv r hdel smallhash __foobar123__
-    # TODO: lappend rv r hdel bighash __foobar123__
+    k = array("names", "smallhash", "*")[0]
+    lappend("rv", r.run("hset", "smallhash", k, "newval1"))
+    set_("smallhash($k)", "newval1")
+    lappend("rv", r.run("hget", "smallhash", k))
+    lappend("rv", r.run("hset", "smallhash", "__foobar123__", "newval"))
+    k = array("names", "bighash", "*")[0]
+    lappend("rv", r.run("hset", "bighash", k, "newval2"))
+    set_("bighash($k)", "newval2")
+    lappend("rv", r.run("hget", "bighash", k))
+    lappend("rv", r.run("hset", "bighash", "__foobar123__", "newval"))
+    lappend("rv", r.run("hdel", "smallhash", "__foobar123__"))
+    lappend("rv", r.run("hdel", "bighash", "__foobar123__"))
     # TODO: set _ rv
     assert False
 
@@ -665,7 +595,6 @@ def test_hset_or_hmset_wrong_number_of_args(r: ValkeyTestClient) -> None:
         r.run("hmset", "smallhash", "key1", "val1", "key2")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hmset_small_hash(r: ValkeyTestClient) -> None:
     """
     test {HMSET - small hash} {
@@ -679,15 +608,14 @@ def test_hmset_small_hash(r: ValkeyTestClient) -> None:
     } {OK}
     """
     args = ""
-    # TODO: foreach {k v} array get smallhash {
-    #       set newval [randstring 0 8 alpha]
-    #       set smallhash($k) $newval
-    #       lappend args $k $newval
-    #   }
+    foreach(
+        "k v",
+        array("get", "smallhash"),
+        "            set newval [randstring 0 8 alpha]\n            set smallhash($k) $newval\n            lappend args $k $newval\n        ",
+    )
     assert r.run("hmset", "smallhash", "*", args) == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hmset_big_hash(r: ValkeyTestClient) -> None:
     """
     test {HMSET - big hash} {
@@ -701,11 +629,11 @@ def test_hmset_big_hash(r: ValkeyTestClient) -> None:
     } {OK}
     """
     args = ""
-    # TODO: foreach {k v} array get bighash {
-    #       set newval [randstring 0 8 alpha]
-    #       set bighash($k) $newval
-    #       lappend args $k $newval
-    #   }
+    foreach(
+        "k v",
+        array("get", "bighash"),
+        "            set newval [randstring 0 8 alpha]\n            set bighash($k) $newval\n            lappend args $k $newval\n        ",
+    )
     assert r.run("hmset", "bighash", "*", args) == "OK"
 
 
@@ -721,9 +649,9 @@ def test_hmget_against_non_existing_key_and_fields(r: ValkeyTestClient) -> None:
     } {{{} {}} {{} {}} {{} {}}}
     """
     rv = ""
-    # TODO: lappend rv r hmget doesntexist __123123123__ __456456456__
-    # TODO: lappend rv r hmget smallhash __123123123__ __456456456__
-    # TODO: lappend rv r hmget bighash __123123123__ __456456456__
+    lappend("rv", r.run("hmget", "doesntexist", "__123123123__", "__456456456__"))
+    lappend("rv", r.run("hmget", "smallhash", "__123123123__", "__456456456__"))
+    lappend("rv", r.run("hmget", "bighash", "__123123123__", "__456456456__"))
     # TODO: set _ rv
     assert False
 
@@ -785,7 +713,6 @@ def test_hash_commands_against_wrong_type(r: ValkeyTestClient) -> None:
         r.run("hscan", "wrongtype", 0)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hmget_small_hash(r: ValkeyTestClient) -> None:
     """
     test {HMGET - small hash} {
@@ -806,20 +733,13 @@ def test_hmget_small_hash(r: ValkeyTestClient) -> None:
     """
     keys = ""
     vals = ""
-    # TODO: foreach {k v} array get smallhash {
-    #       lappend keys $k
-    #       lappend vals $v
-    #   }
+    foreach("k v", array("get", "smallhash"), "            lappend keys $k\n            lappend vals $v\n        ")
     err = ""
     result = r.run("hmget", "smallhash", "*", keys)
-    # TODO: if {$vals ne $result} {
-    #       set err "$vals != $result"
-    #       break
-    #   }
+    if_("$vals ne $result", '            set err "$vals != $result"\n            break\n        ')
     _ = err
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hmget_big_hash(r: ValkeyTestClient) -> None:
     """
     test {HMGET - big hash} {
@@ -840,40 +760,31 @@ def test_hmget_big_hash(r: ValkeyTestClient) -> None:
     """
     keys = ""
     vals = ""
-    # TODO: foreach {k v} array get bighash {
-    #       lappend keys $k
-    #       lappend vals $v
-    #   }
+    foreach("k v", array("get", "bighash"), "            lappend keys $k\n            lappend vals $v\n        ")
     err = ""
     result = r.run("hmget", "bighash", "*", keys)
-    # TODO: if {$vals ne $result} {
-    #       set err "$vals != $result"
-    #       break
-    #   }
+    if_("$vals ne $result", '            set err "$vals != $result"\n            break\n        ')
     _ = err
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hkeys_small_hash(r: ValkeyTestClient) -> None:
     """
     test {HKEYS - small hash} {
         lsort [r hkeys smallhash]
     } lsort [array names smallhash *]
     """
-    # TODO: lsort r hkeys smallhash
+    lsort(r.run("hkeys", "smallhash"))
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hkeys_big_hash(r: ValkeyTestClient) -> None:
     """
     test {HKEYS - big hash} {
         lsort [r hkeys bighash]
     } lsort [array names bighash *]
     """
-    # TODO: lsort r hkeys bighash
+    lsort(r.run("hkeys", "bighash"))
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hvals_small_hash(r: ValkeyTestClient) -> None:
     """
     test {HVALS - small hash} {
@@ -885,13 +796,10 @@ def test_hvals_small_hash(r: ValkeyTestClient) -> None:
     } lsort [r hvals smallhash]
     """
     vals = ""
-    # TODO: foreach {k v} array get smallhash {
-    #       lappend vals $v
-    #   }
-    # TODO: set _ lsort $vals
+    foreach("k v", array("get", "smallhash"), "            lappend vals $v\n        ")
+    _ = lsort(vals)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hvals_big_hash(r: ValkeyTestClient) -> None:
     """
     test {HVALS - big hash} {
@@ -903,30 +811,26 @@ def test_hvals_big_hash(r: ValkeyTestClient) -> None:
     } lsort [r hvals bighash]
     """
     vals = ""
-    # TODO: foreach {k v} array get bighash {
-    #       lappend vals $v
-    #   }
-    # TODO: set _ lsort $vals
+    foreach("k v", array("get", "bighash"), "            lappend vals $v\n        ")
+    _ = lsort(vals)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hgetall_small_hash(r: ValkeyTestClient) -> None:
     """
     test {HGETALL - small hash} {
         lsort [r hgetall smallhash]
     } lsort [array get smallhash]
     """
-    # TODO: lsort r hgetall smallhash
+    lsort(r.run("hgetall", "smallhash"))
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hgetall_big_hash(r: ValkeyTestClient) -> None:
     """
     test {HGETALL - big hash} {
         lsort [r hgetall bighash]
     } lsort [array get bighash]
     """
-    # TODO: lsort r hgetall bighash
+    lsort(r.run("hgetall", "bighash"))
 
 
 def test_hgetall_against_non_existing_key(r: ValkeyTestClient) -> None:
@@ -956,9 +860,9 @@ def test_hgetdel_single_field(r: ValkeyTestClient) -> None:
     r.run("del", "myhash")
     r.run("hset", "myhash", "field1", "value1")
     rv = ""
-    # TODO: lappend rv r hgetdel myhash FIELDS 1 field1
-    # TODO: lappend rv r hexists myhash field1
-    # TODO: lappend rv r exists myhash
+    lappend("rv", r.run("hgetdel", "myhash", "FIELDS", 1, "field1"))
+    lappend("rv", r.run("hexists", "myhash", "field1"))
+    lappend("rv", r.run("exists", "myhash"))
     # TODO: set _ rv
     assert False
 
@@ -981,11 +885,11 @@ def test_hgetdel_multiple_fields(r: ValkeyTestClient) -> None:
     r.run("del", "myhash")
     r.run("hmset", "myhash", "field1", "value1", "field2", "value2", "field3", "value3")
     rv = ""
-    # TODO: lappend rv r hgetdel myhash FIELDS 2 field1 field3
-    # TODO: lappend rv r hexists myhash field1
-    # TODO: lappend rv r hexists myhash field2
-    # TODO: lappend rv r hexists myhash field3
-    # TODO: lappend rv r hget myhash field2
+    lappend("rv", r.run("hgetdel", "myhash", "FIELDS", 2, "field1", "field3"))
+    lappend("rv", r.run("hexists", "myhash", "field1"))
+    lappend("rv", r.run("hexists", "myhash", "field2"))
+    lappend("rv", r.run("hexists", "myhash", "field3"))
+    lappend("rv", r.run("hget", "myhash", "field2"))
     # TODO: set _ rv
     assert False
 
@@ -1005,8 +909,8 @@ def test_hgetdel_non_existing_field(r: ValkeyTestClient) -> None:
     r.run("del", "myhash")
     r.run("hset", "myhash", "field1", "value1")
     rv = ""
-    # TODO: lappend rv r hgetdel myhash FIELDS 1 nonexisting
-    # TODO: lappend rv r hexists myhash field1
+    lappend("rv", r.run("hgetdel", "myhash", "FIELDS", 1, "nonexisting"))
+    lappend("rv", r.run("hexists", "myhash", "field1"))
     # TODO: set _ rv
     assert False
 
@@ -1052,10 +956,10 @@ def test_hgetdel_mix_of_existing_and_non_existing_fields(r: ValkeyTestClient) ->
     r.run("del", "myhash")
     r.run("hmset", "myhash", "a", 1, "b", 2, "c", 3)
     rv = ""
-    # TODO: lappend rv r hgetdel myhash FIELDS 3 a nonexist b
-    # TODO: lappend rv r hexists myhash a
-    # TODO: lappend rv r hexists myhash b
-    # TODO: lappend rv r hexists myhash c
+    lappend("rv", r.run("hgetdel", "myhash", "FIELDS", 3, "a", "nonexist", "b"))
+    lappend("rv", r.run("hexists", "myhash", "a"))
+    lappend("rv", r.run("hexists", "myhash", "b"))
+    lappend("rv", r.run("hexists", "myhash", "c"))
     # TODO: set _ rv
     assert False
 
@@ -1075,8 +979,8 @@ def test_hgetdel_hash_becomes_empty_after_deletion(r: ValkeyTestClient) -> None:
     r.run("del", "myhash")
     r.run("hmset", "myhash", "a", 1, "b", 2)
     rv = ""
-    # TODO: lappend rv r hgetdel myhash FIELDS 2 a b
-    # TODO: lappend rv r exists myhash
+    lappend("rv", r.run("hgetdel", "myhash", "FIELDS", 2, "a", "b"))
+    lappend("rv", r.run("exists", "myhash"))
     # TODO: set _ rv
     assert False
 
@@ -1151,18 +1055,18 @@ def test_hdel_and_return_value(r: ValkeyTestClient) -> None:
     } {0 0 1 0 {} 1 0 {}}
     """
     rv = ""
-    # TODO: lappend rv r hdel smallhash nokey
-    # TODO: lappend rv r hdel bighash nokey
-    # TODO: set k lindex [array names smallhash *] 0
-    # TODO: lappend rv r hdel smallhash $k
-    # TODO: lappend rv r hdel smallhash $k
-    # TODO: lappend rv r hget smallhash $k
-    # TODO: unset smallhash($k)
-    # TODO: set k lindex [array names bighash *] 0
-    # TODO: lappend rv r hdel bighash $k
-    # TODO: lappend rv r hdel bighash $k
-    # TODO: lappend rv r hget bighash $k
-    # TODO: unset bighash($k)
+    lappend("rv", r.run("hdel", "smallhash", "nokey"))
+    lappend("rv", r.run("hdel", "bighash", "nokey"))
+    k = array("names", "smallhash", "*")[0]
+    lappend("rv", r.run("hdel", "smallhash", k))
+    lappend("rv", r.run("hdel", "smallhash", k))
+    lappend("rv", r.run("hget", "smallhash", k))
+    unset("smallhash($k)")
+    k = array("names", "bighash", "*")[0]
+    lappend("rv", r.run("hdel", "bighash", k))
+    lappend("rv", r.run("hdel", "bighash", k))
+    lappend("rv", r.run("hget", "bighash", k))
+    unset("bighash($k)")
     # TODO: set _ rv
     assert False
 
@@ -1215,16 +1119,15 @@ def test_hexists(r: ValkeyTestClient) -> None:
     } {1 0 1 0}
     """
     rv = ""
-    # TODO: set k lindex [array names smallhash *] 0
-    # TODO: lappend rv r hexists smallhash $k
-    # TODO: lappend rv r hexists smallhash nokey
-    # TODO: set k lindex [array names bighash *] 0
-    # TODO: lappend rv r hexists bighash $k
+    k = array("names", "smallhash", "*")[0]
+    lappend("rv", r.run("hexists", "smallhash", k))
+    lappend("rv", r.run("hexists", "smallhash", "nokey"))
+    k = array("names", "bighash", "*")[0]
+    lappend("rv", r.run("hexists", "bighash", k))
     # TODO: lappend rv r hexists bighash nokey
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_is_a_ziplist_encoded_hash_promoted_on_big_payload(r: ValkeyTestClient) -> None:
     """
     test {Is a ziplist encoded Hash promoted on big payload?} {
@@ -1234,7 +1137,7 @@ def test_is_a_ziplist_encoded_hash_promoted_on_big_payload(r: ValkeyTestClient) 
     } {*hashtable*} {needs:debug}
     """
     r.run("config", "set", "hash-max-listpack-value", 64)
-    # TODO: r hset smallhash foo string repeat a 1024
+    r.run("hset", "smallhash", "foo", string("repeat", "a", 1024))
     assert r.run("debug", "object", "smallhash") == "*hashtable*"
 
 
@@ -1284,9 +1187,9 @@ def test_hincrby_against_non_existing_hash_key(r: ValkeyTestClient) -> None:
     rv = ""
     r.run("hdel", "smallhash", "tmp")
     r.run("hdel", "bighash", "tmp")
-    # TODO: lappend rv r hincrby smallhash tmp 2
-    # TODO: lappend rv r hget smallhash tmp
-    # TODO: lappend rv r hincrby bighash tmp 2
+    lappend("rv", r.run("hincrby", "smallhash", "tmp", 2))
+    lappend("rv", r.run("hget", "smallhash", "tmp"))
+    lappend("rv", r.run("hincrby", "bighash", "tmp", 2))
     # TODO: lappend rv r hget bighash tmp
     assert False
 
@@ -1303,9 +1206,9 @@ def test_hincrby_against_hash_key_created_by_hincrby_itself(r: ValkeyTestClient)
     } {5 5 5 5}
     """
     rv = ""
-    # TODO: lappend rv r hincrby smallhash tmp 3
-    # TODO: lappend rv r hget smallhash tmp
-    # TODO: lappend rv r hincrby bighash tmp 3
+    lappend("rv", r.run("hincrby", "smallhash", "tmp", 3))
+    lappend("rv", r.run("hget", "smallhash", "tmp"))
+    lappend("rv", r.run("hincrby", "bighash", "tmp", 3))
     # TODO: lappend rv r hget bighash tmp
     assert False
 
@@ -1379,7 +1282,7 @@ def test_hincrby_fails_against_hash_value_with_spaces_left(r: ValkeyTestClient) 
     except Exception as _catch_err:
         bigerr = str(_catch_err)
     rv = ""
-    # TODO: lappend rv string match "ERR *not an integer*" $smallerr
+    lappend("rv", string("match", "ERR *not an integer*", smallerr))
     # TODO: lappend rv string match "ERR *not an integer*" $bigerr
     assert False
 
@@ -1408,7 +1311,7 @@ def test_hincrby_fails_against_hash_value_with_spaces_right(r: ValkeyTestClient)
     except Exception as _catch_err:
         bigerr = str(_catch_err)
     rv = ""
-    # TODO: lappend rv string match "ERR *not an integer*" $smallerr
+    lappend("rv", string("match", "ERR *not an integer*", smallerr))
     # TODO: lappend rv string match "ERR *not an integer*" $bigerr
     assert False
 
@@ -1462,9 +1365,9 @@ def test_hincrbyfloat_against_non_existing_hash_key(r: ValkeyTestClient) -> None
     rv = ""
     r.run("hdel", "smallhash", "tmp")
     r.run("hdel", "bighash", "tmp")
-    # TODO: lappend rv roundFloat [r hincrbyfloat smallhash tmp 2.5]
-    # TODO: lappend rv roundFloat [r hget smallhash tmp]
-    # TODO: lappend rv roundFloat [r hincrbyfloat bighash tmp 2.5]
+    lappend("rv", round_float(r.run("hincrbyfloat", "smallhash", "tmp", 2.5)))
+    lappend("rv", round_float(r.run("hget", "smallhash", "tmp")))
+    lappend("rv", round_float(r.run("hincrbyfloat", "bighash", "tmp", 2.5)))
     # TODO: lappend rv roundFloat [r hget bighash tmp]
     assert False
 
@@ -1481,9 +1384,9 @@ def test_hincrbyfloat_against_hash_key_created_by_hincrby_itself(r: ValkeyTestCl
     } {6 6 6 6}
     """
     rv = ""
-    # TODO: lappend rv roundFloat [r hincrbyfloat smallhash tmp 3.5]
-    # TODO: lappend rv roundFloat [r hget smallhash tmp]
-    # TODO: lappend rv roundFloat [r hincrbyfloat bighash tmp 3.5]
+    lappend("rv", round_float(r.run("hincrbyfloat", "smallhash", "tmp", 3.5)))
+    lappend("rv", round_float(r.run("hget", "smallhash", "tmp")))
+    lappend("rv", round_float(r.run("hincrbyfloat", "bighash", "tmp", 3.5)))
     # TODO: lappend rv roundFloat [r hget bighash tmp]
     assert False
 
@@ -1560,7 +1463,7 @@ def test_hincrbyfloat_fails_against_hash_value_with_spaces_left(r: ValkeyTestCli
     except Exception as _catch_err:
         bigerr = str(_catch_err)
     rv = ""
-    # TODO: lappend rv string match "ERR *not*float*" $smallerr
+    lappend("rv", string("match", "ERR *not*float*", smallerr))
     # TODO: lappend rv string match "ERR *not*float*" $bigerr
     assert False
 
@@ -1589,7 +1492,7 @@ def test_hincrbyfloat_fails_against_hash_value_with_spaces_right(r: ValkeyTestCl
     except Exception as _catch_err:
         bigerr = str(_catch_err)
     rv = ""
-    # TODO: lappend rv string match "ERR *not*float*" $smallerr
+    lappend("rv", string("match", "ERR *not*float*", smallerr))
     # TODO: lappend rv string match "ERR *not*float*" $bigerr
     assert False
 
@@ -1616,7 +1519,6 @@ def test_hincrbyfloat_fails_against_hash_value_that_contains_a_null_terminator_i
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hstrlen_against_the_small_hash(r: ValkeyTestClient) -> None:
     """
     test {HSTRLEN against the small hash} {
@@ -1631,16 +1533,14 @@ def test_hstrlen_against_the_small_hash(r: ValkeyTestClient) -> None:
     } {}
     """
     err = ""
-    # TODO: foreach k array names smallhash * {
-    #       if {[string length $smallhash($k)] ne [r hstrlen smallhash $k]} {
-    #           set err "[string length $smallhash($k)] != [r hstrlen smallhash $k]"
-    #           break
-    #       }
-    #   }
+    foreach(
+        "k",
+        array("names", "smallhash", "*"),
+        '            if {[string length $smallhash($k)] ne [r hstrlen smallhash $k]} {\n                set err "[string length $smallhash($k)] != [r hstrlen smallhash $k]"\n                break\n            }\n        ',
+    )
     _ = err
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hstrlen_against_the_big_hash(r: ValkeyTestClient) -> None:
     """
     test {HSTRLEN against the big hash} {
@@ -1658,15 +1558,11 @@ def test_hstrlen_against_the_big_hash(r: ValkeyTestClient) -> None:
     } {}
     """
     err = ""
-    # TODO: foreach k array names bighash * {
-    #       if {[string length $bighash($k)] ne [r hstrlen bighash $k]} {
-    #           set err "[string length $bighash($k)] != [r hstrlen bighash $k]"
-    #           puts "HSTRLEN and logical length mismatch:"
-    #           puts "key: $k"
-    #           puts "Logical content: $bighash($k)"
-    #           puts "Server  content: [r hget bighash $k]"
-    #       }
-    #   }
+    foreach(
+        "k",
+        array("names", "bighash", "*"),
+        '            if {[string length $bighash($k)] ne [r hstrlen bighash $k]} {\n                set err "[string length $bighash($k)] != [r hstrlen bighash $k]"\n                puts "HSTRLEN and logical length mismatch:"\n                puts "key: $k"\n                puts "Logical content: $bighash($k)"\n                puts "Server  content: [r hget bighash $k]"\n            }\n        ',
+    )
     _ = err
 
 
@@ -1681,13 +1577,12 @@ def test_hstrlen_against_non_existing_field(r: ValkeyTestClient) -> None:
     } {0 0}
     """
     rv = ""
-    # TODO: lappend rv r hstrlen smallhash __123123123__
-    # TODO: lappend rv r hstrlen bighash __123123123__
+    lappend("rv", r.run("hstrlen", "smallhash", "__123123123__"))
+    lappend("rv", r.run("hstrlen", "bighash", "__123123123__"))
     # TODO: set _ rv
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hstrlen_corner_cases(r: ValkeyTestClient) -> None:
     """
     test {HSTRLEN corner cases} {
@@ -1707,18 +1602,13 @@ def test_hstrlen_corner_cases(r: ValkeyTestClient) -> None:
     }
     """
     vals = "            -9223372036854775808 9223372036854775807 9223372036854775808\n            {} 0 -1 x\n        "
-    # TODO: foreach v vals {
-    #       r hmset smallhash field $v
-    #       r hmset bighash field $v
-    #       set len1 [string length $v]
-    #       set len2 [r hstrlen smallhash field]
-    #       set len3 [r hstrlen bighash field]
-    #       assert {$len1 == $len2}
-    #       assert {$len2 == $len3}
-    #   }
+    foreach(
+        "v",
+        vals,
+        "            r hmset smallhash field $v\n            r hmset bighash field $v\n            set len1 [string length $v]\n            set len2 [r hstrlen smallhash field]\n            set len3 [r hstrlen bighash field]\n            assert {$len1 == $len2}\n            assert {$len2 == $len3}\n        ",
+    )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hincrbyfloat_over_hash_max_listpack_value_encoded_with_a_listpack(r: ValkeyTestClient) -> None:
     """
     test {HINCRBYFLOAT over hash-max-listpack-value encoded with a listpack} {
@@ -1754,15 +1644,15 @@ def test_hincrbyfloat_over_hash_max_listpack_value_encoded_with_a_listpack(r: Va
     r.run("hset", "bighash", "tmp", 0)
     r.run("hincrbyfloat", "smallhash", "tmp", 0.000005)
     r.run("hincrbyfloat", "bighash", "tmp", 0.0000005)
-    # TODO: assert_encoding listpack smallhash
-    # TODO: assert_encoding hashtable bighash
+    assert_encoding("listpack", "smallhash")
+    assert_encoding("hashtable", "bighash")
     r.run("del", "smallhash")
     r.run("del", "bighash")
     r.run("hincrbyfloat", "smallhash", "abcdefgh", 1)
     r.run("hincrbyfloat", "bighash", "abcdefghi", 1)
-    # TODO: assert_encoding listpack smallhash
-    # TODO: assert_encoding hashtable bighash
-    # TODO: r config set hash-max-listpack-value original _max_value
+    assert_encoding("listpack", "smallhash")
+    assert_encoding("hashtable", "bighash")
+    r.run("config", "set", "hash-max-listpack-value", original_max_value)
 
 
 def test_hash_ziplist_regression_test_for_large_keys(r: ValkeyTestClient) -> None:
@@ -1795,9 +1685,8 @@ def test_hash_ziplist_regression_test_for_large_keys(r: ValkeyTestClient) -> Non
     )
 
 
-@pytest.mark.xfail(reason="not implemented")
-@pytest.mark.parametrize(["size"], [("10"), ("512")])
-def test_hash_fuzzing_1_size_fields(r: ValkeyTestClient) -> None:
+@pytest.mark.parametrize(["size"], [(10), (512)])
+def test_hash_fuzzing_1_size_fields(r: ValkeyTestClient, size) -> None:
     """
     test "Hash fuzzing #1 - $size fields" {
         for {set times 0} {$times < 10} {incr times} {
@@ -1821,30 +1710,25 @@ def test_hash_fuzzing_1_size_fields(r: ValkeyTestClient) -> None:
         }
     }
     """
-    # TODO: for {set times 0} {$times < 10} {incr times} {
-    #       catch {unset hash}
-    #       array set hash {}
-    #       r del hash
-    #
-    #       # Create
-    #       for {set j 0} {$j < $size} {incr j} {
-    #           set field [randomValue]
-    #           set value [randomValue]
-    #           r hset hash $field $value
-    #           set hash($field) $value
-    #       }
-    #
-    #       # Verify
-    #       foreach {k v} [array get hash] {
-    #           assert_equal $v [r hget hash $k]
-    #       }
-    #       assert_equal [array size hash] [r hlen hash]
-    #   }
+    times = 0
+    while times < 10:
+        catch("unset hash")
+        array("set", "hash", "")
+        r.run("del", "hash")
+        j = 0
+        while j < size:
+            field = random_value()
+            value = random_value()
+            r.run("hset", "hash", field, value)
+            set_("hash($field)", value)
+            j += 1
+        foreach("k v", array("get", "hash"), "                    assert_equal $v [r hget hash $k]\n                ")
+        assert array("size", "hash") == r.run("hlen", "hash")
+        times += 1
 
 
-@pytest.mark.xfail(reason="not implemented")
-@pytest.mark.parametrize(["size"], [("10"), ("512")])
-def test_hash_fuzzing_2_size_fields(r: ValkeyTestClient) -> None:
+@pytest.mark.parametrize(["size"], [(10), (512)])
+def test_hash_fuzzing_2_size_fields(r: ValkeyTestClient, size) -> None:
     """
     test "Hash fuzzing #2 - $size fields" {
         for {set times 0} {$times < 10} {incr times} {
@@ -1883,43 +1767,24 @@ def test_hash_fuzzing_2_size_fields(r: ValkeyTestClient) -> None:
         }
     }
     """
-    # TODO: for {set times 0} {$times < 10} {incr times} {
-    #       catch {unset hash}
-    #       array set hash {}
-    #       r del hash
-    #
-    #       # Create
-    #       for {set j 0} {$j < $size} {incr j} {
-    #           randpath {
-    #               set field [randomValue]
-    #               set value [randomValue]
-    #               r hset hash $field $value
-    #               set hash($field) $value
-    #           } {
-    #               set field [randomSignedInt 512]
-    #               set value [randomSignedInt 512]
-    #               r hset hash $field $value
-    #               set hash($field) $value
-    #           } {
-    #               randpath {
-    #                   set field [randomValue]
-    #               } {
-    #                   set field [randomSignedInt 512]
-    #               }
-    #               r hdel hash $field
-    #               unset -nocomplain hash($field)
-    #           }
-    #       }
-    #
-    #       # Verify
-    #       foreach {k v} [array get hash] {
-    #           assert_equal $v [r hget hash $k]
-    #       }
-    #       assert_equal [array size hash] [r hlen hash]
-    #   }
+    times = 0
+    while times < 10:
+        catch("unset hash")
+        array("set", "hash", "")
+        r.run("del", "hash")
+        j = 0
+        while j < size:
+            randpath(
+                "                        set field [randomValue]\n                        set value [randomValue]\n                        r hset hash $field $value\n                        set hash($field) $value\n                    ",
+                "                        set field [randomSignedInt 512]\n                        set value [randomSignedInt 512]\n                        r hset hash $field $value\n                        set hash($field) $value\n                    ",
+                "                        randpath {\n                            set field [randomValue]\n                        } {\n                            set field [randomSignedInt 512]\n                        }\n                        r hdel hash $field\n                        unset -nocomplain hash($field)\n                    ",
+            )
+            j += 1
+        foreach("k v", array("get", "hash"), "                    assert_equal $v [r hget hash $k]\n                ")
+        assert array("size", "hash") == r.run("hlen", "hash")
+        times += 1
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_stress_test_the_hash_ziplist_hashtable_encoding_conversion(r: ValkeyTestClient) -> None:
     """
     test {Stress test the hash ziplist -> hashtable encoding conversion} {
@@ -1934,13 +1799,15 @@ def test_stress_test_the_hash_ziplist_hashtable_encoding_conversion(r: ValkeyTes
     }
     """
     r.run("config", "set", "hash-max-ziplist-entries", 32)
-    # TODO: for {set j 0} {$j < 100} {incr j} {
-    #       r del myhash
-    #       for {set i 0} {$i < 64} {incr i} {
-    #           r hset myhash [randomValue] [randomValue]
-    #       }
-    #       assert_encoding hashtable myhash
-    #   }
+    j = 0
+    while j < 100:
+        r.run("del", "myhash")
+        i = 0
+        while i < 64:
+            r.run("hset", "myhash", random_value(), random_value())
+            i += 1
+        assert_encoding("hashtable", "myhash")
+        j += 1
 
 
 @pytest.mark.skipif("", reason="{[string match *x86_64* [exec uname -a]]}")
@@ -1996,30 +1863,30 @@ def test_hash_ziplist_of_various_encodings(r: ValkeyTestClient) -> None:
     } {ZIP_INT_8B 127 ZIP_INT_16B 32767 ZIP_INT_32B 2147483647 ZIP_INT_64B 9223372036854775808 ZIP_INT_IMM_MIN 0 ZIP_INT_IMM_MAX 12}
     """
     r.run("del", "k")
-    # TODO: config_set hash-max-ziplist-entries 1000000000
-    # TODO: config_set hash-max-ziplist-value 1000000000
+    config_set("hash-max-ziplist-entries", 1000000000)
+    config_set("hash-max-ziplist-value", 1000000000)
     r.run("hset", "k", "ZIP_INT_8B", 127)
     r.run("hset", "k", "ZIP_INT_16B", 32767)
     r.run("hset", "k", "ZIP_INT_32B", 2147483647)
     r.run("hset", "k", "ZIP_INT_64B", 9223372036854775808)
     r.run("hset", "k", "ZIP_INT_IMM_MIN", 0)
     r.run("hset", "k", "ZIP_INT_IMM_MAX", 12)
-    # TODO: r hset k ZIP_STR_06B string repeat x 31
-    # TODO: r hset k ZIP_STR_14B string repeat x 8191
-    # TODO: r hset k ZIP_STR_32B string repeat x 65535
+    r.run("hset", "k", "ZIP_STR_06B", string("repeat", "x", 31))
+    r.run("hset", "k", "ZIP_STR_14B", string("repeat", "x", 8191))
+    r.run("hset", "k", "ZIP_STR_32B", string("repeat", "x", 65535))
     k = r.run("hgetall", "k")
     dump = r.run("dump", "k")
-    # TODO: config_set hash-max-ziplist-entries 2
-    # TODO: config_set sanitize-dump-payload no mayfail
+    config_set("hash-max-ziplist-entries", 2)
+    config_set("sanitize-dump-payload", "no", "mayfail")
     r.run("restore", "kk", 0, dump)
     kk = r.run("hgetall", "kk")
-    # TODO: assert_equal lsort $k lsort $kk
-    # TODO: assert_equal dict get $k ZIP_STR_06B string repeat x 31
-    # TODO: set k dict remove $k ZIP_STR_06B
-    # TODO: assert_equal dict get $k ZIP_STR_14B string repeat x 8191
-    # TODO: set k dict remove $k ZIP_STR_14B
-    # TODO: assert_equal dict get $k ZIP_STR_32B string repeat x 65535
-    # TODO: set k dict remove $k ZIP_STR_32B
+    assert lsort(k) == lsort(kk)
+    assert k["ZIP_STR_06B"] == string("repeat", "x", 31)
+    k = dict_("remove", k, "ZIP_STR_06B")
+    assert k["ZIP_STR_14B"] == string("repeat", "x", 8191)
+    k = dict_("remove", k, "ZIP_STR_14B")
+    assert k["ZIP_STR_32B"] == string("repeat", "x", 65535)
+    k = dict_("remove", k, "ZIP_STR_32B")
     # TODO: set _ k
     assert False
 
@@ -2044,17 +1911,17 @@ def test_hash_ziplist_of_various_encodings_sanitize_dump(r: ValkeyTestClient) ->
         set _ $k
     } {ZIP_INT_8B 127 ZIP_INT_16B 32767 ZIP_INT_32B 2147483647 ZIP_INT_64B 9223372036854775808 ZIP_INT_IMM_MIN 0 ZIP_INT_IMM_MAX 12}
     """
-    # TODO: config_set sanitize-dump-payload yes mayfail
+    config_set("sanitize-dump-payload", "yes", "mayfail")
     # TODO: r restore kk 0 dump replace
     k = r.run("hgetall", "k")
     kk = r.run("hgetall", "kk")
-    # TODO: assert_equal lsort $k lsort $kk
-    # TODO: assert_equal dict get $k ZIP_STR_06B string repeat x 31
-    # TODO: set k dict remove $k ZIP_STR_06B
-    # TODO: assert_equal dict get $k ZIP_STR_14B string repeat x 8191
-    # TODO: set k dict remove $k ZIP_STR_14B
-    # TODO: assert_equal dict get $k ZIP_STR_32B string repeat x 65535
-    # TODO: set k dict remove $k ZIP_STR_32B
+    assert lsort(k) == lsort(kk)
+    assert k["ZIP_STR_06B"] == string("repeat", "x", 31)
+    k = dict_("remove", k, "ZIP_STR_06B")
+    assert k["ZIP_STR_14B"] == string("repeat", "x", 8191)
+    k = dict_("remove", k, "ZIP_STR_14B")
+    assert k["ZIP_STR_32B"] == string("repeat", "x", 65535)
+    k = dict_("remove", k, "ZIP_STR_32B")
     # TODO: set _ k
     assert False
 
@@ -2069,3 +1936,86 @@ def test_hincrbyfloat_does_not_allow_nan_or_infinity(r: ValkeyTestClient) -> Non
     with pytest.raises(Exception, match=".*value\\ is\\ NaN\\ or\\ Infinity.*"):
         r.run("hincrbyfloat", "hfoo", "field", float("+inf"))
     assert 0 == r.run("exists", "hfoo")
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def array(*args):
+    raise NotImplementedError("array")
+
+
+def assert_encoding(*args):
+    raise NotImplementedError("assert_encoding")
+
+
+def assert_lessthan(*args):
+    raise NotImplementedError("assert_lessthan")
+
+
+def catch(*args):
+    raise NotImplementedError("catch")
+
+
+def chi_square_value(*args):
+    raise NotImplementedError("chi_square_value")
+
+
+def config_set(*args):
+    raise NotImplementedError("config_set")
+
+
+def create_hash(*args):
+    raise NotImplementedError("create_hash")
+
+
+def dict_(*args):
+    raise NotImplementedError("dict_")
+
+
+def foreach(*args):
+    raise NotImplementedError("foreach")
+
+
+def get_keys(*args):
+    raise NotImplementedError("get_keys")
+
+
+def if_(*args):
+    raise NotImplementedError("if_")
+
+
+def lappend(*args):
+    raise NotImplementedError("lappend")
+
+
+def lsort(*args):
+    raise NotImplementedError("lsort")
+
+
+def random_value(*args):
+    raise NotImplementedError("random_value")
+
+
+def randpath(*args):
+    raise NotImplementedError("randpath")
+
+
+def round_float(*args):
+    raise NotImplementedError("round_float")
+
+
+def set_(*args):
+    raise NotImplementedError("set_")
+
+
+def string(*args):
+    raise NotImplementedError("string")
+
+
+def unset(*args):
+    raise NotImplementedError("unset")
+
+
+def while_(*args):
+    raise NotImplementedError("while_")

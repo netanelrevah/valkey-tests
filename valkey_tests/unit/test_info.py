@@ -1,4 +1,4 @@
-# ruff: noqa: F841
+# ruff: noqa: PLR2004, ANN002, ANN201
 
 import pytest
 
@@ -534,7 +534,6 @@ start_server {} {
 pytestmark = [pytest.mark.info, pytest.mark.external_skip]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_memory_database_and_pubsub_overhead_and_rehashing_dict_count(r: ValkeyTestClient) -> None:
     """
     test {memory: database and pubsub overhead and rehashing dict count} {
@@ -594,24 +593,22 @@ def test_memory_database_and_pubsub_overhead_and_rehashing_dict_count(r: ValkeyT
     r.run("flushall")
     info_mem = r.run("info", "memory")
     mem_stats = r.run("memory", "stats")
-    # TODO: assert_equal getInfoProperty $info_mem mem_overhead_db_hashtable_rehashing {0}
-    # TODO: assert_equal dict get $mem_stats overhead.db.hashtable.lut {0}
-    # TODO: assert_equal dict get $mem_stats overhead.db.hashtable.rehashing {0}
-    # TODO: assert_equal dict get $mem_stats db.dict.rehashing.count {0}
+    assert get_info_property(info_mem, "mem_overhead_db_hashtable_rehashing") == "0"
+    assert mem_stats["overhead.db.hashtable.lut"] == "0"
+    assert mem_stats["overhead.db.hashtable.rehashing"] == "0"
+    assert mem_stats["db.dict.rehashing.count"] == "0"
     r.run("set", "a", "b")
     info_mem = r.run("info", "memory")
     mem_stats = r.run("memory", "stats")
-    # TODO: assert_equal getInfoProperty $info_mem mem_overhead_db_hashtable_rehashing {0}
-    # TODO: set hashtable_overhead dict get $mem_stats overhead.db.hashtable.lut
-    # TODO: if {$hashtable_overhead < 140} {
-    #       # 32-bit version (hashtable struct + 1 bucket of 64 bytes)
-    #       set bits 32
-    #   } else {
-    #       set bits 64
-    #   }
-    # TODO: assert_range dict get $mem_stats overhead.db.hashtable.lut 1 256
-    # TODO: assert_equal dict get $mem_stats overhead.db.hashtable.rehashing {0}
-    # TODO: assert_equal dict get $mem_stats db.dict.rehashing.count {0}
+    assert get_info_property(info_mem, "mem_overhead_db_hashtable_rehashing") == "0"
+    hashtable_overhead = mem_stats["overhead.db.hashtable.lut"]
+    if hashtable_overhead < 140:
+        bits = 32
+    else:
+        bits = 64
+    assert_range(mem_stats["overhead.db.hashtable.lut"], 1, 256)
+    assert mem_stats["overhead.db.hashtable.rehashing"] == "0"
+    assert mem_stats["db.dict.rehashing.count"] == "0"
     r.run("multi")
     r.run("set", "b", "c")
     r.run("set", "c", "d")
@@ -620,21 +617,29 @@ def test_memory_database_and_pubsub_overhead_and_rehashing_dict_count(r: ValkeyT
     r.run("set", "f", "g")
     r.run("set", "g", "h")
     r.run("set", "h", "i")
-    # TODO: if {$bits == 32} {
-    #       # In 32-bit mode, we have 12 elements per bucket. Insert five more
-    #       # to trigger rehashing.
-    #       r set aa aa
-    #       r set bb bb
-    #       r set cc cc
-    #       r set dd dd
-    #       r set ee ee
-    #   }
+    if bits == 32:
+        r.run("set", "aa", "aa")
+        r.run("set", "bb", "bb")
+        r.run("set", "cc", "cc")
+        r.run("set", "dd", "dd")
+        r.run("set", "ee", "ee")
     r.run("info", "memory")
     r.run("memory", "stats")
     res = r.run("exec")
     info_mem = res["end-1"]
     mem_stats = res["end"]
-    # TODO: assert_range getInfoProperty $info_mem mem_overhead_db_hashtable_rehashing 1 64
-    # TODO: assert_range dict get $mem_stats overhead.db.hashtable.lut 1 300
-    # TODO: assert_range dict get $mem_stats overhead.db.hashtable.rehashing 1 64
-    # TODO: assert_equal dict get $mem_stats db.dict.rehashing.count {1}
+    assert_range(get_info_property(info_mem, "mem_overhead_db_hashtable_rehashing"), 1, 64)
+    assert_range(mem_stats["overhead.db.hashtable.lut"], 1, 300)
+    assert_range(mem_stats["overhead.db.hashtable.rehashing"], 1, 64)
+    assert mem_stats["db.dict.rehashing.count"] == "1"
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def assert_range(*args):
+    raise NotImplementedError("assert_range")
+
+
+def get_info_property(*args):
+    raise NotImplementedError("get_info_property")

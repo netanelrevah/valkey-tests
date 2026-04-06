@@ -1,4 +1,4 @@
-# ruff: noqa: F841
+# ruff: noqa: F841, ANN001, ANN002, ANN201
 import time
 
 import pytest
@@ -63,18 +63,18 @@ def test_blpop_on_threaded_async_rm_call(r: ValkeyTestClient) -> None:
         $rd close
     }
     """
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd do_rm_call_async_on_thread blpop l 0
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("lpush", "l", "a")
     # TODO: assert_equal $rd read {l a}
-    # TODO: wait_for_blocked_clients_count 0
+    wait_for_blocked_clients_count(0)
     # TODO: $rd close
 
 
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd"], [("do_rm_call_async"), ("do_rm_call_async_script_mode")])
-def test_blpop_on_async_rm_call_using_cmd(r: ValkeyTestClient) -> None:
+def test_blpop_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd) -> None:
     """
     test "Blpop on async RM_Call using $cmd" {
         set rd [valkey_deferring_client]
@@ -87,18 +87,18 @@ def test_blpop_on_async_rm_call_using_cmd(r: ValkeyTestClient) -> None:
         $rd close
     }
     """
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd cmd blpop l 0
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("lpush", "l", "a")
     # TODO: assert_equal $rd read {l a}
-    # TODO: wait_for_blocked_clients_count 0
+    wait_for_blocked_clients_count(0)
     # TODO: $rd close
 
 
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd"], [("do_rm_call_async"), ("do_rm_call_async_script_mode")])
-def test_brpop_on_async_rm_call_using_cmd(r: ValkeyTestClient) -> None:
+def test_brpop_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd) -> None:
     """
     test "Brpop on async RM_Call using $cmd" {
         set rd [valkey_deferring_client]
@@ -111,18 +111,18 @@ def test_brpop_on_async_rm_call_using_cmd(r: ValkeyTestClient) -> None:
         $rd close
     }
     """
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd cmd brpop l 0
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("lpush", "l", "a")
     # TODO: assert_equal $rd read {l a}
-    # TODO: wait_for_blocked_clients_count 0
+    wait_for_blocked_clients_count(0)
     # TODO: $rd close
 
 
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd"], [("do_rm_call_async"), ("do_rm_call_async_script_mode")])
-def test_brpoplpush_on_async_rm_call_using_cmd(r: ValkeyTestClient) -> None:
+def test_brpoplpush_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd) -> None:
     """
     test "Brpoplpush on async RM_Call using $cmd" {
         set rd [valkey_deferring_client]
@@ -136,19 +136,19 @@ def test_brpoplpush_on_async_rm_call_using_cmd(r: ValkeyTestClient) -> None:
         r lpop l2
     } {a}
     """
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd cmd brpoplpush l1 l2 0
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("lpush", "l1", "a")
     # TODO: assert_equal $rd read {a}
-    # TODO: wait_for_blocked_clients_count 0
+    wait_for_blocked_clients_count(0)
     # TODO: $rd close
     assert r.run("lpop", "l2") == "a"
 
 
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd"], [("do_rm_call_async"), ("do_rm_call_async_script_mode")])
-def test_blmove_on_async_rm_call_using_cmd(r: ValkeyTestClient) -> None:
+def test_blmove_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd) -> None:
     """
     test "Blmove on async RM_Call using $cmd" {
         set rd [valkey_deferring_client]
@@ -162,19 +162,19 @@ def test_blmove_on_async_rm_call_using_cmd(r: ValkeyTestClient) -> None:
         r lpop l2
     } {a}
     """
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd cmd blmove l1 l2 LEFT LEFT 0
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("lpush", "l1", "a")
     # TODO: assert_equal $rd read {a}
-    # TODO: wait_for_blocked_clients_count 0
+    wait_for_blocked_clients_count(0)
     # TODO: $rd close
     assert r.run("lpop", "l2") == "a"
 
 
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd"], [("do_rm_call_async"), ("do_rm_call_async_script_mode")])
-def test_bzpopmin_on_async_rm_call_using_cmd(r: ValkeyTestClient) -> None:
+def test_bzpopmin_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd) -> None:
     """
     test "Bzpopmin on async RM_Call using $cmd" {
         set rd [valkey_deferring_client]
@@ -187,18 +187,18 @@ def test_bzpopmin_on_async_rm_call_using_cmd(r: ValkeyTestClient) -> None:
         $rd close
     }
     """
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd cmd bzpopmin s 0
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("zadd", "s", 10, "foo")
     # TODO: assert_equal $rd read {s foo 10}
-    # TODO: wait_for_blocked_clients_count 0
+    wait_for_blocked_clients_count(0)
     # TODO: $rd close
 
 
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd"], [("do_rm_call_async"), ("do_rm_call_async_script_mode")])
-def test_bzpopmax_on_async_rm_call_using_cmd(r: ValkeyTestClient) -> None:
+def test_bzpopmax_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd) -> None:
     """
     test "Bzpopmax on async RM_Call using $cmd" {
         set rd [valkey_deferring_client]
@@ -211,12 +211,12 @@ def test_bzpopmax_on_async_rm_call_using_cmd(r: ValkeyTestClient) -> None:
         $rd close
     }
     """
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd cmd bzpopmax s 0
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("zadd", "s", 10, "foo")
     # TODO: assert_equal $rd read {s foo 10}
-    # TODO: wait_for_blocked_clients_count 0
+    wait_for_blocked_clients_count(0)
     # TODO: $rd close
 
 
@@ -234,12 +234,12 @@ def test_nested_async_rm_call(r: ValkeyTestClient) -> None:
         $rd close
     }
     """
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd do_rm_call_async do_rm_call_async do_rm_call_async do_rm_call_async blpop l 0
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("lpush", "l", "a")
     # TODO: assert_equal $rd read {l a}
-    # TODO: wait_for_blocked_clients_count 0
+    wait_for_blocked_clients_count(0)
     # TODO: $rd close
 
 
@@ -261,15 +261,15 @@ def test_test_multiple_async_rm_call_waiting_on_the_same_event(r: ValkeyTestClie
         $rd2 close
     }
     """
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: set rd2 valkey_deferring_client
+    rd1 = valkey_deferring_client()
+    rd2 = valkey_deferring_client()
     # TODO: $rd1 do_rm_call_async do_rm_call_async do_rm_call_async do_rm_call_async blpop l 0
     # TODO: $rd2 do_rm_call_async do_rm_call_async do_rm_call_async do_rm_call_async blpop l 0
-    # TODO: wait_for_blocked_clients_count 2
+    wait_for_blocked_clients_count(2)
     r.run("lpush", "l", "element", "element")
     # TODO: assert_equal $rd1 read {l element}
     # TODO: assert_equal $rd2 read {l element}
-    # TODO: wait_for_blocked_clients_count 0
+    wait_for_blocked_clients_count(0)
     # TODO: $rd1 close
     # TODO: $rd2 close
 
@@ -328,24 +328,14 @@ def test_async_rm_call_inside_async_rm_call_callback(r: ValkeyTestClient) -> Non
         $rd close
     }
     """
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd wait_and_do_rm_call blpop l 0
-    # TODO: wait_for_blocked_clients_count 1
-    # TODO: start_server {} {
-    #       test "Connect a replica to the master instance" {
-    #           r slaveof [srv -1 host] [srv -1 port]
-    #           wait_for_condition 50 100 {
-    #               [s role] eq {slave} &&
-    #               [string match {*master_link_status:up*} [r info replication]]
-    #           } else {
-    #               fail "Can't turn the instance into a replica"
-    #           }
-    #       }
-    #
-    #       assert_equal {1} [r -1 lpush l a]
-    #       assert_equal [$rd read] {l a}
-    #   }
-    # TODO: wait_for_blocked_clients_count 0
+    wait_for_blocked_clients_count(1)
+    start_server(
+        "",
+        '            test "Connect a replica to the master instance" {\n                r slaveof [srv -1 host] [srv -1 port]\n                wait_for_condition 50 100 {\n                    [s role] eq {slave} &&\n                    [string match {*master_link_status:up*} [r info replication]]\n                } else {\n                    fail "Can\'t turn the instance into a replica"\n                }\n            }\n\n            assert_equal {1} [r -1 lpush l a]\n            assert_equal [$rd read] {l a}\n        ',
+    )
+    wait_for_blocked_clients_count(0)
     # TODO: $rd close
 
 
@@ -374,13 +364,13 @@ def test_become_replica_while_having_async_rm_call_running(r: ValkeyTestClient) 
     }
     """
     r.run("flushall")
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd do_rm_call_async blpop l 0
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("replicaof", "localhost", 30000)
-    # TODO: catch {[$rd read]} e
+    catch("[$rd read]", "e")
     # TODO: assert_match {UNBLOCKED force unblock from blocking operation*} e
-    # TODO: wait_for_blocked_clients_count 0
+    wait_for_blocked_clients_count(0)
     r.run("replicaof", "no", "one")
     r.run("lpush", "l", 1)
     assert r.run("llen", "l") == "1"
@@ -411,17 +401,17 @@ def test_pipeline_with_blocking_rm_call(r: ValkeyTestClient) -> None:
     }
     """
     r.run("flushall")
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     buf = ""
     # TODO: append buf "do_rm_call_async blpop l 0\r\n"
     # TODO: append buf "ping\r\n"
     # TODO: $rd write buf
     # TODO: $rd flush
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("lpush", "l", 1)
     # TODO: assert_equal $rd read {l 1}
     # TODO: assert_equal $rd read {PONG}
-    # TODO: wait_for_blocked_clients_count 0
+    wait_for_blocked_clients_count(0)
     # TODO: $rd close
 
 
@@ -450,14 +440,14 @@ def test_blocking_rm_call_abort(r: ValkeyTestClient) -> None:
     }
     """
     r.run("flushall")
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd client id
     # TODO: set client_id $rd read
     # TODO: $rd do_rm_call_async blpop l 0
-    # TODO: wait_for_blocked_clients_count 1
-    # TODO: r client kill ID client _id
-    # TODO: assert_error {*error reading reply*} {$rd read}
-    # TODO: wait_for_blocked_clients_count 0
+    wait_for_blocked_clients_count(1)
+    # TODO: r client kill ID client_id
+    assert_error("*error reading reply*", "$rd read")
+    wait_for_blocked_clients_count(0)
     r.run("lpush", "l", 1)
     assert r.run("llen", "l") == "1"
     # TODO: $rd close
@@ -497,19 +487,15 @@ def test_test_basic_replication_stream_on_unblock_handler(r: ValkeyTestClient) -
     }
     """
     r.run("flushall")
-    # TODO: set repl attach_to_replication_stream
-    # TODO: set rd valkey_deferring_client
+    repl = attach_to_replication_stream()
+    rd = valkey_deferring_client()
     # TODO: $rd do_rm_call_async blpop l 0
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("lpush", "l", "a")
     # TODO: assert_equal $rd read {l a}
-    # TODO: assert_replication_stream repl {
-    #       {select *}
-    #       {lpush l a}
-    #       {lpop l}
-    #   }
-    # TODO: close_replication_stream repl
-    # TODO: wait_for_blocked_clients_count 0
+    assert_replication_stream(repl, "            {select *}\n            {lpush l a}\n            {lpop l}\n        ")
+    close_replication_stream(repl)
+    wait_for_blocked_clients_count(0)
     # TODO: $rd close
 
 
@@ -543,23 +529,18 @@ def test_test_unblock_handler_are_executed_as_a_unit(r: ValkeyTestClient) -> Non
     }
     """
     r.run("flushall")
-    # TODO: set repl attach_to_replication_stream
-    # TODO: set rd valkey_deferring_client
+    repl = attach_to_replication_stream()
+    rd = valkey_deferring_client()
     # TODO: $rd blpop_and_set_multiple_keys l x 1 y 2
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("lpush", "l", "a")
     # TODO: assert_equal $rd read {OK}
-    # TODO: assert_replication_stream repl {
-    #       {select *}
-    #       {lpush l a}
-    #       {multi}
-    #       {lpop l}
-    #       {set x 1}
-    #       {set y 2}
-    #       {exec}
-    #   }
-    # TODO: close_replication_stream repl
-    # TODO: wait_for_blocked_clients_count 0
+    assert_replication_stream(
+        repl,
+        "            {select *}\n            {lpush l a}\n            {multi}\n            {lpop l}\n            {set x 1}\n            {set y 2}\n            {exec}\n        ",
+    )
+    close_replication_stream(repl)
+    wait_for_blocked_clients_count(0)
     # TODO: $rd close
 
 
@@ -592,20 +573,16 @@ def test_test_no_propagation_of_blocking_command(r: ValkeyTestClient) -> None:
     }
     """
     r.run("flushall")
-    # TODO: set repl attach_to_replication_stream
-    # TODO: set rd valkey_deferring_client
+    repl = attach_to_replication_stream()
+    rd = valkey_deferring_client()
     # TODO: $rd do_rm_call_async_no_replicate blpop l 0
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("lpush", "l", "a")
     # TODO: assert_equal $rd read {l a}
     r.run("set", "x", 1)
-    # TODO: assert_replication_stream repl {
-    #       {select *}
-    #       {lpush l a}
-    #       {set x 1}
-    #   }
-    # TODO: close_replication_stream repl
-    # TODO: wait_for_blocked_clients_count 0
+    assert_replication_stream(repl, "            {select *}\n            {lpush l a}\n            {set x 1}\n        ")
+    close_replication_stream(repl)
+    wait_for_blocked_clients_count(0)
     # TODO: $rd close
 
 
@@ -664,27 +641,18 @@ def test_test_unblock_handler_are_executed_as_a_unit_with_key_space_notification
     }
     """
     r.run("flushall")
-    # TODO: set repl attach_to_replication_stream
-    # TODO: set rd valkey_deferring_client
+    repl = attach_to_replication_stream()
+    rd = valkey_deferring_client()
     # TODO: $rd blpop_and_set_multiple_keys l string_foo 1 string_bar 2
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("lpush", "l", "a")
     # TODO: assert_equal $rd read {OK}
-    # TODO: assert_replication_stream repl {
-    #       {select *}
-    #       {lpush l a}
-    #       {multi}
-    #       {lpop l}
-    #       {set string_foo 1}
-    #       {set string_bar 2}
-    #       {incr string_changed{string_foo}}
-    #       {incr string_changed{string_bar}}
-    #       {incr string_total}
-    #       {incr string_total}
-    #       {exec}
-    #   }
-    # TODO: close_replication_stream repl
-    # TODO: wait_for_blocked_clients_count 0
+    assert_replication_stream(
+        repl,
+        "            {select *}\n            {lpush l a}\n            {multi}\n            {lpop l}\n            {set string_foo 1}\n            {set string_bar 2}\n            {incr string_changed{string_foo}}\n            {incr string_changed{string_bar}}\n            {incr string_total}\n            {incr string_total}\n            {exec}\n        ",
+    )
+    close_replication_stream(repl)
+    wait_for_blocked_clients_count(0)
     # TODO: $rd close
 
 
@@ -767,47 +735,25 @@ def test_test_unblock_handler_are_executed_as_a_unit_with_lazy_expire(r: ValkeyT
     """
     r.run("flushall")
     r.run("DEBUG", "SET-ACTIVE-EXPIRE", 0)
-    # TODO: set repl attach_to_replication_stream
-    # TODO: set rd valkey_deferring_client
+    repl = attach_to_replication_stream()
+    rd = valkey_deferring_client()
     # TODO: $rd blpop_and_set_multiple_keys l string_foo 1 string_bar 2
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("lpush", "l", "a")
     # TODO: assert_equal $rd read {OK}
     r.run("pexpire", "string_foo", 1)
     time.sleep(10 / 1000)
     # TODO: $rd blpop_and_set_multiple_keys l string_foo 1 string_bar 2
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("lpush", "l", "a")
     # TODO: assert_equal $rd read {OK}
-    # TODO: assert_replication_stream repl {
-    #       {select *}
-    #       {lpush l a}
-    #       {multi}
-    #       {lpop l}
-    #       {set string_foo 1}
-    #       {set string_bar 2}
-    #       {incr string_changed{string_foo}}
-    #       {incr string_changed{string_bar}}
-    #       {incr string_total}
-    #       {incr string_total}
-    #       {exec}
-    #       {pexpireat string_foo *}
-    #       {lpush l a}
-    #       {multi}
-    #       {lpop l}
-    #       {unlink string_foo}
-    #       {set string_foo 1}
-    #       {set string_bar 2}
-    #       {incr expired}
-    #       {incr string_changed{string_foo}}
-    #       {incr string_changed{string_bar}}
-    #       {incr string_total}
-    #       {incr string_total}
-    #       {exec}
-    #   }
-    # TODO: close_replication_stream repl
+    assert_replication_stream(
+        repl,
+        "            {select *}\n            {lpush l a}\n            {multi}\n            {lpop l}\n            {set string_foo 1}\n            {set string_bar 2}\n            {incr string_changed{string_foo}}\n            {incr string_changed{string_bar}}\n            {incr string_total}\n            {incr string_total}\n            {exec}\n            {pexpireat string_foo *}\n            {lpush l a}\n            {multi}\n            {lpop l}\n            {unlink string_foo}\n            {set string_foo 1}\n            {set string_bar 2}\n            {incr expired}\n            {incr string_changed{string_foo}}\n            {incr string_changed{string_bar}}\n            {incr string_total}\n            {incr string_total}\n            {exec}\n        ",
+    )
+    close_replication_stream(repl)
     r.run("DEBUG", "SET-ACTIVE-EXPIRE", 1)
-    # TODO: wait_for_blocked_clients_count 0
+    wait_for_blocked_clients_count(0)
     # TODO: $rd close
 
 
@@ -842,13 +788,48 @@ def test_test_unblock_handler_on_module_blocked_on_keys(r: ValkeyTestClient) -> 
         $rd close
     }
     """
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     r.run("fsl.push", "l", 1)
     # TODO: $rd do_rm_call_async FSL.BPOPGT l 3 0
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("fsl.push", "l", 2)
     r.run("fsl.push", "l", 3)
     r.run("fsl.push", "l", 4)
     # TODO: assert_equal $rd read {4}
-    # TODO: wait_for_blocked_clients_count 0
+    wait_for_blocked_clients_count(0)
     # TODO: $rd close
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def assert_error(*args):
+    raise NotImplementedError("assert_error")
+
+
+def assert_replication_stream(*args):
+    raise NotImplementedError("assert_replication_stream")
+
+
+def attach_to_replication_stream(*args):
+    raise NotImplementedError("attach_to_replication_stream")
+
+
+def catch(*args):
+    raise NotImplementedError("catch")
+
+
+def close_replication_stream(*args):
+    raise NotImplementedError("close_replication_stream")
+
+
+def start_server(*args):
+    raise NotImplementedError("start_server")
+
+
+def valkey_deferring_client(*args):
+    raise NotImplementedError("valkey_deferring_client")
+
+
+def wait_for_blocked_clients_count(*args):
+    raise NotImplementedError("wait_for_blocked_clients_count")

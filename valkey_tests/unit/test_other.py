@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841, RUF043
+# ruff: noqa: PLR2004, F841, RUF043, ANN002, ANN201
 import time
 from fnmatch import fnmatch
 
@@ -48,7 +48,6 @@ def test_coverage_help_commands(r: ValkeyTestClient) -> None:
     assert fnmatch(str(r.run("MODULE", "HELP")), "*MODULE <subcommand> *")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_coverage_memory_malloc_stats(r: ValkeyTestClient) -> None:
     """
     test {Coverage: MEMORY MALLOC-STATS} {
@@ -57,12 +56,10 @@ def test_coverage_memory_malloc_stats(r: ValkeyTestClient) -> None:
         }
     }
     """
-    # TODO: if {[string match {*jemalloc*} [s mem_allocator]]} {
-    #       assert_match "*jemalloc*" [r memory malloc-stats]
-    #   }
+    if string("match", "*jemalloc*", s("mem_allocator")):
+        assert fnmatch(str(r.run("memory", "malloc-stats")), "*jemalloc*")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_coverage_memory_purge(r: ValkeyTestClient) -> None:
     """
     test {Coverage: MEMORY PURGE} {
@@ -71,9 +68,8 @@ def test_coverage_memory_purge(r: ValkeyTestClient) -> None:
         }
     }
     """
-    # TODO: if {[string match {*jemalloc*} [s mem_allocator]]} {
-    #       assert_equal {OK} [r memory purge]
-    #   }
+    if string("match", "*jemalloc*", s("mem_allocator")):
+        assert "OK" == r.run("memory", "purge")
 
 
 def test_coverage_echo(r: ValkeyTestClient) -> None:
@@ -85,7 +81,6 @@ def test_coverage_echo(r: ValkeyTestClient) -> None:
     assert "bang" == r.run("ECHO", "bang")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_save_make_sure_there_are_all_the_types_as_values(r: ValkeyTestClient) -> None:
     """
     test {SAVE - make sure there are all the types as values} {
@@ -101,7 +96,7 @@ def test_save_make_sure_there_are_all_the_types_as_values(r: ValkeyTestClient) -
         r save
     } {OK} {needs:save}
     """
-    # TODO: waitForBgsave r
+    wait_for_bgsave("r")
     r.run("lpush", "mysavelist", "hello")
     r.run("lpush", "mysavelist", "world")
     r.run("set", "myemptykey", "")
@@ -130,7 +125,6 @@ start_server {overrides {save ""} tags {external:skip}} {
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bgsave(r: ValkeyTestClient) -> None:
     """
     test {BGSAVE} {
@@ -149,7 +143,7 @@ def test_bgsave(r: ValkeyTestClient) -> None:
     r.run("save")
     r.run("set", "x", 10)
     r.run("bgsave")
-    # TODO: waitForBgsave r
+    wait_for_bgsave("r")
     r.run("debug", "reload")
     assert r.run("get", "x") == "10"
 
@@ -195,17 +189,16 @@ def test_expires_after_a_reload_snapshot_append_only_file_rewrite(r: ValkeyTestC
     r.run("save")
     r.run("debug", "reload")
     ttl = r.run("ttl", "x")
-    # TODO: set e1 expr {$ttl > 900 && $ttl <= 1000}
+    e1 = expr("$ttl > 900 && $ttl <= 1000")
     r.run("bgrewriteaof")
-    # TODO: waitForBgrewriteaof r
+    wait_for_bgrewriteaof("r")
     r.run("debug", "loadaof")
     ttl = r.run("ttl", "x")
-    # TODO: set e2 expr {$ttl > 900 && $ttl <= 1000}
+    e2 = expr("$ttl > 900 && $ttl <= 1000")
     # TODO: list e1 e2
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_expires_after_aof_reload_without_rewrite(r: ValkeyTestClient) -> None:
     """
     test {EXPIRES after AOF reload (without rewrite)} {
@@ -255,13 +248,13 @@ def test_expires_after_aof_reload_without_rewrite(r: ValkeyTestClient) -> None:
     r.run("expire", "x", 1000)
     r.run("setex", "y", 2000, "somevalue")
     r.run("set", "z", "somevalue")
-    # TODO: r expireat z expr {[clock seconds]+3000}
+    r.run("expireat", "z", expr("[clock seconds]+3000"))
     r.run("set", "px", "somevalue")
     r.run("pexpire", "px", 1000000)
     r.run("psetex", "py", 2000000, "somevalue")
     r.run("set", "pz", "somevalue")
-    # TODO: r pexpireat pz expr {([clock seconds]+3000)*1000}
-    # TODO: waitForBgrewriteaof r
+    r.run("pexpireat", "pz", expr("([clock seconds]+3000)*1000"))
+    wait_for_bgrewriteaof("r")
     time.sleep(2000 / 1000)
     r.run("debug", "loadaof")
     ttl = r.run("ttl", "x")
@@ -311,14 +304,13 @@ def test_append_basics_integer_encoded_values(r: ValkeyTestClient) -> None:
     r.run("del", "foo")
     r.run("append", "foo", 1)
     r.run("append", "foo", 2)
-    # TODO: lappend res r get foo
+    lappend("res", r.run("get", "foo"))
     r.run("set", "foo", 1)
     r.run("append", "foo", 2)
     # TODO: lappend res r get foo
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_append_fuzzing(r: ValkeyTestClient) -> None:
     """
     test {APPEND fuzzing} {
@@ -340,19 +332,11 @@ def test_append_fuzzing(r: ValkeyTestClient) -> None:
     } {}
     """
     err = ""
-    # TODO: foreach type {binary alpha compr} {
-    #       set buf {}
-    #       r del x
-    #       for {set i 0} {$i < 1000} {incr i} {
-    #           set bin [randstring 0 10 $type]
-    #           append buf $bin
-    #           r append x $bin
-    #       }
-    #       if {$buf != [r get x]} {
-    #           set err "Expected '$buf' found '[r get x]'"
-    #           break
-    #       }
-    #   }
+    foreach(
+        "type",
+        "binary alpha compr",
+        "            set buf {}\n            r del x\n            for {set i 0} {$i < 1000} {incr i} {\n                set bin [randstring 0 10 $type]\n                append buf $bin\n                r append x $bin\n            }\n            if {$buf != [r get x]} {\n                set err \"Expected '$buf' found '[r get x]'\"\n                break\n            }\n        ",
+    )
     _ = err
 
 
@@ -389,7 +373,6 @@ def test_flushdb(r: ValkeyTestClient) -> None:
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_perform_a_final_save_to_leave_a_clean_db_on_disk(r: ValkeyTestClient) -> None:
     """
     test {Perform a final SAVE to leave a clean DB on disk} {
@@ -397,7 +380,7 @@ def test_perform_a_final_save_to_leave_a_clean_db_on_disk(r: ValkeyTestClient) -
         r save
     } {OK} {needs:save}
     """
-    # TODO: waitForBgsave r
+    wait_for_bgsave("r")
     assert r.run("save") == "OK"
 
 
@@ -436,13 +419,13 @@ def test_reset_clears_monitor_state(r: ValkeyTestClient) -> None:
         assert_no_match {*flags=O*} [r client list]
     } {} {needs:reset}
     """
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd monitor
     # TODO: assert_equal $rd read "OK"
     # TODO: $rd reset
     # TODO: assert_equal $rd read "RESET"
     # TODO: $rd close
-    # TODO: assert_no_match {*flags=O*} r client list
+    assert_no_match("*flags=O*", r.run("client", "list"))
 
 
 def test_reset_clears_and_discards_multi_state(r: ValkeyTestClient) -> None:
@@ -522,7 +505,6 @@ def test_subcommand_syntax_error_crash_issue_10070(r: ValkeyTestClient) -> None:
         r.run("CONFIG", "GET_XX")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_extended_redis_compatibility_config(r: ValkeyTestClient) -> None:
     """
     test "Extended Redis Compatibility config" {
@@ -579,57 +561,21 @@ def test_extended_redis_compatibility_config(r: ValkeyTestClient) -> None:
     """
     hello = r.run("hello", 3)
     version = hello["version"]
-    # TODO: if {[string match "11.*" $version]} {
-    #       # Check that the config doesn't exist anymore.
-    #       assert_error "ERR Unknown*" {r config set extended-redis-compatibility yes}
-    #       error "We shall also delete this test case"
-    #   } elseif {[string match "10.*" $version]} {
-    #       # This config is scheduled for removal. In 10.x it should still
-    #       # exists but have no effect.
-    #       r config set extended-redis-compatibility yes
-    #       set hello [r hello 3]
-    #       assert_equal valkey [dict get $hello server]
-    #       assert_equal $version [dict get $hello version]
-    #       r config set extended-redis-compatibility no
-    #   } elseif {[string match "8.*" $version] || [string match "9.*" $version] || ($version eq "255.255.255")} {
-    #       # In 8.x, the config shall work and affect HELLO server and version.
-    #       r config set extended-redis-compatibility yes
-    #       set hello [r hello 3]
-    #       assert_equal "redis" [dict get $hello server]
-    #       assert_match "7.2.*" [dict get $hello version]
-    #       set info [r info server]
-    #       assert_match "*redis_mode:*" $info
-    #       assert_no_match "*server_mode:*" $info
-    #       set lolwut_output [r lolwut version 5]
-    #       assert_match {*Redis ver.*} $lolwut_output
-    #       set lolwut_output [r lolwut version 6]
-    #       assert_match {*Redis ver.*} $lolwut_output
-    #       set lolwut_output [r lolwut version 9]
-    #       assert_match {*Redis ver.*} $lolwut_output
-    #       set lolwut_output [r lolwut]
-    #       assert_match {*Redis ver.*} $lolwut_output
-    #       r config set extended-redis-compatibility no
-    #       set hello [r hello 3]
-    #       assert_equal "valkey" [dict get $hello server]
-    #       assert_equal $version [dict get $hello version]
-    #       set info [r info server]
-    #       assert_no_match "*redis_mode:*" $info
-    #       assert_match "*server_mode:*" $info
-    #       set lolwut_output [r lolwut]
-    #       assert_match {*Valkey ver.*} $lolwut_output
-    #       set lolwut_output [r lolwut version 5]
-    #       assert_match {*Valkey ver.*} $lolwut_output
-    #       set lolwut_output [r lolwut version 6]
-    #       assert_match {*Valkey ver.*} $lolwut_output
-    #       set lolwut_output [r lolwut version 9]
-    #       assert_match {*Valkey ver.*} $lolwut_output
-    #   }
+    if_(
+        '[string match "11.*" $version]',
+        '            # Check that the config doesn\'t exist anymore.\n            assert_error "ERR Unknown*" {r config set extended-redis-compatibility yes}\n            error "We shall also delete this test case"\n        ',
+        "elseif",
+        '[string match "10.*" $version]',
+        "            # This config is scheduled for removal. In 10.x it should still\n            # exists but have no effect.\n            r config set extended-redis-compatibility yes\n            set hello [r hello 3]\n            assert_equal valkey [dict get $hello server]\n            assert_equal $version [dict get $hello version]\n            r config set extended-redis-compatibility no\n        ",
+        "elseif",
+        '[string match "8.*" $version] || [string match "9.*" $version] || ($version eq "255.255.255")',
+        '            # In 8.x, the config shall work and affect HELLO server and version.\n            r config set extended-redis-compatibility yes\n            set hello [r hello 3]\n            assert_equal "redis" [dict get $hello server]\n            assert_match "7.2.*" [dict get $hello version]\n            set info [r info server]\n            assert_match "*redis_mode:*" $info\n            assert_no_match "*server_mode:*" $info\n            set lolwut_output [r lolwut version 5]\n            assert_match {*Redis ver.*} $lolwut_output\n            set lolwut_output [r lolwut version 6]\n            assert_match {*Redis ver.*} $lolwut_output\n            set lolwut_output [r lolwut version 9]\n            assert_match {*Redis ver.*} $lolwut_output\n            set lolwut_output [r lolwut]\n            assert_match {*Redis ver.*} $lolwut_output\n            r config set extended-redis-compatibility no\n            set hello [r hello 3]\n            assert_equal "valkey" [dict get $hello server]\n            assert_equal $version [dict get $hello version]\n            set info [r info server]\n            assert_no_match "*redis_mode:*" $info\n            assert_match "*server_mode:*" $info\n            set lolwut_output [r lolwut]\n            assert_match {*Valkey ver.*} $lolwut_output\n            set lolwut_output [r lolwut version 5]\n            assert_match {*Valkey ver.*} $lolwut_output\n            set lolwut_output [r lolwut version 6]\n            assert_match {*Valkey ver.*} $lolwut_output\n            set lolwut_output [r lolwut version 9]\n            assert_match {*Valkey ver.*} $lolwut_output\n        ',
+    )
 
 
 pytestmark = [pytest.mark.other_external_skip]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_don_t_rehash_if_server_has_child_process(r: ValkeyTestClient) -> None:
     """
     test {Don't rehash if server has child process} {
@@ -671,27 +617,31 @@ def test_don_t_rehash_if_server_has_child_process(r: ValkeyTestClient) -> None:
     """
     r.run("config", "set", "save", "")
     r.run("config", "set", "rdb-key-save-delay", 1000000)
-    # TODO: populate 2000 a 1
-    # TODO: set table_size main_hash_table_size
-    # TODO: populate main_hash_table_keys_before_rehashing_starts b 1
-    # TODO: assert_equal table _size main_hash_table_size
-    # TODO: assert_no_match "*Hash table 1 stats*" r debug htstats 9
+    populate(2000, "a", 1)
+    table_size = main_hash_table_size()
+    populate(main_hash_table_keys_before_rehashing_starts(), "b", 1)
+    assert table_size == main_hash_table_size()
+    assert_no_match("*Hash table 1 stats*", r.run("debug", "htstats", 9))
     r.run("bgsave")
-    # TODO: wait_for_condition 10 100 {
-    #       [s rdb_bgsave_in_progress] eq 1
-    #   } else {
-    #       fail "bgsave did not start in time"
-    #   }
+    wait_for_condition(
+        10,
+        100,
+        "            [s rdb_bgsave_in_progress] eq 1\n        ",
+        "else",
+        '            fail "bgsave did not start in time"\n        ',
+    )
     r.run("mset", "k1", "v1", "k2", "v2")
-    # TODO: assert_equal table _size main_hash_table_size
-    # TODO: assert_no_match "*Hash table 1 stats*" r debug htstats 9
-    # TODO: exec kill -9 get_child_pid 0
-    # TODO: waitForBgsave r
-    # TODO: wait_for_condition 50 100 {
-    #       [main_hash_table_size] > $table_size
-    #   } else {
-    #       fail "hash table did not rehash after child process killed"
-    #   }
+    assert table_size == main_hash_table_size()
+    assert_no_match("*Hash table 1 stats*", r.run("debug", "htstats", 9))
+    exec_("kill", -9, get_child_pid(0))
+    wait_for_bgsave("r")
+    wait_for_condition(
+        50,
+        100,
+        "            [main_hash_table_size] > $table_size\n        ",
+        "else",
+        '            fail "hash table did not rehash after child process killed"\n        ',
+    )
 
 
 """
@@ -707,7 +657,6 @@ proc read_proc_title {pid} {
 pytestmark = [pytest.mark.other_external_skip]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_process_title_set_as_expected(r: ValkeyTestClient) -> None:
     """
     test {Process title set as expected} {
@@ -744,35 +693,11 @@ def test_process_title_set_as_expected(r: ValkeyTestClient) -> None:
         }
     }
     """
-    # TODO: set os exec uname
-    # TODO: if {$os == "Linux" && !$::valgrind} {
-    #       # Set a custom template
-    #       r config set "proc-title-template" "TEST {title} {listen-addr} {port} {tls-port} {unixsocket} {config-file}"
-    #       set cmdline [read_proc_title [srv 0 pid]]
-    #
-    #       assert_equal "TEST" [lindex $cmdline 0]
-    #       assert_match "*/valkey-server" [lindex $cmdline 1]
-    #
-    #       if {$::tls} {
-    #           set expect_port [srv 0 pport]
-    #           set expect_tls_port [srv 0 port]
-    #           set port [srv 0 pport]
-    #       } else {
-    #           set expect_port [srv 0 port]
-    #           set expect_tls_port 0
-    #           set port [srv 0 port]
-    #       }
-    #
-    #       assert_equal "$::host:$port" [lindex $cmdline 2]
-    #       assert_equal $expect_port [lindex $cmdline 3]
-    #       assert_equal $expect_tls_port [lindex $cmdline 4]
-    #       assert_match "*/tests/tmp/server.*/socket" [lindex $cmdline 5]
-    #       assert_match "*/tests/tmp/valkey.conf.*" [lindex $cmdline 6]
-    #
-    #       # Try setting a bad template
-    #       catch {r config set "proc-title-template" "{invalid-var}"} err
-    #       assert_match {*template format is invalid*} $err
-    #   }
+    os = exec_("uname")
+    if_(
+        '$os == "Linux" && !$::valgrind',
+        '            # Set a custom template\n            r config set "proc-title-template" "TEST {title} {listen-addr} {port} {tls-port} {unixsocket} {config-file}"\n            set cmdline [read_proc_title [srv 0 pid]]\n\n            assert_equal "TEST" [lindex $cmdline 0]\n            assert_match "*/valkey-server" [lindex $cmdline 1]\n\n            if {$::tls} {\n                set expect_port [srv 0 pport]\n                set expect_tls_port [srv 0 port]\n                set port [srv 0 pport]\n            } else {\n                set expect_port [srv 0 port]\n                set expect_tls_port 0\n                set port [srv 0 port]\n            }\n\n            assert_equal "$::host:$port" [lindex $cmdline 2]\n            assert_equal $expect_port [lindex $cmdline 3]\n            assert_equal $expect_tls_port [lindex $cmdline 4]\n            assert_match "*/tests/tmp/server.*/socket" [lindex $cmdline 5]\n            assert_match "*/tests/tmp/valkey.conf.*" [lindex $cmdline 6]\n\n            # Try setting a bad template\n            catch {r config set "proc-title-template" "{invalid-var}"} err\n            assert_match {*template format is invalid*} $err\n        ',
+    )
 
 
 """
@@ -847,7 +772,6 @@ start_cluster 1 0 {tags {"other external:skip cluster slow"}} {
 pytestmark = [pytest.mark.other_external_skip]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_server_can_resize_empty_dict(r: ValkeyTestClient) -> None:
     """
     test "Server can resize empty dict" {
@@ -878,18 +802,19 @@ def test_server_can_resize_empty_dict(r: ValkeyTestClient) -> None:
     while j <= 128:
         r.run("del", j, "b")
         j += 1
-    # TODO: set dbnum expr {$::singledb ? 0 : 9}
-    # TODO: wait_for_condition 100 50 {
-    #       [dict get [r memory stats] db.$dbnum overhead.hashtable.main] < 400
-    #   } else {
-    #       fail "dict did not resize in time"
-    #   }
+    dbnum = expr("$::singledb ? 0 : 9")
+    wait_for_condition(
+        100,
+        50,
+        "            [dict get [r memory stats] db.$dbnum overhead.hashtable.main] < 400\n        ",
+        "else",
+        '            fail "dict did not resize in time"\n        ',
+    )
 
 
 pytestmark = [pytest.mark.other_external_skip]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_io_threads_are_runtime_modifiable(r: ValkeyTestClient) -> None:
     """
     test "test io-threads are runtime modifiable" {
@@ -902,12 +827,13 @@ def test_test_io_threads_are_runtime_modifiable(r: ValkeyTestClient) -> None:
         }
     }
     """
-    # TODO: for {set i 0} {$i < 100} {incr i} {
-    #       set random_num [expr {int(rand() * 5) + 1}]
-    #       r config set io-threads $random_num
-    #       set thread_num [lindex [r config get io-threads] 1]
-    #       assert_equal $random_num $thread_num
-    #   }
+    i = 0
+    while i < 100:
+        random_num = expr("int(rand() * 5) + 1")
+        r.run("config", "set", "io-threads", random_num)
+        thread_num = r.run("config", "get", "io-threads")[1]
+        assert random_num == thread_num
+        i += 1
 
 
 """
@@ -963,3 +889,74 @@ close tempFileId
 """
 file delete tempFileName
 """
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def assert_no_match(*args):
+    raise NotImplementedError("assert_no_match")
+
+
+def error(*args):
+    raise NotImplementedError("error")
+
+
+def exec_(*args):
+    raise NotImplementedError("exec_")
+
+
+def expr(*args):
+    raise NotImplementedError("expr")
+
+
+def foreach(*args):
+    raise NotImplementedError("foreach")
+
+
+def get_child_pid(*args):
+    raise NotImplementedError("get_child_pid")
+
+
+def if_(*args):
+    raise NotImplementedError("if_")
+
+
+def lappend(*args):
+    raise NotImplementedError("lappend")
+
+
+def main_hash_table_keys_before_rehashing_starts(*args):
+    raise NotImplementedError("main_hash_table_keys_before_rehashing_starts")
+
+
+def main_hash_table_size(*args):
+    raise NotImplementedError("main_hash_table_size")
+
+
+def populate(*args):
+    raise NotImplementedError("populate")
+
+
+def s(*args):
+    raise NotImplementedError("s")
+
+
+def string(*args):
+    raise NotImplementedError("string")
+
+
+def valkey_deferring_client(*args):
+    raise NotImplementedError("valkey_deferring_client")
+
+
+def wait_for_bgrewriteaof(*args):
+    raise NotImplementedError("wait_for_bgrewriteaof")
+
+
+def wait_for_bgsave(*args):
+    raise NotImplementedError("wait_for_bgsave")
+
+
+def wait_for_condition(*args):
+    raise NotImplementedError("wait_for_condition")

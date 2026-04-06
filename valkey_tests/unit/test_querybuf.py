@@ -1,3 +1,4 @@
+# ruff: noqa: PLR2004, F841, N806, ANN002, ANN201
 import time
 
 import pytest
@@ -83,30 +84,34 @@ def test_query_buffer_resized_correctly(r: ValkeyTestClient) -> None:
         $rd close
     }
     """
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd client setname test_client
     # TODO: $rd read
-    # TODO: assert {[client_query_buffer test_client] == 0}
+    assert client_query_buffer("test_client") == 0
     r.run("debug", "pause-cron", 1)
     # TODO: $rd write "*3\r\n\$3\r\nset\r\n\$2\r\na"
     # TODO: $rd flush
-    # TODO: wait_for_condition 1000 10 {
-    #       [client_query_buffer test_client] > 0
-    #   } else {
-    #       fail "client should start using a private query buffer"
-    #   }
+    wait_for_condition(
+        1000,
+        10,
+        "            [client_query_buffer test_client] > 0\n        ",
+        "else",
+        '            fail "client should start using a private query buffer"\n        ',
+    )
     # TODO: $rd write "a\r\n\$1\r\nb\r\n"
     # TODO: $rd flush
     # TODO: assert_equal {OK} $rd read
-    # TODO: set orig_test_client_qbuf client_query_buffer test_client
-    # TODO: set MAX_QUERY_BUFFER_SIZE expr 32768 + 2
-    # TODO: assert {$orig_test_client_qbuf >= 16384 && $orig_test_client_qbuf <= $MAX_QUERY_BUFFER_SIZE}
+    orig_test_client_qbuf = client_query_buffer("test_client")
+    MAX_QUERY_BUFFER_SIZE = expr(32768, "+", 2)
+    assert (orig_test_client_qbuf >= 16384) and (orig_test_client_qbuf <= MAX_QUERY_BUFFER_SIZE)
     r.run("debug", "pause-cron", 0)
-    # TODO: wait_for_condition 1000 10 {
-    #       [client_idle_sec test_client] >= 3 && [client_query_buffer test_client] < $orig_test_client_qbuf
-    #   } else {
-    #       fail "query buffer was not resized"
-    #   }
+    wait_for_condition(
+        1000,
+        10,
+        "            [client_idle_sec test_client] >= 3 && [client_query_buffer test_client] < $orig_test_client_qbuf\n        ",
+        "else",
+        '            fail "query buffer was not resized"\n        ',
+    )
     # TODO: $rd close
 
 
@@ -146,22 +151,18 @@ def test_query_buffer_resized_correctly_when_not_idle(r: ValkeyTestClient) -> No
     } {0} {needs:debug}
     """
     r.run("debug", "pause-cron", 1)
-    # TODO: set rd valkey_client
+    rd = valkey_client()
     # TODO: $rd client setname test_client
     # TODO: $rd set x string repeat A 400000
-    # TODO: set orig_test_client_qbuf client_query_buffer test_client
-    # TODO: assert {$orig_test_client_qbuf > 32768}
+    orig_test_client_qbuf = client_query_buffer("test_client")
+    assert orig_test_client_qbuf > 32768
     r.run("debug", "pause-cron", 0)
-    # TODO: set t clock milliseconds
-    # TODO: while true {
-    #       # Write something smaller, so query buf peak can shrink
-    #       $rd set x [string repeat A 100]
-    #       set new_test_client_qbuf [client_query_buffer test_client]
-    #       if {$new_test_client_qbuf < $orig_test_client_qbuf && $new_test_client_qbuf > 0} { break }
-    #       if {[expr [clock milliseconds] - $t] > 1000} { break }
-    #       after 10
-    #   }
-    # TODO: assert {[client_query_buffer test_client] > 0 && [client_query_buffer test_client] < $orig_test_client_qbuf}
+    t = clock("milliseconds")
+    while_(
+        "true",
+        "            # Write something smaller, so query buf peak can shrink\n            $rd set x [string repeat A 100]\n            set new_test_client_qbuf [client_query_buffer test_client]\n            if {$new_test_client_qbuf < $orig_test_client_qbuf && $new_test_client_qbuf > 0} { break } \n            if {[expr [clock milliseconds] - $t] > 1000} { break }\n            after 10\n        ",
+    )
+    assert (client_query_buffer("test_client") > 0) and (client_query_buffer("test_client") < orig_test_client_qbuf)
     # TODO: $rd close
     assert False
 
@@ -195,7 +196,7 @@ def test_query_buffer_resized_correctly_with_fat_argv(r: ValkeyTestClient) -> No
         $rd close
     }
     """
-    # TODO: set rd valkey_client
+    rd = valkey_client()
     # TODO: $rd client setname test_client
     # TODO: $rd write "*3\r\n\$3\r\nset\r\n\$1\r\na\r\n\$1000000\r\n"
     # TODO: $rd flush
@@ -203,12 +204,48 @@ def test_query_buffer_resized_correctly_with_fat_argv(r: ValkeyTestClient) -> No
     # TODO: $rd write "a"
     # TODO: $rd flush
     time.sleep(20 / 1000)
-    # TODO: if {[client_query_buffer test_client] < 1000000} {
-    #       fail "query buffer should not be resized when client idle time smaller than 2s"
-    #   }
-    # TODO: wait_for_condition 1000 10 {
-    #       [client_idle_sec test_client] >= 3 && [client_query_buffer test_client] < 1000000
-    #   } else {
-    #       fail "query buffer should be resized when client idle time bigger than 2s"
-    #   }
+    if client_query_buffer("test_client") < 1000000:
+        fail("query buffer should not be resized when client idle time smaller than 2s")
+    wait_for_condition(
+        1000,
+        10,
+        "            [client_idle_sec test_client] >= 3 && [client_query_buffer test_client] < 1000000\n        ",
+        "else",
+        '            fail "query buffer should be resized when client idle time bigger than 2s"\n        ',
+    )
     # TODO: $rd close
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def client_query_buffer(*args):
+    raise NotImplementedError("client_query_buffer")
+
+
+def clock(*args):
+    raise NotImplementedError("clock")
+
+
+def expr(*args):
+    raise NotImplementedError("expr")
+
+
+def fail(*args):
+    raise NotImplementedError("fail")
+
+
+def valkey_client(*args):
+    raise NotImplementedError("valkey_client")
+
+
+def valkey_deferring_client(*args):
+    raise NotImplementedError("valkey_deferring_client")
+
+
+def wait_for_condition(*args):
+    raise NotImplementedError("wait_for_condition")
+
+
+def while_(*args):
+    raise NotImplementedError("while_")

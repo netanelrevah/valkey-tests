@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841
+# ruff: noqa: PLR2004, ANN001, ANN002, ANN201
 
 from fnmatch import fnmatch
 
@@ -280,7 +280,6 @@ def test_module_key_specs_complex_specs_case_2(r: ValkeyTestClient) -> None:
     )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_command_list_filtering(r: ValkeyTestClient) -> None:
     """
     test "Module command list filtering" {
@@ -291,7 +290,10 @@ def test_module_command_list_filtering(r: ValkeyTestClient) -> None:
     }
     """
     reply = r.run("command", "list", "filterby", "module", "keyspecs")
-    # TODO: assert_equal lsort $reply {kspec.complex1 kspec.complex2 kspec.keyword kspec.none kspec.nonewithgetkeys kspec.tworanges kspec.tworangeswithgap}
+    assert (
+        lsort(reply)
+        == "kspec.complex1 kspec.complex2 kspec.keyword kspec.none kspec.nonewithgetkeys kspec.tworanges kspec.tworangeswithgap"
+    )
     assert (
         r.run(
             "command",
@@ -396,32 +398,30 @@ def test_module_key_specs_tworanges_acl(r: ValkeyTestClient) -> None:
     )
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd"], [("kspec.none"), ("kspec.tworanges")])
-def test_cmd_command_will_not_be_marked_with_movablekeys(r: ValkeyTestClient) -> None:
+def test_cmd_command_will_not_be_marked_with_movablekeys(r: ValkeyTestClient, cmd) -> None:
     """
     test "$cmd command will not be marked with movablekeys" {
         set info [lindex [r command info $cmd] 0]
         assert_no_match {*movablekeys*} [lindex $info 2]
     }
     """
-    # TODO: set info lindex [r command info $cmd] 0
-    # TODO: assert_no_match {*movablekeys*} lindex $info 2
+    info = r.run("command", "info", cmd)[0]
+    assert_no_match("*movablekeys*", info[2])
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(
     ["cmd"], [("kspec.keyword"), ("kspec.complex1"), ("kspec.complex2"), ("kspec.nonewithgetkeys")]
 )
-def test_cmd_command_is_marked_with_movablekeys(r: ValkeyTestClient) -> None:
+def test_cmd_command_is_marked_with_movablekeys(r: ValkeyTestClient, cmd) -> None:
     """
     test "$cmd command is marked with movablekeys" {
         set info [lindex [r command info $cmd] 0]
         assert_match {*movablekeys*} [lindex $info 2]
     }
     """
-    # TODO: set info lindex [r command info $cmd] 0
-    # TODO: assert_match {*movablekeys*} lindex $info 2
+    info = r.run("command", "info", cmd)[0]
+    assert fnmatch(str(info[2]), "*movablekeys*")
 
 
 def test_unload_the_module_keyspecs(r: ValkeyTestClient) -> None:
@@ -431,3 +431,14 @@ def test_unload_the_module_keyspecs(r: ValkeyTestClient) -> None:
     }
     """
     assert "OK" == r.run("module", "unload", "keyspecs")
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def assert_no_match(*args):
+    raise NotImplementedError("assert_no_match")
+
+
+def lsort(*args):
+    raise NotImplementedError("lsort")

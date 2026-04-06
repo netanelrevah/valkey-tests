@@ -1,4 +1,4 @@
-# ruff: noqa: F841
+# ruff: noqa: PLR2004, ANN002, ANN201
 
 import pytest
 
@@ -58,7 +58,7 @@ def test_de_authenticating_clients_is_tracked_and_kills_clients(r: ValkeyTestCli
     """
     assert r.run("auth.changecount") == 0
     r.run("auth.createmoduleuser")
-    # TODO: catch { [r ping] } e
+    catch(" [r ping] ", "e")
     # TODO: assert_match {*I/O*} e
     assert r.run("auth.changecount") == 1
 
@@ -71,7 +71,7 @@ def test_modules_can_t_authenticate_with_acls_users_that_dont_exist(r: ValkeyTes
         assert_match {*Invalid user*} $e
     }
     """
-    # TODO: catch { [r auth.authrealuser auth-module-test-fake] } e
+    catch(" [r auth.authrealuser auth-module-test-fake] ", "e")
     # TODO: assert_match {*Invalid user*} e
 
 
@@ -130,7 +130,6 @@ def test_client_callback_is_called_on_user_switch(r: ValkeyTestClient) -> None:
     assert r.run("acl", "whoami") == "default"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_modules_can_redact_arguments(r: ValkeyTestClient) -> None:
     """
     test {modules can redact arguments} {
@@ -155,10 +154,10 @@ def test_modules_can_redact_arguments(r: ValkeyTestClient) -> None:
     r.run("auth.redact", 1, 2, 3)
     r.run("config", "set", "slowlog-log-slower-than", -1)
     slowlog_resp = r.run("slowlog", "get")
-    # TODO: assert_equal 3 llength $slowlog_resp
-    # TODO: assert_equal {slowlog reset} lindex [lindex $slowlog_resp 2] 3
-    # TODO: assert_equal {auth.redact 1 (redacted) 3 (redacted)} lindex [lindex $slowlog_resp 1] 3
-    # TODO: assert_equal {auth.redact (redacted) 2 (redacted)} lindex [lindex $slowlog_resp 0] 3
+    assert 3 == len(slowlog_resp)
+    assert "slowlog reset" == slowlog_resp[2][3]
+    assert "auth.redact 1 (redacted) 3 (redacted)" == slowlog_resp[1][3]
+    assert "auth.redact (redacted) 2 (redacted)" == slowlog_resp[0][3]
 
 
 def test_unload_the_module_testacl(r: ValkeyTestClient) -> None:
@@ -168,3 +167,10 @@ def test_unload_the_module_testacl(r: ValkeyTestClient) -> None:
     }
     """
     assert "OK" == r.run("module", "unload", "testacl")
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def catch(*args):
+    raise NotImplementedError("catch")

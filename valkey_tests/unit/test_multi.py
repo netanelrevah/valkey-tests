@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, PLR1714, F841, RUF043
+# ruff: noqa: PLR2004, PLR1714, F841, RUF043, ANN001, ANN002, ANN201
 import time
 from fnmatch import fnmatch
 
@@ -173,18 +173,18 @@ def test_exec_fails_if_there_are_errors_while_queueing_commands_2(r: ValkeyTestC
         list [r exists foo1{t}] [r exists foo2{t}]
     } {0 0} {needs:config-maxmemory}
     """
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     r.run("del", "foo1{t}", "foo2{t}")
     r.run("multi")
     r.run("set", "foo1{t}", "bar1")
     # TODO: $rd config set maxmemory 1
-    # TODO: assert {[$rd read] eq {OK}}
+    assert_("[$rd read] eq {OK}")
     try:
         r.run("lpush", "mylist{t}", "myvalue")
     except Exception:
         pass
     # TODO: $rd config set maxmemory 0
-    # TODO: assert {[$rd read] eq {OK}}
+    assert_("[$rd read] eq {OK}")
     r.run("set", "foo2{t}", "bar2")
     try:
         e = r.run("exec")
@@ -326,17 +326,18 @@ def test_exec_fail_on_lazy_expired_watched_key(r: ValkeyTestClient) -> None:
     """
     r.run("del", "key")
     r.run("debug", "set-active-expire", 0)
-    # TODO: for {set j 0} {$j < 10} {incr j} {
-    #       r set key 1 px 100
-    #       r watch key
-    #       after 101
-    #       r multi
-    #       r incr key
-    #
-    #       set res [r exec]
-    #       if {$res eq {}} break
-    #   }
-    # TODO: if {$::verbose} { puts "EXEC fail on lazy expired WATCHed key attempts: $j" }
+    j = 0
+    while j < 10:
+        r.run("set", "key", 1, "px", 100)
+        r.run("watch", "key")
+        time.sleep(101 / 1000)
+        r.run("multi")
+        r.run("incr", "key")
+        res = r.run("exec")
+        if res == "":
+            break_()
+        j += 1
+    if_("$::verbose", ' puts "EXEC fail on lazy expired WATCHed key attempts: $j" ')
     r.run("debug", "set-active-expire", 1)
     # TODO: set _ res
 
@@ -773,7 +774,6 @@ def test_watch_will_consider_touched_keys_target_of_expire(r: ValkeyTestClient) 
     r.run("exec")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_watch_will_consider_touched_expired_keys(r: ValkeyTestClient) -> None:
     """
     test {WATCH will consider touched expired keys} {
@@ -796,7 +796,7 @@ def test_watch_will_consider_touched_expired_keys(r: ValkeyTestClient) -> None:
     r.run("set", "x", "foo")
     r.run("expire", "x", 1)
     r.run("watch", "x")
-    # TODO: wait_for_dbsize 0
+    wait_for_dbsize(0)
     r.run("multi")
     r.run("ping")
     r.run("exec")
@@ -846,7 +846,6 @@ def test_discard_should_unwatch_all_the_keys(r: ValkeyTestClient) -> None:
     assert r.run("exec") == "11"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_multi_or_exec_is_not_propagated_single_write_command(r: ValkeyTestClient) -> None:
     """
     test {MULTI / EXEC is not propagated (single write command)} {
@@ -863,20 +862,17 @@ def test_multi_or_exec_is_not_propagated_single_write_command(r: ValkeyTestClien
         close_replication_stream $repl
     } {} {needs:repl}
     """
-    # TODO: set repl attach_to_replication_stream
+    repl = attach_to_replication_stream()
     r.run("multi")
     r.run("set", "foo", "bar")
     r.run("exec")
     r.run("set", "foo2", "bar")
-    # TODO: assert_replication_stream repl {
-    #       {select *}
-    #       {set foo bar}
-    #       {set foo2 bar}
-    #   }
-    # TODO: close_replication_stream repl
+    assert_replication_stream(
+        repl, "            {select *}\n            {set foo bar}\n            {set foo2 bar}\n        "
+    )
+    close_replication_stream(repl)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_multi_or_exec_is_propagated_correctly_multiple_commands(r: ValkeyTestClient) -> None:
     """
     test {MULTI / EXEC is propagated correctly (multiple commands)} {
@@ -901,7 +897,7 @@ def test_multi_or_exec_is_propagated_correctly_multiple_commands(r: ValkeyTestCl
         close_replication_stream $repl
     } {} {needs:repl}
     """
-    # TODO: set repl attach_to_replication_stream
+    repl = attach_to_replication_stream()
     r.run("multi")
     r.run("set", "foo{t}", "bar")
     r.run("get", "foo{t}")
@@ -910,18 +906,13 @@ def test_multi_or_exec_is_propagated_correctly_multiple_commands(r: ValkeyTestCl
     r.run("set", "foo3{t}", "bar3")
     r.run("get", "foo3{t}")
     r.run("exec")
-    # TODO: assert_replication_stream repl {
-    #       {multi}
-    #       {select *}
-    #       {set foo{t} bar}
-    #       {set foo2{t} bar2}
-    #       {set foo3{t} bar3}
-    #       {exec}
-    #   }
-    # TODO: close_replication_stream repl
+    assert_replication_stream(
+        repl,
+        "            {multi}\n            {select *}\n            {set foo{t} bar}\n            {set foo2{t} bar2}\n            {set foo3{t} bar3}\n            {exec}\n        ",
+    )
+    close_replication_stream(repl)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_multi_or_exec_is_propagated_correctly_multiple_commands_with_select(r: ValkeyTestClient) -> None:
     """
     test {MULTI / EXEC is propagated correctly (multiple commands with SELECT)} {
@@ -951,7 +942,7 @@ def test_multi_or_exec_is_propagated_correctly_multiple_commands_with_select(r: 
         close_replication_stream $repl
     } {} {needs:repl singledb:skip}
     """
-    # TODO: set repl attach_to_replication_stream
+    repl = attach_to_replication_stream()
     r.run("multi")
     r.run("select", 1)
     r.run("set", "foo{t}", "bar")
@@ -963,20 +954,13 @@ def test_multi_or_exec_is_propagated_correctly_multiple_commands_with_select(r: 
     r.run("set", "foo3{t}", "bar3")
     r.run("get", "foo3{t}")
     r.run("exec")
-    # TODO: assert_replication_stream repl {
-    #       {multi}
-    #       {select *}
-    #       {set foo{t} bar}
-    #       {select *}
-    #       {set foo2{t} bar2}
-    #       {select *}
-    #       {set foo3{t} bar3}
-    #       {exec}
-    #   }
-    # TODO: close_replication_stream repl
+    assert_replication_stream(
+        repl,
+        "            {multi}\n            {select *}\n            {set foo{t} bar}\n            {select *}\n            {set foo2{t} bar2}\n            {select *}\n            {set foo3{t} bar3}\n            {exec}\n        ",
+    )
+    close_replication_stream(repl)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_multi_or_exec_is_propagated_correctly_empty_transaction(r: ValkeyTestClient) -> None:
     """
     test {MULTI / EXEC is propagated correctly (empty transaction)} {
@@ -991,18 +975,14 @@ def test_multi_or_exec_is_propagated_correctly_empty_transaction(r: ValkeyTestCl
         close_replication_stream $repl
     } {} {needs:repl}
     """
-    # TODO: set repl attach_to_replication_stream
+    repl = attach_to_replication_stream()
     r.run("multi")
     r.run("exec")
     r.run("set", "foo", "bar")
-    # TODO: assert_replication_stream repl {
-    #       {select *}
-    #       {set foo bar}
-    #   }
-    # TODO: close_replication_stream repl
+    assert_replication_stream(repl, "            {select *}\n            {set foo bar}\n        ")
+    close_replication_stream(repl)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_multi_or_exec_is_propagated_correctly_read_only_commands(r: ValkeyTestClient) -> None:
     """
     test {MULTI / EXEC is propagated correctly (read-only commands)} {
@@ -1020,19 +1000,15 @@ def test_multi_or_exec_is_propagated_correctly_read_only_commands(r: ValkeyTestC
     } {} {needs:repl}
     """
     r.run("set", "foo", "value1")
-    # TODO: set repl attach_to_replication_stream
+    repl = attach_to_replication_stream()
     r.run("multi")
     r.run("get", "foo")
     r.run("exec")
     r.run("set", "foo", "value2")
-    # TODO: assert_replication_stream repl {
-    #       {select *}
-    #       {set foo value2}
-    #   }
-    # TODO: close_replication_stream repl
+    assert_replication_stream(repl, "            {select *}\n            {set foo value2}\n        ")
+    close_replication_stream(repl)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_multi_or_exec_is_propagated_correctly_write_command_no_effect(r: ValkeyTestClient) -> None:
     """
     test {MULTI / EXEC is propagated correctly (write command, no effect)} {
@@ -1056,19 +1032,15 @@ def test_multi_or_exec_is_propagated_correctly_write_command_no_effect(r: Valkey
     """
     r.run("del", "bar")
     r.run("del", "foo")
-    # TODO: set repl attach_to_replication_stream
+    repl = attach_to_replication_stream()
     r.run("multi")
     r.run("del", "foo")
     r.run("exec")
     r.run("incr", "foo")
-    # TODO: assert_replication_stream repl {
-    #       {select *}
-    #       {incr foo}
-    #   }
-    # TODO: close_replication_stream repl
+    assert_replication_stream(repl, "            {select *}\n            {incr foo}\n        ")
+    close_replication_stream(repl)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_multi_or_exec_with_replicaof(r: ValkeyTestClient) -> None:
     """
     test {MULTI / EXEC with REPLICAOF} {
@@ -1091,7 +1063,7 @@ def test_multi_or_exec_with_replicaof(r: ValkeyTestClient) -> None:
         r replicaof no one
     } {OK} {needs:repl cluster:skip}
     """
-    # TODO: set repl attach_to_replication_stream
+    repl = attach_to_replication_stream()
     r.run("set", "foo", "bar")
     r.run("multi")
     r.run("set", "foo2", "bar")
@@ -1103,11 +1075,8 @@ def test_multi_or_exec_with_replicaof(r: ValkeyTestClient) -> None:
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "READONLY*")
-    # TODO: assert_replication_stream repl {
-    #       {select *}
-    #       {set foo bar}
-    #   }
-    # TODO: close_replication_stream repl
+    assert_replication_stream(repl, "            {select *}\n            {set foo bar}\n        ")
+    close_replication_stream(repl)
     assert r.run("replicaof", "no", "one") == "OK"
 
 
@@ -1128,9 +1097,9 @@ def test_discard_should_not_fail_during_oom(r: ValkeyTestClient) -> None:
         r ping
     } {PONG} {needs:config-maxmemory}
     """
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd config set maxmemory 1
-    # TODO: assert {[$rd read] eq {OK}}
+    assert_("[$rd read] eq {OK}")
     r.run("multi")
     try:
         e = r.run("set", "x", 1)
@@ -1139,7 +1108,7 @@ def test_discard_should_not_fail_during_oom(r: ValkeyTestClient) -> None:
     assert fnmatch(str(e), "OOM*")
     r.run("discard")
     # TODO: $rd config set maxmemory 0
-    # TODO: assert {[$rd read] eq {OK}}
+    assert_("[$rd read] eq {OK}")
     # TODO: $rd close
     assert r.run("ping") == "PONG"
 
@@ -1172,18 +1141,18 @@ def test_multi_and_script_timeout(r: ValkeyTestClient) -> None:
         $rd1 close; $r2 close
     }
     """
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: set r2 valkey_client
+    rd1 = valkey_deferring_client()
+    r2 = valkey_client()
     r.run("config", "set", "lua-time-limit", 10)
     r.run("set", "xx", 1)
     # TODO: $rd1 eval {while true do end} 0
     time.sleep(200 / 1000)
-    # TODO: catch { $r2 multi; } e
-    # TODO: catch { $r2 incr xx; } e
+    catch(" $r2 multi; ", "e")
+    catch(" $r2 incr xx; ", "e")
     r.run("script", "kill")
     time.sleep(200 / 1000)
-    # TODO: catch { $r2 incr xx; } e
-    # TODO: catch { $r2 exec; } e
+    catch(" $r2 incr xx; ", "e")
+    catch(" $r2 exec; ", "e")
     # TODO: assert_match {EXECABORT*previous errors*} e
     xx = r.run("get", "xx")
     assert (xx == 1) or (xx == 3)
@@ -1221,16 +1190,16 @@ def test_exec_and_script_timeout(r: ValkeyTestClient) -> None:
         $rd1 close; $r2 close
     }
     """
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: set r2 valkey_client
+    rd1 = valkey_deferring_client()
+    r2 = valkey_client()
     r.run("config", "set", "lua-time-limit", 10)
     r.run("set", "xx", 1)
-    # TODO: catch { $r2 multi; } e
-    # TODO: catch { $r2 incr xx; } e
+    catch(" $r2 multi; ", "e")
+    catch(" $r2 incr xx; ", "e")
     # TODO: $rd1 eval {while true do end} 0
     time.sleep(200 / 1000)
-    # TODO: catch { $r2 incr xx; } e
-    # TODO: catch { $r2 exec; } e
+    catch(" $r2 incr xx; ", "e")
+    catch(" $r2 exec; ", "e")
     # TODO: assert_match {EXECABORT*BUSY*} e
     r.run("script", "kill")
     time.sleep(200 / 1000)
@@ -1270,18 +1239,18 @@ def test_multi_exec_body_and_script_timeout(r: ValkeyTestClient) -> None:
         $rd1 close; $r2 close
     }
     """
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: set r2 valkey_client
+    rd1 = valkey_deferring_client()
+    r2 = valkey_client()
     r.run("config", "set", "lua-time-limit", 10)
     r.run("set", "xx", 1)
-    # TODO: catch { $r2 multi; } e
-    # TODO: catch { $r2 incr xx; } e
+    catch(" $r2 multi; ", "e")
+    catch(" $r2 incr xx; ", "e")
     # TODO: $rd1 eval {while true do end} 0
     time.sleep(200 / 1000)
-    # TODO: catch { $r2 incr xx; } e
+    catch(" $r2 incr xx; ", "e")
     r.run("script", "kill")
     time.sleep(200 / 1000)
-    # TODO: catch { $r2 exec; } e
+    catch(" $r2 exec; ", "e")
     # TODO: assert_match {EXECABORT*previous errors*} e
     xx = r.run("get", "xx")
     assert (xx == 1) or (xx == 3)
@@ -1318,15 +1287,15 @@ def test_just_exec_and_script_timeout(r: ValkeyTestClient) -> None:
         $rd1 close; $r2 close
     }
     """
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: set r2 valkey_client
+    rd1 = valkey_deferring_client()
+    r2 = valkey_client()
     r.run("config", "set", "lua-time-limit", 10)
     r.run("set", "xx", 1)
-    # TODO: catch { $r2 multi; } e
-    # TODO: catch { $r2 incr xx; } e
+    catch(" $r2 multi; ", "e")
+    catch(" $r2 incr xx; ", "e")
     # TODO: $rd1 eval {while true do end} 0
     time.sleep(200 / 1000)
-    # TODO: catch { $r2 exec; } e
+    catch(" $r2 exec; ", "e")
     # TODO: assert_match {EXECABORT*BUSY*} e
     r.run("script", "kill")
     time.sleep(200 / 1000)
@@ -1357,7 +1326,7 @@ def test_exec_with_write_commands_and_state_change(r: ValkeyTestClient) -> None:
         $r1 close
     } {0} {needs:repl}
     """
-    # TODO: set r1 valkey_client
+    r1 = valkey_client()
     r.run("set", "xx", 1)
     r.run("multi")
     r.run("incr", "xx")
@@ -1411,7 +1380,7 @@ def test_exec_with_read_commands_and_stale_replica_state_change(r: ValkeyTestCli
     } {0} {needs:repl cluster:skip}
     """
     r.run("config", "set", "replica-serve-stale-data", "no")
-    # TODO: set r1 valkey_client
+    r1 = valkey_client()
     r.run("set", "xx", 1)
     r.run("multi")
     r.run("get", "xx")
@@ -1461,7 +1430,7 @@ def test_exec_with_only_read_commands_should_not_be_rejected_when_oom(r: ValkeyT
         $r2 close
     } {0} {needs:config-maxmemory}
     """
-    # TODO: set r2 valkey_client
+    r2 = valkey_client()
     r.run("set", "x", "value")
     r.run("multi")
     r.run("get", "x")
@@ -1495,7 +1464,7 @@ def test_exec_with_at_least_one_use_memory_command_should_fail(r: ValkeyTestClie
         $r2 close
     } {0} {needs:config-maxmemory}
     """
-    # TODO: set r2 valkey_client
+    r2 = valkey_client()
     r.run("multi")
     r.run("set", "x", 1)
     r.run("get", "x")
@@ -1545,7 +1514,6 @@ def test_blocking_commands_ignores_the_timeout(r: ValkeyTestClient) -> None:
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_multi_propagation_of_publish(r: ValkeyTestClient) -> None:
     """
     test {MULTI propagation of PUBLISH} {
@@ -1562,18 +1530,14 @@ def test_multi_propagation_of_publish(r: ValkeyTestClient) -> None:
         close_replication_stream $repl
     } {} {needs:repl cluster:skip}
     """
-    # TODO: set repl attach_to_replication_stream
+    repl = attach_to_replication_stream()
     r.run("multi")
     r.run("publish", "bla", "bla")
     r.run("exec")
-    # TODO: assert_replication_stream repl {
-    #       {select *}
-    #       {publish bla bla}
-    #   }
-    # TODO: close_replication_stream repl
+    assert_replication_stream(repl, "            {select *}\n            {publish bla bla}\n        ")
+    close_replication_stream(repl)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_multi_propagation_of_script_load(r: ValkeyTestClient) -> None:
     """
     test {MULTI propagation of SCRIPT LOAD} {
@@ -1593,20 +1557,16 @@ def test_multi_propagation_of_script_load(r: ValkeyTestClient) -> None:
         close_replication_stream $repl
     } {} {needs:repl}
     """
-    # TODO: set repl attach_to_replication_stream
+    repl = attach_to_replication_stream()
     r.run("multi")
     r.run("script", "load", "redis.call('set', KEYS[1], 'foo')")
     r.run("set", "foo", "bar")
     res = r.run("exec")
     sha = res[0]
-    # TODO: assert_replication_stream repl {
-    #       {select *}
-    #       {set foo bar}
-    #   }
-    # TODO: close_replication_stream repl
+    assert_replication_stream(repl, "            {select *}\n            {set foo bar}\n        ")
+    close_replication_stream(repl)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_multi_propagation_of_eval(r: ValkeyTestClient) -> None:
     """
     test {MULTI propagation of EVAL} {
@@ -1624,18 +1584,14 @@ def test_multi_propagation_of_eval(r: ValkeyTestClient) -> None:
         close_replication_stream $repl
     } {} {needs:repl}
     """
-    # TODO: set repl attach_to_replication_stream
+    repl = attach_to_replication_stream()
     r.run("multi")
     r.run("eval", "redis.call('set', KEYS[1], 'bar')", 1, "bar")
     r.run("exec")
-    # TODO: assert_replication_stream repl {
-    #       {select *}
-    #       {set bar bar}
-    #   }
-    # TODO: close_replication_stream repl
+    assert_replication_stream(repl, "            {select *}\n            {set bar bar}\n        ")
+    close_replication_stream(repl)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_multi_propagation_of_script_flush(r: ValkeyTestClient) -> None:
     """
     test {MULTI propagation of SCRIPT FLUSH} {
@@ -1654,21 +1610,17 @@ def test_multi_propagation_of_script_flush(r: ValkeyTestClient) -> None:
         close_replication_stream $repl
     } {} {needs:repl}
     """
-    # TODO: set repl attach_to_replication_stream
+    repl = attach_to_replication_stream()
     r.run("multi")
     r.run("script", "flush")
     r.run("set", "foo", "bar")
     r.run("exec")
-    # TODO: assert_replication_stream repl {
-    #       {select *}
-    #       {set foo bar}
-    #   }
-    # TODO: close_replication_stream repl
+    assert_replication_stream(repl, "            {select *}\n            {set foo bar}\n        ")
+    close_replication_stream(repl)
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd"], [("SAVE"), ("SHUTDOWN")])
-def test_multi_with_cmd(r: ValkeyTestClient) -> None:
+def test_multi_with_cmd(r: ValkeyTestClient, cmd) -> None:
     """
     test "MULTI with $cmd" {
         r del foo
@@ -1683,14 +1635,14 @@ def test_multi_with_cmd(r: ValkeyTestClient) -> None:
     r.run("del", "foo")
     r.run("multi")
     r.run("set", "foo", "bar")
-    # TODO: set cmd_lower string tolower $cmd
-    # TODO: assert_error "ERR Command '$cmd_lower' not allowed inside a transaction*" {r $cmd}
+    cmd_lower = string("tolower", cmd)
+    with pytest.raises(Exception, match="ERR\\ Command\\ '\\$cmd_lower'\\ not\\ allowed\\ inside\\ a\\ transaction.*"):
+        r.run(cmd)
     with pytest.raises(Exception, match="EXECABORT\\ Transaction\\ discarded\\ because\\ of\\ previous\\ errors.*"):
         r.run("exec")
     assert r.run("get", "foo") == ""
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_multi_with_bgrewriteaof(r: ValkeyTestClient) -> None:
     """
     test "MULTI with BGREWRITEAOF" {
@@ -1708,21 +1660,22 @@ def test_multi_with_bgrewriteaof(r: ValkeyTestClient) -> None:
         waitForBgrewriteaof r
     } {} {external:skip}
     """
-    # TODO: set forks s total_forks
+    forks = s("total_forks")
     r.run("multi")
     r.run("set", "foo", "bar")
     r.run("BGREWRITEAOF")
     res = r.run("exec")
     assert fnmatch(str(res[1]), "*rewriting scheduled*")
-    # TODO: wait_for_condition 50 100 {
-    #       [s total_forks] > $forks
-    #   } else {
-    #       fail "aofrw didn't start"
-    #   }
-    # TODO: waitForBgrewriteaof r
+    wait_for_condition(
+        50,
+        100,
+        "            [s total_forks] > $forks\n        ",
+        "else",
+        '            fail "aofrw didn\'t start"\n        ',
+    )
+    wait_for_bgrewriteaof("r")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_multi_with_config_set_appendonly(r: ValkeyTestClient) -> None:
     """
     test "MULTI with config set appendonly" {
@@ -1741,19 +1694,21 @@ def test_multi_with_config_set_appendonly(r: ValkeyTestClient) -> None:
         waitForBgrewriteaof r
     } {} {external:skip}
     """
-    # TODO: set lines count_log_lines 0
-    # TODO: set forks s total_forks
+    lines = count_log_lines(0)
+    forks = s("total_forks")
     r.run("multi")
     r.run("set", "foo", "bar")
     r.run("config", "set", "appendonly", "yes")
     r.run("exec")
-    # TODO: verify_log_message 0 "*AOF background was scheduled*" lines
-    # TODO: wait_for_condition 50 100 {
-    #       [s total_forks] > $forks
-    #   } else {
-    #       fail "aofrw didn't start"
-    #   }
-    # TODO: waitForBgrewriteaof r
+    verify_log_message(0, "*AOF background was scheduled*", lines)
+    wait_for_condition(
+        50,
+        100,
+        "            [s total_forks] > $forks\n        ",
+        "else",
+        '            fail "aofrw didn\'t start"\n        ',
+    )
+    wait_for_bgrewriteaof("r")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1887,7 +1842,7 @@ def test_client_reply_off_or_skip_multi_command(r: ValkeyTestClient) -> None:
         $rd close
     }
     """
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd client reply off
     # TODO: $rd multi
     # TODO: $rd ping pong2
@@ -1933,7 +1888,6 @@ def test_auth_errored_inside_multi_will_add_the_reply(r: ValkeyTestClient) -> No
 pytestmark = [pytest.mark.external_skip]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_multi_with_flushall_and_aof(r: ValkeyTestClient) -> None:
     """
     test {MULTI with FLUSHALL and AOF} {
@@ -1952,18 +1906,15 @@ def test_multi_with_flushall_and_aof(r: ValkeyTestClient) -> None:
         r get foo
     } {}
     """
-    # TODO: set aof get_last_incr_aof_path r
+    aof = get_last_incr_aof_path("r")
     r.run("multi")
     r.run("set", "foo", "bar")
     r.run("flushall")
     r.run("exec")
-    # TODO: assert_aof_content aof {
-    #       {multi}
-    #       {select *}
-    #       {set *}
-    #       {flushall}
-    #       {exec}
-    #   }
+    assert_aof_content(
+        aof,
+        "            {multi}\n            {select *}\n            {set *}\n            {flushall}\n            {exec}\n        ",
+    )
     r.run("get", "foo")
 
 
@@ -2003,3 +1954,78 @@ start_cluster 1 0 {tags {"external:skip cluster needs:debug"} overrides {appendo
     }
 }
 """
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def assert_(*args):
+    raise NotImplementedError("assert_")
+
+
+def assert_aof_content(*args):
+    raise NotImplementedError("assert_aof_content")
+
+
+def assert_replication_stream(*args):
+    raise NotImplementedError("assert_replication_stream")
+
+
+def attach_to_replication_stream(*args):
+    raise NotImplementedError("attach_to_replication_stream")
+
+
+def break_(*args):
+    raise NotImplementedError("break_")
+
+
+def catch(*args):
+    raise NotImplementedError("catch")
+
+
+def close_replication_stream(*args):
+    raise NotImplementedError("close_replication_stream")
+
+
+def count_log_lines(*args):
+    raise NotImplementedError("count_log_lines")
+
+
+def get_last_incr_aof_path(*args):
+    raise NotImplementedError("get_last_incr_aof_path")
+
+
+def if_(*args):
+    raise NotImplementedError("if_")
+
+
+def s(*args):
+    raise NotImplementedError("s")
+
+
+def string(*args):
+    raise NotImplementedError("string")
+
+
+def valkey_client(*args):
+    raise NotImplementedError("valkey_client")
+
+
+def valkey_deferring_client(*args):
+    raise NotImplementedError("valkey_deferring_client")
+
+
+def verify_log_message(*args):
+    raise NotImplementedError("verify_log_message")
+
+
+def wait_for_bgrewriteaof(*args):
+    raise NotImplementedError("wait_for_bgrewriteaof")
+
+
+def wait_for_condition(*args):
+    raise NotImplementedError("wait_for_condition")
+
+
+def wait_for_dbsize(*args):
+    raise NotImplementedError("wait_for_dbsize")

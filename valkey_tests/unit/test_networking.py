@@ -1,4 +1,4 @@
-# ruff: noqa: F841
+# ruff: noqa: PLR2004, F841, ANN002, ANN201
 
 import pytest
 
@@ -161,27 +161,27 @@ def test_default_bind_address_configuration_handling(r: ValkeyTestClient) -> Non
     """
     assert "* -::*" == r.run("CONFIG", "GET", "bind")[1]
     r.run("CONFIG", "REWRITE")
-    # TODO: assert_equal 0 count_message_lines [srv 0 config_file] bind
+    assert 0 == count_message_lines(srv(0, "config_file"), "bind")
     r.run("CONFIG", "SET", "bind", "")
     assert "" == r.run("CONFIG", "GET", "bind")[1]
-    # TODO: catch {valkey_client} err
+    catch("valkey_client", "err")
     # TODO: assert_match {*connection refused*} err
     r.run("CONFIG", "REWRITE")
-    # TODO: assert_equal 1 count_message_lines [srv 0 config_file] bind
-    # TODO: restart_server 0 0 0 0
-    # TODO: if {$::force_resp3} {
-    #       assert_equal {{bind }} [valkeycli_exec 0 config get bind]
-    #   } else {
-    #       assert_equal {bind {}} [valkeycli_exec 0 config get bind]
-    #   }
-    # TODO: catch {reconnect 0} err
+    assert 1 == count_message_lines(srv(0, "config_file"), "bind")
+    restart_server(0, 0, 0, 0)
+    if_(
+        "$::force_resp3",
+        "            assert_equal {{bind }} [valkeycli_exec 0 config get bind]\n        ",
+        "else",
+        "            assert_equal {bind {}} [valkeycli_exec 0 config get bind]\n        ",
+    )
+    catch("reconnect 0", "err")
     # TODO: assert_match {*connection refused*} err
-    # TODO: assert_equal {OK} valkeycli_exec 0 config set bind *
-    # TODO: reconnect 0
+    assert "OK" == valkeycli_exec(0, "config", "set", "bind", "*")
+    reconnect(0)
     assert r.run("ping") == "PONG"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_protected_mode_works_as_expected(r: ValkeyTestClient) -> None:
     """
     test {Protected mode works as expected} {
@@ -222,40 +222,11 @@ def test_protected_mode_works_as_expected(r: ValkeyTestClient) -> None:
         }
     }
     """
-    # TODO: set myaddr get_nonloopback_addr
-    # TODO: if {$myaddr != "" && ![string match {127.*} $myaddr]} {
-    #       # Non-loopback client should fail by default
-    #       set r2 [get_nonloopback_client]
-    #       catch {$r2 ping} err
-    #       assert_match {*DENIED*} $err
-    #       $r2 close
-    #
-    #       # Bind configuration should not matter
-    #       assert_equal {OK} [r config set bind "*"]
-    #       set r2 [get_nonloopback_client]
-    #       catch {$r2 ping} err
-    #       assert_match {*DENIED*} $err
-    #       $r2 close
-    #
-    #       # Setting a password should disable protected mode
-    #       assert_equal {OK} [r config set requirepass "secret"]
-    #       set r2 [valkey $myaddr [srv 0 "port"] 0 $::tls]
-    #       assert_equal {OK} [$r2 auth secret]
-    #       assert_equal {PONG} [$r2 ping]
-    #       $r2 close
-    #
-    #       # Clearing the password re-enables protected mode
-    #       assert_equal {OK} [r config set requirepass ""]
-    #       set r2 [valkey $myaddr [srv 0 "port"] 0 $::tls]
-    #       assert_match {*DENIED*} $err
-    #       $r2 close
-    #
-    #       # Explicitly disabling protected-mode works
-    #       assert_equal {OK} [r config set protected-mode no]
-    #       set r2 [valkey $myaddr [srv 0 "port"] 0 $::tls]
-    #       assert_equal {PONG} [$r2 ping]
-    #       $r2 close
-    #   }
+    myaddr = get_nonloopback_addr()
+    if_(
+        '$myaddr != "" && ![string match {127.*} $myaddr]',
+        '            # Non-loopback client should fail by default\n            set r2 [get_nonloopback_client]\n            catch {$r2 ping} err\n            assert_match {*DENIED*} $err\n            $r2 close\n\n            # Bind configuration should not matter\n            assert_equal {OK} [r config set bind "*"]\n            set r2 [get_nonloopback_client]\n            catch {$r2 ping} err\n            assert_match {*DENIED*} $err\n            $r2 close\n\n            # Setting a password should disable protected mode\n            assert_equal {OK} [r config set requirepass "secret"]\n            set r2 [valkey $myaddr [srv 0 "port"] 0 $::tls]\n            assert_equal {OK} [$r2 auth secret]\n            assert_equal {PONG} [$r2 ping]\n            $r2 close\n\n            # Clearing the password re-enables protected mode\n            assert_equal {OK} [r config set requirepass ""]\n            set r2 [valkey $myaddr [srv 0 "port"] 0 $::tls]\n            assert_match {*DENIED*} $err\n            $r2 close\n\n            # Explicitly disabling protected-mode works\n            assert_equal {OK} [r config set protected-mode no]\n            set r2 [valkey $myaddr [srv 0 "port"] 0 $::tls]\n            assert_equal {PONG} [$r2 ping]\n            $r2 close\n        ',
+    )
 
 
 pytestmark = [pytest.mark.external_skip]
@@ -319,27 +290,30 @@ def test_prefetch_works_as_expected_when_killing_a_client_from_the_middle_of_pre
         assert_equal {15} [$rd15 read]
     }
     """
-    # TODO: for {set i 0} {$i < 16} {incr i} {
-    #       set rd$i [valkey_deferring_client]
-    #   }
+    i = 0
+    while i < 16:
+        set_("rd$i", valkey_deferring_client())
+        i += 1
     r.run("set", "a", 0)
     # TODO: $rd4 client id
     # TODO: set rd4_id $rd4 read
-    # TODO: pause_process server _pid
-    # TODO: $rd0 client kill id rd4 _id
-    # TODO: for {set i 1} {$i < 16} {incr i} {
-    #       [set rd$i] set a $i
-    #       [set rd$i] flush
-    #   }
-    # TODO: resume_process server _pid
+    # TODO: pause_process server_pid
+    # TODO: $rd0 client kill id rd4_id
+    for_(
+        "set i 1",
+        "$i < 16",
+        "incr i",
+        "                [set rd$i] set a $i\n                [set rd$i] flush\n            ",
+    )
+    # TODO: resume_process server_pid
     # TODO: assert_equal {1} $rd0 read
-    # TODO: catch {$rd4 read} err
+    catch("$rd4 read", "err")
     # TODO: assert_match {I/O error reading reply} err
     info = r.run("info", "stats")
-    # TODO: set prefetch_entries getInfoProperty $info io_threaded_total_prefetch_entries
-    # TODO: assert_range prefetch _entries 2 15
-    # TODO: set prefetch_batches getInfoProperty $info io_threaded_total_prefetch_batches
-    # TODO: assert_range prefetch _batches 1 7
+    prefetch_entries = get_info_property(info, "io_threaded_total_prefetch_entries")
+    assert_range(prefetch_entries, 2, 15)
+    prefetch_batches = get_info_property(info, "io_threaded_total_prefetch_batches")
+    assert_range(prefetch_batches, 1, 7)
     # TODO: $rd15 get a
     # TODO: assert_equal {OK} $rd15 read
     # TODO: assert_equal {15} $rd15 read
@@ -380,21 +354,19 @@ def test_prefetch_works_as_expected_when_changing_the_batch_size_while_executing
         assert {[r config get prefetch-batch-max-size] eq "prefetch-batch-max-size 1"}
     }
     """
-    # TODO: for {set i 0} {$i < 16} {incr i} {
-    #       set rd$i [valkey_deferring_client]
-    #   }
-    # TODO: pause_process server _pid
-    # TODO: for {set i 0} {$i < 16} {incr i} {
-    #       if {$i == 4} {
-    #           [set rd$i] config set prefetch-batch-max-size 1
-    #       }
-    #       [set rd$i] set a $i
-    #       [set rd$i] flush
-    #   }
-    # TODO: resume_process server _pid
-    # TODO: for {set i 0} {$i < 16} {incr i} {
-    #       assert_equal {OK} [[set rd$i] read]
-    #   }
+    i = 0
+    while i < 16:
+        set_("rd$i", valkey_deferring_client())
+        i += 1
+    # TODO: pause_process server_pid
+    for_(
+        "set i 0",
+        "$i < 16",
+        "incr i",
+        "                if {$i == 4} {\n                    [set rd$i] config set prefetch-batch-max-size 1\n                }\n                [set rd$i] set a $i\n                [set rd$i] flush\n            ",
+    )
+    # TODO: resume_process server_pid
+    for_("set i 0", "$i < 16", "incr i", "                assert_equal {OK} [[set rd$i] read]\n            ")
     assert r.run("config", "get", "prefetch-batch-max-size") == "prefetch-batch-max-size 1"
 
 
@@ -440,22 +412,23 @@ def test_no_prefetch_when_the_batch_size_is_set_to_0(r: ValkeyTestClient) -> Non
     """
     r.run("config", "set", "prefetch-batch-max-size", 0)
     info = r.run("info", "stats")
-    # TODO: set prefetch_entries getInfoProperty $info io_threaded_total_prefetch_entries
-    # TODO: for {set i 0} {$i < 16} {incr i} {
-    #       set rd$i [valkey_deferring_client]
-    #   }
-    # TODO: pause_process server _pid
-    # TODO: for {set i 0} {$i < 16} {incr i} {
-    #       [set rd$i] set a $i
-    #       [set rd$i] flush
-    #   }
-    # TODO: resume_process server _pid
-    # TODO: for {set i 0} {$i < 16} {incr i} {
-    #       assert_equal {OK} [[set rd$i] read]
-    #   }
+    prefetch_entries = get_info_property(info, "io_threaded_total_prefetch_entries")
+    i = 0
+    while i < 16:
+        set_("rd$i", valkey_deferring_client())
+        i += 1
+    # TODO: pause_process server_pid
+    for_(
+        "set i 0",
+        "$i < 16",
+        "incr i",
+        "                [set rd$i] set a $i\n                [set rd$i] flush\n            ",
+    )
+    # TODO: resume_process server_pid
+    for_("set i 0", "$i < 16", "incr i", "                assert_equal {OK} [[set rd$i] read]\n            ")
     info = r.run("info", "stats")
-    # TODO: set new_prefetch_entries getInfoProperty $info io_threaded_total_prefetch_entries
-    # TODO: assert_equal prefetch _entries new _prefetch_entries
+    new_prefetch_entries = get_info_property(info, "io_threaded_total_prefetch_entries")
+    assert prefetch_entries == new_prefetch_entries
 
 
 """
@@ -499,3 +472,58 @@ start_server {} {
     }
 }
 """
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def assert_range(*args):
+    raise NotImplementedError("assert_range")
+
+
+def catch(*args):
+    raise NotImplementedError("catch")
+
+
+def count_message_lines(*args):
+    raise NotImplementedError("count_message_lines")
+
+
+def for_(*args):
+    raise NotImplementedError("for_")
+
+
+def get_info_property(*args):
+    raise NotImplementedError("get_info_property")
+
+
+def get_nonloopback_addr(*args):
+    raise NotImplementedError("get_nonloopback_addr")
+
+
+def if_(*args):
+    raise NotImplementedError("if_")
+
+
+def reconnect(*args):
+    raise NotImplementedError("reconnect")
+
+
+def restart_server(*args):
+    raise NotImplementedError("restart_server")
+
+
+def set_(*args):
+    raise NotImplementedError("set_")
+
+
+def srv(*args):
+    raise NotImplementedError("srv")
+
+
+def valkey_deferring_client(*args):
+    raise NotImplementedError("valkey_deferring_client")
+
+
+def valkeycli_exec(*args):
+    raise NotImplementedError("valkeycli_exec")

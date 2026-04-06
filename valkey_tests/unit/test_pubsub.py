@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841
+# ruff: noqa: PLR2004, F841, ANN001, ANN002, ANN201
 
 import pytest
 
@@ -41,8 +41,8 @@ $rd1 read
 
 
 @pytest.mark.xfail(reason="not implemented")
-@pytest.mark.parametrize(["resp"], [("2"), ("3")])
-def test_pub_or_sub_ping_on_resp_resp(r: ValkeyTestClient) -> None:
+@pytest.mark.parametrize(["resp"], [(2), (3)])
+def test_pub_or_sub_ping_on_resp_resp(r: ValkeyTestClient, resp) -> None:
     """
     test "Pub/Sub PING on RESP$resp" {
         subscribe $rd1 somechannel
@@ -69,13 +69,12 @@ def test_pub_or_sub_ping_on_resp_resp(r: ValkeyTestClient) -> None:
     # TODO: subscribe rd1 somechannel
     # TODO: $rd1 ping
     # TODO: $rd1 ping "foo"
-    # TODO: if {$resp == 3} {
-    #       assert_equal {PONG} [$rd1 read]
-    #       assert_equal {foo} [$rd1 read]
-    #   } else {
-    #       assert_equal {pong {}} [$rd1 read]
-    #       assert_equal {pong foo} [$rd1 read]
-    #   }
+    if_(
+        "$resp == 3",
+        "                assert_equal {PONG} [$rd1 read]\n                assert_equal {foo} [$rd1 read]\n            ",
+        "else",
+        "                assert_equal {pong {}} [$rd1 read]\n                assert_equal {pong foo} [$rd1 read]\n            ",
+    )
     # TODO: unsubscribe rd1 somechannel
     # TODO: $rd1 ping
     # TODO: assert_equal {PONG} $rd1 read
@@ -114,17 +113,17 @@ def test_publish_or_subscribe_basics(r: ValkeyTestClient) -> None:
         $rd1 close
     }
     """
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: assert_equal {1 2} subscribe $rd1 {chan1 chan2}
+    rd1 = valkey_deferring_client()
+    assert "1 2" == subscribe(rd1, "chan1 chan2")
     assert 1 == r.run("publish", "chan1", "hello")
     assert 1 == r.run("publish", "chan2", "world")
     # TODO: assert_equal {message chan1 hello} $rd1 read
     # TODO: assert_equal {message chan2 world} $rd1 read
-    # TODO: unsubscribe rd1 {chan1}
+    unsubscribe(rd1, "chan1")
     assert 0 == r.run("publish", "chan1", "hello")
     assert 1 == r.run("publish", "chan2", "world")
     # TODO: assert_equal {message chan2 world} $rd1 read
-    # TODO: unsubscribe rd1 {chan2}
+    unsubscribe(rd1, "chan2")
     assert 0 == r.run("publish", "chan1", "hello")
     assert 0 == r.run("publish", "chan2", "world")
     # TODO: $rd1 close
@@ -148,10 +147,10 @@ def test_publish_or_subscribe_with_two_clients(r: ValkeyTestClient) -> None:
         $rd2 close
     }
     """
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: set rd2 valkey_deferring_client
-    # TODO: assert_equal {1} subscribe $rd1 {chan1}
-    # TODO: assert_equal {1} subscribe $rd2 {chan1}
+    rd1 = valkey_deferring_client()
+    rd2 = valkey_deferring_client()
+    assert "1" == subscribe(rd1, "chan1")
+    assert "1" == subscribe(rd2, "chan1")
     assert 2 == r.run("publish", "chan1", "hello")
     # TODO: assert_equal {message chan1 hello} $rd1 read
     # TODO: assert_equal {message chan1 hello} $rd2 read
@@ -180,14 +179,16 @@ def test_publish_or_subscribe_after_unsubscribe_without_arguments(r: ValkeyTestC
         $rd1 close
     }
     """
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: assert_equal {1 2 3} subscribe $rd1 {chan1 chan2 chan3}
-    # TODO: unsubscribe rd1
-    # TODO: wait_for_condition 50 100 {
-    #       [r publish chan1 hello] eq 0
-    #   } else {
-    #       fail "unsubscribe did not take effect"
-    #   }
+    rd1 = valkey_deferring_client()
+    assert "1 2 3" == subscribe(rd1, "chan1 chan2 chan3")
+    unsubscribe(rd1)
+    wait_for_condition(
+        50,
+        100,
+        "            [r publish chan1 hello] eq 0\n        ",
+        "else",
+        '            fail "unsubscribe did not take effect"\n        ',
+    )
     assert 0 == r.run("publish", "chan1", "hello")
     assert 0 == r.run("publish", "chan2", "hello")
     assert 0 == r.run("publish", "chan3", "hello")
@@ -207,8 +208,8 @@ def test_subscribe_to_one_channel_more_than_once(r: ValkeyTestClient) -> None:
         $rd1 close
     }
     """
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: assert_equal {1 1 1} subscribe $rd1 {chan1 chan1 chan1}
+    rd1 = valkey_deferring_client()
+    assert "1 1 1" == subscribe(rd1, "chan1 chan1 chan1")
     assert 1 == r.run("publish", "chan1", "hello")
     # TODO: assert_equal {message chan1 hello} $rd1 read
     # TODO: $rd1 close
@@ -224,8 +225,8 @@ def test_unsubscribe_from_non_subscribed_channels(r: ValkeyTestClient) -> None:
         $rd1 close
     }
     """
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: assert_equal {0 0 0} unsubscribe $rd1 {foo bar quux}
+    rd1 = valkey_deferring_client()
+    assert "0 0 0" == unsubscribe(rd1, "foo bar quux")
     # TODO: $rd1 close
 
 
@@ -260,8 +261,8 @@ def test_publish_or_psubscribe_basics(r: ValkeyTestClient) -> None:
         $rd1 close
     }
     """
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: assert_equal {1 2} psubscribe $rd1 {foo.* bar.*}
+    rd1 = valkey_deferring_client()
+    assert "1 2" == psubscribe(rd1, "foo.* bar.*")
     assert 1 == r.run("publish", "foo.1", "hello")
     assert 1 == r.run("publish", "bar.1", "hello")
     assert 0 == r.run("publish", "foo1", "hello")
@@ -269,11 +270,11 @@ def test_publish_or_psubscribe_basics(r: ValkeyTestClient) -> None:
     assert 0 == r.run("publish", "qux.1", "hello")
     # TODO: assert_equal {pmessage foo.* foo.1 hello} $rd1 read
     # TODO: assert_equal {pmessage bar.* bar.1 hello} $rd1 read
-    # TODO: assert_equal {1} punsubscribe $rd1 {foo.*}
+    assert "1" == punsubscribe(rd1, "foo.*")
     assert 0 == r.run("publish", "foo.1", "hello")
     assert 1 == r.run("publish", "bar.1", "hello")
     # TODO: assert_equal {pmessage bar.* bar.1 hello} $rd1 read
-    # TODO: assert_equal {0} punsubscribe $rd1 {bar.*}
+    assert "0" == punsubscribe(rd1, "bar.*")
     assert 0 == r.run("publish", "foo.1", "hello")
     assert 0 == r.run("publish", "bar.1", "hello")
     # TODO: $rd1 close
@@ -297,10 +298,10 @@ def test_publish_or_psubscribe_with_two_clients(r: ValkeyTestClient) -> None:
         $rd2 close
     }
     """
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: set rd2 valkey_deferring_client
-    # TODO: assert_equal {1} psubscribe $rd1 {chan.*}
-    # TODO: assert_equal {1} psubscribe $rd2 {chan.*}
+    rd1 = valkey_deferring_client()
+    rd2 = valkey_deferring_client()
+    assert "1" == psubscribe(rd1, "chan.*")
+    assert "1" == psubscribe(rd2, "chan.*")
     assert 2 == r.run("publish", "chan.foo", "hello")
     # TODO: assert_equal {pmessage chan.* chan.foo hello} $rd1 read
     # TODO: assert_equal {pmessage chan.* chan.foo hello} $rd2 read
@@ -329,14 +330,16 @@ def test_publish_or_psubscribe_after_punsubscribe_without_arguments(r: ValkeyTes
         $rd1 close
     }
     """
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: assert_equal {1 2 3} psubscribe $rd1 {chan1.* chan2.* chan3.*}
-    # TODO: punsubscribe rd1
-    # TODO: wait_for_condition 50 100 {
-    #       [r publish chan1.hi hello] eq 0
-    #   } else {
-    #       fail "unsubscribe did not take effect"
-    #   }
+    rd1 = valkey_deferring_client()
+    assert "1 2 3" == psubscribe(rd1, "chan1.* chan2.* chan3.*")
+    punsubscribe(rd1)
+    wait_for_condition(
+        50,
+        100,
+        "            [r publish chan1.hi hello] eq 0\n        ",
+        "else",
+        '            fail "unsubscribe did not take effect"\n        ',
+    )
     assert 0 == r.run("publish", "chan1.hi", "hello")
     assert 0 == r.run("publish", "chan2.hi", "hello")
     assert 0 == r.run("publish", "chan3.hi", "hello")
@@ -370,19 +373,19 @@ def test_pubsub_messages_with_client_reply_off(r: ValkeyTestClient) -> None:
         $rd close
     } {0} {resp3}
     """
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd hello 3
     # TODO: $rd read
     # TODO: $rd client reply off
-    # TODO: assert_equal {1} subscribe $rd channel
-    # TODO: assert_equal {2} psubscribe $rd ch*
+    assert "1" == subscribe(rd, "channel")
+    assert "2" == psubscribe(rd, "ch*")
     # TODO: $rd client reply off
     assert 2 == r.run("publish", "channel", "hello")
     # TODO: assert_equal {message channel hello} $rd read
     # TODO: assert_equal {pmessage ch* channel hello} $rd read
     # TODO: $rd client reply off
-    # TODO: assert_equal {1} unsubscribe $rd channel
-    # TODO: assert_equal {0} punsubscribe $rd ch*
+    assert "1" == unsubscribe(rd, "channel")
+    assert "0" == punsubscribe(rd, "ch*")
     # TODO: $rd close
     assert False
 
@@ -398,8 +401,8 @@ def test_punsubscribe_from_non_subscribed_channels(r: ValkeyTestClient) -> None:
         $rd1 close
     }
     """
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: assert_equal {0 0 0} punsubscribe $rd1 {foo.* bar.* quux.*}
+    rd1 = valkey_deferring_client()
+    assert "0 0 0" == punsubscribe(rd1, "foo.* bar.* quux.*")
     # TODO: $rd1 close
 
 
@@ -435,15 +438,15 @@ def test_numpats_returns_the_number_of_unique_patterns(r: ValkeyTestClient) -> N
         $rd2 close
     }
     """
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: set rd2 valkey_deferring_client
-    # TODO: psubscribe rd1 "foo*"
-    # TODO: psubscribe rd2 "foo*"
-    # TODO: psubscribe rd1 "bar*"
-    # TODO: psubscribe rd2 "baz*"
+    rd1 = valkey_deferring_client()
+    rd2 = valkey_deferring_client()
+    psubscribe(rd1, "foo*")
+    psubscribe(rd2, "foo*")
+    psubscribe(rd1, "bar*")
+    psubscribe(rd2, "baz*")
     patterns = r.run("pubsub", "numpat")
-    # TODO: punsubscribe rd1
-    # TODO: punsubscribe rd2
+    punsubscribe(rd1)
+    punsubscribe(rd2)
     assert 3 == patterns
     # TODO: $rd1 close
     # TODO: $rd2 close
@@ -465,9 +468,9 @@ def test_mix_subscribe_and_psubscribe(r: ValkeyTestClient) -> None:
         $rd1 close
     }
     """
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: assert_equal {1} subscribe $rd1 {foo.bar}
-    # TODO: assert_equal {2} psubscribe $rd1 {foo.*}
+    rd1 = valkey_deferring_client()
+    assert "1" == subscribe(rd1, "foo.bar")
+    assert "2" == psubscribe(rd1, "foo.*")
     assert 2 == r.run("publish", "foo.bar", "hello")
     # TODO: assert_equal {message foo.bar hello} $rd1 read
     # TODO: assert_equal {pmessage foo.* foo.bar hello} $rd1 read
@@ -509,9 +512,9 @@ def test_keyspace_notifications_we_receive_keyspace_notifications(r: ValkeyTestC
     }
     """
     r.run("config", "set", "notify-keyspace-events", "KA")
-    # TODO: set rd1 valkey_deferring_client
+    rd1 = valkey_deferring_client()
     # TODO: $rd1 CLIENT REPLY OFF
-    # TODO: assert_equal {1} psubscribe $rd1 *
+    assert "1" == psubscribe(rd1, "*")
     r.run("set", "foo", "bar")
     # TODO: assert_equal "pmessage * __keyspace@${db}__:foo set" $rd1 read
     # TODO: $rd1 close
@@ -531,9 +534,9 @@ def test_keyspace_notifications_we_receive_keyevent_notifications(r: ValkeyTestC
     }
     """
     r.run("config", "set", "notify-keyspace-events", "EA")
-    # TODO: set rd1 valkey_deferring_client
+    rd1 = valkey_deferring_client()
     # TODO: $rd1 CLIENT REPLY SKIP
-    # TODO: assert_equal {1} psubscribe $rd1 *
+    assert "1" == psubscribe(rd1, "*")
     r.run("set", "foo", "bar")
     # TODO: assert_equal "pmessage * __keyevent@${db}__:set foo" $rd1 read
     # TODO: $rd1 close
@@ -555,10 +558,10 @@ def test_keyspace_notifications_we_can_receive_both_kind_of_events(r: ValkeyTest
     }
     """
     r.run("config", "set", "notify-keyspace-events", "KEA")
-    # TODO: set rd1 valkey_deferring_client
+    rd1 = valkey_deferring_client()
     # TODO: $rd1 CLIENT REPLY ON
     # TODO: assert_equal {OK} $rd1 read
-    # TODO: assert_equal {1} psubscribe $rd1 *
+    assert "1" == psubscribe(rd1, "*")
     r.run("set", "foo", "bar")
     # TODO: assert_equal "pmessage * __keyspace@${db}__:foo set" $rd1 read
     # TODO: assert_equal "pmessage * __keyevent@${db}__:set foo" $rd1 read
@@ -583,8 +586,8 @@ def test_keyspace_notifications_we_are_able_to_mask_events(r: ValkeyTestClient) 
     """
     r.run("config", "set", "notify-keyspace-events", "KEl")
     r.run("del", "mylist")
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: assert_equal {1} psubscribe $rd1 *
+    rd1 = valkey_deferring_client()
+    assert "1" == psubscribe(rd1, "*")
     r.run("set", "foo", "bar")
     r.run("lpush", "mylist", "a")
     # TODO: assert_equal "pmessage * __keyspace@${db}__:mylist lpush" $rd1 read
@@ -610,8 +613,8 @@ def test_keyspace_notifications_general_events_test(r: ValkeyTestClient) -> None
     }
     """
     r.run("config", "set", "notify-keyspace-events", "KEg")
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: assert_equal {1} psubscribe $rd1 *
+    rd1 = valkey_deferring_client()
+    assert "1" == psubscribe(rd1, "*")
     r.run("set", "foo", "bar")
     r.run("expire", "foo", 1)
     r.run("del", "foo")
@@ -644,8 +647,8 @@ def test_keyspace_notifications_list_events_test(r: ValkeyTestClient) -> None:
     """
     r.run("config", "set", "notify-keyspace-events", "KEl")
     r.run("del", "mylist")
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: assert_equal {1} psubscribe $rd1 *
+    rd1 = valkey_deferring_client()
+    assert "1" == psubscribe(rd1, "*")
     r.run("lpush", "mylist", "a")
     r.run("rpush", "mylist", "a")
     r.run("rpop", "mylist")
@@ -678,8 +681,8 @@ def test_keyspace_notifications_set_events_test(r: ValkeyTestClient) -> None:
     """
     r.run("config", "set", "notify-keyspace-events", "Ks")
     r.run("del", "myset")
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: assert_equal {1} psubscribe $rd1 *
+    rd1 = valkey_deferring_client()
+    assert "1" == psubscribe(rd1, "*")
     r.run("sadd", "myset", "a", "b", "c", "d")
     r.run("srem", "myset", "x")
     r.run("sadd", "myset", "x", "y", "z")
@@ -710,8 +713,8 @@ def test_keyspace_notifications_zset_events_test(r: ValkeyTestClient) -> None:
     """
     r.run("config", "set", "notify-keyspace-events", "Kz")
     r.run("del", "myzset")
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: assert_equal {1} psubscribe $rd1 *
+    rd1 = valkey_deferring_client()
+    assert "1" == psubscribe(rd1, "*")
     r.run("zadd", "myzset", 1, "a", 2, "b")
     r.run("zrem", "myzset", "x")
     r.run("zadd", "myzset", 3, "x", 4, "y", 5, "z")
@@ -739,8 +742,8 @@ def test_keyspace_notifications_hash_events_test(r: ValkeyTestClient) -> None:
     """
     r.run("config", "set", "notify-keyspace-events", "Kh")
     r.run("del", "myhash")
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: assert_equal {1} psubscribe $rd1 *
+    rd1 = valkey_deferring_client()
+    assert "1" == psubscribe(rd1, "*")
     r.run("hmset", "myhash", "yes", 1, "no", 0)
     r.run("hincrby", "myhash", "yes", 10)
     # TODO: assert_equal "pmessage * __keyspace@${db}__:myhash hset" $rd1 read
@@ -777,8 +780,8 @@ def test_keyspace_notifications_stream_events_test(r: ValkeyTestClient) -> None:
     """
     r.run("config", "set", "notify-keyspace-events", "Kt")
     r.run("del", "mystream")
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: assert_equal {1} psubscribe $rd1 *
+    rd1 = valkey_deferring_client()
+    assert "1" == psubscribe(rd1, "*")
     # TODO: r xgroup create mystream mygroup  mkstream
     r.run("xgroup", "createconsumer", "mystream", "mygroup", "Bob")
     id = r.run("xadd", "mystream", 1, "field1", "A")
@@ -816,14 +819,16 @@ def test_keyspace_notifications_expired_events_triggered_expire(r: ValkeyTestCli
     """
     r.run("config", "set", "notify-keyspace-events", "Ex")
     r.run("del", "foo")
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: assert_equal {1} psubscribe $rd1 *
+    rd1 = valkey_deferring_client()
+    assert "1" == psubscribe(rd1, "*")
     r.run("psetex", "foo", 100, 1)
-    # TODO: wait_for_condition 50 100 {
-    #       [r exists foo] == 0
-    #   } else {
-    #       fail "Key does not expire?!"
-    #   }
+    wait_for_condition(
+        50,
+        100,
+        "            [r exists foo] == 0\n        ",
+        "else",
+        '            fail "Key does not expire?!"\n        ',
+    )
     # TODO: assert_equal "pmessage * __keyevent@${db}__:expired foo" $rd1 read
     # TODO: $rd1 close
 
@@ -843,8 +848,8 @@ def test_keyspace_notifications_expired_events_background_expire(r: ValkeyTestCl
     """
     r.run("config", "set", "notify-keyspace-events", "Ex")
     r.run("del", "foo")
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: assert_equal {1} psubscribe $rd1 *
+    rd1 = valkey_deferring_client()
+    assert "1" == psubscribe(rd1, "*")
     r.run("psetex", "foo", 100, 1)
     # TODO: assert_equal "pmessage * __keyevent@${db}__:expired foo" $rd1 read
     # TODO: $rd1 close
@@ -866,8 +871,8 @@ def test_keyspace_notification_expired_event_expiration_time_is_already_expired(
     """
     r.run("config", "set", "notify-keyspace-events", "Ex")
     r.run("del", "foo")
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: assert_equal {1} psubscribe $rd1 *
+    rd1 = valkey_deferring_client()
+    assert "1" == psubscribe(rd1, "*")
     r.run("set", "foo", 1)
     r.run("expire", "foo", -1)
     # TODO: assert_equal "pmessage * __keyevent@${db}__:expired foo" $rd1 read
@@ -894,8 +899,8 @@ def test_keyspace_notifications_evicted_events(r: ValkeyTestClient) -> None:
     r.run("config", "set", "notify-keyspace-events", "Ee")
     r.run("config", "set", "maxmemory-policy", "allkeys-lru")
     r.run("flushdb")
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: assert_equal {1} psubscribe $rd1 *
+    rd1 = valkey_deferring_client()
+    assert "1" == psubscribe(rd1, "*")
     r.run("set", "foo", "bar")
     r.run("config", "set", "maxmemory", 1)
     # TODO: assert_equal "pmessage * __keyevent@${db}__:evicted foo" $rd1 read
@@ -944,8 +949,8 @@ def test_keyspace_notifications_new_key_test(r: ValkeyTestClient) -> None:
     }
     """
     r.run("config", "set", "notify-keyspace-events", "En")
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: assert_equal {1} psubscribe $rd1 *
+    rd1 = valkey_deferring_client()
+    assert "1" == psubscribe(rd1, "*")
     r.run("set", "foo", "bar")
     r.run("set", "foo", "baz")
     r.run("set", "bar", "bar")
@@ -1047,3 +1052,34 @@ def test_unsubscribe_inside_multi_and_publish_to_self(r: ValkeyTestClient) -> No
     assert r.run("exec") == "abc {unsubscribe bar 2} {unsubscribe baz 1} def"
     assert r.run("publish", "foo", "vaz") == "1"
     assert r.run("read") == "message foo vaz"
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def if_(*args):
+    raise NotImplementedError("if_")
+
+
+def psubscribe(*args):
+    raise NotImplementedError("psubscribe")
+
+
+def punsubscribe(*args):
+    raise NotImplementedError("punsubscribe")
+
+
+def subscribe(*args):
+    raise NotImplementedError("subscribe")
+
+
+def unsubscribe(*args):
+    raise NotImplementedError("unsubscribe")
+
+
+def valkey_deferring_client(*args):
+    raise NotImplementedError("valkey_deferring_client")
+
+
+def wait_for_condition(*args):
+    raise NotImplementedError("wait_for_condition")

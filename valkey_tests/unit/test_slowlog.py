@@ -1,4 +1,6 @@
-# ruff: noqa: PLR2004, F841
+# ruff: noqa: PLR2004, F841, ANN001, ANN002, ANN201
+
+from fnmatch import fnmatch
 
 import pytest
 
@@ -7,7 +9,6 @@ from tests.valkey_test_client import ValkeyTestClient
 pytestmark = [pytest.mark.slowlog]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_slowlog_check_that_it_starts_with_an_empty_log(r: ValkeyTestClient) -> None:
     """
     test {SLOWLOG - check that it starts with an empty log} {
@@ -17,9 +18,7 @@ def test_slowlog_check_that_it_starts_with_an_empty_log(r: ValkeyTestClient) -> 
         r slowlog len
     } {0}
     """
-    # TODO: if {$::external} {
-    #       r slowlog reset
-    #   }
+    if_("$::external", "            r slowlog reset\n        ")
     assert r.run("slowlog", "len") == "0"
 
 
@@ -108,7 +107,6 @@ def test_slowlog_reset_subcommand_works(r: ValkeyTestClient) -> None:
     assert r.run("slowlog", "len") == "0"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_slowlog_logged_entry_sanity_check(r: ValkeyTestClient) -> None:
     """
     test {SLOWLOG - logged entry sanity check} {
@@ -128,15 +126,12 @@ def test_slowlog_logged_entry_sanity_check(r: ValkeyTestClient) -> None:
     r.run("debug", "sleep", 0.2)
     e = r.run("slowlog", "get")[0]
     assert len(e) == 6
-    # TODO: if {!$::external} {
-    #       assert_equal [lindex $e 0] 106
-    #   }
-    # TODO: assert_equal expr {[lindex $e 2] > 100000} 1
+    if_("!$::external", "            assert_equal [lindex $e 0] 106\n        ")
+    assert expr("[lindex $e 2] > 100000") == 1
     assert e[3] == "debug sleep 0.2"
     assert "foobar" == e[5]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_slowlog_certain_commands_are_omitted_that_contain_sensitive_information(r: ValkeyTestClient) -> None:
     """
     test {SLOWLOG - Certain commands are omitted that contain sensitive information} {
@@ -190,21 +185,20 @@ def test_slowlog_certain_commands_are_omitted_that_contain_sensitive_information
     r.run("config", "set", "slowlog-log-slower-than", 0)
     r.run("config", "set", "slowlog-log-slower-than", -1)
     slowlog_resp = r.run("slowlog", "get", -1)
-    # TODO: assert_equal 11 llength $slowlog_resp
-    # TODO: assert_equal {slowlog reset} lindex [lindex $slowlog_resp 10] 3
-    # TODO: assert_equal {acl setuser (redacted) (redacted) (redacted)} lindex [lindex $slowlog_resp 9] 3
-    # TODO: assert_equal {config set primaryuser (redacted)} lindex [lindex $slowlog_resp 8] 3
-    # TODO: assert_equal {config set primaryauth (redacted)} lindex [lindex $slowlog_resp 7] 3
-    # TODO: assert_equal {config set requirepass (redacted)} lindex [lindex $slowlog_resp 6] 3
-    # TODO: assert_equal {config set tls-key-file-pass (redacted)} lindex [lindex $slowlog_resp 5] 3
-    # TODO: assert_equal {config set tls-client-key-file-pass (redacted)} lindex [lindex $slowlog_resp 4] 3
-    # TODO: assert_equal {acl setuser (redacted) (redacted) (redacted)} lindex [lindex $slowlog_resp 3] 3
-    # TODO: assert_equal {acl getuser (redacted)} lindex [lindex $slowlog_resp 2] 3
-    # TODO: assert_equal {acl deluser (redacted) (redacted)} lindex [lindex $slowlog_resp 1] 3
-    # TODO: assert_equal {config set slowlog-log-slower-than 0} lindex [lindex $slowlog_resp 0] 3
+    assert 11 == len(slowlog_resp)
+    assert "slowlog reset" == slowlog_resp[10][3]
+    assert "acl setuser (redacted) (redacted) (redacted)" == slowlog_resp[9][3]
+    assert "config set primaryuser (redacted)" == slowlog_resp[8][3]
+    assert "config set primaryauth (redacted)" == slowlog_resp[7][3]
+    assert "config set requirepass (redacted)" == slowlog_resp[6][3]
+    assert "config set tls-key-file-pass (redacted)" == slowlog_resp[5][3]
+    assert "config set tls-client-key-file-pass (redacted)" == slowlog_resp[4][3]
+    assert "acl setuser (redacted) (redacted) (redacted)" == slowlog_resp[3][3]
+    assert "acl getuser (redacted)" == slowlog_resp[2][3]
+    assert "acl deluser (redacted) (redacted)" == slowlog_resp[1][3]
+    assert "config set slowlog-log-slower-than 0" == slowlog_resp[0][3]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_slowlog_some_commands_can_redact_sensitive_fields(r: ValkeyTestClient) -> None:
     """
     test {SLOWLOG - Some commands can redact sensitive fields} {
@@ -225,15 +219,15 @@ def test_slowlog_some_commands_can_redact_sensitive_fields(r: ValkeyTestClient) 
     """
     r.run("config", "set", "slowlog-log-slower-than", 0)
     r.run("slowlog", "reset")
-    # TODO: r migrate srv 0 host srv 0 port key 9 5000
-    # TODO: r migrate srv 0 host srv 0 port key 9 5000 AUTH user
-    # TODO: r migrate srv 0 host srv 0 port key 9 5000 AUTH2 user password
+    r.run("migrate", srv(0, "host"), srv(0, "port"), "key", 9, 5000)
+    r.run("migrate", srv(0, "host"), srv(0, "port"), "key", 9, 5000, "AUTH", "user")
+    r.run("migrate", srv(0, "host"), srv(0, "port"), "key", 9, 5000, "AUTH2", "user", "password")
     r.run("config", "set", "slowlog-log-slower-than", -1)
     slowlog_resp = r.run("slowlog", "get")
-    # TODO: assert_equal 4 llength $slowlog_resp
-    # TODO: assert_match {* key 9 5000} lindex [lindex $slowlog_resp 2] 3
-    # TODO: assert_match {* key 9 5000 AUTH (redacted)} lindex [lindex $slowlog_resp 1] 3
-    # TODO: assert_match {* key 9 5000 AUTH2 (redacted) (redacted)} lindex [lindex $slowlog_resp 0] 3
+    assert 4 == len(slowlog_resp)
+    assert fnmatch(str(slowlog_resp[2][3]), "* key 9 5000")
+    assert fnmatch(str(slowlog_resp[1][3]), "* key 9 5000 AUTH (redacted)")
+    assert fnmatch(str(slowlog_resp[0][3]), "* key 9 5000 AUTH2 (redacted) (redacted)")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -302,9 +296,9 @@ def test_slowlog_rewritten_commands_are_logged_as_their_original_command(r: Valk
     r.run("slowlog", "reset")
     r.run("INCRBYFLOAT", "A", 1.0)
     assert "INCRBYFLOAT A 1.0" == r.run("slowlog", "get")[0][3]
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd blpop l 0
-    # TODO: wait_for_blocked_clients_count 1 50 100
+    wait_for_blocked_clients_count(1, 50, 100)
     r.run("multi")
     r.run("lpush", "l", "foo")
     r.run("slowlog", "reset")
@@ -368,7 +362,6 @@ def test_slowlog_commands_with_too_many_arguments_are_trimmed(r: ValkeyTestClien
     )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_slowlog_too_long_arguments_are_trimmed(r: ValkeyTestClient) -> None:
     """
     test {SLOWLOG - too long arguments are trimmed} {
@@ -382,8 +375,8 @@ def test_slowlog_too_long_arguments_are_trimmed(r: ValkeyTestClient) -> None:
     """
     r.run("config", "set", "slowlog-log-slower-than", 0)
     r.run("slowlog", "reset")
-    # TODO: set arg string repeat A 129
-    # TODO: r sadd set foo arg
+    arg = string("repeat", "A", 129)
+    r.run("sadd", "set", "foo", arg)
     e = r.run("slowlog", "get")["end-1"]
     assert (
         e[3]
@@ -532,22 +525,21 @@ def test_slowlog_blocking_command_is_reported_only_after_unblocked(r: ValkeyTest
     }
     """
     r.run("del", "mylist")
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     r.run("config", "set", "slowlog-log-slower-than", 0)
     r.run("config", "set", "slowlog-max-len", 110)
     r.run("slowlog", "reset")
     # TODO: $rd BLPOP mylist 0
-    # TODO: wait_for_blocked_clients_count 1 50 20
-    # TODO: assert_equal 0 llength [regexp -all -inline (?=BLPOP) [r slowlog get]]
+    wait_for_blocked_clients_count(1, 50, 20)
+    assert 0 == len(regexp("-all", "-inline", "(?=BLPOP)", r.run("slowlog", "get")))
     r.run("LPUSH", "mylist", 1)
-    # TODO: wait_for_blocked_clients_count 0 50 20
-    # TODO: assert_equal 1 llength [regexp -all -inline (?=BLPOP) [r slowlog get]]
+    wait_for_blocked_clients_count(0, 50, 20)
+    assert 1 == len(regexp("-all", "-inline", "(?=BLPOP)", r.run("slowlog", "get")))
     # TODO: $rd close
 
 
-@pytest.mark.xfail(reason="not implemented")
-@pytest.mark.parametrize(["is_eval"], [("0"), ("1")])
-def test_slowlog_the_commands_in_script_are_recorded_normally_is_eval_is_eval(r: ValkeyTestClient) -> None:
+@pytest.mark.parametrize(["is_eval"], [(0), (1)])
+def test_slowlog_the_commands_in_script_are_recorded_normally_is_eval_is_eval(r: ValkeyTestClient, is_eval) -> None:
     """
     test "SLOWLOG - the commands in script are recorded normally - is_eval: $is_eval" {
         if {$is_eval == 0} {
@@ -585,27 +577,59 @@ def test_slowlog_the_commands_in_script_are_recorded_normally_is_eval_is_eval(r:
         assert_equal {test-client} [lindex $ping_cmd 5]
     }
     """
-    # TODO: if {$is_eval == 0} {
-    #       r function load replace "#!lua name=mylib \n redis.register_function('myfunc', function(KEYS, ARGS) server.call('ping') end)"
-    #   }
+    if_(
+        "$is_eval == 0",
+        "                r function load replace \"#!lua name=mylib \\n redis.register_function('myfunc', function(KEYS, ARGS) server.call('ping') end)\"\n            ",
+    )
     r.run("client", "setname", "test-client")
     r.run("config", "set", "slowlog-log-slower-than", 0)
     r.run("slowlog", "reset")
-    # TODO: if {$is_eval} {
-    #       r eval "server.call('ping')" 0
-    #   } else {
-    #       r fcall myfunc 0
-    #   }
+    if is_eval:
+        r.run("eval", "server.call('ping')", 0)
+    else:
+        r.run("fcall", "myfunc", 0)
     slowlog_resp = r.run("slowlog", "get", 2)
-    # TODO: assert_equal 2 llength $slowlog_resp
-    # TODO: set script_cmd lindex $slowlog_resp 0
-    # TODO: set ping_cmd lindex $slowlog_resp 1
-    # TODO: if {$is_eval} {
-    #       assert_equal {eval server.call('ping') 0} [lindex $script_cmd 3]
-    #   } else {
-    #       assert_equal {fcall myfunc 0} [lindex $script_cmd 3]
-    #   }
-    # TODO: assert_equal {ping} lindex $ping_cmd 3
-    # TODO: assert_equal lindex $script_cmd 4 lindex $ping_cmd 4
-    # TODO: assert_equal {test-client} lindex $script_cmd 5
-    # TODO: assert_equal {test-client} lindex $ping_cmd 5
+    assert 2 == len(slowlog_resp)
+    script_cmd = slowlog_resp[0]
+    ping_cmd = slowlog_resp[1]
+    if_(
+        "$is_eval",
+        "                assert_equal {eval server.call('ping') 0} [lindex $script_cmd 3]\n            ",
+        "else",
+        "                assert_equal {fcall myfunc 0} [lindex $script_cmd 3]\n            ",
+    )
+    assert "ping" == ping_cmd[3]
+    assert script_cmd[4] == ping_cmd[4]
+    assert "test-client" == script_cmd[5]
+    assert "test-client" == ping_cmd[5]
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def expr(*args):
+    raise NotImplementedError("expr")
+
+
+def if_(*args):
+    raise NotImplementedError("if_")
+
+
+def regexp(*args):
+    raise NotImplementedError("regexp")
+
+
+def srv(*args):
+    raise NotImplementedError("srv")
+
+
+def string(*args):
+    raise NotImplementedError("string")
+
+
+def valkey_deferring_client(*args):
+    raise NotImplementedError("valkey_deferring_client")
+
+
+def wait_for_blocked_clients_count(*args):
+    raise NotImplementedError("wait_for_blocked_clients_count")

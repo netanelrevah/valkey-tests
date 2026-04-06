@@ -1,4 +1,4 @@
-# ruff: noqa: F841
+# ruff: noqa: PLR2004, ANN002, ANN201
 
 import pytest
 
@@ -66,28 +66,26 @@ def test_command_cache_is_invalidated_on_module_load(r: ValkeyTestClient) -> Non
     }
     """
     commands_before = r.run("command")
-    # TODO: set count_before llength $commands_before
+    count_before = len(commands_before)
     module_commands_found = 0
-    # TODO: foreach cmd commands _before {
-    #       set name [lindex $cmd 0]
-    #       if {[string match "test.*" $name]} {
-    #           incr module_commands_found
-    #       }
-    #   }
-    # TODO: assert_equal module _commands_found 0
+    foreach(
+        "cmd",
+        commands_before,
+        '            set name [lindex $cmd 0]\n            if {[string match "test.*" $name]} {\n                incr module_commands_found\n            }\n        ',
+    )
+    assert module_commands_found == 0
     # TODO: r module load testmodule
     r.run("command")
     commands_after = r.run("command")
-    # TODO: set count_after llength $commands_after
-    # TODO: assert {$count_after > $count_before}
+    count_after = len(commands_after)
+    assert count_after > count_before
     module_commands_found = 0
-    # TODO: foreach cmd commands _after {
-    #       set name [lindex $cmd 0]
-    #       if {[string match "test.*" $name]} {
-    #           incr module_commands_found
-    #       }
-    #   }
-    # TODO: assert {$module_commands_found > 0}
+    foreach(
+        "cmd",
+        commands_after,
+        '            set name [lindex $cmd 0]\n            if {[string match "test.*" $name]} {\n                incr module_commands_found\n            }\n        ',
+    )
+    assert module_commands_found > 0
 
 
 def test_command_info_works_with_module_commands(r: ValkeyTestClient) -> None:
@@ -104,7 +102,6 @@ def test_command_info_works_with_module_commands(r: ValkeyTestClient) -> None:
     assert info[0][0] == "test.basics"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_command_count_includes_module_commands(r: ValkeyTestClient) -> None:
     """
     test {COMMAND COUNT includes module commands} {
@@ -115,10 +112,9 @@ def test_command_count_includes_module_commands(r: ValkeyTestClient) -> None:
     }
     """
     count_with_module = r.run("command", "count")
-    # TODO: assert {$count_with_module > 200}
+    assert count_with_module > 200
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_command_cache_is_invalidated_on_module_unload(r: ValkeyTestClient) -> None:
     """
     test {COMMAND cache is invalidated on module unload} {
@@ -159,28 +155,26 @@ def test_command_cache_is_invalidated_on_module_unload(r: ValkeyTestClient) -> N
     }
     """
     commands_before = r.run("command")
-    # TODO: set count_before llength $commands_before
+    count_before = len(commands_before)
     module_commands_found = 0
-    # TODO: foreach cmd commands _before {
-    #       set name [lindex $cmd 0]
-    #       if {[string match "test.*" $name]} {
-    #           incr module_commands_found
-    #       }
-    #   }
-    # TODO: assert {$module_commands_found > 0}
+    foreach(
+        "cmd",
+        commands_before,
+        '            set name [lindex $cmd 0]\n            if {[string match "test.*" $name]} {\n                incr module_commands_found\n            }\n        ',
+    )
+    assert module_commands_found > 0
     r.run("module", "unload", "test")
     r.run("command")
     commands_after = r.run("command")
-    # TODO: set count_after llength $commands_after
-    # TODO: assert {$count_after < $count_before}
+    count_after = len(commands_after)
+    assert count_after < count_before
     module_commands_found = 0
-    # TODO: foreach cmd commands _after {
-    #       set name [lindex $cmd 0]
-    #       if {[string match "test.*" $name]} {
-    #           incr module_commands_found
-    #       }
-    #   }
-    # TODO: assert_equal module _commands_found 0
+    foreach(
+        "cmd",
+        commands_after,
+        '            set name [lindex $cmd 0]\n            if {[string match "test.*" $name]} {\n                incr module_commands_found\n            }\n        ',
+    )
+    assert module_commands_found == 0
 
 
 def test_command_info_returns_empty_for_unloaded_module_commands(r: ValkeyTestClient) -> None:
@@ -232,16 +226,16 @@ def test_command_cache_invalidation_with_multiple_load_or_unload_cycles(r: Valke
     baseline_count = r.run("command", "count")
     # TODO: r module load testmodule
     count_loaded = r.run("command", "count")
-    # TODO: assert {$count_loaded > $baseline_count}
+    assert count_loaded > baseline_count
     r.run("module", "unload", "test")
     count_unloaded = r.run("command", "count")
-    # TODO: assert_equal count _unloaded baseline _count
+    assert count_unloaded == baseline_count
     # TODO: r module load testmodule
     count_loaded_again = r.run("command", "count")
-    # TODO: assert_equal count _loaded_again count _loaded
+    assert count_loaded_again == count_loaded
     r.run("module", "unload", "test")
     count_unloaded_again = r.run("command", "count")
-    # TODO: assert_equal count _unloaded_again baseline _count
+    assert count_unloaded_again == baseline_count
 
 
 pytestmark = [pytest.mark.modules]
@@ -282,13 +276,20 @@ def test_command_cache_works_correctly_with_resp2_and_resp3(r: ValkeyTestClient)
     commands_resp2_before = r.run("command")
     # TODO: r module load testmodule
     commands_resp2_after = r.run("command")
-    # TODO: assert {[llength $commands_resp2_after] > [llength $commands_resp2_before]}
+    assert len(commands_resp2_after) > len(commands_resp2_before)
     r.run("hello", 3)
     commands_resp3 = r.run("command")
-    # TODO: assert_equal llength $commands_resp3 llength $commands_resp2_after
+    assert len(commands_resp3) == len(commands_resp2_after)
     r.run("module", "unload", "test")
     commands_resp3_after = r.run("command")
-    # TODO: assert {[llength $commands_resp3_after] < [llength $commands_resp3]}
+    assert len(commands_resp3_after) < len(commands_resp3)
     r.run("hello", 2)
     commands_resp2_final = r.run("command")
-    # TODO: assert_equal llength $commands_resp2_final llength $commands_resp3_after
+    assert len(commands_resp2_final) == len(commands_resp3_after)
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def foreach(*args):
+    raise NotImplementedError("foreach")

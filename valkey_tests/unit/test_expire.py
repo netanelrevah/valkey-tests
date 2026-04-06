@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841
+# ruff: noqa: PLR2004, F841, ANN002, ANN201
 import time
 from fnmatch import fnmatch
 
@@ -58,7 +58,6 @@ def test_expire_write_on_expire_should_work(r: ValkeyTestClient) -> None:
     assert r.run("lrange", "x", 0, -1) == "bar foo"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_expireat_check_for_expire_alike_behavior(r: ValkeyTestClient) -> None:
     """
     test {EXPIREAT - Check for EXPIRE alike behavior} {
@@ -70,7 +69,7 @@ def test_expireat_check_for_expire_alike_behavior(r: ValkeyTestClient) -> None:
     """
     r.run("del", "x")
     r.run("set", "x", "foo")
-    # TODO: r expireat x expr [clock seconds]+15
+    r.run("expireat", "x", expr(clock("seconds"), 15))
     assert r.run("ttl", "x") == "1[345]"
 
 
@@ -173,19 +172,20 @@ def test_expire_precision_is_now_the_millisecond(r: ValkeyTestClient) -> None:
         assert_equal $b {}
     }
     """
-    # TODO: for {set j 0} {$j < 30} {incr j} {
-    #       r del x
-    #       r setex x 1 somevalue
-    #       after 800
-    #       set a [r get x]
-    #       if {$a ne {somevalue}} continue
-    #       after 300
-    #       set b [r get x]
-    #       if {$b eq {}} break
-    #   }
-    # TODO: if {$::verbose} {
-    #       puts "millisecond expire test attempts: $j"
-    #   }
+    j = 0
+    while j < 30:
+        r.run("del", "x")
+        r.run("setex", "x", 1, "somevalue")
+        time.sleep(800 / 1000)
+        a = r.run("get", "x")
+        if a != "somevalue":
+            continue_()
+        time.sleep(300 / 1000)
+        b = r.run("get", "x")
+        if b == "":
+            break_()
+        j += 1
+    if_("$::verbose", '            puts "millisecond expire test attempts: $j"\n        ')
     # TODO: assert_equal a {somevalue}
     # TODO: assert_equal b {}
 
@@ -209,16 +209,17 @@ def test_psetex_can_set_sub_second_expires(r: ValkeyTestClient) -> None:
         list $a $b
     } {somevalue {}}
     """
-    # TODO: for {set j 0} {$j < 50} {incr j} {
-    #       r del x
-    #       r psetex x 100 somevalue
-    #       set a [r get x]
-    #       after 101
-    #       set b [r get x]
-    #
-    #       if {$a eq {somevalue} && $b eq {}} break
-    #   }
-    # TODO: if {$::verbose} { puts "PSETEX sub-second expire test attempts: $j" }
+    j = 0
+    while j < 50:
+        r.run("del", "x")
+        r.run("psetex", "x", 100, "somevalue")
+        a = r.run("get", "x")
+        time.sleep(101 / 1000)
+        b = r.run("get", "x")
+        if (a == "somevalue") and (b == ""):
+            break_()
+        j += 1
+    if_("$::verbose", ' puts "PSETEX sub-second expire test attempts: $j" ')
     # TODO: list a b
     assert False
 
@@ -242,16 +243,17 @@ def test_pexpire_can_set_sub_second_expires(r: ValkeyTestClient) -> None:
         list $c $d
     } {somevalue {}}
     """
-    # TODO: for {set j 0} {$j < 50} {incr j} {
-    #       r set x somevalue
-    #       r pexpire x 100
-    #       set c [r get x]
-    #       after 101
-    #       set d [r get x]
-    #
-    #       if {$c eq {somevalue} && $d eq {}} break
-    #   }
-    # TODO: if {$::verbose} { puts "PEXPIRE sub-second expire test attempts: $j" }
+    j = 0
+    while j < 50:
+        r.run("set", "x", "somevalue")
+        r.run("pexpire", "x", 100)
+        c = r.run("get", "x")
+        time.sleep(101 / 1000)
+        d = r.run("get", "x")
+        if (c == "somevalue") and (d == ""):
+            break_()
+        j += 1
+    if_("$::verbose", ' puts "PEXPIRE sub-second expire test attempts: $j" ')
     # TODO: list c d
     assert False
 
@@ -276,22 +278,22 @@ def test_pexpireat_can_set_sub_second_expires(r: ValkeyTestClient) -> None:
         list $e $f
     } {somevalue {}}
     """
-    # TODO: for {set j 0} {$j < 50} {incr j} {
-    #       r set x somevalue
-    #       set now [r time]
-    #       r pexpireat x [expr ([lindex $now 0]*1000)+([lindex $now 1]/1000)+200]
-    #       set e [r get x]
-    #       after 201
-    #       set f [r get x]
-    #
-    #       if {$e eq {somevalue} && $f eq {}} break
-    #   }
-    # TODO: if {$::verbose} { puts "PEXPIREAT sub-second expire test attempts: $j" }
+    j = 0
+    while j < 50:
+        r.run("set", "x", "somevalue")
+        now = r.run("time")
+        r.run("pexpireat", "x", expr("([lindex", now, "0]*1000)+([lindex", now, "1]/1000)+200"))
+        e = r.run("get", "x")
+        time.sleep(201 / 1000)
+        f = r.run("get", "x")
+        if (e == "somevalue") and (f == ""):
+            break_()
+        j += 1
+    if_("$::verbose", ' puts "PEXPIREAT sub-second expire test attempts: $j" ')
     # TODO: list e f
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_expire_or_expireat_or_pexpire_or_pexpireat_expiration_time_is_already_expired(r: ValkeyTestClient) -> None:
     """
     test {EXPIRE / EXPIREAT / PEXPIRE / PEXPIREAT Expiration time is already expired} {
@@ -324,19 +326,19 @@ def test_expire_or_expireat_or_pexpire_or_pexpireat_expiration_time_is_already_e
     r.run("set", "x", "somevalue")
     r.run("expire", "x", -1)
     assert "0" == r.run("exists", "x")
-    # TODO: assert_equal {1} s expired_keys
+    assert "1" == s("expired_keys")
     r.run("set", "x", "somevalue")
-    # TODO: r expireat x expr [clock seconds] - 1
+    r.run("expireat", "x", expr(clock("seconds"), "-", 1))
     assert "0" == r.run("exists", "x")
-    # TODO: assert_equal {2} s expired_keys
+    assert "2" == s("expired_keys")
     r.run("set", "x", "somevalue")
     r.run("pexpire", "x", -1000)
     assert "0" == r.run("exists", "x")
-    # TODO: assert_equal {3} s expired_keys
+    assert "3" == s("expired_keys")
     r.run("set", "x", "somevalue")
-    # TODO: r pexpireat x expr [clock milliseconds] - 1000
+    r.run("pexpireat", "x", expr(clock("milliseconds"), "-", 1000))
     assert "0" == r.run("exists", "x")
-    # TODO: assert_equal {4} s expired_keys
+    assert "4" == s("expired_keys")
 
 
 def test_ttl_returns_time_to_live_in_seconds(r: ValkeyTestClient) -> None:
@@ -397,7 +399,6 @@ def test_ttl_or_pttl_or_expiretime_or_pexpiretime_return_2_if_key_does_not_exit(
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_expiretime_returns_absolute_expiration_time_in_seconds(r: ValkeyTestClient) -> None:
     """
     test {EXPIRETIME returns absolute expiration time in seconds} {
@@ -408,12 +409,11 @@ def test_expiretime_returns_absolute_expiration_time_in_seconds(r: ValkeyTestCli
     }
     """
     r.run("del", "x")
-    # TODO: set abs_expire expr [clock seconds] + 100
-    # TODO: r set x somevalue exat abs _expire
-    # TODO: assert_equal r expiretime x abs _expire
+    abs_expire = expr(clock("seconds"), "+", 100)
+    r.run("set", "x", "somevalue", "exat", abs_expire)
+    assert r.run("expiretime", "x") == abs_expire
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_pexpiretime_returns_absolute_expiration_time_in_milliseconds(r: ValkeyTestClient) -> None:
     """
     test {PEXPIRETIME returns absolute expiration time in milliseconds} {
@@ -424,12 +424,11 @@ def test_pexpiretime_returns_absolute_expiration_time_in_milliseconds(r: ValkeyT
     }
     """
     r.run("del", "x")
-    # TODO: set abs_expire expr [clock milliseconds] + 100000
-    # TODO: r set x somevalue pxat abs _expire
-    # TODO: assert_equal r pexpiretime x abs _expire
+    abs_expire = expr(clock("milliseconds"), "+", 100000)
+    r.run("set", "x", "somevalue", "pxat", abs_expire)
+    assert r.run("pexpiretime", "x") == abs_expire
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_server_should_actively_expire_keys_incrementally(r: ValkeyTestClient) -> None:
     """
     test {Server should actively expire keys incrementally} {
@@ -453,11 +452,13 @@ def test_server_should_actively_expire_keys_incrementally(r: ValkeyTestClient) -
     r.run("psetex", "key2", 500, "a")
     r.run("psetex", "key3", 500, "a")
     assert 3 == r.run("dbsize")
-    # TODO: wait_for_condition 20 100 {
-    #       [r dbsize] eq 0
-    #   } else {
-    #       fail "Keys did not actively expire."
-    #   }
+    wait_for_condition(
+        20,
+        100,
+        "            [r dbsize] eq 0\n        ",
+        "else",
+        '            fail "Keys did not actively expire."\n        ',
+    )
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -517,7 +518,6 @@ def test_expire_should_not_resurrect_keys_issue_1026(r: ValkeyTestClient) -> Non
     assert r.run("exists", "foo") == "0"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_5_keys_in_5_keys_out(r: ValkeyTestClient) -> None:
     """
     test {5 keys in, 5 keys out} {
@@ -539,7 +539,7 @@ def test_5_keys_in_5_keys_out(r: ValkeyTestClient) -> None:
     r.run("set", "e", "c")
     r.run("set", "s", "c")
     r.run("set", "foo", "b")
-    # TODO: assert_equal lsort [r keys *] {a e foo s t}
+    assert lsort(r.run("keys", "*")) == "a e foo s t"
     r.run("del", "a")
 
 
@@ -877,7 +877,6 @@ start_server {overrides {appendonly {yes} appendfsync always} tags {external:ski
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_all_ttl_in_commands_are_propagated_as_absolute_timestamp_in_replication_stream(r: ValkeyTestClient) -> None:
     """
     test {All TTL in commands are propagated as absolute timestamp in replication stream} {
@@ -946,54 +945,34 @@ def test_all_ttl_in_commands_are_propagated_as_absolute_timestamp_in_replication
     } {} {needs:repl}
     """
     r.run("flushall")
-    # TODO: set repl attach_to_replication_stream
+    repl = attach_to_replication_stream()
     r.run("set", "foo1", "bar", "ex", 200)
     r.run("set", "foo1", "bar", "px", 100000)
-    # TODO: r set foo1 bar exat expr [clock seconds]+100
-    # TODO: r set foo1 bar pxat expr [clock milliseconds]+100000
+    r.run("set", "foo1", "bar", "exat", expr(clock("seconds"), 100))
+    r.run("set", "foo1", "bar", "pxat", expr(clock("milliseconds"), 100000))
     r.run("setex", "foo1", 100, "bar")
     r.run("psetex", "foo1", 100000, "bar")
     r.run("set", "foo2", "bar")
     r.run("expire", "foo2", 100)
     r.run("pexpire", "foo2", 100000)
     r.run("set", "foo3", "bar")
-    # TODO: r expireat foo3 expr [clock seconds]+100
-    # TODO: r pexpireat foo3 expr [clock seconds]*1000+100000
-    # TODO: r expireat foo3 expr [clock seconds]-100
+    r.run("expireat", "foo3", expr(clock("seconds"), 100))
+    r.run("pexpireat", "foo3", expr(clock("seconds"), "*1000+100000"))
+    r.run("expireat", "foo3", expr(clock("seconds"), -100))
     r.run("set", "foo4", "bar")
     r.run("getex", "foo4", "ex", 200)
     r.run("getex", "foo4", "px", 200000)
-    # TODO: r getex foo4 exat expr [clock seconds]+100
-    # TODO: r getex foo4 pxat expr [clock milliseconds]+100000
+    r.run("getex", "foo4", "exat", expr(clock("seconds"), 100))
+    r.run("getex", "foo4", "pxat", expr(clock("milliseconds"), 100000))
     r.run("set", "foo5", "bar")
     encoded = r.run("dump", "foo5")
     r.run("restore", "foo6", 100000, encoded)
-    # TODO: r restore foo7 expr [clock milliseconds]+100000 encoded absttl
-    # TODO: assert_replication_stream repl {
-    #       {select *}
-    #       {set foo1 bar PXAT *}
-    #       {set foo1 bar PXAT *}
-    #       {set foo1 bar PXAT *}
-    #       {set foo1 bar pxat *}
-    #       {set foo1 bar PXAT *}
-    #       {set foo1 bar PXAT *}
-    #       {set foo2 bar}
-    #       {pexpireat foo2 *}
-    #       {pexpireat foo2 *}
-    #       {set foo3 bar}
-    #       {pexpireat foo3 *}
-    #       {pexpireat foo3 *}
-    #       {unlink foo3}
-    #       {set foo4 bar}
-    #       {pexpireat foo4 *}
-    #       {pexpireat foo4 *}
-    #       {pexpireat foo4 *}
-    #       {pexpireat foo4 *}
-    #       {set foo5 bar}
-    #       {restore foo6 * * ABSTTL}
-    #       {restore foo7 * * absttl}
-    #   }
-    # TODO: close_replication_stream repl
+    r.run("restore", "foo7", expr(clock("milliseconds"), 100000), encoded, "absttl")
+    assert_replication_stream(
+        repl,
+        "            {select *}\n            {set foo1 bar PXAT *}\n            {set foo1 bar PXAT *}\n            {set foo1 bar PXAT *}\n            {set foo1 bar pxat *}\n            {set foo1 bar PXAT *}\n            {set foo1 bar PXAT *}\n            {set foo2 bar}\n            {pexpireat foo2 *}\n            {pexpireat foo2 *}\n            {set foo3 bar}\n            {pexpireat foo3 *}\n            {pexpireat foo3 *}\n            {unlink foo3}\n            {set foo4 bar}\n            {pexpireat foo4 *}\n            {pexpireat foo4 *}\n            {pexpireat foo4 *}\n            {pexpireat foo4 *}\n            {set foo5 bar}\n            {restore foo6 * * ABSTTL}\n            {restore foo7 * * absttl}\n        ",
+    )
+    close_replication_stream(repl)
 
 
 """
@@ -1156,7 +1135,6 @@ def test_getex_use_of_persist_option_should_remove_ttl_after_loadaof(r: ValkeyTe
     assert r.run("ttl", "foo") == "-1"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_getex_propagate_as_to_replica_as_persist_unlink_or_nothing(r: ValkeyTestClient) -> None:
     """
     test {GETEX propagate as to replica as PERSIST, UNLINK, or nothing} {
@@ -1178,21 +1156,18 @@ def test_getex_propagate_as_to_replica_as_persist_unlink_or_nothing(r: ValkeyTes
     } {} {needs:repl}
     """
     r.run("flushall")
-    # TODO: set repl attach_to_replication_stream
+    repl = attach_to_replication_stream()
     r.run("set", "foo", "bar", "EX", 100)
     r.run("getex", "foo", "PERSIST")
     r.run("getex", "foo")
-    # TODO: r getex foo exat expr [clock seconds]-100
-    # TODO: assert_replication_stream repl {
-    #       {select *}
-    #       {set foo bar PXAT *}
-    #       {persist foo}
-    #       {unlink foo}
-    #   }
-    # TODO: close_replication_stream repl
+    r.run("getex", "foo", "exat", expr(clock("seconds"), -100))
+    assert_replication_stream(
+        repl,
+        "           {select *}\n           {set foo bar PXAT *}\n           {persist foo}\n           {unlink foo}\n        ",
+    )
+    close_replication_stream(repl)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_expire_with_nx_option_on_a_key_with_ttl(r: ValkeyTestClient) -> None:
     """
     test {EXPIRE with NX option on a key with ttl} {
@@ -1203,10 +1178,9 @@ def test_expire_with_nx_option_on_a_key_with_ttl(r: ValkeyTestClient) -> None:
     """
     r.run("SET", "foo", "bar", "EX", 100)
     assert r.run("EXPIRE", "foo", 200, "NX") == 0
-    # TODO: assert_range r TTL foo 50 100
+    assert_range(r.run("TTL", "foo"), 50, 100)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_expire_with_nx_option_on_a_key_without_ttl(r: ValkeyTestClient) -> None:
     """
     test {EXPIRE with NX option on a key without ttl} {
@@ -1217,10 +1191,9 @@ def test_expire_with_nx_option_on_a_key_without_ttl(r: ValkeyTestClient) -> None
     """
     r.run("SET", "foo", "bar")
     assert r.run("EXPIRE", "foo", 200, "NX") == 1
-    # TODO: assert_range r TTL foo 100 200
+    assert_range(r.run("TTL", "foo"), 100, 200)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_expire_with_xx_option_on_a_key_with_ttl(r: ValkeyTestClient) -> None:
     """
     test {EXPIRE with XX option on a key with ttl} {
@@ -1231,7 +1204,7 @@ def test_expire_with_xx_option_on_a_key_with_ttl(r: ValkeyTestClient) -> None:
     """
     r.run("SET", "foo", "bar", "EX", 100)
     assert r.run("EXPIRE", "foo", 200, "XX") == 1
-    # TODO: assert_range r TTL foo 100 200
+    assert_range(r.run("TTL", "foo"), 100, 200)
 
 
 def test_expire_with_xx_option_on_a_key_without_ttl(r: ValkeyTestClient) -> None:
@@ -1247,7 +1220,6 @@ def test_expire_with_xx_option_on_a_key_without_ttl(r: ValkeyTestClient) -> None
     assert r.run("TTL", "foo") == -1
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_expire_with_gt_option_on_a_key_with_lower_ttl(r: ValkeyTestClient) -> None:
     """
     test {EXPIRE with GT option on a key with lower ttl} {
@@ -1258,10 +1230,9 @@ def test_expire_with_gt_option_on_a_key_with_lower_ttl(r: ValkeyTestClient) -> N
     """
     r.run("SET", "foo", "bar", "EX", 100)
     assert r.run("EXPIRE", "foo", 200, "GT") == 1
-    # TODO: assert_range r TTL foo 100 200
+    assert_range(r.run("TTL", "foo"), 100, 200)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_expire_with_gt_option_on_a_key_with_higher_ttl(r: ValkeyTestClient) -> None:
     """
     test {EXPIRE with GT option on a key with higher ttl} {
@@ -1272,7 +1243,7 @@ def test_expire_with_gt_option_on_a_key_with_higher_ttl(r: ValkeyTestClient) -> 
     """
     r.run("SET", "foo", "bar", "EX", 200)
     assert r.run("EXPIRE", "foo", 100, "GT") == 0
-    # TODO: assert_range r TTL foo 100 200
+    assert_range(r.run("TTL", "foo"), 100, 200)
 
 
 def test_expire_with_gt_option_on_a_key_without_ttl(r: ValkeyTestClient) -> None:
@@ -1288,7 +1259,6 @@ def test_expire_with_gt_option_on_a_key_without_ttl(r: ValkeyTestClient) -> None
     assert r.run("TTL", "foo") == -1
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_expire_with_lt_option_on_a_key_with_higher_ttl(r: ValkeyTestClient) -> None:
     """
     test {EXPIRE with LT option on a key with higher ttl} {
@@ -1299,10 +1269,9 @@ def test_expire_with_lt_option_on_a_key_with_higher_ttl(r: ValkeyTestClient) -> 
     """
     r.run("SET", "foo", "bar", "EX", 100)
     assert r.run("EXPIRE", "foo", 200, "LT") == 0
-    # TODO: assert_range r TTL foo 50 100
+    assert_range(r.run("TTL", "foo"), 50, 100)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_expire_with_lt_option_on_a_key_with_lower_ttl(r: ValkeyTestClient) -> None:
     """
     test {EXPIRE with LT option on a key with lower ttl} {
@@ -1313,10 +1282,9 @@ def test_expire_with_lt_option_on_a_key_with_lower_ttl(r: ValkeyTestClient) -> N
     """
     r.run("SET", "foo", "bar", "EX", 200)
     assert r.run("EXPIRE", "foo", 100, "LT") == 1
-    # TODO: assert_range r TTL foo 50 100
+    assert_range(r.run("TTL", "foo"), 50, 100)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_expire_with_lt_option_on_a_key_without_ttl(r: ValkeyTestClient) -> None:
     """
     test {EXPIRE with LT option on a key without ttl} {
@@ -1327,10 +1295,9 @@ def test_expire_with_lt_option_on_a_key_without_ttl(r: ValkeyTestClient) -> None
     """
     r.run("SET", "foo", "bar")
     assert r.run("EXPIRE", "foo", 100, "LT") == 1
-    # TODO: assert_range r TTL foo 50 100
+    assert_range(r.run("TTL", "foo"), 50, 100)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_expire_with_lt_and_xx_option_on_a_key_with_ttl(r: ValkeyTestClient) -> None:
     """
     test {EXPIRE with LT and XX option on a key with ttl} {
@@ -1341,7 +1308,7 @@ def test_expire_with_lt_and_xx_option_on_a_key_with_ttl(r: ValkeyTestClient) -> 
     """
     r.run("SET", "foo", "bar", "EX", 200)
     assert r.run("EXPIRE", "foo", 100, "LT", "XX") == 1
-    # TODO: assert_range r TTL foo 50 100
+    assert_range(r.run("TTL", "foo"), 50, 100)
 
 
 def test_expire_with_lt_and_xx_option_on_a_key_without_ttl(r: ValkeyTestClient) -> None:
@@ -1482,7 +1449,6 @@ def test_expire_with_non_existed_key(r: ValkeyTestClient) -> None:
     assert r.run("EXPIRE", "none", 100, "LT") == 0
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_server_should_not_propagate_the_read_command_on_lazy_expire(r: ValkeyTestClient) -> None:
     """
     test {Server should not propagate the read command on lazy expire} {
@@ -1511,23 +1477,20 @@ def test_server_should_not_propagate_the_read_command_on_lazy_expire(r: ValkeyTe
     r.run("debug", "set-active-expire", 0)
     r.run("flushall")
     r.run("set", "foo", "bar", "PX", 1)
-    # TODO: set repl attach_to_replication_stream
-    # TODO: wait_for_condition 50 100 {
-    #       [r get foo] eq {}
-    #   } else {
-    #       fail "Replication not started."
-    #   }
+    repl = attach_to_replication_stream()
+    wait_for_condition(
+        50,
+        100,
+        "            [r get foo] eq {}\n        ",
+        "else",
+        '            fail "Replication not started."\n        ',
+    )
     r.run("set", "x", 1)
-    # TODO: assert_replication_stream repl {
-    #       {select *}
-    #       {unlink foo}
-    #       {set x 1}
-    #   }
-    # TODO: close_replication_stream repl
+    assert_replication_stream(repl, "            {select *}\n            {unlink foo}\n            {set x 1}\n        ")
+    close_replication_stream(repl)
     assert r.run("debug", "set-active-expire", 1) == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_scan_lazy_expire_should_not_be_wrapped_in_multi_or_exec(r: ValkeyTestClient) -> None:
     """
     test {SCAN: Lazy-expire should not be wrapped in MULTI/EXEC} {
@@ -1556,18 +1519,15 @@ def test_scan_lazy_expire_should_not_be_wrapped_in_multi_or_exec(r: ValkeyTestCl
     r.run("set", "foo1", "bar", "PX", 1)
     r.run("set", "foo2", "bar", "PX", 1)
     time.sleep(2 / 1000)
-    # TODO: set repl attach_to_replication_stream
+    repl = attach_to_replication_stream()
     r.run("scan", 0)
-    # TODO: assert_replication_stream repl {
-    #       {select *}
-    #       {unlink foo*}
-    #       {unlink foo*}
-    #   }
-    # TODO: close_replication_stream repl
+    assert_replication_stream(
+        repl, "            {select *}\n            {unlink foo*}\n            {unlink foo*}\n        "
+    )
+    close_replication_stream(repl)
     assert r.run("debug", "set-active-expire", 1) == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_randomkey_lazy_expire_should_not_be_wrapped_in_multi_or_exec(r: ValkeyTestClient) -> None:
     """
     test {RANDOMKEY: Lazy-expire should not be wrapped in MULTI/EXEC} {
@@ -1596,14 +1556,12 @@ def test_randomkey_lazy_expire_should_not_be_wrapped_in_multi_or_exec(r: ValkeyT
     r.run("set", "foo1", "bar", "PX", 1)
     r.run("set", "foo2", "bar", "PX", 1)
     time.sleep(2 / 1000)
-    # TODO: set repl attach_to_replication_stream
+    repl = attach_to_replication_stream()
     r.run("randomkey")
-    # TODO: assert_replication_stream repl {
-    #       {select *}
-    #       {unlink foo*}
-    #       {unlink foo*}
-    #   }
-    # TODO: close_replication_stream repl
+    assert_replication_stream(
+        repl, "            {select *}\n            {unlink foo*}\n            {unlink foo*}\n        "
+    )
+    close_replication_stream(repl)
     assert r.run("debug", "set-active-expire", 1) == "OK"
 
 
@@ -1633,7 +1591,6 @@ def test_import_source_can_be_closed_when_import_mode_is_off(r: ValkeyTestClient
     assert fnmatch(str(r.run("client", "list", "id", r.run("client", "id"))), "*flags=N*")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_import_mode_should_forbid_active_expiration(r: ValkeyTestClient) -> None:
     """
     test {Import mode should forbid active expiration} {
@@ -1668,11 +1625,13 @@ def test_import_mode_should_forbid_active_expiration(r: ValkeyTestClient) -> Non
     assert r.run("dbsize") == "2"
     assert r.run("client", "import-source", "off") == "OK"
     r.run("config", "set", "import-mode", "no")
-    # TODO: wait_for_condition 40 100 {
-    #       [r dbsize] eq 0
-    #   } else {
-    #       fail "Keys did not actively expire."
-    #   }
+    wait_for_condition(
+        40,
+        100,
+        "            [r dbsize] eq 0\n        ",
+        "else",
+        '            fail "Keys did not actively expire."\n        ',
+    )
 
 
 def test_import_mode_should_forbid_lazy_expiration(r: ValkeyTestClient) -> None:
@@ -1715,7 +1674,6 @@ def test_import_mode_should_forbid_lazy_expiration(r: ValkeyTestClient) -> None:
     assert r.run("debug", "set-active-expire", 1) == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_client_can_visit_expired_key_in_import_source_state(r: ValkeyTestClient) -> None:
     """
     test {Client can visit expired key in import-source state} {
@@ -1767,14 +1725,15 @@ def test_client_can_visit_expired_key_in_import_source_state(r: ValkeyTestClient
     assert r.run("keys", "*") == "foo1"
     assert r.run("client", "import-source", "off") == "OK"
     r.run("config", "set", "import-mode", "no")
-    # TODO: wait_for_condition 40 100 {
-    #       [r dbsize] eq 0
-    #   } else {
-    #       fail "Keys did not actively expire."
-    #   }
+    wait_for_condition(
+        40,
+        100,
+        "            [r dbsize] eq 0\n        ",
+        "else",
+        '            fail "Keys did not actively expire."\n        ',
+    )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_negative_ttl_will_not_cause_server_to_crash_when_import_mode_is_on(r: ValkeyTestClient) -> None:
     """
     test {Negative ttl will not cause server to crash when import mode is on} {
@@ -1801,14 +1760,11 @@ def test_negative_ttl_will_not_cause_server_to_crash_when_import_mode_is_on(r: V
     r.run("expireat", "foo1", -10000)
     assert r.run("dbsize") == 2
     r.run("config", "set", "import-mode", "no")
-    # TODO: wait_for_condition 30 100 {
-    #       [r dbsize] == 0
-    #   } else {
-    #       fail "key wasn't expired"
-    #   }
+    wait_for_condition(
+        30, 100, "            [r dbsize] == 0\n        ", "else", '            fail "key wasn\'t expired"\n        '
+    )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_replicakeyswithexpire_memory_leak_verification_and_cleanup(r: ValkeyTestClient) -> None:
     """
     test {replicaKeysWithExpire memory leak verification and cleanup} {
@@ -1878,73 +1834,15 @@ def test_replicakeyswithexpire_memory_leak_verification_and_cleanup(r: ValkeyTes
         }
     }
     """
-    # TODO: start_server {tags {needs:repl external:skip}} {
-    #       # Set the outer layer server as primary
-    #       set primary [srv -1 client]
-    #       set primary_host [srv -1 host]
-    #       set primary_port [srv -1 port]
-    #       # Set this inner layer server as replica
-    #       set replica [srv 0 client]
-    #       set replica_host [srv 0 host]
-    #       set replica_port [srv 0 port]
-    #
-    #       $replica replicaof $primary_host $primary_port
-    #
-    #       # Wait for replication to sync
-    #       wait_for_sync $replica
-    #
-    #       # Enable writable replica mode
-    #       $replica config set replica-read-only no
-    #
-    #       # Disable the cleanup via debug command to simulate the memory leak scenario
-    #       $replica debug set-active-expire 0
-    #
-    #       # Write a batch of keys with expiration directly to the replica
-    #       $replica flushall
-    #       set key_count 10
-    #       for {set i 0} {$i < $key_count} {incr i} {
-    #           $replica set "expire_key_$i" "value_from_replica_$i"
-    #           $replica expire "expire_key_$i" 1
-    #       }
-    #
-    #       # Check the initial replicaKeysWithExpire count via info command
-    #       set replica_count_before [s 0 slave_expires_tracked_keys]
-    #       assert {$replica_count_before > 0}
-    #
-    #       # Now perform failover from primary to this replica
-    #       $primary failover to $replica_host $replica_port
-    #
-    #       # Verify the failover completed and this server is now primary
-    #       wait_for_condition 50 100 {
-    #           [s -1 master_failover_state] == "no-failover"
-    #       } else {
-    #           fail "Failover from primary to replica did not finish"
-    #       }
-    #
-    #       # Verify that the count is the same - this demonstrates the memory leak
-    #       set primary_count_before_cleanup [s 0 slave_expires_tracked_keys]
-    #       assert {$primary_count_before_cleanup == $replica_count_before}
-    #
-    #       # Now enable the cleanup via debug command
-    #       $replica debug set-active-expire 1
-    #
-    #       # Check the replicaKeysWithExpire count after cleanup - should be 0
-    #       wait_for_condition 50 100 {
-    #           [s 0 slave_expires_tracked_keys] eq "0"
-    #       } else {
-    #           fail "Count should be 0 after cleanup"
-    #       }
-    #
-    #       # Clean up
-    #       $replica flushall
-    #       assert_equal [$replica dbsize] 0
-    #   }
+    start_server(
+        "tags {needs:repl external:skip}",
+        '            # Set the outer layer server as primary\n            set primary [srv -1 client]\n            set primary_host [srv -1 host]\n            set primary_port [srv -1 port]\n            # Set this inner layer server as replica\n            set replica [srv 0 client]\n            set replica_host [srv 0 host]\n            set replica_port [srv 0 port]\n            \n            $replica replicaof $primary_host $primary_port\n            \n            # Wait for replication to sync\n            wait_for_sync $replica\n            \n            # Enable writable replica mode\n            $replica config set replica-read-only no\n            \n            # Disable the cleanup via debug command to simulate the memory leak scenario\n            $replica debug set-active-expire 0\n            \n            # Write a batch of keys with expiration directly to the replica\n            $replica flushall\n            set key_count 10\n            for {set i 0} {$i < $key_count} {incr i} {\n                $replica set "expire_key_$i" "value_from_replica_$i"\n                $replica expire "expire_key_$i" 1\n            }\n            \n            # Check the initial replicaKeysWithExpire count via info command\n            set replica_count_before [s 0 slave_expires_tracked_keys]\n            assert {$replica_count_before > 0}\n            \n            # Now perform failover from primary to this replica\n            $primary failover to $replica_host $replica_port\n            \n            # Verify the failover completed and this server is now primary\n            wait_for_condition 50 100 {\n                [s -1 master_failover_state] == "no-failover"\n            } else {\n                fail "Failover from primary to replica did not finish"\n            }\n            \n            # Verify that the count is the same - this demonstrates the memory leak\n            set primary_count_before_cleanup [s 0 slave_expires_tracked_keys]\n            assert {$primary_count_before_cleanup == $replica_count_before} \n            \n            # Now enable the cleanup via debug command\n            $replica debug set-active-expire 1\n\n            # Check the replicaKeysWithExpire count after cleanup - should be 0\n            wait_for_condition 50 100 {\n                [s 0 slave_expires_tracked_keys] eq "0"\n            } else {\n                fail "Count should be 0 after cleanup"\n            }\n            \n            # Clean up\n            $replica flushall\n            assert_equal [$replica dbsize] 0\n        ',
+    )
 
 
 pytestmark = [pytest.mark.expire]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_active_expiration_triggers_hashtable_shrink(r: ValkeyTestClient) -> None:
     """
     test {Active expiration triggers hashtable shrink} {
@@ -1987,27 +1885,31 @@ def test_active_expiration_triggers_hashtable_shrink(r: ValkeyTestClient) -> Non
     r.run("debug", "SET-ACTIVE-EXPIRE", 0)
     persistent_keys = 5
     volatile_keys = 100
-    # TODO: set total_keys expr $persistent_keys + $volatile_keys
-    # TODO: for {set i 0} {$i < $persistent_keys} {incr i} {
-    #       r set "key_$i" "value_$i"
-    #   }
-    # TODO: for {set i 0} {$i < $volatile_keys} {incr i} {
-    #       r psetex "expire_key_${i}" 100 "expire_value_${i}"
-    #   }
-    # TODO: set table_size_before_expire main_hash_table_size
-    # TODO: assert_equal total _keys r dbsize
+    total_keys = expr(persistent_keys, "+", volatile_keys)
+    for_("set i 0", "$i < $persistent_keys", "incr i", '            r set "key_$i" "value_$i"\n        ')
+    for_(
+        "set i 0",
+        "$i < $volatile_keys",
+        "incr i",
+        '            r psetex "expire_key_${i}" 100 "expire_value_${i}"\n        ',
+    )
+    table_size_before_expire = main_hash_table_size()
+    assert total_keys == r.run("dbsize")
     r.run("debug", "SET-ACTIVE-EXPIRE", 1)
-    # TODO: wait_for_condition 100 50 {
-    #       [r dbsize] eq $persistent_keys
-    #   } else {
-    #       fail "Keys not expired"
-    #   }
-    # TODO: wait_for_condition 100 50 {
-    #       [main_hash_table_size] < $table_size_before_expire
-    #   } else {
-    #       puts [r debug htstats 9]
-    #       fail "Table didn't shrink"
-    #   }
+    wait_for_condition(
+        100,
+        50,
+        "            [r dbsize] eq $persistent_keys\n        ",
+        "else",
+        '            fail "Keys not expired"\n        ',
+    )
+    wait_for_condition(
+        100,
+        50,
+        "            [main_hash_table_size] < $table_size_before_expire\n        ",
+        "else",
+        '            puts [r debug htstats 9]\n            fail "Table didn\'t shrink"\n        ',
+    )
     assert r.run("ping") == "PONG"
 
 
@@ -2087,3 +1989,66 @@ start_cluster 1 0 {tags {"expire external:skip cluster"}} {
     } {} {needs:debug}
 }
 """
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def assert_range(*args):
+    raise NotImplementedError("assert_range")
+
+
+def assert_replication_stream(*args):
+    raise NotImplementedError("assert_replication_stream")
+
+
+def attach_to_replication_stream(*args):
+    raise NotImplementedError("attach_to_replication_stream")
+
+
+def break_(*args):
+    raise NotImplementedError("break_")
+
+
+def clock(*args):
+    raise NotImplementedError("clock")
+
+
+def close_replication_stream(*args):
+    raise NotImplementedError("close_replication_stream")
+
+
+def continue_(*args):
+    raise NotImplementedError("continue_")
+
+
+def expr(*args):
+    raise NotImplementedError("expr")
+
+
+def for_(*args):
+    raise NotImplementedError("for_")
+
+
+def if_(*args):
+    raise NotImplementedError("if_")
+
+
+def lsort(*args):
+    raise NotImplementedError("lsort")
+
+
+def main_hash_table_size(*args):
+    raise NotImplementedError("main_hash_table_size")
+
+
+def s(*args):
+    raise NotImplementedError("s")
+
+
+def start_server(*args):
+    raise NotImplementedError("start_server")
+
+
+def wait_for_condition(*args):
+    raise NotImplementedError("wait_for_condition")

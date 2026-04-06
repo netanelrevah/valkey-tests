@@ -1,3 +1,5 @@
+# ruff: noqa: ANN002, ANN201
+
 import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
@@ -14,7 +16,6 @@ r module load testmodule
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_fork(r: ValkeyTestClient) -> None:
     """
     test {Module fork} {
@@ -30,15 +31,16 @@ def test_module_fork(r: ValkeyTestClient) -> None:
     } {3}
     """
     r.run("fork.create", 3, 100000)
-    # TODO: wait_for_condition 20 100 {
-    #       [r fork.exitcode] != -1
-    #   } else {
-    #       fail "fork didn't terminate"
-    #   }
+    wait_for_condition(
+        20,
+        100,
+        "            [r fork.exitcode] != -1\n        ",
+        "else",
+        '            fail "fork didn\'t terminate"\n        ',
+    )
     assert r.run("fork.exitcode") == "3"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_fork_kill(r: ValkeyTestClient) -> None:
     """
     test {Module fork kill} {
@@ -62,17 +64,19 @@ def test_module_fork_kill(r: ValkeyTestClient) -> None:
     }
     """
     r.run("fork.create", 3, 100000000)
-    # TODO: wait_for_condition 20 100 {
-    #       [count_log_message 0 "fork child started"] == 2
-    #   } else {
-    #       fail "fork didn't start"
-    #   }
+    wait_for_condition(
+        20,
+        100,
+        '            [count_log_message 0 "fork child started"] == 2\n        ',
+        "else",
+        '            fail "fork didn\'t start"\n        ',
+    )
     with pytest.raises(Exception, match="Fork\\ failed"):
         r.run("fork.create", 0, 1)
-    # TODO: assert {[count_log_message 0 "Can't fork for module: Operation already in progress"] eq "1"}
+    assert count_log_message(0, "Can't fork for module: Operation already in progress") == "1"
     r.run("fork.kill")
-    # TODO: assert {[count_log_message 0 "Received SIGUSR1 in child"] eq "1"}
-    # TODO: assert {[count_log_message 0 "fork child exiting"] eq "1"}
+    assert count_log_message(0, "Received SIGUSR1 in child") == "1"
+    assert count_log_message(0, "fork child exiting") == "1"
 
 
 def test_unload_the_module_fork(r: ValkeyTestClient) -> None:
@@ -82,3 +86,14 @@ def test_unload_the_module_fork(r: ValkeyTestClient) -> None:
     }
     """
     assert "OK" == r.run("module", "unload", "fork")
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def count_log_message(*args):
+    raise NotImplementedError("count_log_message")
+
+
+def wait_for_condition(*args):
+    raise NotImplementedError("wait_for_condition")

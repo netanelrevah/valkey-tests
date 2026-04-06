@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841, RUF043
+# ruff: noqa: PLR2004, F841, RUF043, ANN002, ANN201
 
 from fnmatch import fnmatch
 
@@ -9,7 +9,6 @@ from tests.valkey_test_client import ValkeyTestClient
 pytestmark = [pytest.mark.hll_large_memory]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_cve_2025_32023_sparse_hll_xzero_overflow_triggers_crash(r: ValkeyTestClient) -> None:
     """
     test {CVE-2025-32023: Sparse HLL XZERO overflow triggers crash} {
@@ -38,12 +37,12 @@ def test_cve_2025_32023_sparse_hll_xzero_overflow_triggers_crash(r: ValkeyTestCl
         assert_error {*INVALIDOBJ*} {r pfadd hll_overflow foo}
     }
     """
-    # TODO: set hll binary format cccc 72 89 76 76
-    # TODO: append hll binary format cccc 1 0 0 0
-    # TODO: append hll binary format cccccccc 0 0 0 0 0 0 0 0
-    # TODO: append hll string repeat [binary format ccc 0x7f 0xff 0x3f] 50331648
-    # TODO: append hll binary format c 0x80
-    # TODO: r set hll_overflow hll
+    hll = binary("format", "cccc", 72, 89, 76, 76)
+    append("hll", binary("format", "cccc", 1, 0, 0, 0))
+    append("hll", binary("format", "cccccccc", 0, 0, 0, 0, 0, 0, 0, 0))
+    append("hll", string("repeat", binary("format", "ccc", "0x7f", "0xff", "0x3f"), 50331648))
+    append("hll", binary("format", "c", "0x80"))
+    r.run("set", "hll_overflow", hll)
     r.run("pfadd", "hll_merge_source", "hi")
     with pytest.raises(Exception, match=".*INVALIDOBJ.*"):
         r.run("pfmerge", "fail_target", "hll_overflow", "hll_merge_source")
@@ -115,7 +114,6 @@ def test_pfadd_works_with_empty_string_regression(r: ValkeyTestClient) -> None:
     r.run("pfadd", "hll", "")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_pfcount_returns_approximated_cardinality_of_set(r: ValkeyTestClient) -> None:
     """
     test {PFCOUNT returns approximated cardinality of set} {
@@ -132,13 +130,12 @@ def test_pfcount_returns_approximated_cardinality_of_set(r: ValkeyTestClient) ->
     r.run("del", "hll")
     res = ""
     r.run("pfadd", "hll", 1, 2, 3, 4, 5)
-    # TODO: lappend res r pfcount hll
+    lappend("res", r.run("pfcount", "hll"))
     r.run("pfadd", "hll", 6, 7, 8, 8, 9, 10)
-    # TODO: lappend res r pfcount hll
+    lappend("res", r.run("pfcount", "hll"))
     assert res == "5 10"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hyperloglogs_are_promote_from_sparse_to_dense(r: ValkeyTestClient) -> None:
     """
     test {HyperLogLogs are promote from sparse to dense} {
@@ -164,20 +161,10 @@ def test_hyperloglogs_are_promote_from_sparse_to_dense(r: ValkeyTestClient) -> N
     r.run("del", "hll")
     r.run("config", "set", "hll-sparse-max-bytes", 3000)
     n = 0
-    # TODO: while {$n < 100000} {
-    #       set elements {}
-    #       for {set j 0} {$j < 100} {incr j} {lappend elements [expr rand()]}
-    #       incr n 100
-    #       r pfadd hll {*}$elements
-    #       set card [r pfcount hll]
-    #       set err [expr {abs($card-$n)}]
-    #       assert {$err < (double($card)/100)*5}
-    #       if {$n < 1000} {
-    #           assert {[r pfdebug encoding hll] eq {sparse}}
-    #       } elseif {$n > 10000} {
-    #           assert {[r pfdebug encoding hll] eq {dense}}
-    #       }
-    #   }
+    while_(
+        "$n < 100000",
+        "            set elements {}\n            for {set j 0} {$j < 100} {incr j} {lappend elements [expr rand()]}\n            incr n 100\n            r pfadd hll {*}$elements\n            set card [r pfcount hll]\n            set err [expr {abs($card-$n)}]\n            assert {$err < (double($card)/100)*5}\n            if {$n < 1000} {\n                assert {[r pfdebug encoding hll] eq {sparse}}\n            } elseif {$n > 10000} {\n                assert {[r pfdebug encoding hll] eq {dense}}\n            }\n        ",
+    )
 
 
 def test_change_hll_sparse_max_bytes(r: ValkeyTestClient) -> None:
@@ -201,7 +188,6 @@ def test_change_hll_sparse_max_bytes(r: ValkeyTestClient) -> None:
     assert r.run("pfdebug", "encoding", "hll") == "dense"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hyperloglog_promote_to_dense_well_in_different_hll_sparse_max_bytes(r: ValkeyTestClient) -> None:
     """
     test {Hyperloglog promote to dense well in different hll-sparse-max-bytes} {
@@ -224,26 +210,17 @@ def test_hyperloglog_promote_to_dense_well_in_different_hll_sparse_max_bytes(r: 
         }
     } {} {needs:pfdebug}
     """
-    # TODO: set max(0) 100
-    # TODO: set max(1) 500
-    # TODO: set max(2) 3000
-    # TODO: for {set i 0} {$i < [array size max]} {incr i} {
-    #       r config set hll-sparse-max-bytes $max($i)
-    #       r del hll
-    #       r pfadd hll
-    #       set len [r strlen hll]
-    #       while {$len <= $max($i)} {
-    #           assert {[r pfdebug encoding hll] eq {sparse}}
-    #           set elements {}
-    #           for {set j 0} {$j < 10} {incr j} { lappend elements [expr rand()]}
-    #           r pfadd hll {*}$elements
-    #           set len [r strlen hll]
-    #       }
-    #       assert {[r pfdebug encoding hll] eq {dense}}
-    #   }
+    set_("max(0)", 100)
+    set_("max(1)", 500)
+    set_("max(2)", 3000)
+    for_(
+        "set i 0",
+        "$i < [array size max]",
+        "incr i",
+        "            r config set hll-sparse-max-bytes $max($i)\n            r del hll\n            r pfadd hll\n            set len [r strlen hll]\n            while {$len <= $max($i)} {\n                assert {[r pfdebug encoding hll] eq {sparse}}\n                set elements {}\n                for {set j 0} {$j < 10} {incr j} { lappend elements [expr rand()]}\n                r pfadd hll {*}$elements\n                set len [r strlen hll]\n            }\n            assert {[r pfdebug encoding hll] eq {dense}}\n        ",
+    )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hyperloglog_sparse_encoding_stress_test(r: ValkeyTestClient) -> None:
     """
     test {HyperLogLog sparse encoding stress test} {
@@ -267,24 +244,24 @@ def test_hyperloglog_sparse_encoding_stress_test(r: ValkeyTestClient) -> None:
         }
     } {} {needs:pfdebug}
     """
-    # TODO: for {set x 0} {$x < 1000} {incr x} {
-    #       r del hll1
-    #       r del hll2
-    #       set numele [randomInt 100]
-    #       set elements {}
-    #       for {set j 0} {$j < $numele} {incr j} {
-    #           lappend elements [expr rand()]
-    #       }
-    #       # Force dense representation of hll2
-    #       r pfadd hll2
-    #       r pfdebug todense hll2
-    #       r pfadd hll1 {*}$elements
-    #       r pfadd hll2 {*}$elements
-    #       assert {[r pfdebug encoding hll1] eq {sparse}}
-    #       assert {[r pfdebug encoding hll2] eq {dense}}
-    #       # Cardinality estimated should match exactly.
-    #       assert {[r pfcount hll1] eq [r pfcount hll2]}
-    #   }
+    x = 0
+    while x < 1000:
+        r.run("del", "hll1")
+        r.run("del", "hll2")
+        numele = random_int(100)
+        elements = ""
+        j = 0
+        while j < numele:
+            lappend("elements", expr("rand()"))
+            j += 1
+        r.run("pfadd", "hll2")
+        r.run("pfdebug", "todense", "hll2")
+        r.run("pfadd", "hll1", "*", elements)
+        r.run("pfadd", "hll2", "*", elements)
+        assert r.run("pfdebug", "encoding", "hll1") == "sparse"
+        assert r.run("pfdebug", "encoding", "hll2") == "dense"
+        assert r.run("pfcount", "hll1") == r.run("pfcount", "hll2")
+        x += 1
 
 
 def test_corrupted_sparse_hyperloglogs_are_detected_additional_at_tail(r: ValkeyTestClient) -> None:
@@ -376,7 +353,6 @@ def test_corrupted_dense_hyperloglogs_are_detected_wrong_length(r: ValkeyTestCli
     assert e == "*WRONGTYPE*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_fuzzing_dense_or_sparse_encoding_server_should_always_detect_errors(r: ValkeyTestClient) -> None:
     """
     test {Fuzzing dense/sparse encoding: Server should always detect errors} {
@@ -407,31 +383,29 @@ def test_fuzzing_dense_or_sparse_encoding_server_should_always_detect_errors(r: 
         }
     }
     """
-    # TODO: for {set j 0} {$j < 1000} {incr j} {
-    #       r del hll
-    #       set items {}
-    #       set numitems [randomInt 3000]
-    #       for {set i 0} {$i < $numitems} {incr i} {
-    #           lappend items [expr {rand()}]
-    #       }
-    #       r pfadd hll {*}$items
-    #
-    #       # Corrupt it in some random way.
-    #       for {set i 0} {$i < 5} {incr i} {
-    #           set len [r strlen hll]
-    #           set pos [randomInt $len]
-    #           set byte [randstring 1 1 binary]
-    #           r setrange hll $pos $byte
-    #           # Don't modify more bytes 50% of times
-    #           if {rand() < 0.5} break
-    #       }
-    #
-    #       # Use the hyperloglog to check if it crashes
-    #       # the server in some way.
-    #       catch {
-    #           r pfcount hll
-    #       }
-    #   }
+    j = 0
+    while j < 1000:
+        r.run("del", "hll")
+        items = ""
+        numitems = random_int(3000)
+        i = 0
+        while i < numitems:
+            lappend("items", expr("rand()"))
+            i += 1
+        r.run("pfadd", "hll", "*", items)
+        i = 0
+        while i < 5:
+            len = r.run("strlen", "hll")
+            pos = random_int(len)
+            byte = randstring(1, 1, "binary")
+            r.run("setrange", "hll", pos, byte)
+            if_("rand() < 0.5", "break")
+            i += 1
+        try:
+            r.run("pfcount", "hll")
+        except Exception:
+            pass
+        j += 1
 
 
 def test_pfadd_pfcount_pfmerge_type_checking_works(r: ValkeyTestClient) -> None:
@@ -545,7 +519,6 @@ def test_pfmerge_with_one_non_empty_input_key_dest_key_is_actually_one_of_the_so
     assert 3 == r.run("pfcount", "destkey")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_pfmerge_results_with_simd(r: ValkeyTestClient) -> None:
     """
     test {PFMERGE results with simd} {
@@ -588,15 +561,18 @@ def test_pfmerge_results_with_simd(r: ValkeyTestClient) -> None:
     } {} {needs:pfdebug}
     """
     r.run("del", "hllscalar{t}", "hllsimd{t}", "hll1{t}", "hll2{t}", "hll3{t}")
-    # TODO: for {set x 1} {$x < 2000} {incr x} {
-    #       r pfadd hll1{t} [expr rand()]
-    #   }
-    # TODO: for {set x 1} {$x < 4000} {incr x} {
-    #       r pfadd hll2{t} [expr rand()]
-    #   }
-    # TODO: for {set x 1} {$x < 8000} {incr x} {
-    #       r pfadd hll3{t} [expr rand()]
-    #   }
+    x = 1
+    while x < 2000:
+        r.run("pfadd", "hll1{t}", expr("rand()"))
+        x += 1
+    x = 1
+    while x < 4000:
+        r.run("pfadd", "hll2{t}", expr("rand()"))
+        x += 1
+    x = 1
+    while x < 8000:
+        r.run("pfadd", "hll3{t}", expr("rand()"))
+        x += 1
     assert r.run("pfcount", "hll1{t}") > 0
     assert r.run("pfcount", "hll2{t}") > 0
     assert r.run("pfcount", "hll3{t}") > 0
@@ -621,7 +597,6 @@ def test_pfmerge_results_with_simd(r: ValkeyTestClient) -> None:
     assert scalar == simd
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_pfcount_multiple_keys_merge_returns_cardinality_of_union_1(r: ValkeyTestClient) -> None:
     """
     test {PFCOUNT multiple-keys merge returns cardinality of union #1} {
@@ -639,19 +614,14 @@ def test_pfcount_multiple_keys_merge_returns_cardinality_of_union_1(r: ValkeyTes
     }
     """
     r.run("del", "hll1{t}", "hll2{t}", "hll3{t}")
-    # TODO: for {set x 1} {$x < 10000} {incr x} {
-    #       r pfadd hll1{t} "foo-$x"
-    #       r pfadd hll2{t} "bar-$x"
-    #       r pfadd hll3{t} "zap-$x"
-    #
-    #       set card [r pfcount hll1{t} hll2{t} hll3{t}]
-    #       set realcard [expr {$x*3}]
-    #       set err [expr {abs($card-$realcard)}]
-    #       assert {$err < (double($card)/100)*5}
-    #   }
+    for_(
+        "set x 1",
+        "$x < 10000",
+        "incr x",
+        '            r pfadd hll1{t} "foo-$x"\n            r pfadd hll2{t} "bar-$x"\n            r pfadd hll3{t} "zap-$x"\n\n            set card [r pfcount hll1{t} hll2{t} hll3{t}]\n            set realcard [expr {$x*3}]\n            set err [expr {abs($card-$realcard)}]\n            assert {$err < (double($card)/100)*5}\n        ',
+    )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_pfcount_multiple_keys_merge_returns_cardinality_of_union_2(r: ValkeyTestClient) -> None:
     """
     test {PFCOUNT multiple-keys merge returns cardinality of union #2} {
@@ -672,17 +642,19 @@ def test_pfcount_multiple_keys_merge_returns_cardinality_of_union_2(r: ValkeyTes
     """
     r.run("del", "hll1{t}", "hll2{t}", "hll3{t}")
     elements = ""
-    # TODO: for {set x 1} {$x < 10000} {incr x} {
-    #       for {set j 1} {$j <= 3} {incr j} {
-    #           set rint [randomInt 20000]
-    #           r pfadd hll$j{t} $rint
-    #           lappend elements $rint
-    #       }
-    #   }
-    # TODO: set realcard llength [lsort -unique $elements]
+    x = 1
+    while x < 10000:
+        j = 1
+        while j <= 3:
+            rint = random_int(20000)
+            r.run("pfadd", "hll$j{t}", rint)
+            lappend("elements", rint)
+            j += 1
+        x += 1
+    realcard = len(lsort("-unique", elements))
     card = r.run("pfcount", "hll1{t}", "hll2{t}", "hll3{t}")
-    # TODO: set err expr {abs($card-$realcard)}
-    # TODO: assert {$err < (double($card)/100)*5}
+    err = expr("abs($card-$realcard)")
+    assert_("$err < (double($card)/100)*5")
 
 
 def test_pfdebug_getreg_returns_the_hyperloglog_raw_registers(r: ValkeyTestClient) -> None:
@@ -698,7 +670,6 @@ def test_pfdebug_getreg_returns_the_hyperloglog_raw_registers(r: ValkeyTestClien
     assert len(r.run("pfdebug", "getreg", "hll")) == "16384"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_pfadd_or_pfcount_cache_invalidation_works(r: ValkeyTestClient) -> None:
     """
     test {PFADD / PFCOUNT cache invalidation works} {
@@ -715,8 +686,67 @@ def test_pfadd_or_pfcount_cache_invalidation_works(r: ValkeyTestClient) -> None:
     r.run("del", "hll")
     r.run("pfadd", "hll", "a", "b", "c")
     r.run("pfcount", "hll")
-    # TODO: assert {[r getrange hll 15 15] eq "\x00"}
+    assert_('[r getrange hll 15 15] eq "\\x00"')
     r.run("pfadd", "hll", "a", "b", "c")
-    # TODO: assert {[r getrange hll 15 15] eq "\x00"}
+    assert_('[r getrange hll 15 15] eq "\\x00"')
     r.run("pfadd", "hll", 1, 2, 3)
-    # TODO: assert {[r getrange hll 15 15] eq "\x80"}
+    assert_('[r getrange hll 15 15] eq "\\x80"')
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def append(*args):
+    raise NotImplementedError("append")
+
+
+def array(*args):
+    raise NotImplementedError("array")
+
+
+def assert_(*args):
+    raise NotImplementedError("assert_")
+
+
+def binary(*args):
+    raise NotImplementedError("binary")
+
+
+def expr(*args):
+    raise NotImplementedError("expr")
+
+
+def for_(*args):
+    raise NotImplementedError("for_")
+
+
+def if_(*args):
+    raise NotImplementedError("if_")
+
+
+def lappend(*args):
+    raise NotImplementedError("lappend")
+
+
+def lsort(*args):
+    raise NotImplementedError("lsort")
+
+
+def random_int(*args):
+    raise NotImplementedError("random_int")
+
+
+def randstring(*args):
+    raise NotImplementedError("randstring")
+
+
+def set_(*args):
+    raise NotImplementedError("set_")
+
+
+def string(*args):
+    raise NotImplementedError("string")
+
+
+def while_(*args):
+    raise NotImplementedError("while_")

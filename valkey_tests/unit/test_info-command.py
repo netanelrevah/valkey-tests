@@ -1,4 +1,4 @@
-# ruff: noqa: F841
+# ruff: noqa: ANN002, ANN201
 
 import pytest
 
@@ -7,7 +7,6 @@ from tests.valkey_test_client import ValkeyTestClient
 pytestmark = [pytest.mark.info_and_its_relative_command]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_extract_version_and_sha1_details_from_info_command_and_print(r: ValkeyTestClient) -> None:
     """
     test "Extract version and sha1 details from info command and print" {
@@ -18,11 +17,10 @@ def test_extract_version_and_sha1_details_from_info_command_and_print(r: ValkeyT
     }
     """
     i = r.run("info")
-    # TODO: regexp {redis_version:(.*?)\r\n} i - version
-    # TODO: regexp {redis_git_sha1:(.*?)\r\n} i - sha1
+    regexp("redis_version:(.*?)\\r\\n", i, "-", "version")
+    regexp("redis_git_sha1:(.*?)\\r\\n", i, "-", "sha1")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_info_command_with_at_most_one_sub_command(r: ValkeyTestClient) -> None:
     """
     test "info command with at most one sub command" {
@@ -45,26 +43,13 @@ def test_info_command_with_at_most_one_sub_command(r: ValkeyTestClient) -> None:
         }
     }
     """
-    # TODO: foreach arg {"" "all" "default" "everything"} {
-    #       if {$arg == ""} {
-    #           set info [r 0 info]
-    #       } else {
-    #           set info [r 0 info $arg]
-    #       }
-    #
-    #       assert { [string match "*redis_version*" $info] }
-    #       assert { [string match "*used_cpu_user*" $info] }
-    #       assert { ![string match "*sentinel_tilt*" $info] }
-    #       assert { [string match "*used_memory*" $info] }
-    #       if {$arg == "" || $arg == "default"} {
-    #           assert { ![string match "*rejected_calls*" $info] }
-    #       } else {
-    #           assert { [string match "*rejected_calls*" $info] }
-    #       }
-    #   }
+    foreach(
+        "arg",
+        '"" "all" "default" "everything"',
+        '            if {$arg == ""} {\n                set info [r 0 info]\n            } else {\n                set info [r 0 info $arg]\n            }\n\n            assert { [string match "*redis_version*" $info] }\n            assert { [string match "*used_cpu_user*" $info] }\n            assert { ![string match "*sentinel_tilt*" $info] }\n            assert { [string match "*used_memory*" $info] }\n            if {$arg == "" || $arg == "default"} {\n                assert { ![string match "*rejected_calls*" $info] }        \n            } else {\n                assert { [string match "*rejected_calls*" $info] }        \n            }        \n        ',
+    )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_info_command_with_one_sub_section(r: ValkeyTestClient) -> None:
     """
     test "info command with one sub-section" {
@@ -83,18 +68,17 @@ def test_info_command_with_one_sub_section(r: ValkeyTestClient) -> None:
     }
     """
     info = r.run("info", "cpu")
-    # TODO: assert { [string match "*used_cpu_user*" $info] }
-    # TODO: assert { ![string match "*sentinel_tilt*" $info] }
-    # TODO: assert { ![string match "*used_memory*" $info] }
+    assert string("match", "*used_cpu_user*", info)
+    assert_(' ![string match "*sentinel_tilt*" $info] ')
+    assert_(' ![string match "*used_memory*" $info] ')
     info = r.run("info", "sentinel")
-    # TODO: assert { ![string match "*sentinel_tilt*" $info] }
-    # TODO: assert { ![string match "*used_memory*" $info] }
+    assert_(' ![string match "*sentinel_tilt*" $info] ')
+    assert_(' ![string match "*used_memory*" $info] ')
     info = r.run("info", "commandSTATS")
-    # TODO: assert { ![string match "*used_memory*" $info] }
-    # TODO: assert { [string match "*rejected_calls*" $info] }
+    assert_(' ![string match "*used_memory*" $info] ')
+    assert string("match", "*rejected_calls*", info)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_info_command_with_multiple_sub_sections(r: ValkeyTestClient) -> None:
     """
     test "info command with multiple sub-sections" {
@@ -123,26 +107,25 @@ def test_info_command_with_multiple_sub_sections(r: ValkeyTestClient) -> None:
     }
     """
     info = r.run("info", "cpu", "sentinel")
-    # TODO: assert { [string match "*used_cpu_user*" $info] }
-    # TODO: assert { ![string match "*sentinel_tilt*" $info] }
-    # TODO: assert { ![string match "*master_repl_offset*" $info] }
+    assert string("match", "*used_cpu_user*", info)
+    assert_(' ![string match "*sentinel_tilt*" $info] ')
+    assert_(' ![string match "*master_repl_offset*" $info] ')
     info = r.run("info", "cpu", "all")
-    # TODO: assert { [string match "*used_cpu_user*" $info] }
-    # TODO: assert { ![string match "*sentinel_tilt*" $info] }
-    # TODO: assert { [string match "*used_memory*" $info] }
-    # TODO: assert { [string match "*master_repl_offset*" $info] }
-    # TODO: assert { [string match "*rejected_calls*" $info] }
-    # TODO: assert { ![string match "*used_cpu_user_children*used_cpu_user_children*" $info] }
+    assert string("match", "*used_cpu_user*", info)
+    assert_(' ![string match "*sentinel_tilt*" $info] ')
+    assert string("match", "*used_memory*", info)
+    assert string("match", "*master_repl_offset*", info)
+    assert string("match", "*rejected_calls*", info)
+    assert_(' ![string match "*used_cpu_user_children*used_cpu_user_children*" $info] ')
     info = r.run("info", "cpu", "default")
-    # TODO: assert { [string match "*used_cpu_user*" $info] }
-    # TODO: assert { ![string match "*sentinel_tilt*" $info] }
-    # TODO: assert { [string match "*used_memory*" $info] }
-    # TODO: assert { [string match "*master_repl_offset*" $info] }
-    # TODO: assert { ![string match "*rejected_calls*" $info] }
-    # TODO: assert { ![string match "*used_cpu_user_children*used_cpu_user_children*" $info] }
+    assert string("match", "*used_cpu_user*", info)
+    assert_(' ![string match "*sentinel_tilt*" $info] ')
+    assert string("match", "*used_memory*", info)
+    assert string("match", "*master_repl_offset*", info)
+    assert_(' ![string match "*rejected_calls*" $info] ')
+    assert_(' ![string match "*used_cpu_user_children*used_cpu_user_children*" $info] ')
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_info_command_includes_used_active_time_main_thread_field(r: ValkeyTestClient) -> None:
     """
     test "info command includes used_active_time_main_thread field" {
@@ -162,5 +145,28 @@ def test_info_command_includes_used_active_time_main_thread_field(r: ValkeyTestC
     r.run("get", "test_key")
     r.run("del", "test_key")
     info = r.run("info")
-    # TODO: set active_time getInfoProperty $info used_active_time_main_thread
-    # TODO: assert {$active_time > 0}
+    active_time = get_info_property(info, "used_active_time_main_thread")
+    assert active_time > 0
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def assert_(*args):
+    raise NotImplementedError("assert_")
+
+
+def foreach(*args):
+    raise NotImplementedError("foreach")
+
+
+def get_info_property(*args):
+    raise NotImplementedError("get_info_property")
+
+
+def regexp(*args):
+    raise NotImplementedError("regexp")
+
+
+def string(*args):
+    raise NotImplementedError("string")

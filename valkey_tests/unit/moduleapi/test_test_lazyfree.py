@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004
+# ruff: noqa: PLR2004, F841, ANN002, ANN201
 
 import pytest
 
@@ -16,7 +16,6 @@ r module load testmodule
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_modules_allocated_memory_can_be_reclaimed_in_the_background(r: ValkeyTestClient) -> None:
     """
     test "modules allocated memory can be reclaimed in the background" {
@@ -46,22 +45,41 @@ def test_modules_allocated_memory_can_be_reclaimed_in_the_background(r: ValkeyTe
         }
     }
     """
-    # TODO: set orig_mem s used_memory
-    # TODO: set rd valkey_deferring_client
-    # TODO: for {set i 0} {$i < 10000} {incr i} {
-    #       $rd lazyfreelink.insert lazykey $i
-    #   }
-    # TODO: for {set j 0} {$j < 10000} {incr j} {
-    #       $rd read
-    #   }
+    orig_mem = s("used_memory")
+    rd = valkey_deferring_client()
+    for_("set i 0", "$i < 10000", "incr i", "            $rd lazyfreelink.insert lazykey $i\n        ")
+    for_("set j 0", "$j < 10000", "incr j", "            $rd read \n        ")
     assert r.run("lazyfreelink.len", "lazykey") == 10000
-    # TODO: set peak_mem s used_memory
+    peak_mem = s("used_memory")
     assert r.run("unlink", "lazykey") == 1
-    # TODO: assert {$peak_mem > $orig_mem+10000}
-    # TODO: wait_for_condition 50 100 {
-    #       [s used_memory] < $peak_mem &&
-    #       [s used_memory] < $orig_mem*2 &&
-    #       [string match {*lazyfreed_objects:1*} [r info Memory]]
-    #   } else {
-    #       fail "Module memory is not reclaimed by UNLINK"
-    #   }
+    assert_("$peak_mem > $orig_mem+10000")
+    wait_for_condition(
+        50,
+        100,
+        "            [s used_memory] < $peak_mem &&\n            [s used_memory] < $orig_mem*2 &&\n            [string match {*lazyfreed_objects:1*} [r info Memory]]\n        ",
+        "else",
+        '            fail "Module memory is not reclaimed by UNLINK"\n        ',
+    )
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def assert_(*args):
+    raise NotImplementedError("assert_")
+
+
+def for_(*args):
+    raise NotImplementedError("for_")
+
+
+def s(*args):
+    raise NotImplementedError("s")
+
+
+def valkey_deferring_client(*args):
+    raise NotImplementedError("valkey_deferring_client")
+
+
+def wait_for_condition(*args):
+    raise NotImplementedError("wait_for_condition")

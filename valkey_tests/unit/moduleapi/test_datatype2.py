@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004
+# ruff: noqa: PLR2004, ANN002, ANN201
 
 import pytest
 
@@ -91,7 +91,6 @@ def test_datatype2_test_read_and_write(r: ValkeyTestClient) -> None:
     assert data == r.run("mem.read", "k1", 0)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_datatype2_test_rdb_save_and_load(r: ValkeyTestClient) -> None:
     """
     test "datatype2: test rdb save and load" {
@@ -144,7 +143,7 @@ def test_datatype2_test_rdb_save_and_load(r: ValkeyTestClient) -> None:
     assert 2 == r.run("mem.alloc", "k4", 2)
     assert len(data) == r.run("mem.write", "k4", 0, data)
     r.run("bgsave")
-    # TODO: waitForBgsave r
+    wait_for_bgsave("r")
     r.run("debug", "reload")
     r.run("select", 0)
     assert "k1" == r.run("mem.read", "k1", 1)
@@ -154,7 +153,6 @@ def test_datatype2_test_rdb_save_and_load(r: ValkeyTestClient) -> None:
     assert "k4" == r.run("mem.read", "k4", 0)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_datatype2_test_aof_rewrite(r: ValkeyTestClient) -> None:
     """
     test "datatype2: test aof rewrite" {
@@ -207,7 +205,7 @@ def test_datatype2_test_aof_rewrite(r: ValkeyTestClient) -> None:
     assert 2 == r.run("mem.alloc", "k4", 2)
     assert len(data) == r.run("mem.write", "k4", 0, data)
     r.run("bgrewriteaof")
-    # TODO: waitForBgrewriteaof r
+    wait_for_bgrewriteaof("r")
     r.run("debug", "loadaof")
     r.run("select", 0)
     assert "k1" == r.run("mem.read", "k1", 1)
@@ -344,7 +342,6 @@ def test_datatype2_test_swapdb(r: ValkeyTestClient) -> None:
     assert "total 5 used 2" == r.run("mem.usage", 0)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_datatype2_test_digest(r: ValkeyTestClient) -> None:
     """
     test "datatype2: test digest" {
@@ -401,13 +398,12 @@ def test_datatype2_test_digest(r: ValkeyTestClient) -> None:
     assert len(data) == r.run("mem.write", "k2", 0, data)
     assert data == r.run("mem.read", "k2", 0)
     r.run("select", 0)
-    # TODO: set digest0 debug_digest
+    digest0 = debug_digest()
     r.run("select", 1)
-    # TODO: set digest1 debug_digest
-    # TODO: assert_equal digest0 digest1
+    digest1 = debug_digest()
+    assert digest0 == digest1
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_datatype2_test_memusage(r: ValkeyTestClient) -> None:
     """
     test "datatype2: test memusage" {
@@ -435,4 +431,23 @@ def test_datatype2_test_memusage(r: ValkeyTestClient) -> None:
     assert 3 == r.run("mem.alloc", "k2", 3)
     assert len(data) == r.run("mem.write", "k2", 0, data)
     assert data == r.run("mem.read", "k2", 0)
-    # TODO: assert_equal memory_usage k1 memory_usage k2
+    assert memory_usage("k1") == memory_usage("k2")
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def debug_digest(*args):
+    raise NotImplementedError("debug_digest")
+
+
+def memory_usage(*args):
+    raise NotImplementedError("memory_usage")
+
+
+def wait_for_bgrewriteaof(*args):
+    raise NotImplementedError("wait_for_bgrewriteaof")
+
+
+def wait_for_bgsave(*args):
+    raise NotImplementedError("wait_for_bgsave")

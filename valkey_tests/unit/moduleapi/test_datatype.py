@@ -1,4 +1,5 @@
-# ruff: noqa: F841, RUF043
+# ruff: noqa: F841, RUF043, ANN002, ANN201
+
 from fnmatch import fnmatch
 
 import pytest
@@ -53,7 +54,6 @@ def test_datatype_rm_savedatatypetostring_rm_loaddatatypefromstringencver_work(r
     assert r.run("datatype.get", "dtkeycopy") == "-1111 MyString"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_datatype_handle_truncated_rm_loaddatatypefromstringencver(r: ValkeyTestClient) -> None:
     """
     test {DataType: Handle truncated RM_LoadDataTypeFromStringEncver()} {
@@ -67,10 +67,12 @@ def test_datatype_handle_truncated_rm_loaddatatypefromstringencver(r: ValkeyTest
     """
     r.run("datatype.set", "dtkey", -1111, "MyString")
     encoded = r.run("datatype.dump", "dtkey")
-    # TODO: set truncated string range $encoded 0 end-1
-    # TODO: catch {r datatype.restore dtkeycopy $truncated 4} e
-    # TODO: set e
-    assert False
+    truncated = string("range", encoded, 0, "end-1")
+    try:
+        e = r.run("datatype.restore", "dtkeycopy", truncated, 4)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "*Invalid*"
 
 
 def test_datatype_moduletypereplacevalue_happy_path_works(r: ValkeyTestClient) -> None:
@@ -172,28 +174,31 @@ def test_datatype_slow_loading(r: ValkeyTestClient) -> None:
     """
     r.run("config", "set", "busy-reply-threshold", 5000)
     r.run("datatype.slow_loading", 1)
-    # TODO: set rd valkey_deferring_client
-    # TODO: set start clock clicks -milliseconds
+    rd = valkey_deferring_client()
+    start = clock("clicks", "-milliseconds")
     # TODO: $rd debug reload
-    # TODO: wait_for_condition 50 100 {
-    #       [r datatype.is_in_slow_loading] eq 1
-    #   } else {
-    #       fail "Failed waiting for slow loading to start"
-    #   }
+    wait_for_condition(
+        50,
+        100,
+        "            [r datatype.is_in_slow_loading] eq 1\n        ",
+        "else",
+        '            fail "Failed waiting for slow loading to start"\n        ',
+    )
     with pytest.raises(Exception, match=".*LOADING.*"):
         r.run("ping")
-    # TODO: assert_lessthan expr [clock clicks -milliseconds]-$start 2000
+    assert_lessthan(expr(clock("clicks", "-milliseconds"), "-$start"), 2000)
     r.run("datatype.slow_loading", 0)
-    # TODO: wait_for_condition 50 100 {
-    #       [s loading] eq {0}
-    #   } else {
-    #       fail "Failed waiting for loading to end"
-    #   }
+    wait_for_condition(
+        50,
+        100,
+        "            [s loading] eq {0}\n        ",
+        "else",
+        '            fail "Failed waiting for loading to end"\n        ',
+    )
     # TODO: $rd read
     # TODO: $rd close
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_datatype_check_the_type_name(r: ValkeyTestClient) -> None:
     """
     test {DataType: check the type name} {
@@ -204,10 +209,9 @@ def test_datatype_check_the_type_name(r: ValkeyTestClient) -> None:
     """
     r.run("flushdb")
     r.run("datatype.set", "foo", 111, "bar")
-    # TODO: assert_type test___dt foo
+    assert_type("test___dt", "foo")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_scan_module_datatype(r: ValkeyTestClient) -> None:
     """
     test {SCAN module datatype} {
@@ -229,22 +233,18 @@ def test_scan_module_datatype(r: ValkeyTestClient) -> None:
     }
     """
     r.run("flushdb")
-    # TODO: populate 1000
+    populate(1000)
     r.run("datatype.set", "foo", 111, "bar")
     type = r.run("type", "foo")
     cur = 0
     keys = ""
-    # TODO: while 1 {
-    #       set res [r scan $cur type $type]
-    #       set cur [lindex $res 0]
-    #       set k [lindex $res 1]
-    #       lappend keys {*}$k
-    #       if {$cur == 0} break
-    #   }
+    while_(
+        1,
+        "            set res [r scan $cur type $type]\n            set cur [lindex $res 0]\n            set k [lindex $res 1]\n            lappend keys {*}$k\n            if {$cur == 0} break\n        ",
+    )
     assert 1 == len(keys)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_scan_module_datatype_with_case_sensitive(r: ValkeyTestClient) -> None:
     """
     test {SCAN module datatype with case sensitive} {
@@ -266,22 +266,18 @@ def test_scan_module_datatype_with_case_sensitive(r: ValkeyTestClient) -> None:
     }
     """
     r.run("flushdb")
-    # TODO: populate 1000
+    populate(1000)
     r.run("datatype.set", "foo", 111, "bar")
     type = "tEsT___dT"
     cur = 0
     keys = ""
-    # TODO: while 1 {
-    #       set res [r scan $cur type $type]
-    #       set cur [lindex $res 0]
-    #       set k [lindex $res 1]
-    #       lappend keys {*}$k
-    #       if {$cur == 0} break
-    #   }
+    while_(
+        1,
+        "            set res [r scan $cur type $type]\n            set cur [lindex $res 0]\n            set k [lindex $res 1]\n            lappend keys {*}$k\n            if {$cur == 0} break\n        ",
+    )
     assert 1 == len(keys)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_datatype_check_memory_usage(r: ValkeyTestClient) -> None:
     """
     test {DataType: check memory usage} {
@@ -292,6 +288,49 @@ def test_datatype_check_memory_usage(r: ValkeyTestClient) -> None:
     }
     """
     r.run("flushdb")
-    # TODO: set large_key string repeat A 100000
-    # TODO: r datatype.set large _key 111 bar
-    # TODO: assert_morethan r memory usage $large_key 100000
+    large_key = string("repeat", "A", 100000)
+    r.run("datatype.set", large_key, 111, "bar")
+    assert_morethan(r.run("memory", "usage", large_key), 100000)
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def assert_lessthan(*args):
+    raise NotImplementedError("assert_lessthan")
+
+
+def assert_morethan(*args):
+    raise NotImplementedError("assert_morethan")
+
+
+def assert_type(*args):
+    raise NotImplementedError("assert_type")
+
+
+def clock(*args):
+    raise NotImplementedError("clock")
+
+
+def expr(*args):
+    raise NotImplementedError("expr")
+
+
+def populate(*args):
+    raise NotImplementedError("populate")
+
+
+def string(*args):
+    raise NotImplementedError("string")
+
+
+def valkey_deferring_client(*args):
+    raise NotImplementedError("valkey_deferring_client")
+
+
+def wait_for_condition(*args):
+    raise NotImplementedError("wait_for_condition")
+
+
+def while_(*args):
+    raise NotImplementedError("while_")

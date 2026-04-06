@@ -1,3 +1,5 @@
+# ruff: noqa: ANN002, ANN201
+
 import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
@@ -14,7 +16,6 @@ r module load testmodule
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_mallocsize_of_raw_bytes(r: ValkeyTestClient) -> None:
     """
     test {MallocSize of raw bytes} {
@@ -23,10 +24,9 @@ def test_mallocsize_of_raw_bytes(r: ValkeyTestClient) -> None:
     }
     """
     assert r.run("mallocsize.setraw", "key", 40) == "OK"
-    # TODO: assert_morethan r memory usage key 40
+    assert_morethan(r.run("memory", "usage", "key"), 40)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_mallocsize_of_string(r: ValkeyTestClient) -> None:
     """
     test {MallocSize of string} {
@@ -35,10 +35,9 @@ def test_mallocsize_of_string(r: ValkeyTestClient) -> None:
     }
     """
     assert r.run("mallocsize.setstr", "key", "abcdefg") == "OK"
-    # TODO: assert_morethan r memory usage key 7
+    assert_morethan(r.run("memory", "usage", "key"), 7)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_mallocsize_of_dict(r: ValkeyTestClient) -> None:
     """
     test {MallocSize of dict} {
@@ -47,4 +46,11 @@ def test_mallocsize_of_dict(r: ValkeyTestClient) -> None:
     }
     """
     assert r.run("mallocsize.setdict", "key", "f1", "v1", "f2", "v2") == "OK"
-    # TODO: assert_morethan r memory usage key 8
+    assert_morethan(r.run("memory", "usage", "key"), 8)
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def assert_morethan(*args):
+    raise NotImplementedError("assert_morethan")

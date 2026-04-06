@@ -1,5 +1,4 @@
-# ruff: noqa: PLR2004, RUF043
-
+# ruff: noqa: PLR2004, RUF043, ANN002, ANN201
 from fnmatch import fnmatch
 
 import pytest
@@ -234,7 +233,7 @@ def test_test_module_check_eval_script_with_user_and_acl(r: ValkeyTestClient) ->
     r.run("ACL", "LOG", "RESET")
     assert r.run("usercall.reset_user") == "OK"
     assert r.run("usercall.add_to_acl", "~* &* +@all -set") == "OK"
-    # TODO: catch {r usercall.call_with_user_flag C evalsha $sha_set 0} e
+    catch("r usercall.call_with_user_flag C evalsha $sha_set 0", "e")
     # TODO: assert_match {*ERR ACL failure in script*} e
     # TODO: assert_equal r usercall.call_with_user_flag C evalsha $sha_get 0 1
     entry = r.run("ACL", "LOG")[0]
@@ -278,3 +277,10 @@ start_server {tags {"wait aof external:skip"}} {
     }
 }
 """
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def catch(*args):
+    raise NotImplementedError("catch")

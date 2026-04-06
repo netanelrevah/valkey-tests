@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841, RUF043
+# ruff: noqa: PLR2004, F841, RUF043, ANN002, ANN201
 import time
 from fnmatch import fnmatch
 
@@ -18,7 +18,6 @@ r module load testmodule
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_rm_call(r: ValkeyTestClient) -> None:
     """
     test {test RM_Call} {
@@ -28,10 +27,9 @@ def test_test_rm_call(r: ValkeyTestClient) -> None:
     }
     """
     info = r.run("test.call_info", "commandstats")
-    # TODO: assert { [string match "*cmdstat_module*" $info] }
+    assert string("match", "*cmdstat_module*", info)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_rm_call_args_array(r: ValkeyTestClient) -> None:
     """
     test {test RM_Call args array} {
@@ -41,10 +39,9 @@ def test_test_rm_call_args_array(r: ValkeyTestClient) -> None:
     }
     """
     info = r.run("test.call_generic", "info", "commandstats")
-    # TODO: assert { [string match "*cmdstat_module*" $info] }
+    assert string("match", "*cmdstat_module*", info)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_rm_call_recursive(r: ValkeyTestClient) -> None:
     """
     test {test RM_Call recursive} {
@@ -53,20 +50,18 @@ def test_test_rm_call_recursive(r: ValkeyTestClient) -> None:
     }
     """
     info = r.run("test.call_generic", "test.call_generic", "info", "commandstats")
-    # TODO: assert { [string match "*cmdstat_module*" $info] }
+    assert string("match", "*cmdstat_module*", info)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_valkey_version(r: ValkeyTestClient) -> None:
     """
     test {test valkey version} {
         assert_equal [s valkey_version] [r test.serverversion]
     }
     """
-    # TODO: assert_equal s valkey_version r test.serverversion
+    assert s("valkey_version") == r.run("test.serverversion")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_long_double_conversions(r: ValkeyTestClient) -> None:
     """
     test {test long double conversions} {
@@ -75,10 +70,9 @@ def test_test_long_double_conversions(r: ValkeyTestClient) -> None:
     }
     """
     ld = r.run("test.ld_conversion")
-    # TODO: assert {[string match $ld "0.00000000000000001"]}
+    assert string("match", ld, "0.00000000000000001")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_unsigned_long_long_conversions(r: ValkeyTestClient) -> None:
     """
     test {test unsigned long long conversions} {
@@ -87,7 +81,7 @@ def test_test_unsigned_long_long_conversions(r: ValkeyTestClient) -> None:
     }
     """
     ret = r.run("test.ull_conversion")
-    # TODO: assert {[string match $ret "ok"]}
+    assert string("match", ret, "ok")
 
 
 def test_test_module_db_commands(r: ValkeyTestClient) -> None:
@@ -147,7 +141,6 @@ def test_test_module_keyexists(r: ValkeyTestClient) -> None:
     assert 0 == r.run("test.keyexists", "x")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_module_lru_api(r: ValkeyTestClient) -> None:
     """
     test {test module lru api} {
@@ -173,7 +166,7 @@ def test_test_module_lru_api(r: ValkeyTestClient) -> None:
     lru = r.run("test.getlru", "x")
     assert lru <= 1000
     was_set = r.run("test.setlru", "x", 100000)
-    # TODO: assert { $was_set == 1 }
+    assert was_set == 1
     idle = r.run("object", "idletime", "x")
     assert idle >= 100
     lru = r.run("test.getlru", "x")
@@ -182,7 +175,7 @@ def test_test_module_lru_api(r: ValkeyTestClient) -> None:
     lru = r.run("test.getlru", "x")
     assert lru == -1
     was_set = r.run("test.setlru", "x", 100000)
-    # TODO: assert { $was_set == 0 }
+    assert was_set == 0
 
 
 """
@@ -190,7 +183,6 @@ r config set maxmemory-policy allkeys-lru
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_module_lfu_api(r: ValkeyTestClient) -> None:
     """
     test {test module lfu api} {
@@ -216,7 +208,7 @@ def test_test_module_lfu_api(r: ValkeyTestClient) -> None:
     lfu = r.run("test.getlfu", "x")
     assert lfu >= 1
     was_set = r.run("test.setlfu", "x", 100)
-    # TODO: assert { $was_set == 1 }
+    assert was_set == 1
     freq = r.run("object", "freq", "x")
     assert freq <= 100
     lfu = r.run("test.getlfu", "x")
@@ -225,7 +217,7 @@ def test_test_module_lfu_api(r: ValkeyTestClient) -> None:
     lfu = r.run("test.getlfu", "x")
     assert lfu == -1
     was_set = r.run("test.setlfu", "x", 100)
-    # TODO: assert { $was_set == 0 }
+    assert was_set == 0
 
 
 """
@@ -245,7 +237,6 @@ proc parse_client_flags {flags} {
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_module_clientinfo_api(r: ValkeyTestClient) -> None:
     """
     test {test module clientinfo api} {
@@ -304,44 +295,42 @@ def test_test_module_clientinfo_api(r: ValkeyTestClient) -> None:
     """
     info = r.run("test.clientinfo")
     assert info["db"] == 9
-    # TODO: set flags parse_client_flags [dict get $info flags]
-    # TODO: if {$::tls} {
-    #       assert { "ssl" in $flags }
-    #   }
-    # TODO: assert { "authenticated" in $flags }
-    # TODO: assert { "ever_authenticated" in $flags }
-    # TODO: assert { "multi" ni $flags }
-    # TODO: assert { "tracking" ni $flags }
-    # TODO: assert { "readonly" ni $flags }
+    flags = parse_client_flags(info["flags"])
+    if_("$::tls", '            assert { "ssl" in $flags }\n        ')
+    assert_(' "authenticated" in $flags ')
+    assert_(' "ever_authenticated" in $flags ')
+    assert_(' "multi" ni $flags ')
+    assert_(' "tracking" ni $flags ')
+    assert_(' "readonly" ni $flags ')
     r.run("multi")
     r.run("test.clientinfo")
     info = r.run("exec")[0]
-    # TODO: set flags parse_client_flags [dict get $info flags]
-    # TODO: assert { "multi" in $flags }
-    # TODO: assert { "authenticated" in $flags }
-    # TODO: assert { "ever_authenticated" in $flags }
+    flags = parse_client_flags(info["flags"])
+    assert_(' "multi" in $flags ')
+    assert_(' "authenticated" in $flags ')
+    assert_(' "ever_authenticated" in $flags ')
     r.run("client", "tracking", "on")
     info = r.run("test.clientinfo")
-    # TODO: set flags parse_client_flags [dict get $info flags]
-    # TODO: assert { "tracking" in $flags }
-    # TODO: assert { "multi" ni $flags }
-    # TODO: assert { "authenticated" in $flags }
-    # TODO: assert { "ever_authenticated" in $flags }
+    flags = parse_client_flags(info["flags"])
+    assert_(' "tracking" in $flags ')
+    assert_(' "multi" ni $flags ')
+    assert_(' "authenticated" in $flags ')
+    assert_(' "ever_authenticated" in $flags ')
     r.run("CLIENT", "TRACKING", "off")
     r.run("readonly")
     info = r.run("test.clientinfo")
-    # TODO: set flags parse_client_flags [dict get $info flags]
-    # TODO: assert { "readonly" in $flags }
-    # TODO: assert { "tracking" ni $flags }
-    # TODO: assert { "multi" ni $flags }
-    # TODO: assert { "authenticated" in $flags }
-    # TODO: assert { "ever_authenticated" in $flags }
+    flags = parse_client_flags(info["flags"])
+    assert_(' "readonly" in $flags ')
+    assert_(' "tracking" ni $flags ')
+    assert_(' "multi" ni $flags ')
+    assert_(' "authenticated" in $flags ')
+    assert_(' "ever_authenticated" in $flags ')
     r.run("readwrite")
     info = r.run("test.clientinfo")
-    # TODO: set flags parse_client_flags [dict get $info flags]
-    # TODO: assert { "readonly" ni $flags }
-    # TODO: assert { "authenticated" in $flags }
-    # TODO: assert { "ever_authenticated" in $flags }
+    flags = parse_client_flags(info["flags"])
+    assert_(' "readonly" ni $flags ')
+    assert_(' "authenticated" in $flags ')
+    assert_(' "ever_authenticated" in $flags ')
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -362,7 +351,7 @@ def test_tracking_with_rm_call_sanity(r: ValkeyTestClient) -> None:
         $rd_trk close
     }
     """
-    # TODO: set rd_trk valkey_client
+    rd_trk = valkey_client()
     # TODO: $rd_trk HELLO 3
     # TODO: $rd_trk CLIENT TRACKING on
     r.run("MSET", "key1{t}", 1, "key2{t}", 1)
@@ -391,7 +380,7 @@ def test_tracking_with_rm_call_with_script(r: ValkeyTestClient) -> None:
         $rd_trk close
     }
     """
-    # TODO: set rd_trk valkey_client
+    rd_trk = valkey_client()
     # TODO: $rd_trk HELLO 3
     # TODO: $rd_trk CLIENT TRACKING on
     r.run("MSET", "key1{t}", 1, "key2{t}", 1)
@@ -457,7 +446,6 @@ def test_test_module_get_or_set_client_name_by_id_api(r: ValkeyTestClient) -> No
     assert "somebody" == r.run("client", "getname")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_module_getclientcert_api(r: ValkeyTestClient) -> None:
     """
     test {test module getclientcert api} {
@@ -471,14 +459,9 @@ def test_test_module_getclientcert_api(r: ValkeyTestClient) -> None:
     }
     """
     cert = r.run("test.getclientcert")
-    # TODO: if {$::tls} {
-    #       assert {$cert != ""}
-    #   } else {
-    #       assert {$cert == ""}
-    #   }
+    if_("$::tls", '            assert {$cert != ""}\n        ', "else", '            assert {$cert == ""}\n        ')
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_detached_thread_safe_cnotext(r: ValkeyTestClient) -> None:
     """
     test {test detached thread safe cnotext} {
@@ -487,7 +470,7 @@ def test_test_detached_thread_safe_cnotext(r: ValkeyTestClient) -> None:
     }
     """
     r.run("test.log_tsctx", "info", "Test message")
-    # TODO: verify_log_message 0 "*<misc> Test message*" 0
+    verify_log_message(0, "*<misc> Test message*", 0)
 
 
 def test_test_rm_call_client_info(r: ValkeyTestClient) -> None:
@@ -981,7 +964,6 @@ def test_rm_call_eval_stale_replica(r: ValkeyTestClient) -> None:
     assert r.run("config", "set", "replica-serve-stale-data", "yes") == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_rm_call_eval_failed_bgsave_prevents_writes(r: ValkeyTestClient) -> None:
     """
     test "rm_call EVAL - failed bgsave prevents writes" {
@@ -1031,12 +1013,12 @@ def test_rm_call_eval_failed_bgsave_prevents_writes(r: ValkeyTestClient) -> None
     } {OK}
     """
     r.run("config", "set", "rdb-key-save-delay", 10000000)
-    # TODO: populate 1000
+    populate(1000)
     r.run("set", "x", "x")
     r.run("bgsave")
-    # TODO: set pid1 get_child_pid 0
-    # TODO: catch {exec kill -9 $pid1}
-    # TODO: waitForBgsave r
+    pid1 = get_child_pid(0)
+    catch("exec kill -9 $pid1")
+    wait_for_bgsave("r")
     assert r.run("get", "x") == "x"
     with pytest.raises(Exception, match="MISCONF\\ .*"):
         r.run("set", "x", "y")
@@ -1052,7 +1034,7 @@ def test_rm_call_eval_failed_bgsave_prevents_writes(r: ValkeyTestClient) -> None
     )
     r.run("config", "set", "rdb-key-save-delay", 0)
     r.run("bgsave")
-    # TODO: waitForBgsave r
+    wait_for_bgsave("r")
     assert r.run("set", "x", "y") == "OK"
 
 
@@ -1173,7 +1155,6 @@ def test_test_silent_open_key(r: ValkeyTestClient) -> None:
     assert "0" == r.run("test.get_n_events")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.skipif("", reason="{[string match {*jemalloc*} [s mem_allocator]]}")
 def test_test_rm_call_with_large_arg_for_set_command(r: ValkeyTestClient) -> None:
     """
@@ -1186,8 +1167,8 @@ def test_test_rm_call_with_large_arg_for_set_command(r: ValkeyTestClient) -> Non
         assert {[r memory usage bar] < 42000}; # 42K to count for Jemalloc's additional memory overhead.
     }
     """
-    # TODO: r set foo string repeat A 100000
-    # TODO: r test.call_generic set bar string repeat A 33000
+    r.run("set", "foo", string("repeat", "A", 100000))
+    r.run("test.call_generic", "set", "bar", string("repeat", "A", 33000))
     assert r.run("memory", "usage", "bar") < 42000
 
 
@@ -1198,3 +1179,50 @@ def test_unload_the_module_misc(r: ValkeyTestClient) -> None:
     }
     """
     assert "OK" == r.run("module", "unload", "misc")
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def assert_(*args):
+    raise NotImplementedError("assert_")
+
+
+def catch(*args):
+    raise NotImplementedError("catch")
+
+
+def get_child_pid(*args):
+    raise NotImplementedError("get_child_pid")
+
+
+def if_(*args):
+    raise NotImplementedError("if_")
+
+
+def parse_client_flags(*args):
+    raise NotImplementedError("parse_client_flags")
+
+
+def populate(*args):
+    raise NotImplementedError("populate")
+
+
+def s(*args):
+    raise NotImplementedError("s")
+
+
+def string(*args):
+    raise NotImplementedError("string")
+
+
+def valkey_client(*args):
+    raise NotImplementedError("valkey_client")
+
+
+def verify_log_message(*args):
+    raise NotImplementedError("verify_log_message")
+
+
+def wait_for_bgsave(*args):
+    raise NotImplementedError("wait_for_bgsave")

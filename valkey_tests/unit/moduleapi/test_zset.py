@@ -1,4 +1,4 @@
-# ruff: noqa: RUF043
+# ruff: noqa: RUF043, ANN002, ANN201
 
 import pytest
 
@@ -78,7 +78,6 @@ def test_module_zset_incrby(r: ValkeyTestClient) -> None:
     assert "hello 100" == r.run("zrange", "k", 0, -1, "withscores")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_zset_rangebylex(r: ValkeyTestClient) -> None:
     """
     test {Module zset rangebylex} {
@@ -139,9 +138,7 @@ def test_module_zset_rangebylex(r: ValkeyTestClient) -> None:
     r.run("del", "k")
     r.run("config", "set", "zset-max-listpack-entries", 2)
     r.run("config", "set", "zset-max-listpack-value", 64)
-    # TODO: for {set i 0} {$i < 4} {incr i} {
-    #       r zadd k 0 "ele$i"
-    #   }
+    for_("set i 0", "$i < 4", "incr i", '            r zadd k 0 "ele$i"\n        ')
     assert "ele0 ele1 ele2 ele3" == r.run("zset.rangebylex", "k", "-", "+")
     assert "ele3 ele2 ele1 ele0" == r.run("zset.revrangebylex", "k", "-", "+")
     assert "ele1 ele2" == r.run("zset.rangebylex", "k", "(ele0", "(ele3")
@@ -149,16 +146,13 @@ def test_module_zset_rangebylex(r: ValkeyTestClient) -> None:
     r.run("del", "k")
     r.run("config", "set", "zset-max-listpack-entries", 128)
     r.run("config", "set", "zset-max-listpack-value", 64)
-    # TODO: for {set i 0} {$i < 4} {incr i} {
-    #       r zadd k 0 "ele$i"
-    #   }
+    for_("set i 0", "$i < 4", "incr i", '            r zadd k 0 "ele$i"\n        ')
     assert "ele0 ele1 ele2 ele3" == r.run("zset.rangebylex", "k", "-", "+")
     assert "ele3 ele2 ele1 ele0" == r.run("zset.revrangebylex", "k", "-", "+")
     assert "ele1 ele2" == r.run("zset.rangebylex", "k", "(ele0", "(ele3")
     assert "ele2 ele1" == r.run("zset.revrangebylex", "k", "(ele0", "(ele3")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_zset_members(r: ValkeyTestClient) -> None:
     """
     test {Module zset members} {
@@ -198,17 +192,13 @@ def test_module_zset_members(r: ValkeyTestClient) -> None:
     r.run("del", "k")
     r.run("config", "set", "zset-max-listpack-entries", 2)
     r.run("config", "set", "zset-max-listpack-value", 64)
-    # TODO: for {set i 0} {$i < 4} {incr i} {
-    #       r zadd k 0 "ele$i"
-    #   }
-    # TODO: assert_equal {ele0 ele1 ele2 ele3} lsort [r zset.members k]
+    for_("set i 0", "$i < 4", "incr i", '            r zadd k 0 "ele$i"\n        ')
+    assert "ele0 ele1 ele2 ele3" == lsort(r.run("zset.members", "k"))
     r.run("del", "k")
     r.run("config", "set", "zset-max-listpack-entries", 128)
     r.run("config", "set", "zset-max-listpack-value", 64)
-    # TODO: for {set i 0} {$i < 4} {incr i} {
-    #       r zadd k 0 "ele$i"
-    #   }
-    # TODO: assert_equal {ele0 ele1 ele2 ele3} lsort [r zset.members k]
+    for_("set i 0", "$i < 4", "incr i", '            r zadd k 0 "ele$i"\n        ')
+    assert "ele0 ele1 ele2 ele3" == lsort(r.run("zset.members", "k"))
 
 
 def test_unload_the_module_zset(r: ValkeyTestClient) -> None:
@@ -218,3 +208,14 @@ def test_unload_the_module_zset(r: ValkeyTestClient) -> None:
     }
     """
     assert "OK" == r.run("module", "unload", "zset")
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def for_(*args):
+    raise NotImplementedError("for_")
+
+
+def lsort(*args):
+    raise NotImplementedError("lsort")

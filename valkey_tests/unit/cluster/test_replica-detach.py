@@ -32,7 +32,7 @@ set number_of_shards 3
 
 
 """
-start_cluster number _of_shards number _of_shards {tags {external:skip cluster}} {
+start_cluster number_of_shards number_of_shards {tags {external:skip cluster}} {
     test "Cluster should start ok" {
         wait_for_cluster_state ok
     }

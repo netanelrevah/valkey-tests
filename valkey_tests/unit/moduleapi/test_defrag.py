@@ -1,4 +1,4 @@
-# ruff: noqa: F841
+# ruff: noqa: PLR2004, ANN002, ANN201
 import time
 
 import pytest
@@ -37,7 +37,6 @@ catch {r config set activedefrag yes} e
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.skipif("", reason='{[r config get activedefrag] eq "activedefrag yes"}')
 def test_module_defrag_simple_key_defrag_works(r: ValkeyTestClient) -> None:
     """
@@ -53,11 +52,10 @@ def test_module_defrag_simple_key_defrag_works(r: ValkeyTestClient) -> None:
     r.run("frag.create", "key1", 1, 1000, 0)
     time.sleep(2000 / 1000)
     info = r.run("info", "defragtest_stats")
-    # TODO: assert {[getInfoProperty $info defragtest_datatype_attempts] > 0}
-    # TODO: assert_equal 0 getInfoProperty $info defragtest_datatype_resumes
+    assert get_info_property(info, "defragtest_datatype_attempts") > 0
+    assert 0 == get_info_property(info, "defragtest_datatype_resumes")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.skipif("", reason='{[r config get activedefrag] eq "activedefrag yes"}')
 def test_module_defrag_late_defrag_with_cursor_works(r: ValkeyTestClient) -> None:
     """
@@ -80,11 +78,10 @@ def test_module_defrag_late_defrag_with_cursor_works(r: ValkeyTestClient) -> Non
     r.run("frag.create", "key2", 10000, 100, 1000)
     time.sleep(2000 / 1000)
     info = r.run("info", "defragtest_stats")
-    # TODO: assert {[getInfoProperty $info defragtest_datatype_resumes] > 10}
-    # TODO: assert_equal 0 getInfoProperty $info defragtest_datatype_wrong_cursor
+    assert get_info_property(info, "defragtest_datatype_resumes") > 10
+    assert 0 == get_info_property(info, "defragtest_datatype_wrong_cursor")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.skipif("", reason='{[r config get activedefrag] eq "activedefrag yes"}')
 def test_module_defrag_global_defrag_works(r: ValkeyTestClient) -> None:
     """
@@ -101,4 +98,11 @@ def test_module_defrag_global_defrag_works(r: ValkeyTestClient) -> None:
     r.run("frag.resetstats")
     time.sleep(2000 / 1000)
     info = r.run("info", "defragtest_stats")
-    # TODO: assert {[getInfoProperty $info defragtest_global_attempts] > 0}
+    assert get_info_property(info, "defragtest_global_attempts") > 0
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def get_info_property(*args):
+    raise NotImplementedError("get_info_property")

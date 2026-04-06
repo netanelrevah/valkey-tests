@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004
+# ruff: noqa: PLR2004, ANN002, ANN201
 
 import pytest
 
@@ -36,18 +36,18 @@ def test_spublish_or_ssubscribe_basics(r: ValkeyTestClient) -> None:
         $rd1 close
     }
     """
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: assert_equal {1} ssubscribe $rd1 {chan1}
-    # TODO: assert_equal {2} ssubscribe $rd1 {chan2}
+    rd1 = valkey_deferring_client()
+    assert "1" == ssubscribe(rd1, "chan1")
+    assert "2" == ssubscribe(rd1, "chan2")
     assert 1 == r.run("SPUBLISH", "chan1", "hello")
     assert 1 == r.run("SPUBLISH", "chan2", "world")
     # TODO: assert_equal {smessage chan1 hello} $rd1 read
     # TODO: assert_equal {smessage chan2 world} $rd1 read
-    # TODO: sunsubscribe rd1 {chan1}
+    sunsubscribe(rd1, "chan1")
     assert 0 == r.run("SPUBLISH", "chan1", "hello")
     assert 1 == r.run("SPUBLISH", "chan2", "world")
     # TODO: assert_equal {smessage chan2 world} $rd1 read
-    # TODO: sunsubscribe rd1 {chan2}
+    sunsubscribe(rd1, "chan2")
     assert 0 == r.run("SPUBLISH", "chan1", "hello")
     assert 0 == r.run("SPUBLISH", "chan2", "world")
     # TODO: $rd1 close
@@ -71,10 +71,10 @@ def test_spublish_or_ssubscribe_with_two_clients(r: ValkeyTestClient) -> None:
         $rd2 close
     }
     """
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: set rd2 valkey_deferring_client
-    # TODO: assert_equal {1} ssubscribe $rd1 {chan1}
-    # TODO: assert_equal {1} ssubscribe $rd2 {chan1}
+    rd1 = valkey_deferring_client()
+    rd2 = valkey_deferring_client()
+    assert "1" == ssubscribe(rd1, "chan1")
+    assert "1" == ssubscribe(rd2, "chan1")
     assert 2 == r.run("SPUBLISH", "chan1", "hello")
     # TODO: assert_equal {smessage chan1 hello} $rd1 read
     # TODO: assert_equal {smessage chan1 hello} $rd2 read
@@ -107,16 +107,18 @@ def test_spublish_or_ssubscribe_after_unsubscribe_without_arguments(r: ValkeyTes
         $rd1 close
     }
     """
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: assert_equal {1} ssubscribe $rd1 {chan1}
-    # TODO: assert_equal {2} ssubscribe $rd1 {chan2}
-    # TODO: assert_equal {3} ssubscribe $rd1 {chan3}
-    # TODO: sunsubscribe rd1
-    # TODO: wait_for_condition 50 100 {
-    #       [r spublish chan1 hello] eq 0
-    #   } else {
-    #       fail "unsubscribe did not take effect"
-    #   }
+    rd1 = valkey_deferring_client()
+    assert "1" == ssubscribe(rd1, "chan1")
+    assert "2" == ssubscribe(rd1, "chan2")
+    assert "3" == ssubscribe(rd1, "chan3")
+    sunsubscribe(rd1)
+    wait_for_condition(
+        50,
+        100,
+        "            [r spublish chan1 hello] eq 0\n        ",
+        "else",
+        '            fail "unsubscribe did not take effect"\n        ',
+    )
     assert 0 == r.run("SPUBLISH", "chan1", "hello")
     assert 0 == r.run("SPUBLISH", "chan2", "hello")
     assert 0 == r.run("SPUBLISH", "chan3", "hello")
@@ -136,8 +138,8 @@ def test_ssubscribe_to_one_channel_more_than_once(r: ValkeyTestClient) -> None:
         $rd1 close
     }
     """
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: assert_equal {1 1 1} ssubscribe $rd1 {chan1 chan1 chan1}
+    rd1 = valkey_deferring_client()
+    assert "1 1 1" == ssubscribe(rd1, "chan1 chan1 chan1")
     assert 1 == r.run("SPUBLISH", "chan1", "hello")
     # TODO: assert_equal {smessage chan1 hello} $rd1 read
     # TODO: $rd1 close
@@ -156,10 +158,10 @@ def test_sunsubscribe_from_non_subscribed_channels(r: ValkeyTestClient) -> None:
         $rd1 close
     }
     """
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: assert_equal {0} sunsubscribe $rd1 {foo}
-    # TODO: assert_equal {0} sunsubscribe $rd1 {bar}
-    # TODO: assert_equal {0} sunsubscribe $rd1 {quux}
+    rd1 = valkey_deferring_client()
+    assert "0" == sunsubscribe(rd1, "foo")
+    assert "0" == sunsubscribe(rd1, "bar")
+    assert "0" == sunsubscribe(rd1, "quux")
     # TODO: $rd1 close
 
 
@@ -190,10 +192,10 @@ def test_spublish_or_ssubscribe_with_two_clients_1(r: ValkeyTestClient) -> None:
         $rd2 close
     }
     """
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: set rd2 valkey_deferring_client
-    # TODO: assert_equal {1} ssubscribe $rd1 {chan1}
-    # TODO: assert_equal {1} ssubscribe $rd2 {chan1}
+    rd1 = valkey_deferring_client()
+    rd2 = valkey_deferring_client()
+    assert "1" == ssubscribe(rd1, "chan1")
+    assert "1" == ssubscribe(rd2, "chan1")
     assert 2 == r.run("SPUBLISH", "chan1", "hello")
     assert "chan1 2" == r.run("pubsub", "shardnumsub", "chan1")
     assert "chan1" == r.run("pubsub", "shardchannels")
@@ -221,10 +223,10 @@ def test_spublish_or_ssubscribe_with_publish_or_subscribe(r: ValkeyTestClient) -
         $rd2 close
     }
     """
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: set rd2 valkey_deferring_client
-    # TODO: assert_equal {1} ssubscribe $rd1 {chan1}
-    # TODO: assert_equal {1} subscribe $rd2 {chan1}
+    rd1 = valkey_deferring_client()
+    rd2 = valkey_deferring_client()
+    assert "1" == ssubscribe(rd1, "chan1")
+    assert "1" == subscribe(rd2, "chan1")
     assert 1 == r.run("SPUBLISH", "chan1", "hello")
     assert 1 == r.run("publish", "chan1", "hello")
     assert "chan1 1" == r.run("pubsub", "shardnumsub", "chan1")
@@ -262,19 +264,19 @@ def test_pubsubshard_with_client_reply_off(r: ValkeyTestClient) -> None:
         $rd close
     }
     """
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd hello 3
     # TODO: $rd read
     # TODO: $rd client reply off
     # TODO: $rd ping
-    # TODO: assert_equal {1} ssubscribe $rd channel
+    assert "1" == ssubscribe(rd, "channel")
     # TODO: $rd client reply off
     # TODO: $rd ping
     assert 1 == r.run("spublish", "channel", "hello")
     # TODO: assert_equal {smessage channel hello} $rd read
     # TODO: $rd client reply off
     # TODO: $rd ping
-    # TODO: assert_equal {0} sunsubscribe $rd channel
+    assert "0" == sunsubscribe(rd, "channel")
     # TODO: $rd close
 
 
@@ -308,3 +310,26 @@ start_server {tags {"pubsubshard external:skip"}} {
     }
 }
 """
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def ssubscribe(*args):
+    raise NotImplementedError("ssubscribe")
+
+
+def subscribe(*args):
+    raise NotImplementedError("subscribe")
+
+
+def sunsubscribe(*args):
+    raise NotImplementedError("sunsubscribe")
+
+
+def valkey_deferring_client(*args):
+    raise NotImplementedError("valkey_deferring_client")
+
+
+def wait_for_condition(*args):
+    raise NotImplementedError("wait_for_condition")

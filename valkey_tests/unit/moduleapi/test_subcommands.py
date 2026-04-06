@@ -1,5 +1,4 @@
-# ruff: noqa: F841
-
+# ruff: noqa: ANN002, ANN201
 from fnmatch import fnmatch
 
 import pytest
@@ -18,7 +17,6 @@ r module load testmodule
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_subcommands_via_command(r: ValkeyTestClient) -> None:
     """
     test "Module subcommands via COMMAND" {
@@ -38,15 +36,21 @@ def test_module_subcommands_via_command(r: ValkeyTestClient) -> None:
     }
     """
     command_reply = r.run("command", "info", "subcommands.bitarray")
-    # TODO: set first_cmd lindex $command_reply 0
-    # TODO: set subcmds_in_command lsort [lindex $first_cmd 9]
-    # TODO: assert_equal lindex $subcmds_in_command 0 {subcommands.bitarray|get -2 module 1 1 1 {} {} {{flags {RO access} begin_search {type index spec {index 1}} find_keys {type range spec {lastkey 0 keystep 1 limit 0}}}} {}}
-    # TODO: assert_equal lindex $subcmds_in_command 1 {subcommands.bitarray|set -2 module 1 1 1 {} {} {{flags {RW update} begin_search {type index spec {index 1}} find_keys {type range spec {lastkey 0 keystep 1 limit 0}}}} {}}
+    first_cmd = command_reply[0]
+    subcmds_in_command = lsort(first_cmd[9])
+    assert (
+        subcmds_in_command[0]
+        == "subcommands.bitarray|get -2 module 1 1 1 {} {} {{flags {RO access} begin_search {type index spec {index 1}} find_keys {type range spec {lastkey 0 keystep 1 limit 0}}}} {}"
+    )
+    assert (
+        subcmds_in_command[1]
+        == "subcommands.bitarray|set -2 module 1 1 1 {} {} {{flags {RW update} begin_search {type index spec {index 1}} find_keys {type range spec {lastkey 0 keystep 1 limit 0}}}} {}"
+    )
     docs_reply = r.run("command", "docs", "subcommands.bitarray")
-    # TODO: set docs dict create {*}[lindex $docs_reply 1]
-    # TODO: set subcmds_in_cmd_docs dict create {*}[dict get $docs subcommands]
-    # TODO: assert_equal dict get $subcmds_in_cmd_docs "subcommands.bitarray|get" {group module module subcommands}
-    # TODO: assert_equal dict get $subcmds_in_cmd_docs "subcommands.bitarray|set" {group module module subcommands}
+    docs = dict_("create", "*", docs_reply[1])
+    subcmds_in_cmd_docs = dict_("create", "*", docs["subcommands"])
+    assert subcmds_in_cmd_docs["subcommands.bitarray|get"] == "group module module subcommands"
+    assert subcmds_in_cmd_docs["subcommands.bitarray|set"] == "group module module subcommands"
 
 
 def test_module_pure_container_command_fails_on_arity_error(r: ValkeyTestClient) -> None:
@@ -94,7 +98,6 @@ def test_module_get_current_subcommand_fullname(r: ValkeyTestClient) -> None:
     assert r.run("subcommands.sub", "get_fullname") == "subcommands.sub|get_fullname"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_command_list_filterby_module(r: ValkeyTestClient) -> None:
     """
     test "COMMAND LIST FILTERBY MODULE" {
@@ -111,11 +114,11 @@ def test_command_list_filterby_module(r: ValkeyTestClient) -> None:
     """
     assert "" == r.run("command", "list", "filterby", "module", "non_existing")
     commands = r.run("command", "list", "filterby", "module", "subcommands")
-    # TODO: assert_not_equal lsearch $commands "subcommands.bitarray" -1
-    # TODO: assert_not_equal lsearch $commands "subcommands.bitarray|set" -1
-    # TODO: assert_not_equal lsearch $commands "subcommands.parent_get_fullname" -1
-    # TODO: assert_not_equal lsearch $commands "subcommands.sub|get_fullname" -1
-    # TODO: assert_equal lsearch $commands "set" -1
+    assert_not_equal(lsearch(commands, "subcommands.bitarray"), -1)
+    assert_not_equal(lsearch(commands, "subcommands.bitarray|set"), -1)
+    assert_not_equal(lsearch(commands, "subcommands.parent_get_fullname"), -1)
+    assert_not_equal(lsearch(commands, "subcommands.sub|get_fullname"), -1)
+    assert lsearch(commands, "set") == -1
 
 
 def test_unload_the_module_subcommands(r: ValkeyTestClient) -> None:
@@ -125,3 +128,22 @@ def test_unload_the_module_subcommands(r: ValkeyTestClient) -> None:
     }
     """
     assert "OK" == r.run("module", "unload", "subcommands")
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def assert_not_equal(*args):
+    raise NotImplementedError("assert_not_equal")
+
+
+def dict_(*args):
+    raise NotImplementedError("dict_")
+
+
+def lsearch(*args):
+    raise NotImplementedError("lsearch")
+
+
+def lsort(*args):
+    raise NotImplementedError("lsort")

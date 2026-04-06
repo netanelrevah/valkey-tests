@@ -1,5 +1,3 @@
-# ruff: noqa: F841
-
 from fnmatch import fnmatch
 
 import pytest
@@ -29,7 +27,6 @@ def test_module_eventloop_sendbytes(r: ValkeyTestClient) -> None:
     assert fnmatch(str(r.run("test.sendbytes", 2000000)), "OK")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_eventloop_iteration(r: ValkeyTestClient) -> None:
     """
     test "Module eventloop iteration" {
@@ -40,7 +37,7 @@ def test_module_eventloop_iteration(r: ValkeyTestClient) -> None:
     """
     iteration = r.run("test.iteration")
     next_iteration = r.run("test.iteration")
-    # TODO: assert {$next_iteration > $iteration}
+    assert next_iteration > iteration
 
 
 def test_module_eventloop_sanity(r: ValkeyTestClient) -> None:

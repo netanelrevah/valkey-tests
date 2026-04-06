@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, RUF043
+# ruff: noqa: PLR2004, F841, RUF043, ANN002, ANN201
 
 import pytest
 
@@ -88,19 +88,21 @@ def test_module_rdbloadsave_test_with_pipelining(r: ValkeyTestClient) -> None:
     r.run("config", "set", "loading-process-events-interval-bytes", 1024)
     r.run("config", "set", "key-load-delay", 50)
     r.run("flushdb")
-    # TODO: populate 3000 a 1024
+    populate(3000, "a", 1024)
     r.run("set", "x", 111)
     assert r.run("dbsize") == 3001
     assert "OK" == r.run("test.rdbsave", "blabla.rdb")
     r.run("flushdb")
     assert r.run("dbsize") == 0
-    # TODO: set rd1 valkey_deferring_client
+    rd1 = valkey_deferring_client()
     # TODO: $rd1 test.rdbload blabla.rdb
-    # TODO: wait_for_condition 50 100 {
-    #       [s loading] eq 1
-    #   } else {
-    #       fail "Redis did not start loading or loaded RDB too fast"
-    #   }
+    wait_for_condition(
+        50,
+        100,
+        "            [s loading] eq 1\n        ",
+        "else",
+        '            fail "Redis did not start loading or loaded RDB too fast"\n        ',
+    )
     # TODO: $rd1 get x
     # TODO: $rd1 dbsize
     # TODO: assert_equal OK $rd1 read
@@ -110,7 +112,6 @@ def test_module_rdbloadsave_test_with_pipelining(r: ValkeyTestClient) -> None:
     r.run("config", "set", "key-load-delay", 0)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_rdbloadsave_with_aof(r: ValkeyTestClient) -> None:
     """
     test "Module rdbloadsave with aof" {
@@ -151,26 +152,27 @@ def test_module_rdbloadsave_with_aof(r: ValkeyTestClient) -> None:
     r.run("config", "set", "save", "")
     r.run("config", "set", "appendonly", "yes")
     r.run("config", "set", "auto-aof-rewrite-percentage", 0)
-    # TODO: waitForBgrewriteaof r
+    wait_for_bgrewriteaof("r")
     r.run("set", "k", "v1")
     assert "OK" == r.run("test.rdbsave", "aoftest.rdb")
     r.run("set", "k", "v2")
     r.run("config", "set", "rdb-key-save-delay", 10000000)
     r.run("bgrewriteaof")
     assert "OK" == r.run("test.rdbload", "aoftest.rdb")
-    # TODO: wait_for_condition 50 100 {
-    #       [string match {*Killing*AOF*child*} [exec tail -20 < [srv 0 stdout]]]
-    #   } else {
-    #       fail "Can't find 'Killing AOF child' in recent log lines"
-    #   }
-    # TODO: assert_equal 1 s aof_enabled
+    wait_for_condition(
+        50,
+        100,
+        "            [string match {*Killing*AOF*child*} [exec tail -20 < [srv 0 stdout]]]\n        ",
+        "else",
+        "            fail \"Can't find 'Killing AOF child' in recent log lines\"\n        ",
+    )
+    assert 1 == s("aof_enabled")
     assert "v1" == r.run("get", "k")
     r.run("flushdb")
     r.run("config", "set", "rdb-key-save-delay", 0)
     r.run("config", "set", "appendonly", "no")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_rdbloadsave_with_bgsave(r: ValkeyTestClient) -> None:
     """
     test "Module rdbloadsave with bgsave" {
@@ -207,18 +209,19 @@ def test_module_rdbloadsave_with_bgsave(r: ValkeyTestClient) -> None:
     r.run("config", "set", "rdb-key-save-delay", 500000)
     r.run("bgsave")
     assert "OK" == r.run("test.rdbload", "bgsave.rdb")
-    # TODO: wait_for_condition 10 1000 {
-    #       [string match {*Background*saving*terminated*} [exec tail -20 < [srv 0 stdout]]]
-    #   } else {
-    #       fail "Can't find 'Background saving terminated' in recent log lines"
-    #   }
+    wait_for_condition(
+        10,
+        1000,
+        "            [string match {*Background*saving*terminated*} [exec tail -20 < [srv 0 stdout]]]\n        ",
+        "else",
+        "            fail \"Can't find 'Background saving terminated' in recent log lines\"\n        ",
+    )
     assert "v1" == r.run("get", "k")
     r.run("flushall")
-    # TODO: waitForBgsave r
+    wait_for_bgsave("r")
     r.run("config", "set", "rdb-key-save-delay", 0)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_rdbloadsave_calls_rdbsave_in_a_module_fork(r: ValkeyTestClient) -> None:
     """
     test "Module rdbloadsave calls rdbsave in a module fork" {
@@ -250,12 +253,14 @@ def test_module_rdbloadsave_calls_rdbsave_in_a_module_fork(r: ValkeyTestClient) 
     r.run("config", "set", "rdb-key-save-delay", 500000)
     r.run("set", "k", "v1")
     assert "OK" == r.run("test.rdbsave_fork", "rdbfork.rdb")
-    # TODO: assert_equal s module_fork_in_progress 1
-    # TODO: wait_for_condition 10 1000 {
-    #       [status r module_fork_in_progress] == "0"
-    #   } else {
-    #       fail "Module fork didn't finish"
-    #   }
+    assert s("module_fork_in_progress") == 1
+    wait_for_condition(
+        10,
+        1000,
+        '            [status r module_fork_in_progress] == "0"\n        ',
+        "else",
+        '            fail "Module fork didn\'t finish"\n        ',
+    )
     r.run("set", "k", "v2")
     assert "OK" == r.run("test.rdbload", "rdbfork.rdb")
     assert "v1" == r.run("get", "k")
@@ -269,3 +274,30 @@ def test_unload_the_module_rdbloadsave(r: ValkeyTestClient) -> None:
     }
     """
     assert "OK" == r.run("module", "unload", "rdbloadsave")
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def populate(*args):
+    raise NotImplementedError("populate")
+
+
+def s(*args):
+    raise NotImplementedError("s")
+
+
+def valkey_deferring_client(*args):
+    raise NotImplementedError("valkey_deferring_client")
+
+
+def wait_for_bgrewriteaof(*args):
+    raise NotImplementedError("wait_for_bgrewriteaof")
+
+
+def wait_for_bgsave(*args):
+    raise NotImplementedError("wait_for_bgsave")
+
+
+def wait_for_condition(*args):
+    raise NotImplementedError("wait_for_condition")

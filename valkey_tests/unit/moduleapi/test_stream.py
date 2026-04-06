@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841, RUF043
+# ruff: noqa: PLR2004, F841, RUF043, ANN002, ANN201
 
 import pytest
 
@@ -45,7 +45,7 @@ def test_module_stream_add_and_delete(r: ValkeyTestClient) -> None:
     r.run("del", "mystream")
     streamid1 = r.run("stream.add", "mystream", "item", 1, "value", "a")
     streamid2 = r.run("stream.add", "mystream", "item", 2, "value", "b")
-    # TODO: assert { [string match "*-*" $streamid1] }
+    assert string("match", "*-*", streamid1)
     items = r.run("XRANGE", "mystream", "-", "+")
     # TODO: assert_equal items "{$streamid1 {item 1 value a}} {$streamid2 {item 2 value b}}"
     assert "OK" == r.run("stream.delete", "mystream", streamid1)
@@ -94,22 +94,26 @@ def test_module_stream_add_unblocks_blocking_xread(r: ValkeyTestClient) -> None:
     }
     """
     r.run("del", "mystream")
-    # TODO: set rd1 valkey_deferring_client
+    rd1 = valkey_deferring_client()
     # TODO: $rd1 XREAD BLOCK 3000 STREAMS mystream
-    # TODO: wait_for_condition 50 100 {
-    #       [s 0 blocked_clients] eq {1}
-    #   } else {
-    #       fail "Client is not blocked"
-    #   }
+    wait_for_condition(
+        50,
+        100,
+        "            [s 0 blocked_clients] eq {1}\n        ",
+        "else",
+        '            fail "Client is not blocked"\n        ',
+    )
     id = r.run("stream.add", "mystream", "field", 1, "value", "a")
     # TODO: assert_equal "{mystream {{$id {field 1 value a}}}}" $rd1 read
-    # TODO: set rd2 valkey_deferring_client
+    rd2 = valkey_deferring_client()
     # TODO: $rd2 XREAD BLOCK 3000 STREAMS mystream
-    # TODO: wait_for_condition 50 100 {
-    #       [s 0 blocked_clients] eq {1}
-    #   } else {
-    #       fail "Client is not blocked"
-    #   }
+    wait_for_condition(
+        50,
+        100,
+        "            [s 0 blocked_clients] eq {1}\n        ",
+        "else",
+        '            fail "Client is not blocked"\n        ',
+    )
     id = r.run("stream.add", "mystream", "field", 2, "value", "b")
     # TODO: assert_equal "{mystream {{$id {field 2 value b}}}}" $rd2 read
 
@@ -163,13 +167,13 @@ def test_module_stream_iterator(r: ValkeyTestClient) -> None:
     assert result1 == expect1
     result_rev = r.run("stream.range", "mystream", "+", "-")
     expect_rev = r.run("xrevrange", "mystream", "+", "-")
-    # TODO: assert_equal result _rev expect _rev
+    assert result_rev == expect_rev
     result2 = r.run("stream.range", "mystream", "-", streamid1)
     # TODO: assert_equal result2 "{$streamid1 {item 1 value a}}"
-    # TODO: assert_equal result2 list [list $streamid1 {item 1 value a}]
+    assert result2 == list_(list_(streamid1, "item 1 value a"))
     result3 = r.run("stream.range", "mystream", streamid2, streamid2)
     # TODO: assert_equal result3 "{$streamid2 {item 2 value b}}"
-    # TODO: assert_equal result3 list [list $streamid2 {item 2 value b}]
+    assert result3 == list_(list_(streamid2, "item 2 value b"))
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -338,3 +342,22 @@ run_solo {stream-large-memory} {
     }
 }
 """
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def list_(*args):
+    raise NotImplementedError("list_")
+
+
+def string(*args):
+    raise NotImplementedError("string")
+
+
+def valkey_deferring_client(*args):
+    raise NotImplementedError("valkey_deferring_client")
+
+
+def wait_for_condition(*args):
+    raise NotImplementedError("wait_for_condition")

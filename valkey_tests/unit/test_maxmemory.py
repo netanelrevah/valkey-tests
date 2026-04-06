@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841, RUF043
+# ruff: noqa: PLR2004, F841, RUF043, ANN001, ANN002, ANN201
 import time
 
 import pytest
@@ -97,10 +97,9 @@ set clients {}
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["client_eviction"], [("false"), ("true")])
 def test_eviction_due_to_output_buffers_of_many_mget_clients_client_eviction_client_eviction(
-    r: ValkeyTestClient,
+    r: ValkeyTestClient, client_eviction
 ) -> None:
     """
     test "eviction due to output buffers of many MGET clients, client eviction: $client_eviction" {
@@ -128,23 +127,18 @@ def test_eviction_due_to_output_buffers_of_many_mget_clients_client_eviction_cli
         verify_eviction_test $client_eviction
     }
     """
-    # TODO: init_test client _eviction
-    # TODO: for {set j 0} {$j < 20} {incr j} {
-    #       set rr [valkey_deferring_client]
-    #       lappend clients $rr
-    #   }
-    # TODO: set t clock seconds
-    # TODO: while {![check_eviction_test $client_eviction] && [expr [clock seconds] - $t] < 20} {
-    #       foreach rr $clients {
-    #           if {[catch {
-    #               $rr mget 1
-    #               $rr flush
-    #           } err]} {
-    #               lremove clients $rr
-    #           }
-    #       }
-    #   }
-    # TODO: verify_eviction_test client _eviction
+    init_test(client_eviction)
+    j = 0
+    while j < 20:
+        rr = valkey_deferring_client()
+        lappend("clients", rr)
+        j += 1
+    t = clock("seconds")
+    while_(
+        "![check_eviction_test $client_eviction] && [expr [clock seconds] - $t] < 20",
+        "                foreach rr $clients {\n                    if {[catch {\n                        $rr mget 1\n                        $rr flush\n                    } err]} {\n                        lremove clients $rr\n                    }\n                }\n            ",
+    )
+    verify_eviction_test(client_eviction)
 
 
 """
@@ -161,7 +155,9 @@ set clients {}
 
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["client_eviction"], [("false"), ("true")])
-def test_eviction_due_to_input_buffer_of_a_dead_client_client_eviction_client_eviction(r: ValkeyTestClient) -> None:
+def test_eviction_due_to_input_buffer_of_a_dead_client_client_eviction_client_eviction(
+    r: ValkeyTestClient, client_eviction
+) -> None:
     """
     test "eviction due to input buffer of a dead client, client eviction: $client_eviction" {
         init_test $client_eviction
@@ -189,11 +185,12 @@ def test_eviction_due_to_input_buffer_of_a_dead_client_client_eviction_client_ev
         verify_eviction_test $client_eviction
     }
     """
-    # TODO: init_test client _eviction
-    # TODO: for {set j 0} {$j < 30} {incr j} {
-    #       set rr [valkey_deferring_client]
-    #       lappend clients $rr
-    #   }
+    init_test(client_eviction)
+    j = 0
+    while j < 30:
+        rr = valkey_deferring_client()
+        lappend("clients", rr)
+        j += 1
     # TODO: foreach rr clients {
     #       if {[catch {
     #           $rr write "*250\r\n"
@@ -208,7 +205,7 @@ def test_eviction_due_to_input_buffer_of_a_dead_client_client_eviction_client_ev
     #           lremove clients $rr
     #       }
     #   }
-    # TODO: verify_eviction_test client _eviction
+    verify_eviction_test(client_eviction)
 
 
 """
@@ -225,7 +222,9 @@ set clients {}
 
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["client_eviction"], [("false"), ("true")])
-def test_eviction_due_to_output_buffers_of_pubsub_client_eviction_client_eviction(r: ValkeyTestClient) -> None:
+def test_eviction_due_to_output_buffers_of_pubsub_client_eviction_client_eviction(
+    r: ValkeyTestClient, client_eviction
+) -> None:
     """
     test "eviction due to output buffers of pubsub, client eviction: $client_eviction" {
         init_test $client_eviction
@@ -254,24 +253,22 @@ def test_eviction_due_to_output_buffers_of_pubsub_client_eviction_client_evictio
         verify_eviction_test $client_eviction
     }
     """
-    # TODO: init_test client _eviction
-    # TODO: for {set j 0} {$j < 20} {incr j} {
-    #       set rr [valkey_client]
-    #       lappend clients $rr
-    #   }
+    init_test(client_eviction)
+    j = 0
+    while j < 20:
+        rr = valkey_client()
+        lappend("clients", rr)
+        j += 1
     # TODO: foreach rr clients {
     #       $rr subscribe bla
     #   }
-    # TODO: set bigstr string repeat x 100000
-    # TODO: set t clock seconds
-    # TODO: while {![check_eviction_test $client_eviction] && [expr [clock seconds] - $t] < 20} {
-    #       if {[catch { r publish bla $bigstr } err]} {
-    #           if $::verbose {
-    #               puts "Error publishing: $err"
-    #           }
-    #       }
-    #   }
-    # TODO: verify_eviction_test client _eviction
+    bigstr = string("repeat", "x", 100000)
+    t = clock("seconds")
+    while_(
+        "![check_eviction_test $client_eviction] && [expr [clock seconds] - $t] < 20",
+        '                if {[catch { r publish bla $bigstr } err]} {\n                    if $::verbose {\n                        puts "Error publishing: $err"\n                    }\n                }\n            ',
+    )
+    verify_eviction_test(client_eviction)
 
 
 """
@@ -283,7 +280,6 @@ foreach rr clients {
 pytestmark = [pytest.mark.maxmemory_external_skip]
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(
     ["policy"],
     [
@@ -296,7 +292,7 @@ pytestmark = [pytest.mark.maxmemory_external_skip]
         ("volatile-ttl"),
     ],
 )
-def test_maxmemory_is_the_memory_limit_honoured_policy_policy(r: ValkeyTestClient) -> None:
+def test_maxmemory_is_the_memory_limit_honoured_policy_policy(r: ValkeyTestClient, policy) -> None:
     """
     test "maxmemory - is the memory limit honoured? (policy $policy)" {
         # make sure to start with a blank instance
@@ -327,30 +323,26 @@ def test_maxmemory_is_the_memory_limit_honoured_policy_policy(r: ValkeyTestClien
     }
     """
     r.run("flushall")
-    # TODO: set used s used_memory
-    # TODO: set limit expr {$used+100*1024}
-    # TODO: r config set maxmemory limit
-    # TODO: r config set maxmemory-policy policy
+    used = s("used_memory")
+    limit = expr("$used+100*1024")
+    r.run("config", "set", "maxmemory", limit)
+    r.run("config", "set", "maxmemory-policy", policy)
     numkeys = 0
-    # TODO: while 1 {
-    #       r setex [randomKey] 10000 x
-    #       incr numkeys
-    #       if {[s used_memory]+4096 > $limit} {
-    #           assert {$numkeys > 10}
-    #           break
-    #       }
-    #   }
-    # TODO: for {set j 0} {$j < $numkeys} {incr j} {
-    #       r setex [randomKey] 10000 x
-    #   }
-    # TODO: assert {[s used_memory] < ($limit+4096)}
+    while_(
+        1,
+        "                r setex [randomKey] 10000 x\n                incr numkeys\n                if {[s used_memory]+4096 > $limit} {\n                    assert {$numkeys > 10}\n                    break\n                }\n            ",
+    )
+    j = 0
+    while j < numkeys:
+        r.run("setex", random_key(), 10000, "x")
+        j += 1
+    assert_("[s used_memory] < ($limit+4096)")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(
     ["policy"], [("allkeys-random"), ("allkeys-lru"), ("volatile-lru"), ("volatile-random"), ("volatile-ttl")]
 )
-def test_maxmemory_only_allkeys_should_remove_non_volatile_keys_policy(r: ValkeyTestClient) -> None:
+def test_maxmemory_only_allkeys_should_remove_non_volatile_keys_policy(r: ValkeyTestClient, policy) -> None:
     """
     test "maxmemory - only allkeys-* should remove non-volatile keys ($policy)" {
         # make sure to start with a blank instance
@@ -391,37 +383,29 @@ def test_maxmemory_only_allkeys_should_remove_non_volatile_keys_policy(r: Valkey
     }
     """
     r.run("flushall")
-    # TODO: set used s used_memory
-    # TODO: set limit expr {$used+100*1024}
-    # TODO: r config set maxmemory limit
-    # TODO: r config set maxmemory-policy policy
+    used = s("used_memory")
+    limit = expr("$used+100*1024")
+    r.run("config", "set", "maxmemory", limit)
+    r.run("config", "set", "maxmemory-policy", policy)
     numkeys = 0
-    # TODO: while 1 {
-    #       r set [randomKey] x
-    #       incr numkeys
-    #       if {[s used_memory]+4096 > $limit} {
-    #           assert {$numkeys > 10}
-    #           break
-    #       }
-    #   }
+    while_(
+        1,
+        "                r set [randomKey] x\n                incr numkeys\n                if {[s used_memory]+4096 > $limit} {\n                    assert {$numkeys > 10}\n                    break\n                }\n            ",
+    )
     err = 0
-    # TODO: for {set j 0} {$j < $numkeys} {incr j} {
-    #       if {[catch {r set [randomKey] x} e]} {
-    #           if {[string match {*used memory*} $e]} {
-    #               set err 1
-    #           }
-    #       }
-    #   }
-    # TODO: if {[string match allkeys-* $policy]} {
-    #       assert {[s used_memory] < ($limit+4096)}
-    #   } else {
-    #       assert {$err == 1}
-    #   }
+    j = 0
+    while j < numkeys:
+        if catch("r set [randomKey] x", "e"):
+            if_("[string match {*used memory*} $e]", "                        set err 1\n                    ")
+        j += 1
+    if string("match", "allkeys-*", policy):
+        assert_("[s used_memory] < ($limit+4096)")
+    else:
+        assert_("$err == 1")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["policy"], [("volatile-lru"), ("volatile-lfu"), ("volatile-random"), ("volatile-ttl")])
-def test_maxmemory_policy_policy_should_only_remove_volatile_keys(r: ValkeyTestClient) -> None:
+def test_maxmemory_policy_policy_should_only_remove_volatile_keys(r: ValkeyTestClient, policy) -> None:
     """
     test "maxmemory - policy $policy should only remove volatile keys." {
         # make sure to start with a blank instance
@@ -465,33 +449,25 @@ def test_maxmemory_policy_policy_should_only_remove_volatile_keys(r: ValkeyTestC
     }
     """
     r.run("flushall")
-    # TODO: set used s used_memory
-    # TODO: set limit expr {$used+400*1024}
-    # TODO: r config set maxmemory limit
-    # TODO: r config set maxmemory-policy policy
+    used = s("used_memory")
+    limit = expr("$used+400*1024")
+    r.run("config", "set", "maxmemory", limit)
+    r.run("config", "set", "maxmemory-policy", policy)
     numkeys = 0
-    # TODO: while 1 {
-    #       # Odd keys are volatile
-    #       # Even keys are non volatile
-    #       if {$numkeys % 2} {
-    #           r setex "key:$numkeys" 10000 x
-    #       } else {
-    #           r set "key:$numkeys" x
-    #       }
-    #       if {[s used_memory]+4096 > $limit} {
-    #           assert {$numkeys > 10}
-    #           break
-    #       }
-    #       incr numkeys
-    #   }
+    while_(
+        1,
+        '                # Odd keys are volatile\n                # Even keys are non volatile\n                if {$numkeys % 2} {\n                    r setex "key:$numkeys" 10000 x\n                } else {\n                    r set "key:$numkeys" x\n                }\n                if {[s used_memory]+4096 > $limit} {\n                    assert {$numkeys > 10}\n                    break\n                }\n                incr numkeys\n            ',
+    )
     err = 0
-    # TODO: for {set j 0} {$j < $numkeys} {incr j} {
-    #       catch {r setex "foo:$j" 10000 x}
-    #   }
-    # TODO: assert {[s used_memory] < ($limit+4096)}
-    # TODO: for {set j 0} {$j < $numkeys} {incr j 2} {
-    #       assert {[r exists "key:$j"]}
-    #   }
+    j = 0
+    while j < numkeys:
+        catch('r setex "foo:$j" 10000 x')
+        j += 1
+    assert_("[s used_memory] < ($limit+4096)")
+    j = 0
+    while j < numkeys:
+        assert_('[r exists "key:$j"]')
+        j += 2
 
 
 """
@@ -627,7 +603,6 @@ test_slave_buffers "replica buffer don't induce eviction" 100000 100 1 0
 pytestmark = [pytest.mark.maxmemory_external_skip]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_don_t_rehash_if_used_memory_exceeds_maxmemory_after_rehash(r: ValkeyTestClient) -> None:
     """
     test {Don't rehash if used memory exceeds maxmemory after rehash} {
@@ -669,26 +644,25 @@ def test_don_t_rehash_if_used_memory_exceeds_maxmemory_after_rehash(r: ValkeyTes
     r.run("config", "set", "latency-tracking", "no")
     r.run("config", "set", "maxmemory", 0)
     r.run("config", "set", "maxmemory-policy", "allkeys-random")
-    # TODO: set dbnum expr {$::singledb ? 0 : 9}
-    # TODO: populate 2000 a 1
-    # TODO: set table_size main_hash_table_size
-    # TODO: populate main_hash_table_keys_before_rehashing_starts b 1
-    # TODO: assert_equal table _size main_hash_table_size
-    # TODO: assert_no_match "*Hash table 1 stats*" r debug htstats $dbnum
+    dbnum = expr("$::singledb ? 0 : 9")
+    populate(2000, "a", 1)
+    table_size = main_hash_table_size()
+    populate(main_hash_table_keys_before_rehashing_starts(), "b", 1)
+    assert table_size == main_hash_table_size()
+    assert_no_match("*Hash table 1 stats*", r.run("debug", "htstats", dbnum))
     dbsize_before = r.run("dbsize")
-    # TODO: set used s used_memory
-    # TODO: set limit expr {$used + 10*1024}
-    # TODO: r config set maxmemory limit
+    used = s("used_memory")
+    limit = expr("$used + 10*1024")
+    r.run("config", "set", "maxmemory", limit)
     r.run("set", "k0", "v0")
     r.run("set", "k1", "v1")
     r.run("set", "k2", "v2")
-    # TODO: assert_equal r dbsize expr {$dbsize_before + 3}
+    assert r.run("dbsize") == expr("$dbsize_before + 3")
 
 
 pytestmark = [pytest.mark.maxmemory_external_skip_io_threads_skip]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_client_tracking_don_t_cause_eviction_feedback_loop(r: ValkeyTestClient) -> None:
     """
     test {client tracking don't cause eviction feedback loop} {
@@ -758,45 +732,41 @@ def test_client_tracking_don_t_cause_eviction_feedback_loop(r: ValkeyTestClient)
     r.run("config", "set", "maxmemory-policy", "allkeys-lru")
     r.run("config", "set", "maxmemory-eviction-tenacity", 100)
     clients = ""
-    # TODO: for {set j 0} {$j < 10} {incr j} {
-    #       lappend clients [valkey_deferring_client]
-    #   }
-    # TODO: foreach rd clients {
-    #       $rd HELLO 3
-    #       $rd read ; # Consume the HELLO reply
-    #       $rd CLIENT TRACKING on
-    #       $rd read ; # Consume the CLIENT reply
-    #   }
-    # TODO: for {set j 0} {$j < 300} {incr j} {
-    #       set key $j[string repeat x 1000]
-    #       r set $key x
-    #
-    #       # for each key, enable caching for this key
-    #       foreach rd $clients {
-    #           $rd get $key
-    #           $rd read
-    #       }
-    #   }
+    j = 0
+    while j < 10:
+        lappend("clients", valkey_deferring_client())
+        j += 1
+    foreach(
+        "rd",
+        clients,
+        "            $rd HELLO 3\n            $rd read ; # Consume the HELLO reply\n            $rd CLIENT TRACKING on\n            $rd read ; # Consume the CLIENT reply\n        ",
+    )
+    j = 0
+    while j < 300:
+        key = j
+        r.run("set", key, "x")
+        foreach("rd", clients, "                $rd get $key\n                $rd read\n            ")
+        j += 1
     time.sleep(1100 / 1000)
-    # TODO: set used s used_memory
-    # TODO: set limit expr {$used - 40000}
-    # TODO: r config set maxmemory limit
-    # TODO: set evicted s evicted_keys
-    # TODO: if {$::verbose} { puts "evicted: $evicted" }
-    # TODO: assert_range r dbsize 200 300
-    # TODO: assert_range evicted 10 50
-    # TODO: foreach rd clients {
-    #       $rd read ;# make sure we have some invalidation message waiting
-    #       $rd close
-    #   }
-    # TODO: set evicted s evicted_keys
-    # TODO: if {$::verbose} { puts "evicted: $evicted" }
+    used = s("used_memory")
+    limit = expr("$used - 40000")
+    r.run("config", "set", "maxmemory", limit)
+    evicted = s("evicted_keys")
+    if_("$::verbose", ' puts "evicted: $evicted" ')
+    assert_range(r.run("dbsize"), 200, 300)
+    assert_range(evicted, 10, 50)
+    foreach(
+        "rd",
+        clients,
+        "            $rd read ;# make sure we have some invalidation message waiting\n            $rd close\n        ",
+    )
+    evicted = s("evicted_keys")
+    if_("$::verbose", ' puts "evicted: $evicted" ')
 
 
 pytestmark = [pytest.mark.maxmemory, pytest.mark.external_skip]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_propagation_with_eviction(r: ValkeyTestClient) -> None:
     """
     test {propagation with eviction} {
@@ -836,31 +806,27 @@ def test_propagation_with_eviction(r: ValkeyTestClient) -> None:
         r config set maxmemory-policy noeviction
     }
     """
-    # TODO: set repl attach_to_replication_stream
+    repl = attach_to_replication_stream()
     r.run("set", "asdf1", 1)
     r.run("set", "asdf2", 2)
     r.run("set", "asdf3", 3)
     r.run("config", "set", "maxmemory-policy", "allkeys-lru")
     r.run("config", "set", "maxmemory", 1)
-    # TODO: wait_for_condition 5000 10 {
-    #       [r dbsize] eq 0
-    #   } else {
-    #       fail "Not all keys have been evicted"
-    #   }
+    wait_for_condition(
+        5000,
+        10,
+        "            [r dbsize] eq 0\n        ",
+        "else",
+        '            fail "Not all keys have been evicted"\n        ',
+    )
     r.run("config", "set", "maxmemory", 0)
     r.run("config", "set", "maxmemory-policy", "noeviction")
     r.run("set", "asdf4", 4)
-    # TODO: assert_replication_stream repl {
-    #       {select *}
-    #       {set asdf1 1}
-    #       {set asdf2 2}
-    #       {set asdf3 3}
-    #       {unlink asdf*}
-    #       {unlink asdf*}
-    #       {unlink asdf*}
-    #       {set asdf4 4}
-    #   }
-    # TODO: close_replication_stream repl
+    assert_replication_stream(
+        repl,
+        "            {select *}\n            {set asdf1 1}\n            {set asdf2 2}\n            {set asdf3 3}\n            {unlink asdf*}\n            {unlink asdf*}\n            {unlink asdf*}\n            {set asdf4 4}\n        ",
+    )
+    close_replication_stream(repl)
     r.run("config", "set", "maxmemory", 0)
     r.run("config", "set", "maxmemory-policy", "noeviction")
 
@@ -868,7 +834,6 @@ def test_propagation_with_eviction(r: ValkeyTestClient) -> None:
 pytestmark = [pytest.mark.maxmemory, pytest.mark.external_skip]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_propagation_with_eviction_in_multi(r: ValkeyTestClient) -> None:
     """
     test {propagation with eviction in MULTI} {
@@ -902,27 +867,25 @@ def test_propagation_with_eviction_in_multi(r: ValkeyTestClient) -> None:
         r config set maxmemory-policy noeviction
     }
     """
-    # TODO: set repl attach_to_replication_stream
+    repl = attach_to_replication_stream()
     r.run("config", "set", "maxmemory-policy", "allkeys-lru")
     r.run("multi")
     r.run("incr", "x")
     r.run("config", "set", "maxmemory", 1)
     r.run("incr", "x")
     assert r.run("exec") == "1 OK 2"
-    # TODO: wait_for_condition 5000 10 {
-    #       [r dbsize] eq 0
-    #   } else {
-    #       fail "Not all keys have been evicted"
-    #   }
-    # TODO: assert_replication_stream repl {
-    #       {multi}
-    #       {select *}
-    #       {incr x}
-    #       {incr x}
-    #       {exec}
-    #       {unlink x}
-    #   }
-    # TODO: close_replication_stream repl
+    wait_for_condition(
+        5000,
+        10,
+        "            [r dbsize] eq 0\n        ",
+        "else",
+        '            fail "Not all keys have been evicted"\n        ',
+    )
+    assert_replication_stream(
+        repl,
+        "            {multi}\n            {select *}\n            {incr x}\n            {incr x}\n            {exec}\n            {unlink x}\n        ",
+    )
+    close_replication_stream(repl)
     r.run("config", "set", "maxmemory", 0)
     r.run("config", "set", "maxmemory-policy", "noeviction")
 
@@ -992,3 +955,102 @@ def test_import_mode_should_forbid_eviction(r: ValkeyTestClient) -> None:
     assert r.run("client", "import-source", "off") == "OK"
     r.run("config", "set", "import-mode", "no")
     assert r.run("dbsize") == "0"
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def assert_(*args):
+    raise NotImplementedError("assert_")
+
+
+def assert_no_match(*args):
+    raise NotImplementedError("assert_no_match")
+
+
+def assert_range(*args):
+    raise NotImplementedError("assert_range")
+
+
+def assert_replication_stream(*args):
+    raise NotImplementedError("assert_replication_stream")
+
+
+def attach_to_replication_stream(*args):
+    raise NotImplementedError("attach_to_replication_stream")
+
+
+def catch(*args):
+    raise NotImplementedError("catch")
+
+
+def clock(*args):
+    raise NotImplementedError("clock")
+
+
+def close_replication_stream(*args):
+    raise NotImplementedError("close_replication_stream")
+
+
+def expr(*args):
+    raise NotImplementedError("expr")
+
+
+def foreach(*args):
+    raise NotImplementedError("foreach")
+
+
+def if_(*args):
+    raise NotImplementedError("if_")
+
+
+def init_test(*args):
+    raise NotImplementedError("init_test")
+
+
+def lappend(*args):
+    raise NotImplementedError("lappend")
+
+
+def main_hash_table_keys_before_rehashing_starts(*args):
+    raise NotImplementedError("main_hash_table_keys_before_rehashing_starts")
+
+
+def main_hash_table_size(*args):
+    raise NotImplementedError("main_hash_table_size")
+
+
+def populate(*args):
+    raise NotImplementedError("populate")
+
+
+def random_key(*args):
+    raise NotImplementedError("random_key")
+
+
+def s(*args):
+    raise NotImplementedError("s")
+
+
+def string(*args):
+    raise NotImplementedError("string")
+
+
+def valkey_client(*args):
+    raise NotImplementedError("valkey_client")
+
+
+def valkey_deferring_client(*args):
+    raise NotImplementedError("valkey_deferring_client")
+
+
+def verify_eviction_test(*args):
+    raise NotImplementedError("verify_eviction_test")
+
+
+def wait_for_condition(*args):
+    raise NotImplementedError("wait_for_condition")
+
+
+def while_(*args):
+    raise NotImplementedError("while_")

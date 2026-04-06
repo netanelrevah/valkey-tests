@@ -1,4 +1,4 @@
-# ruff: noqa: F841
+# ruff: noqa: ANN002, ANN201
 
 import pytest
 
@@ -16,7 +16,6 @@ r module load testmodule
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_command_introspection_via_command_info(r: ValkeyTestClient) -> None:
     """
     test "Module command introspection via COMMAND INFO" {
@@ -40,23 +39,17 @@ def test_module_command_introspection_via_command_info(r: ValkeyTestClient) -> N
     """
     redis_reply = r.run("command", "info", "xadd")[0]
     module_reply = r.run("command", "info", "cmdintrospection.xadd")[0]
-    # TODO: for {set i 1} {$i < [llength $redis_reply]} {incr i} {
-    #       if {$i == 2} {
-    #           # Remove the "module" flag
-    #           set mylist [lindex $module_reply $i]
-    #           set idx [lsearch $mylist "module"]
-    #           set mylist [lreplace $mylist $idx $idx]
-    #           lset module_reply $i $mylist
-    #       }
-    #       if {$i == 6} {
-    #           # Skip ACL categories
-    #           continue
-    #       }
-    #       assert_equal [lindex $redis_reply $i] [lindex $module_reply $i]
-    #   }
+    i = 1
+    while i < len(redis_reply):
+        if_(
+            "$i == 2",
+            '                # Remove the "module" flag\n                set mylist [lindex $module_reply $i]\n                set idx [lsearch $mylist "module"]\n                set mylist [lreplace $mylist $idx $idx]\n                lset module_reply $i $mylist\n            ',
+        )
+        if_("$i == 6", "                # Skip ACL categories\n                continue\n            ")
+        assert redis_reply[i] == module_reply[i]
+        i += 1
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_command_introspection_via_command_docs(r: ValkeyTestClient) -> None:
     """
     test "Module command introspection via COMMAND DOCS" {
@@ -73,15 +66,13 @@ def test_module_command_introspection_via_command_docs(r: ValkeyTestClient) -> N
         assert_equal $redis_reply $module_reply
     }
     """
-    # TODO: set redis_reply dict create {*}[lindex [r command docs xadd] 1]
-    # TODO: set module_reply dict create {*}[lindex [r command docs cmdintrospection.xadd] 1]
-    # TODO: dict unset redis_reply group
-    # TODO: dict unset module_reply group
-    # TODO: dict unset module_reply module
-    # TODO: if {$::log_req_res} {
-    #       dict unset redis_reply reply_schema
-    #   }
-    # TODO: assert_equal redis _reply module _reply
+    redis_reply = dict_("create", "*", r.run("command", "docs", "xadd")[1])
+    module_reply = dict_("create", "*", r.run("command", "docs", "cmdintrospection.xadd")[1])
+    dict_("unset", "redis_reply", "group")
+    dict_("unset", "module_reply", "group")
+    dict_("unset", "module_reply", "module")
+    if_("$::log_req_res", "            dict unset redis_reply reply_schema\n        ")
+    assert redis_reply == module_reply
 
 
 def test_unload_the_module_cmdintrospection(r: ValkeyTestClient) -> None:
@@ -91,3 +82,14 @@ def test_unload_the_module_cmdintrospection(r: ValkeyTestClient) -> None:
     }
     """
     assert "OK" == r.run("module", "unload", "cmdintrospection")
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def dict_(*args):
+    raise NotImplementedError("dict_")
+
+
+def if_(*args):
+    raise NotImplementedError("if_")

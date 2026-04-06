@@ -1,3 +1,5 @@
+# ruff: noqa: ANN002, ANN201
+
 import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
@@ -287,7 +289,6 @@ test {Filtering based on client id} {
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_onload_failure_will_handle_un_registration(r: ValkeyTestClient) -> None:
     """
     test {OnLoad failure will handle un-registration} {
@@ -298,8 +299,15 @@ def test_onload_failure_will_handle_un_registration(r: ValkeyTestClient) -> None
         assert_equal [r lrange mylist 0 -1] {elem1 @delme elem2}
     }
     """
-    # TODO: catch {r module load $testmodule log-key 0 noload}
+    catch("r module load $testmodule log-key 0 noload")
     r.run("set", "mykey", "@log")
     assert r.run("lrange", "log-key", 0, -1) == ""
     r.run("rpush", "mylist", "elem1", "@delme", "elem2")
     assert r.run("lrange", "mylist", 0, -1) == "elem1 @delme elem2"
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def catch(*args):
+    raise NotImplementedError("catch")

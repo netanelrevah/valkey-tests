@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004
+# ruff: noqa: PLR2004, F841, ANN002, ANN201
 
 import pytest
 
@@ -7,7 +7,6 @@ from tests.valkey_test_client import ValkeyTestClient
 pytestmark = [pytest.mark.lazyfree]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_unlink_can_reclaim_memory_in_background(r: ValkeyTestClient) -> None:
     """
     test "UNLINK can reclaim memory in background" {
@@ -32,26 +31,27 @@ def test_unlink_can_reclaim_memory_in_background(r: ValkeyTestClient) -> None:
         }
     }
     """
-    # TODO: wait_lazyfree_done r
-    # TODO: set orig_mem s used_memory
+    wait_lazyfree_done("r")
+    orig_mem = s("used_memory")
     args = ""
-    # TODO: for {set i 0} {$i < 100000} {incr i} {
-    #       lappend args $i
-    #   }
+    i = 0
+    while i < 100000:
+        lappend("args", i)
+        i += 1
     r.run("sadd", "myset", "*", args)
     assert r.run("scard", "myset") == 100000
-    # TODO: set peak_mem s used_memory
+    peak_mem = s("used_memory")
     assert r.run("unlink", "myset") == 1
-    # TODO: assert {$peak_mem > $orig_mem+1000000}
-    # TODO: wait_for_condition 50 100 {
-    #       [s used_memory] < $peak_mem &&
-    #       [s used_memory] < $orig_mem*2
-    #   } else {
-    #       fail "Memory is not reclaimed by UNLINK"
-    #   }
+    assert_("$peak_mem > $orig_mem+1000000")
+    wait_for_condition(
+        50,
+        100,
+        "            [s used_memory] < $peak_mem &&\n            [s used_memory] < $orig_mem*2\n        ",
+        "else",
+        '            fail "Memory is not reclaimed by UNLINK"\n        ',
+    )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_flushdb_async_can_reclaim_memory_in_background(r: ValkeyTestClient) -> None:
     """
     test "FLUSHDB ASYNC can reclaim memory in background" {
@@ -76,26 +76,27 @@ def test_flushdb_async_can_reclaim_memory_in_background(r: ValkeyTestClient) -> 
         }
     }
     """
-    # TODO: wait_lazyfree_done r
-    # TODO: set orig_mem s used_memory
+    wait_lazyfree_done("r")
+    orig_mem = s("used_memory")
     args = ""
-    # TODO: for {set i 0} {$i < 100000} {incr i} {
-    #       lappend args $i
-    #   }
+    i = 0
+    while i < 100000:
+        lappend("args", i)
+        i += 1
     r.run("sadd", "myset", "*", args)
     assert r.run("scard", "myset") == 100000
-    # TODO: set peak_mem s used_memory
+    peak_mem = s("used_memory")
     r.run("flushdb", "async")
-    # TODO: assert {$peak_mem > $orig_mem+1000000}
-    # TODO: wait_for_condition 50 100 {
-    #       [s used_memory] < $peak_mem &&
-    #       [s used_memory] < $orig_mem*2
-    #   } else {
-    #       fail "Memory is not reclaimed by FLUSHDB ASYNC"
-    #   }
+    assert_("$peak_mem > $orig_mem+1000000")
+    wait_for_condition(
+        50,
+        100,
+        "            [s used_memory] < $peak_mem &&\n            [s used_memory] < $orig_mem*2\n        ",
+        "else",
+        '            fail "Memory is not reclaimed by FLUSHDB ASYNC"\n        ',
+    )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_lazy_free_a_stream_with_all_types_of_metadata(r: ValkeyTestClient) -> None:
     """
     test "lazy free a stream with all types of metadata" {
@@ -130,31 +131,37 @@ def test_lazy_free_a_stream_with_all_types_of_metadata(r: ValkeyTestClient) -> N
         assert_equal [s lazyfreed_objects] 1
     } {} {needs:config-resetstat}
     """
-    # TODO: wait_for_condition 50 100 {
-    #       [s lazyfree_pending_objects] == 0
-    #   } else {
-    #       fail "lazyfree isn't done"
-    #   }
+    wait_for_condition(
+        50,
+        100,
+        "            [s lazyfree_pending_objects] == 0\n        ",
+        "else",
+        '            fail "lazyfree isn\'t done"\n        ',
+    )
     r.run("config", "resetstat")
     r.run("config", "set", "stream-node-max-entries", 5)
-    # TODO: for {set j 0} {$j < 1000} {incr j} {
-    #       if {rand() < 0.9} {
-    #           r xadd stream * foo $j
-    #       } else {
-    #           r xadd stream * bar $j
-    #       }
-    #   }
+    j = 0
+    while j < 1000:
+        if_(
+            "rand() < 0.9",
+            "                r xadd stream * foo $j\n            ",
+            "else",
+            "                r xadd stream * bar $j\n            ",
+        )
+        j += 1
     r.run("xgroup", "create", "stream", "mygroup", 0)
     records = r.run("xreadgroup", "GROUP", "mygroup", "Alice", "COUNT", 2, "STREAMS", "stream", ">")
     r.run("xdel", "stream", records[0][1][1][0])
     r.run("xack", "stream", "mygroup", records[0][1][0][0])
     r.run("unlink", "stream")
-    # TODO: wait_for_condition 50 100 {
-    #       [s lazyfree_pending_objects] == 0
-    #   } else {
-    #       fail "lazyfree isn't done"
-    #   }
-    # TODO: assert_equal s lazyfreed_objects 1
+    wait_for_condition(
+        50,
+        100,
+        "            [s lazyfree_pending_objects] == 0\n        ",
+        "else",
+        '            fail "lazyfree isn\'t done"\n        ',
+    )
+    assert s("lazyfreed_objects") == 1
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -181,9 +188,38 @@ def test_lazy_free_a_stream_with_deleted_cgroup(r: ValkeyTestClient) -> None:
     # TODO: r xgroup create s bla
     r.run("xgroup", "destroy", "s", "bla")
     r.run("unlink", "s")
-    # TODO: wait_for_condition 50 100 {
-    #       [s lazyfree_pending_objects] == 0
-    #   } else {
-    #       fail "lazyfree isn't done"
-    #   }
-    # TODO: assert_equal s lazyfreed_objects 0
+    wait_for_condition(
+        50,
+        100,
+        "            [s lazyfree_pending_objects] == 0\n        ",
+        "else",
+        '            fail "lazyfree isn\'t done"\n        ',
+    )
+    assert s("lazyfreed_objects") == 0
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def assert_(*args):
+    raise NotImplementedError("assert_")
+
+
+def if_(*args):
+    raise NotImplementedError("if_")
+
+
+def lappend(*args):
+    raise NotImplementedError("lappend")
+
+
+def s(*args):
+    raise NotImplementedError("s")
+
+
+def wait_for_condition(*args):
+    raise NotImplementedError("wait_for_condition")
+
+
+def wait_lazyfree_done(*args):
+    raise NotImplementedError("wait_lazyfree_done")

@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, RUF043
+# ruff: noqa: PLR2004, RUF043, ANN002, ANN201
 
 from fnmatch import fnmatch
 
@@ -2387,7 +2387,6 @@ def test_not_enough_good_replicas(r: ValkeyTestClient) -> None:
     r.run("config", "set", "min-replicas-to-write", 0)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_not_enough_good_replicas_state_change_during_long_script(r: ValkeyTestClient) -> None:
     """
     test "not enough good replicas state change during long script" {
@@ -2439,44 +2438,10 @@ def test_not_enough_good_replicas_state_change_during_long_script(r: ValkeyTestC
     r.run("set", "x", "pre-script value")
     r.run("config", "set", "min-replicas-to-write", 1)
     r.run("config", "set", "lua-time-limit", 10)
-    # TODO: start_server {tags {"external:skip"}} {
-    #       # add a replica and wait for the master to recognize it's online
-    #       r slaveof [srv -1 host] [srv -1 port]
-    #       wait_replica_online [srv -1 client]
-    #
-    #       # run a slow script that does one write, then waits for INFO to indicate
-    #       # that the replica dropped, and then runs another write
-    #       set rd [valkey_deferring_client -1]
-    #       $rd eval {
-    #           redis.call('set','x',"script value")
-    #           while true do
-    #               local info = redis.call('info','replication')
-    #               if (string.match(info, "connected_slaves:0")) then
-    #                   redis.call('set','x',info)
-    #                   break
-    #               end
-    #           end
-    #           return 1
-    #       } 1 x
-    #
-    #       # wait for the script to time out and yield
-    #       wait_for_condition 100 100 {
-    #           [catch {r -1 ping} e] == 1
-    #       } else {
-    #           fail "Can't wait for script to start running"
-    #       }
-    #       catch {r -1 ping} e
-    #       assert_match {BUSY*} $e
-    #
-    #       # cause the replica to disconnect (triggering the busy script to exit)
-    #       r slaveof no one
-    #
-    #       # make sure the script was able to write after the replica dropped
-    #       assert_equal [$rd read] 1
-    #       assert_match {*connected_slaves:0*} [r -1 get x]
-    #
-    #       $rd close
-    #   }
+    start_server(
+        'tags {"external:skip"}',
+        "            # add a replica and wait for the master to recognize it's online\n            r slaveof [srv -1 host] [srv -1 port]\n            wait_replica_online [srv -1 client]\n\n            # run a slow script that does one write, then waits for INFO to indicate\n            # that the replica dropped, and then runs another write\n            set rd [valkey_deferring_client -1]\n            $rd eval {\n                redis.call('set','x',\"script value\")\n                while true do\n                    local info = redis.call('info','replication')\n                    if (string.match(info, \"connected_slaves:0\")) then\n                        redis.call('set','x',info)\n                        break\n                    end\n                end\n                return 1\n            } 1 x\n\n            # wait for the script to time out and yield\n            wait_for_condition 100 100 {\n                [catch {r -1 ping} e] == 1\n            } else {\n                fail \"Can't wait for script to start running\"\n            }\n            catch {r -1 ping} e\n            assert_match {BUSY*} $e\n\n            # cause the replica to disconnect (triggering the busy script to exit)\n            r slaveof no one\n\n            # make sure the script was able to write after the replica dropped\n            assert_equal [$rd read] 1\n            assert_match {*connected_slaves:0*} [r -1 get x]\n\n            $rd close\n        ",
+    )
     r.run("config", "set", "min-replicas-to-write", 0)
     assert r.run("config", "set", "lua-time-limit", 5000) == "OK"
 
@@ -2600,7 +2565,6 @@ def test_reject_script_do_not_cause_a_lua_stack_leak(r: ValkeyTestClient) -> Non
 pytestmark = [pytest.mark.scripting]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_consistent_eval_error_reporting(r: ValkeyTestClient) -> None:
     """
     test "Consistent eval error reporting" {
@@ -2716,10 +2680,10 @@ def test_consistent_eval_error_reporting(r: ValkeyTestClient) -> None:
     r.run("config", "set", "maxmemory", 1)
     with pytest.raises(Exception, match="OOM\\ command\\ not\\ allowed\\ when\\ used\\ memory\\ >\\ 'maxmemory'.*"):
         r.run("eval", "return redis.call('set','x','y')", 1, "x")
-    # TODO: assert_equal errorrstat OOM r {count=1}
-    # TODO: assert_equal s total_error_replies {1}
-    # TODO: assert_match {calls=0*rejected_calls=1,failed_calls=0*} cmdrstat set r
-    # TODO: assert_match {calls=1*rejected_calls=0,failed_calls=1*} cmdrstat eval r
+    assert errorrstat("OOM", "r") == "count=1"
+    assert s("total_error_replies") == "1"
+    assert fnmatch(str(cmdrstat("set", "r")), "calls=0*rejected_calls=1,failed_calls=0*")
+    assert fnmatch(str(cmdrstat("eval", "r")), "calls=1*rejected_calls=0,failed_calls=1*")
     r.run("config", "resetstat")
     assert (
         r.run(
@@ -2730,27 +2694,27 @@ def test_consistent_eval_error_reporting(r: ValkeyTestClient) -> None:
         )
         == 1
     )
-    # TODO: assert_equal errorrstat ERR r {}
-    # TODO: assert_equal errorrstat OOM r {count=1}
-    # TODO: assert_equal s total_error_replies {1}
-    # TODO: assert_match {calls=0*rejected_calls=1,failed_calls=0*} cmdrstat set r
-    # TODO: assert_match {calls=1*rejected_calls=0,failed_calls=0*} cmdrstat eval r
+    assert errorrstat("ERR", "r") == ""
+    assert errorrstat("OOM", "r") == "count=1"
+    assert s("total_error_replies") == "1"
+    assert fnmatch(str(cmdrstat("set", "r")), "calls=0*rejected_calls=1,failed_calls=0*")
+    assert fnmatch(str(cmdrstat("eval", "r")), "calls=1*rejected_calls=0,failed_calls=0*")
     r.run("config", "resetstat")
     with pytest.raises(Exception, match="OOM\\ command\\ not\\ allowed\\ when\\ used\\ memory\\ >\\ 'maxmemory'\\."):
         r.run("eval", " return redis.pcall('set','x','y') ", 1, "x")
-    # TODO: assert_equal errorrstat ERR r {}
-    # TODO: assert_equal errorrstat OOM r {count=1}
-    # TODO: assert_equal s total_error_replies {1}
-    # TODO: assert_match {calls=0*rejected_calls=1,failed_calls=0*} cmdrstat set r
-    # TODO: assert_match {calls=1*rejected_calls=0,failed_calls=1*} cmdrstat eval r
+    assert errorrstat("ERR", "r") == ""
+    assert errorrstat("OOM", "r") == "count=1"
+    assert s("total_error_replies") == "1"
+    assert fnmatch(str(cmdrstat("set", "r")), "calls=0*rejected_calls=1,failed_calls=0*")
+    assert fnmatch(str(cmdrstat("eval", "r")), "calls=1*rejected_calls=0,failed_calls=1*")
     r.run("config", "set", "maxmemory", 0)
     r.run("config", "resetstat")
     with pytest.raises(Exception, match="ERR\\ DB\\ index\\ is\\ out\\ of\\ range.*"):
         r.run("eval", "return redis.call('select',99)", 0)
-    # TODO: assert_equal errorrstat ERR r {count=1}
-    # TODO: assert_equal s total_error_replies {1}
-    # TODO: assert_match {calls=1*rejected_calls=0,failed_calls=1*} cmdrstat select r
-    # TODO: assert_match {calls=1*rejected_calls=0,failed_calls=1*} cmdrstat eval r
+    assert errorrstat("ERR", "r") == "count=1"
+    assert s("total_error_replies") == "1"
+    assert fnmatch(str(cmdrstat("select", "r")), "calls=1*rejected_calls=0,failed_calls=1*")
+    assert fnmatch(str(cmdrstat("eval", "r")), "calls=1*rejected_calls=0,failed_calls=1*")
     r.run("config", "resetstat")
     assert (
         r.run(
@@ -2760,19 +2724,19 @@ def test_consistent_eval_error_reporting(r: ValkeyTestClient) -> None:
         )
         == 1
     )
-    # TODO: assert_equal errorrstat ERR r {count=1}
-    # TODO: assert_equal s total_error_replies {1}
-    # TODO: assert_match {calls=1*rejected_calls=0,failed_calls=1*} cmdrstat select r
-    # TODO: assert_match {calls=1*rejected_calls=0,failed_calls=0*} cmdrstat eval r
+    assert errorrstat("ERR", "r") == "count=1"
+    assert s("total_error_replies") == "1"
+    assert fnmatch(str(cmdrstat("select", "r")), "calls=1*rejected_calls=0,failed_calls=1*")
+    assert fnmatch(str(cmdrstat("eval", "r")), "calls=1*rejected_calls=0,failed_calls=0*")
     r.run("config", "resetstat")
     with pytest.raises(
         Exception, match="ERR\\ Write\\ commands\\ are\\ not\\ allowed\\ from\\ read\\-only\\ scripts.*"
     ):
         r.run("eval_ro", "return redis.call('set','x','y')", 1, "x")
-    # TODO: assert_equal errorrstat ERR r {count=1}
-    # TODO: assert_equal s total_error_replies {1}
-    # TODO: assert_match {calls=0*rejected_calls=1,failed_calls=0*} cmdrstat set r
-    # TODO: assert_match {calls=1*rejected_calls=0,failed_calls=1*} cmdrstat eval_ro r
+    assert errorrstat("ERR", "r") == "count=1"
+    assert s("total_error_replies") == "1"
+    assert fnmatch(str(cmdrstat("set", "r")), "calls=0*rejected_calls=1,failed_calls=0*")
+    assert fnmatch(str(cmdrstat("eval_ro", "r")), "calls=1*rejected_calls=0,failed_calls=1*")
     r.run("config", "resetstat")
     assert (
         r.run(
@@ -2783,10 +2747,10 @@ def test_consistent_eval_error_reporting(r: ValkeyTestClient) -> None:
         )
         == 1
     )
-    # TODO: assert_equal errorrstat ERR r {count=1}
-    # TODO: assert_equal s total_error_replies {1}
-    # TODO: assert_match {calls=0*rejected_calls=1,failed_calls=0*} cmdrstat set r
-    # TODO: assert_match {calls=1*rejected_calls=0,failed_calls=0*} cmdrstat eval_ro r
+    assert errorrstat("ERR", "r") == "count=1"
+    assert s("total_error_replies") == "1"
+    assert fnmatch(str(cmdrstat("set", "r")), "calls=0*rejected_calls=1,failed_calls=0*")
+    assert fnmatch(str(cmdrstat("eval_ro", "r")), "calls=1*rejected_calls=0,failed_calls=0*")
     r.run("config", "resetstat")
     r.run("set", "Sicily", 1)
     with pytest.raises(
@@ -2798,13 +2762,12 @@ def test_consistent_eval_error_reporting(r: ValkeyTestClient) -> None:
             1,
             "x",
         )
-    # TODO: assert_equal errorrstat WRONGTYPE r {count=1}
-    # TODO: assert_equal s total_error_replies {1}
-    # TODO: assert_match {calls=1*rejected_calls=0,failed_calls=1*} cmdrstat geoadd r
-    # TODO: assert_match {calls=1*rejected_calls=0,failed_calls=1*} cmdrstat eval r
+    assert errorrstat("WRONGTYPE", "r") == "count=1"
+    assert s("total_error_replies") == "1"
+    assert fnmatch(str(cmdrstat("geoadd", "r")), "calls=1*rejected_calls=0,failed_calls=1*")
+    assert fnmatch(str(cmdrstat("eval", "r")), "calls=1*rejected_calls=0,failed_calls=1*")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_lua_redis_error_reply_api(r: ValkeyTestClient) -> None:
     """
     test "LUA redis.error_reply API" {
@@ -2818,10 +2781,9 @@ def test_lua_redis_error_reply_api(r: ValkeyTestClient) -> None:
     r.run("config", "resetstat")
     with pytest.raises(Exception, match="MY_ERR_CODE\\ custom\\ msg"):
         r.run("eval", 'return redis.error_reply("MY_ERR_CODE custom msg")', 0)
-    # TODO: assert_equal errorrstat MY_ERR_CODE r {count=1}
+    assert errorrstat("MY_ERR_CODE", "r") == "count=1"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_lua_redis_error_reply_api_with_empty_string(r: ValkeyTestClient) -> None:
     """
     test "LUA redis.error_reply API with empty string" {
@@ -2835,10 +2797,9 @@ def test_lua_redis_error_reply_api_with_empty_string(r: ValkeyTestClient) -> Non
     r.run("config", "resetstat")
     with pytest.raises(Exception, match="ERR"):
         r.run("eval", 'return redis.error_reply("")', 0)
-    # TODO: assert_equal errorrstat ERR r {count=1}
+    assert errorrstat("ERR", "r") == "count=1"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_lua_redis_status_reply_api(r: ValkeyTestClient) -> None:
     """
     test "LUA redis.status_reply API" {
@@ -2855,7 +2816,7 @@ def test_lua_redis_status_reply_api(r: ValkeyTestClient) -> None:
     r.run("readraw", 1)
     assert r.run("eval", 'return redis.status_reply("MY_OK_CODE custom msg")', 0) == "+MY_OK_CODE custom msg"
     r.run("readraw", 0)
-    # TODO: assert_equal errorrstat MY_ERR_CODE r {}
+    assert errorrstat("MY_ERR_CODE", "r") == ""
 
 
 def test_lua_test_pcall(r: ValkeyTestClient) -> None:
@@ -2918,7 +2879,6 @@ def test_lua_test_pcall_with_non_string_or_integer_arg(r: ValkeyTestClient) -> N
     assert r.run("eval", '                return redis.call("ping", "asdf")            ', 0) == "asdf"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_lua_test_trim_string_as_expected(r: ValkeyTestClient) -> None:
     """
     test "LUA test trim string as expected" {
@@ -2947,28 +2907,12 @@ def test_lua_test_trim_string_as_expected(r: ValkeyTestClient) -> None:
         }
     }
     """
-    # TODO: if {[string match {*jemalloc*} [s mem_allocator]]} {
-    #       # test that when using LUA cache mechanism, if there is free space in the argv array, the string is trimmed.
-    #       r set foo [string repeat "a" 45]
-    #       set expected_memory [r memory usage foo]
-    #
-    #       # Jemalloc will allocate for the requested 63 bytes, 80 bytes.
-    #       # We can't test for larger sizes because LUA_CMD_OBJCACHE_MAX_LEN is 64.
-    #       # This value will be recycled to be used in the next argument.
-    #       # We use SETNX to avoid saving the string which will prevent us to reuse it in the next command.
-    #       r eval {
-    #           return redis.call("SETNX", "foo", string.rep("a", 63))
-    #       } 0
-    #
-    #       # Jemalloc will allocate for the request 45 bytes, 56 bytes.
-    #       # we can't test for smaller sizes because OBJ_ENCODING_EMBSTR_SIZE_LIMIT is 44 where no trim is done.
-    #       r eval {
-    #           return redis.call("SET", "foo", string.rep("a", 45))
-    #       } 0
-    #
-    #       # Assert the string has been trimmed and the 80 bytes from the previous alloc were not kept.
-    #       assert { [r memory usage foo] <= $expected_memory};
-    #   }
+    if string("match", "*jemalloc*", s("mem_allocator")):
+        r.run("set", "foo", string("repeat", "a", 45))
+        expected_memory = r.run("memory", "usage", "foo")
+        r.run("eval", '                return redis.call("SETNX", "foo", string.rep("a", 63))\n            ', 0)
+        r.run("eval", '                return redis.call("SET", "foo", string.rep("a", 45))\n            ', 0)
+        assert r.run("memory", "usage", "foo") <= expected_memory
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -3010,7 +2954,6 @@ def test_eval_explicit_error_call_handling(r: ValkeyTestClient) -> None:
         r.run("eval", "error({})", 0)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_eval_select_inside_script_affects_subsequent_commands_in_same_script(r: ValkeyTestClient) -> None:
     """
     test {EVAL - SELECT inside script affects subsequent commands in same script} {
@@ -3050,13 +2993,12 @@ def test_eval_select_inside_script_affects_subsequent_commands_in_same_script(r:
     r.run("select", 0)
     r.run("del", "testkey")
     r.run("set", "testkey", "db0_value")
-    # TODO: set result run_script {
-    #               local db0_val = server.call('get', 'testkey')
-    #               server.call('select', '1')
-    #               server.call('set', 'testkey', 'db1_value')
-    #               return server.call('get', 'testkey')
-    #           } 1 testkey
-    # TODO: assert_equal "db1_value" result
+    result = run_script(
+        "            local db0_val = server.call('get', 'testkey')            server.call('select', '1')            server.call('set', 'testkey', 'db1_value')            return server.call('get', 'testkey')        ",
+        1,
+        "testkey",
+    )
+    assert "db1_value" == result
     assert "db0_value" == r.run("get", "testkey")
     r.run("select", 1)
     assert "db1_value" == r.run("get", "testkey")
@@ -3120,3 +3062,30 @@ def test_stop_the_non_dirty_scripts_when_an_oom_occurs_midway_through_execution(
         )
     assert "" == r.run("get", "foo")
     r.run("config", "set", "maxmemory", 0)
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def cmdrstat(*args):
+    raise NotImplementedError("cmdrstat")
+
+
+def errorrstat(*args):
+    raise NotImplementedError("errorrstat")
+
+
+def run_script(*args):
+    raise NotImplementedError("run_script")
+
+
+def s(*args):
+    raise NotImplementedError("s")
+
+
+def start_server(*args):
+    raise NotImplementedError("start_server")
+
+
+def string(*args):
+    raise NotImplementedError("string")

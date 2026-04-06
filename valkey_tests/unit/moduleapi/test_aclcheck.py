@@ -1,5 +1,4 @@
-# ruff: noqa: PLR2004, RUF043
-
+# ruff: noqa: PLR2004, RUF043, ANN002, ANN201
 from fnmatch import fnmatch
 
 import pytest
@@ -596,11 +595,17 @@ def test_test_permission_compaction_and_simplification_for_categories_added_by_a
 pytestmark = [pytest.mark.modules_acl]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_module_load_fails_if_exceeds_the_maximum_number_of_adding_acl_categories(r: ValkeyTestClient) -> None:
     """
     test {test module load fails if exceeds the maximum number of adding acl categories} {
         assert_error {ERR Error loading the extension. Please check the server logs.} {r module load $testmodule 1}
     }
     """
-    # TODO: assert_error {ERR Error loading the extension. Please check the server logs.} {r module load $testmodule 1}
+    assert_error("ERR Error loading the extension. Please check the server logs.", "r module load $testmodule 1")
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def assert_error(*args):
+    raise NotImplementedError("assert_error")

@@ -1,3 +1,5 @@
+# ruff: noqa: ANN002, ANN201
+
 import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
@@ -14,7 +16,6 @@ r module load testmodule
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_hash_set(r: ValkeyTestClient) -> None:
     """
     test {Module hash set} {
@@ -29,8 +30,8 @@ def test_module_hash_set(r: ValkeyTestClient) -> None:
     }
     """
     r.run("del", "k")
-    # TODO: set status catch {r hash.set_stringref k f hello} errmsg
-    # TODO: assert {$status == 1}
+    status = catch("r hash.set_stringref k f hello", "errmsg")
+    assert status == 1
     r.run("hset", "k", "f", "hello1")
     assert "0" == r.run("hash.has_stringref", "k", "f")
     r.run("hash.set_stringref", "k", "f", "hello1")
@@ -45,3 +46,10 @@ def test_unload_the_module_hash(r: ValkeyTestClient) -> None:
     }
     """
     assert "OK" == r.run("module", "unload", "hash.stringref")
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def catch(*args):
+    raise NotImplementedError("catch")

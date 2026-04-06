@@ -1,3 +1,5 @@
+# ruff: noqa: F841, ANN002, ANN201
+
 import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
@@ -61,30 +63,29 @@ def test_blocked_clients_time_tracking_check_blocked_command_that_uses_redismodu
     """
     r.run("slowlog", "reset")
     r.run("config", "set", "slowlog-log-slower-than", 200000)
-    # TODO: if {!$::no_latency} {
-    #       assert_equal [r slowlog len] 0
-    #   }
+    if_("!$::no_latency", "            assert_equal [r slowlog len] 0\n        ")
     r.run("block.debug", 0, 10000)
-    # TODO: if {!$::no_latency} {
-    #       assert_equal [r slowlog len] 0
-    #   }
+    if_("!$::no_latency", "            assert_equal [r slowlog len] 0\n        ")
     r.run("config", "resetstat")
     r.run("config", "set", "latency-tracking", "yes")
     r.run("config", "set", "latency-tracking-info-percentiles", "50.0")
     r.run("block.debug", 200, 10000)
-    # TODO: if {!$::no_latency} {
-    #       assert_equal [r slowlog len] 1
-    #   }
-    # TODO: set cmdstatline cmdrstat block.debug r
-    # TODO: set latencystatline_debug latency_percentiles_usec block.debug
-    # TODO: regexp "calls=1,usec=(.*?),usec_per_call=(.*?),rejected_calls=0,failed_calls=0" cmdstatline -> usec usec_per_call
-    # TODO: regexp "p50=(.+\..+)" latencystatline _debug -> p50
-    # TODO: assert {$usec >= 100000}
-    # TODO: assert {$usec_per_call >= 100000}
-    # TODO: assert {$p50 >= 100000}
+    if_("!$::no_latency", "            assert_equal [r slowlog len] 1\n        ")
+    cmdstatline = cmdrstat("block.debug", "r")
+    latencystatline_debug = latency_percentiles_usec("block.debug")
+    regexp(
+        "calls=1,usec=(.*?),usec_per_call=(.*?),rejected_calls=0,failed_calls=0",
+        cmdstatline,
+        "->",
+        "usec",
+        "usec_per_call",
+    )
+    # TODO: regexp "p50=(.+\..+)" latencystatline_debug -> p50
+    assert_("$usec >= 100000")
+    assert_("$usec_per_call >= 100000")
+    assert_("$p50 >= 100000")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_blocked_clients_time_tracking_check_blocked_command_that_uses_redismodule_blockedclientmeasuretimestart_is_tracking_background_time_even_in_timeout(
     r: ValkeyTestClient,
 ) -> None:
@@ -114,25 +115,20 @@ def test_blocked_clients_time_tracking_check_blocked_command_that_uses_redismodu
     """
     r.run("slowlog", "reset")
     r.run("config", "set", "slowlog-log-slower-than", 200000)
-    # TODO: if {!$::no_latency} {
-    #       assert_equal [r slowlog len] 0
-    #   }
+    if_("!$::no_latency", "            assert_equal [r slowlog len] 0\n        ")
     r.run("block.debug", 0, 20000)
-    # TODO: if {!$::no_latency} {
-    #       assert_equal [r slowlog len] 0
-    #   }
+    if_("!$::no_latency", "            assert_equal [r slowlog len] 0\n        ")
     r.run("config", "resetstat")
     r.run("block.debug", 20000, 500)
-    # TODO: if {!$::no_latency} {
-    #       assert_equal [r slowlog len] 1
-    #   }
-    # TODO: set cmdstatline cmdrstat block.debug r
-    # TODO: regexp "calls=1,usec=(.*?),usec_per_call=(.*?),rejected_calls=0,failed_calls=0" cmdstatline usec usec_per_call
-    # TODO: assert {$usec >= 250000}
-    # TODO: assert {$usec_per_call >= 250000}
+    if_("!$::no_latency", "            assert_equal [r slowlog len] 1\n        ")
+    cmdstatline = cmdrstat("block.debug", "r")
+    regexp(
+        "calls=1,usec=(.*?),usec_per_call=(.*?),rejected_calls=0,failed_calls=0", cmdstatline, "usec", "usec_per_call"
+    )
+    assert_("$usec >= 250000")
+    assert_("$usec_per_call >= 250000")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_blocked_clients_time_tracking_check_blocked_command_with_multiple_calls_redismodule_blockedclientmeasuretimestart_is_tracking_the_total_background_time(
     r: ValkeyTestClient,
 ) -> None:
@@ -161,25 +157,20 @@ def test_blocked_clients_time_tracking_check_blocked_command_with_multiple_calls
     """
     r.run("slowlog", "reset")
     r.run("config", "set", "slowlog-log-slower-than", 200000)
-    # TODO: if {!$::no_latency} {
-    #       assert_equal [r slowlog len] 0
-    #   }
+    if_("!$::no_latency", "            assert_equal [r slowlog len] 0\n        ")
     r.run("block.double_debug", 0)
-    # TODO: if {!$::no_latency} {
-    #       assert_equal [r slowlog len] 0
-    #   }
+    if_("!$::no_latency", "            assert_equal [r slowlog len] 0\n        ")
     r.run("config", "resetstat")
     r.run("block.double_debug", 100)
-    # TODO: if {!$::no_latency} {
-    #       assert_equal [r slowlog len] 1
-    #   }
-    # TODO: set cmdstatline cmdrstat block.double_debug r
-    # TODO: regexp "calls=1,usec=(.*?),usec_per_call=(.*?),rejected_calls=0,failed_calls=0" cmdstatline usec usec_per_call
-    # TODO: assert {$usec >= 60000}
-    # TODO: assert {$usec_per_call >= 60000}
+    if_("!$::no_latency", "            assert_equal [r slowlog len] 1\n        ")
+    cmdstatline = cmdrstat("block.double_debug", "r")
+    regexp(
+        "calls=1,usec=(.*?),usec_per_call=(.*?),rejected_calls=0,failed_calls=0", cmdstatline, "usec", "usec_per_call"
+    )
+    assert_("$usec >= 60000")
+    assert_("$usec_per_call >= 60000")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_blocked_clients_time_tracking_check_blocked_command_without_calling_redismodule_blockedclientmeasuretimestart_is_not_reporting_background_time(
     r: ValkeyTestClient,
 ) -> None:
@@ -199,13 +190,9 @@ def test_blocked_clients_time_tracking_check_blocked_command_without_calling_red
     """
     r.run("slowlog", "reset")
     r.run("config", "set", "slowlog-log-slower-than", 200000)
-    # TODO: if {!$::no_latency} {
-    #       assert_equal [r slowlog len] 0
-    #   }
+    if_("!$::no_latency", "            assert_equal [r slowlog len] 0\n        ")
     r.run("block.debug_no_track", 200, 1000)
-    # TODO: if {!$::no_latency} {
-    #       assert_equal [r slowlog len] 0
-    #   }
+    if_("!$::no_latency", "            assert_equal [r slowlog len] 0\n        ")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -240,23 +227,58 @@ def test_client_unblock_works_only_for_modules_with_timeout_support(r: ValkeyTes
         assert_equal "foobar" [$rd read]
     }
     """
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd client id
     # TODO: set id $rd read
     # TODO: $rd block.block 20000
-    # TODO: wait_for_condition 50 100 {
-    #       [r block.is_blocked] == 1
-    #   } else {
-    #       fail "Module did not block"
-    #   }
+    wait_for_condition(
+        50,
+        100,
+        "            [r block.is_blocked] == 1\n        ",
+        "else",
+        '            fail "Module did not block"\n        ',
+    )
     # TODO: assert_equal 1 r client unblock $id
     # TODO: assert_match {*Timed out*} $rd read
     # TODO: $rd block.block 0
-    # TODO: wait_for_condition 50 100 {
-    #       [r block.is_blocked] == 1
-    #   } else {
-    #       fail "Module did not block"
-    #   }
+    wait_for_condition(
+        50,
+        100,
+        "            [r block.is_blocked] == 1\n        ",
+        "else",
+        '            fail "Module did not block"\n        ',
+    )
     # TODO: assert_equal 0 r client unblock $id
     assert "OK" == r.run("block.release", "foobar")
     # TODO: assert_equal "foobar" $rd read
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def assert_(*args):
+    raise NotImplementedError("assert_")
+
+
+def cmdrstat(*args):
+    raise NotImplementedError("cmdrstat")
+
+
+def if_(*args):
+    raise NotImplementedError("if_")
+
+
+def latency_percentiles_usec(*args):
+    raise NotImplementedError("latency_percentiles_usec")
+
+
+def regexp(*args):
+    raise NotImplementedError("regexp")
+
+
+def valkey_deferring_client(*args):
+    raise NotImplementedError("valkey_deferring_client")
+
+
+def wait_for_condition(*args):
+    raise NotImplementedError("wait_for_condition")

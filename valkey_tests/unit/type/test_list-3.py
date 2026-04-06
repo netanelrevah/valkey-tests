@@ -1,4 +1,4 @@
-# ruff: noqa: F841
+# ruff: noqa: F841, ANN001, ANN002, ANN201
 
 import pytest
 
@@ -64,7 +64,6 @@ def test_explicit_regression_for_a_list_bug(r: ValkeyTestClient) -> None:
     assert r.run("lindex", "l", 1) == mylist[1]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_regression_for_quicklist_3343_bug(r: ValkeyTestClient) -> None:
     """
     test {Regression for quicklist #3343 bug} {
@@ -83,16 +82,15 @@ def test_regression_for_quicklist_3343_bug(r: ValkeyTestClient) -> None:
     r.run("del", "mylist")
     r.run("lpush", "mylist", 401)
     r.run("lpush", "mylist", 392)
-    # TODO: r rpush mylist string repeat x 5105 "799"
-    # TODO: r lset mylist -1 string repeat x 1014 "702"
+    r.run("rpush", "mylist", string("repeat", "x", 5105), "799")
+    r.run("lset", "mylist", -1, string("repeat", "x", 1014), "702")
     r.run("lpop", "mylist")
-    # TODO: r lset mylist -1 string repeat x 4149 "852"
-    # TODO: r linsert mylist before 401 string repeat x 9927 "12"
+    r.run("lset", "mylist", -1, string("repeat", "x", 4149), "852")
+    r.run("linsert", "mylist", "before", 401, string("repeat", "x", 9927), "12")
     r.run("lrange", "mylist", 0, -1)
     assert r.run("ping") == "PONG"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_check_compression_with_recompress(r: ValkeyTestClient) -> None:
     """
     test {Check compression with recompress} {
@@ -111,20 +109,19 @@ def test_check_compression_with_recompress(r: ValkeyTestClient) -> None:
     }
     """
     r.run("del", "key")
-    # TODO: config_set list-compress-depth 1
-    # TODO: config_set list-max-ziplist-size 16
+    config_set("list-compress-depth", 1)
+    config_set("list-max-ziplist-size", 16)
     r.run("rpush", "key", "a")
-    # TODO: r rpush key string repeat b 50000
+    r.run("rpush", "key", string("repeat", "b", 50000))
     r.run("rpush", "key", "c")
     r.run("lset", "key", 1, "d")
     r.run("rpop", "key")
-    # TODO: r rpush key string repeat e 5000
+    r.run("rpush", "key", string("repeat", "e", 5000))
     r.run("linsert", "key", "before", "f", 1)
     r.run("rpush", "key", "g")
     r.run("ping")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_crash_due_to_wrongly_recompress_after_lrem(r: ValkeyTestClient) -> None:
     """
     test {Crash due to wrongly recompress after lrem} {
@@ -144,21 +141,20 @@ def test_crash_due_to_wrongly_recompress_after_lrem(r: ValkeyTestClient) -> None
     }
     """
     r.run("del", "key")
-    # TODO: config_set list-compress-depth 2
+    config_set("list-compress-depth", 2)
     r.run("lpush", "key", "a")
-    # TODO: r lpush key string repeat a 5000
-    # TODO: r lpush key string repeat b 5000
-    # TODO: r lpush key string repeat c 5000
-    # TODO: r rpush key string repeat x 10000 "969"
+    r.run("lpush", "key", string("repeat", "a", 5000))
+    r.run("lpush", "key", string("repeat", "b", 5000))
+    r.run("lpush", "key", string("repeat", "c", 5000))
+    r.run("rpush", "key", string("repeat", "x", 10000), "969")
     r.run("rpush", "key", "b")
     r.run("lrem", "key", 1, "a")
     r.run("rpop", "key")
-    # TODO: r lrem key 1 string repeat x 10000 "969"
+    r.run("lrem", "key", 1, string("repeat", "x", 10000), "969")
     r.run("rpush", "key", "crash")
     r.run("ping")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_linsert_correctly_recompress_full_quicklistnode_after_inserting_a_element_before_it(
     r: ValkeyTestClient,
 ) -> None:
@@ -177,10 +173,10 @@ def test_linsert_correctly_recompress_full_quicklistnode_after_inserting_a_eleme
     }
     """
     r.run("del", "key")
-    # TODO: config_set list-compress-depth 1
+    config_set("list-compress-depth", 1)
     r.run("rpush", "key", "b")
     r.run("rpush", "key", "c")
-    # TODO: r lset key -1 string repeat x 8192 "969"
+    r.run("lset", "key", -1, string("repeat", "x", 8192), "969")
     r.run("lpush", "key", "a")
     r.run("rpush", "key", "d")
     r.run("linsert", "key", "before", "b", "f")
@@ -188,7 +184,6 @@ def test_linsert_correctly_recompress_full_quicklistnode_after_inserting_a_eleme
     r.run("ping")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_linsert_correctly_recompress_full_quicklistnode_after_inserting_a_element_after_it(
     r: ValkeyTestClient,
 ) -> None:
@@ -207,10 +202,10 @@ def test_linsert_correctly_recompress_full_quicklistnode_after_inserting_a_eleme
     }
     """
     r.run("del", "key")
-    # TODO: config_set list-compress-depth 1
+    config_set("list-compress-depth", 1)
     r.run("rpush", "key", "b")
     r.run("rpush", "key", "c")
-    # TODO: r lset key 0 string repeat x 8192 "969"
+    r.run("lset", "key", 0, string("repeat", "x", 8192), "969")
     r.run("lpush", "key", "a")
     r.run("rpush", "key", "d")
     r.run("linsert", "key", "after", "c", "f")
@@ -233,9 +228,8 @@ config_set list-compress-depth comp
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
-@pytest.mark.parametrize(["comp"], [("2"), ("1"), ("0")])
-def test_stress_tester_for_3343_alike_bugs_comp_comp(r: ValkeyTestClient) -> None:
+@pytest.mark.parametrize(["comp"], [(2), (1), (0)])
+def test_stress_tester_for_3343_alike_bugs_comp_comp(r: ValkeyTestClient, comp) -> None:
     """
     test "Stress tester for #3343-alike bugs comp: $comp" {
         r del key
@@ -281,36 +275,46 @@ def test_stress_tester_for_3343_alike_bugs_comp_comp(r: ValkeyTestClient) -> Non
     """
     r.run("del", "key")
     sent = ""
-    # TODO: for {set j 0} {$j < $cycles} {incr j} {
-    #       catch {
-    #           set cmd [generate_cmd_on_list_key key]
-    #           lappend sent $cmd
-    #
-    #           # execute the command, we expect commands to fail on syntax errors
-    #           r {*}$cmd
-    #       }
-    #   }
+    for_(
+        "set j 0",
+        "$j < $cycles",
+        "incr j",
+        "            catch {\n                set cmd [generate_cmd_on_list_key key]\n                lappend sent $cmd\n\n                # execute the command, we expect commands to fail on syntax errors\n                r {*}$cmd\n            }\n        ",
+    )
     print_commands = "false"
     crash = "false"
-    # TODO: if {[catch {r ping}]} {
-    #       puts "Server crashed"
-    #       set print_commands true
-    #       set crash true
-    #   }
-    # TODO: if {!$::external} {
-    #       # check valgrind and asan report for invalid reads after execute
-    #       # command so that we have a report that is easier to reproduce
-    #       set valgrind_errors [find_valgrind_errors [srv 0 stderr] false]
-    #       set asan_errors [sanitizer_errors_from_file [srv 0 stderr]]
-    #       if {$valgrind_errors != "" || $asan_errors != ""} {
-    #           puts "valgrind or asan found an issue"
-    #           set print_commands true
-    #       }
-    #   }
-    # TODO: if {$print_commands} {
-    #       puts "violating commands:"
-    #       foreach cmd $sent {
-    #           puts $cmd
-    #       }
-    #   }
+    if catch("r ping"):
+        print_commands = "true"
+        crash = "true"
+    if_(
+        "!$::external",
+        '            # check valgrind and asan report for invalid reads after execute\n            # command so that we have a report that is easier to reproduce\n            set valgrind_errors [find_valgrind_errors [srv 0 stderr] false]\n            set asan_errors [sanitizer_errors_from_file [srv 0 stderr]]\n            if {$valgrind_errors != "" || $asan_errors != ""} {\n                puts "valgrind or asan found an issue"\n                set print_commands true\n            }\n        ',
+    )
+    if_(
+        "$print_commands",
+        '            puts "violating commands:"\n            foreach cmd $sent {\n                puts $cmd\n            }\n        ',
+    )
     assert crash == "false"
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def catch(*args):
+    raise NotImplementedError("catch")
+
+
+def config_set(*args):
+    raise NotImplementedError("config_set")
+
+
+def for_(*args):
+    raise NotImplementedError("for_")
+
+
+def if_(*args):
+    raise NotImplementedError("if_")
+
+
+def string(*args):
+    raise NotImplementedError("string")

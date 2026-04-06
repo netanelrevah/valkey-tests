@@ -1,3 +1,5 @@
+# ruff: noqa: ANN002, ANN201
+
 import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
@@ -31,10 +33,10 @@ def test_publish_and_spublish_via_a_module(r: ValkeyTestClient) -> None:
         $rd2 close
     }
     """
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: set rd2 valkey_deferring_client
-    # TODO: assert_equal {1} ssubscribe $rd1 {chan1}
-    # TODO: assert_equal {1} subscribe $rd2 {chan1}
+    rd1 = valkey_deferring_client()
+    rd2 = valkey_deferring_client()
+    assert "1" == ssubscribe(rd1, "chan1")
+    assert "1" == subscribe(rd2, "chan1")
     assert 1 == r.run("publish.shard", "chan1", "hello")
     assert 1 == r.run("publish.classic", "chan1", "world")
     # TODO: assert_equal {smessage chan1 hello} $rd1 read
@@ -67,3 +69,18 @@ def test_module_publish_to_self_with_multi_message(r: ValkeyTestClient) -> None:
     r.run("unsubscribe", "foo")
     r.run("hello", 2)
     _ = ""
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def ssubscribe(*args):
+    raise NotImplementedError("ssubscribe")
+
+
+def subscribe(*args):
+    raise NotImplementedError("subscribe")
+
+
+def valkey_deferring_client(*args):
+    raise NotImplementedError("valkey_deferring_client")

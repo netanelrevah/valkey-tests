@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841, RUF043
+# ruff: noqa: PLR2004, F841, RUF043, ANN001, ANN002, ANN201
 import time
 from fnmatch import fnmatch
 
@@ -64,9 +64,7 @@ def test_keys_with_pattern(r: ValkeyTestClient) -> None:
         lsort [r keys foo*]
     } {foo_a foo_b foo_c}
     """
-    # TODO: foreach key {key_x key_y key_z foo_a foo_b foo_c} {
-    #       r set $key hello
-    #   }
+    foreach("key", "key_x key_y key_z foo_a foo_b foo_c", "            r set $key hello\n        ")
     # TODO: lsort r keys foo*
     assert False
 
@@ -91,7 +89,6 @@ def test_dbsize(r: ValkeyTestClient) -> None:
     assert r.run("dbsize") == "6"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_keys_with_hashtag(r: ValkeyTestClient) -> None:
     """
     test {KEYS with hashtag} {
@@ -102,14 +99,11 @@ def test_keys_with_hashtag(r: ValkeyTestClient) -> None:
         assert_equal [lsort [r keys "*{b}*"]] [list "{b}a" "{b}b" "{b}c"]
     }
     """
-    # TODO: foreach key {"{a}x" "{a}y" "{a}z" "{b}a" "{b}b" "{b}c"} {
-    #       r set $key hello
-    #   }
-    # TODO: assert_equal lsort [r keys "{a}*"] list "{a}x" "{a}y" "{a}z"
-    # TODO: assert_equal lsort [r keys "*{b}*"] list "{b}a" "{b}b" "{b}c"
+    foreach("key", '"{a}x" "{a}y" "{a}z" "{b}a" "{b}b" "{b}c"', "            r set $key hello\n        ")
+    assert lsort(r.run("keys", "{a}*")) == list_("{a}x", "{a}y", "{a}z")
+    assert lsort(r.run("keys", "*{b}*")) == list_("{b}a", "{b}b", "{b}c")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_del_all_keys(r: ValkeyTestClient) -> None:
     """
     test {DEL all keys} {
@@ -117,7 +111,7 @@ def test_del_all_keys(r: ValkeyTestClient) -> None:
         r dbsize
     } {0}
     """
-    # TODO: foreach key r keys * {r del $key}
+    foreach("key", r.run("keys", "*"), "r del $key")
     assert r.run("dbsize") == "0"
 
 
@@ -160,7 +154,7 @@ def test_exists(r: ValkeyTestClient) -> None:
     """
     res = ""
     r.run("set", "newkey", "test")
-    # TODO: append res r exists newkey
+    append("res", r.run("exists", "newkey"))
     r.run("del", "newkey")
     # TODO: append res r exists newkey
     assert False
@@ -179,7 +173,7 @@ def test_zero_length_value_in_key_set_or_get_or_exists(r: ValkeyTestClient) -> N
     """
     r.run("set", "emptykey", "")
     res = r.run("get", "emptykey")
-    # TODO: append res r exists emptykey
+    append("res", r.run("exists", "emptykey"))
     r.run("del", "emptykey")
     # TODO: append res r exists emptykey
     assert False
@@ -200,11 +194,11 @@ def test_commands_pipelining(r: ValkeyTestClient) -> None:
     } {1xyzk1}
     """
     fd = r.run("channel")
-    # TODO: flush fd
+    flush(fd)
     res = ""
-    # TODO: append res string match OK* [r read]
-    # TODO: append res r read
-    # TODO: append res string match PONG* [r read]
+    append("res", string("match", "OK*", r.run("read")))
+    append("res", r.run("read"))
+    append("res", string("match", "PONG*", r.run("read")))
     # TODO: format res
     assert False
 
@@ -411,7 +405,6 @@ def test_rename_with_volatile_key_should_not_inherit_ttl_of_target_key(r: Valkey
     assert r.run("ttl", "mykey2{t}") == "-1"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_del_all_keys_again_db_0(r: ValkeyTestClient) -> None:
     """
     test {DEL all keys again (DB 0)} {
@@ -421,9 +414,7 @@ def test_del_all_keys_again_db_0(r: ValkeyTestClient) -> None:
         r dbsize
     } {0}
     """
-    # TODO: foreach key r keys * {
-    #       r del $key
-    #   }
+    foreach("key", r.run("keys", "*"), "            r del $key\n        ")
     assert r.run("dbsize") == "0"
 
 
@@ -441,16 +432,13 @@ def test_del_all_keys_again_db_1(r: ValkeyTestClient) -> None:
     } {0} {singledb:skip}
     """
     r.run("select", 10)
-    # TODO: foreach key r keys * {
-    #       r del $key
-    #   }
+    foreach("key", r.run("keys", "*"), "            r del $key\n        ")
     res = r.run("dbsize")
     r.run("select", 9)
     # TODO: format res
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_copy_basic_usage_for_string(r: ValkeyTestClient) -> None:
     """
     test {COPY basic usage for string} {
@@ -474,18 +462,14 @@ def test_copy_basic_usage_for_string(r: ValkeyTestClient) -> None:
     r.run("set", "mykey{t}", "foobar")
     res = ""
     r.run("copy", "mykey{t}", "mynewkey{t}")
-    # TODO: lappend res r get mynewkey{t}
-    # TODO: lappend res r dbsize
-    # TODO: if {$::singledb} {
-    #       assert_equal [list foobar 2] [format $res]
-    #   } else {
-    #       r copy mykey{t} mynewkey{t} DB 10
-    #       r select 10
-    #       lappend res [r get mynewkey{t}]
-    #       lappend res [r dbsize]
-    #       r select 9
-    #       assert_equal [list foobar 2 foobar 1] [format $res]
-    #   }
+    lappend("res", r.run("get", "mynewkey{t}"))
+    lappend("res", r.run("dbsize"))
+    if_(
+        "$::singledb",
+        "            assert_equal [list foobar 2] [format $res]\n        ",
+        "else",
+        "            r copy mykey{t} mynewkey{t} DB 10\n            r select 10\n            lappend res [r get mynewkey{t}]\n            lappend res [r dbsize]\n            r select 9\n            assert_equal [list foobar 2 foobar 1] [format $res]\n        ",
+    )
 
 
 def test_copy_for_string_does_not_replace_an_existing_key_without_replace_option(r: ValkeyTestClient) -> None:
@@ -517,7 +501,6 @@ def test_copy_for_string_can_replace_an_existing_key_with_replace_option(r: Valk
     assert r.run("get", "mynewkey{t}") == "hello"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_copy_for_string_ensures_that_copied_data_is_independent_of_copying_data(r: ValkeyTestClient) -> None:
     """
     test {COPY for string ensures that copied data is independent of copying data} {
@@ -544,15 +527,15 @@ def test_copy_for_string_ensures_that_copied_data_is_independent_of_copying_data
     res = ""
     r.run("copy", "mykey{t}", "mynewkey{t}", "DB", 10)
     r.run("select", 10)
-    # TODO: lappend res r get mynewkey{t}
+    lappend("res", r.run("get", "mynewkey{t}"))
     r.run("set", "mynewkey{t}", "hoge")
-    # TODO: lappend res r get mynewkey{t}
+    lappend("res", r.run("get", "mynewkey{t}"))
     r.run("select", 9)
-    # TODO: lappend res r get mykey{t}
+    lappend("res", r.run("get", "mykey{t}"))
     r.run("select", 10)
     r.run("flushdb")
     r.run("select", 9)
-    # TODO: format res
+    format_(res)
 
 
 def test_copy_for_string_does_not_copy_data_to_no_integer_db(r: ValkeyTestClient) -> None:
@@ -629,9 +612,8 @@ foreach {type large} array get largevalue {
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["type"], [("intset"), ("listpack"), ("hashtable")])
-def test_copy_basic_usage_for_type_set(r: ValkeyTestClient) -> None:
+def test_copy_basic_usage_for_type_set(r: ValkeyTestClient, type) -> None:
     """
     test {COPY basic usage for $type set} {
         r del set1{t} newset1{t}
@@ -656,25 +638,23 @@ def test_copy_basic_usage_for_type_set(r: ValkeyTestClient) -> None:
     """
     r.run("del", "set1{t}", "newset1{t}")
     r.run("sadd", "set1{t}", 1, 2, 3)
-    # TODO: if {$type ne "intset"} {
-    #       r sadd set1{t} a
-    #   }
-    # TODO: if {$type eq "hashtable"} {
-    #       for {set i 4} {$i < 200} {incr i} {
-    #           r sadd set1{t} $i
-    #       }
-    #   }
-    # TODO: assert_encoding type set1{t}
+    if type != "intset":
+        r.run("sadd", "set1{t}", "a")
+    if type == "hashtable":
+        i = 4
+        while i < 200:
+            r.run("sadd", "set1{t}", i)
+            i += 1
+    assert_encoding(type, "set1{t}")
     r.run("copy", "set1{t}", "newset1{t}")
-    # TODO: set digest debug_digest_value set1{t}
-    # TODO: assert_equal digest debug_digest_value newset1{t}
-    # TODO: assert_refcount 1 set1{t}
-    # TODO: assert_refcount 1 newset1{t}
+    digest = debug_digest_value("set1{t}")
+    assert digest == debug_digest_value("newset1{t}")
+    assert_refcount(1, "set1{t}")
+    assert_refcount(1, "newset1{t}")
     r.run("del", "set1{t}")
-    # TODO: assert_equal digest debug_digest_value newset1{t}
+    assert digest == debug_digest_value("newset1{t}")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_copy_basic_usage_for_listpack_sorted_set(r: ValkeyTestClient) -> None:
     """
     test {COPY basic usage for listpack sorted set} {
@@ -692,17 +672,16 @@ def test_copy_basic_usage_for_listpack_sorted_set(r: ValkeyTestClient) -> None:
     """
     r.run("del", "zset1{t}", "newzset1{t}")
     r.run("zadd", "zset1{t}", 123, "foobar")
-    # TODO: assert_encoding listpack zset1{t}
+    assert_encoding("listpack", "zset1{t}")
     r.run("copy", "zset1{t}", "newzset1{t}")
-    # TODO: set digest debug_digest_value zset1{t}
-    # TODO: assert_equal digest debug_digest_value newzset1{t}
-    # TODO: assert_refcount 1 zset1{t}
-    # TODO: assert_refcount 1 newzset1{t}
+    digest = debug_digest_value("zset1{t}")
+    assert digest == debug_digest_value("newzset1{t}")
+    assert_refcount(1, "zset1{t}")
+    assert_refcount(1, "newzset1{t}")
     r.run("del", "zset1{t}")
-    # TODO: assert_equal digest debug_digest_value newzset1{t}
+    assert digest == debug_digest_value("newzset1{t}")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_copy_basic_usage_for_skiplist_sorted_set(r: ValkeyTestClient) -> None:
     """
     test {COPY basic usage for skiplist sorted set} {
@@ -726,21 +705,21 @@ def test_copy_basic_usage_for_skiplist_sorted_set(r: ValkeyTestClient) -> None:
     r.run("del", "zset2{t}", "newzset2{t}")
     original_max = r.run("config", "get", "zset-max-ziplist-entries")[1]
     r.run("config", "set", "zset-max-ziplist-entries", 0)
-    # TODO: for {set j 0} {$j < 130} {incr j} {
-    #       r zadd zset2{t} [randomInt 50] ele-[randomInt 10]
-    #   }
-    # TODO: assert_encoding skiplist zset2{t}
+    j = 0
+    while j < 130:
+        r.run("zadd", "zset2{t}", random_int(50), "ele-[randomInt", "10]")
+        j += 1
+    assert_encoding("skiplist", "zset2{t}")
     r.run("copy", "zset2{t}", "newzset2{t}")
-    # TODO: set digest debug_digest_value zset2{t}
-    # TODO: assert_equal digest debug_digest_value newzset2{t}
-    # TODO: assert_refcount 1 zset2{t}
-    # TODO: assert_refcount 1 newzset2{t}
+    digest = debug_digest_value("zset2{t}")
+    assert digest == debug_digest_value("newzset2{t}")
+    assert_refcount(1, "zset2{t}")
+    assert_refcount(1, "newzset2{t}")
     r.run("del", "zset2{t}")
-    # TODO: assert_equal digest debug_digest_value newzset2{t}
-    # TODO: r config set zset-max-ziplist-entries original _max
+    assert digest == debug_digest_value("newzset2{t}")
+    r.run("config", "set", "zset-max-ziplist-entries", original_max)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_copy_basic_usage_for_listpack_hash(r: ValkeyTestClient) -> None:
     """
     test {COPY basic usage for listpack hash} {
@@ -758,17 +737,16 @@ def test_copy_basic_usage_for_listpack_hash(r: ValkeyTestClient) -> None:
     """
     r.run("del", "hash1{t}", "newhash1{t}")
     r.run("hset", "hash1{t}", "tmp", 17179869184)
-    # TODO: assert_encoding listpack hash1{t}
+    assert_encoding("listpack", "hash1{t}")
     r.run("copy", "hash1{t}", "newhash1{t}")
-    # TODO: set digest debug_digest_value hash1{t}
-    # TODO: assert_equal digest debug_digest_value newhash1{t}
-    # TODO: assert_refcount 1 hash1{t}
-    # TODO: assert_refcount 1 newhash1{t}
+    digest = debug_digest_value("hash1{t}")
+    assert digest == debug_digest_value("newhash1{t}")
+    assert_refcount(1, "hash1{t}")
+    assert_refcount(1, "newhash1{t}")
     r.run("del", "hash1{t}")
-    # TODO: assert_equal digest debug_digest_value newhash1{t}
+    assert digest == debug_digest_value("newhash1{t}")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_copy_basic_usage_for_hashtable_hash(r: ValkeyTestClient) -> None:
     """
     test {COPY basic usage for hashtable hash} {
@@ -792,21 +770,21 @@ def test_copy_basic_usage_for_hashtable_hash(r: ValkeyTestClient) -> None:
     r.run("del", "hash2{t}", "newhash2{t}")
     original_max = r.run("config", "get", "hash-max-ziplist-entries")[1]
     r.run("config", "set", "hash-max-ziplist-entries", 0)
-    # TODO: for {set i 0} {$i < 64} {incr i} {
-    #       r hset hash2{t} [randomValue] [randomValue]
-    #   }
-    # TODO: assert_encoding hashtable hash2{t}
+    i = 0
+    while i < 64:
+        r.run("hset", "hash2{t}", random_value(), random_value())
+        i += 1
+    assert_encoding("hashtable", "hash2{t}")
     r.run("copy", "hash2{t}", "newhash2{t}")
-    # TODO: set digest debug_digest_value hash2{t}
-    # TODO: assert_equal digest debug_digest_value newhash2{t}
-    # TODO: assert_refcount 1 hash2{t}
-    # TODO: assert_refcount 1 newhash2{t}
+    digest = debug_digest_value("hash2{t}")
+    assert digest == debug_digest_value("newhash2{t}")
+    assert_refcount(1, "hash2{t}")
+    assert_refcount(1, "newhash2{t}")
     r.run("del", "hash2{t}")
-    # TODO: assert_equal digest debug_digest_value newhash2{t}
-    # TODO: r config set hash-max-ziplist-entries original _max
+    assert digest == debug_digest_value("newhash2{t}")
+    r.run("config", "set", "hash-max-ziplist-entries", original_max)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_copy_basic_usage_for_stream(r: ValkeyTestClient) -> None:
     """
     test {COPY basic usage for stream} {
@@ -829,15 +807,14 @@ def test_copy_basic_usage_for_stream(r: ValkeyTestClient) -> None:
         r.run("XADD", "mystream{t}", "*", "item", 2, "value", "b")
         i += 1
     r.run("copy", "mystream{t}", "mynewstream{t}")
-    # TODO: set digest debug_digest_value mystream{t}
-    # TODO: assert_equal digest debug_digest_value mynewstream{t}
-    # TODO: assert_refcount 1 mystream{t}
-    # TODO: assert_refcount 1 mynewstream{t}
+    digest = debug_digest_value("mystream{t}")
+    assert digest == debug_digest_value("mynewstream{t}")
+    assert_refcount(1, "mystream{t}")
+    assert_refcount(1, "mynewstream{t}")
     r.run("del", "mystream{t}")
-    # TODO: assert_equal digest debug_digest_value mynewstream{t}
+    assert digest == debug_digest_value("mynewstream{t}")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_copy_basic_usage_for_stream_cgroups(r: ValkeyTestClient) -> None:
     """
     test {COPY basic usage for stream-cgroups} {
@@ -887,14 +864,13 @@ def test_copy_basic_usage_for_stream_cgroups(r: ValkeyTestClient) -> None:
     r.run("copy", "x{t}", "newx{t}")
     info = r.run("xinfo", "stream", "x{t}", "full")
     assert info == r.run("xinfo", "stream", "newx{t}", "full")
-    # TODO: assert_refcount 1 x{t}
-    # TODO: assert_refcount 1 newx{t}
+    assert_refcount(1, "x{t}")
+    assert_refcount(1, "newx{t}")
     r.run("del", "x{t}")
     assert info == r.run("xinfo", "stream", "newx{t}", "full")
     r.run("flushdb")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_move_basic_usage(r: ValkeyTestClient) -> None:
     """
     test {MOVE basic usage} {
@@ -913,13 +889,13 @@ def test_move_basic_usage(r: ValkeyTestClient) -> None:
     r.run("set", "mykey", "foobar")
     r.run("move", "mykey", 10)
     res = ""
-    # TODO: lappend res r exists mykey
-    # TODO: lappend res r dbsize
+    lappend("res", r.run("exists", "mykey"))
+    lappend("res", r.run("dbsize"))
     r.run("select", 10)
-    # TODO: lappend res r get mykey
-    # TODO: lappend res r dbsize
+    lappend("res", r.run("get", "mykey"))
+    lappend("res", r.run("dbsize"))
     r.run("select", 9)
-    # TODO: format res
+    format_(res)
 
 
 def test_move_against_key_existing_in_the_target_db(r: ValkeyTestClient) -> None:
@@ -1030,11 +1006,11 @@ def test_set_or_get_keys_in_different_dbs(r: ValkeyTestClient) -> None:
     r.run("set", "b", "bared")
     r.run("select", 9)
     res = ""
-    # TODO: lappend res r get a
-    # TODO: lappend res r get b
+    lappend("res", r.run("get", "a"))
+    lappend("res", r.run("get", "b"))
     r.run("select", 10)
-    # TODO: lappend res r get a
-    # TODO: lappend res r get b
+    lappend("res", r.run("get", "a"))
+    lappend("res", r.run("get", "b"))
     r.run("select", 9)
     # TODO: format res
     assert False
@@ -1074,7 +1050,7 @@ def test_randomkey(r: ValkeyTestClient) -> None:
         if rkey == "bar":
             bar_seen = 1
         i += 1
-    # TODO: list foo _seen bar _seen
+    # TODO: list foo_seen bar_seen
     assert False
 
 
@@ -1173,7 +1149,6 @@ def test_coverage_basic_swapdb_test_and_unhappy_path(r: ValkeyTestClient) -> Non
     assert fnmatch(str(r.run("swapdb", 0, 0)), "OK")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_coverage_swapdb_and_flushdb(r: ValkeyTestClient) -> None:
     """
     test {Coverage: SWAPDB and FLUSHDB} {
@@ -1203,21 +1178,20 @@ def test_coverage_swapdb_and_flushdb(r: ValkeyTestClient) -> None:
     r.run("set", "swapkey", "v1")
     r.run("select", 1)
     r.run("set", "swapkey1", "v1")
-    # TODO: assert_no_match "*db2:keys=*" r info keyspace
+    assert_no_match("*db2:keys=*", r.run("info", "keyspace"))
     r.run("swapdb", 0, 2)
     r.run("select", 0)
     assert fnmatch(str(r.run("dbsize")), str(0))
-    # TODO: assert_no_match "*db0:keys=*" r info keyspace
+    assert_no_match("*db0:keys=*", r.run("info", "keyspace"))
     r.run("select", 2)
     r.run("flushdb")
     assert fnmatch(str(r.run("dbsize")), str(0))
     assert fnmatch(str(r.run("info", "keyspace")), "*db1:keys=*")
-    # TODO: assert_no_match "*db0:keys=*" r info keyspace
-    # TODO: assert_no_match "*db2:keys=*" r info keyspace
+    assert_no_match("*db0:keys=*", r.run("info", "keyspace"))
+    assert_no_match("*db2:keys=*", r.run("info", "keyspace"))
     assert r.run("flushall") == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_regression_for_pattern_matching_very_long_nested_loops(r: ValkeyTestClient) -> None:
     """
     test {Regression for pattern matching very long nested loops} {
@@ -1227,8 +1201,8 @@ def test_regression_for_pattern_matching_very_long_nested_loops(r: ValkeyTestCli
     } {}
     """
     r.run("flushdb")
-    # TODO: r SET string repeat "a" 50000 1
-    # TODO: r KEYS string repeat "*?" 50000
+    r.run("SET", string("repeat", "a", 50000), 1)
+    r.run("KEYS", string("repeat", "*?", 50000))
 
 
 """
@@ -1243,3 +1217,66 @@ start_cluster 1 0 {tags {"keyspace external:skip cluster"}} {
     }
 }
 """
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def append(*args):
+    raise NotImplementedError("append")
+
+
+def assert_encoding(*args):
+    raise NotImplementedError("assert_encoding")
+
+
+def assert_no_match(*args):
+    raise NotImplementedError("assert_no_match")
+
+
+def assert_refcount(*args):
+    raise NotImplementedError("assert_refcount")
+
+
+def debug_digest_value(*args):
+    raise NotImplementedError("debug_digest_value")
+
+
+def flush(*args):
+    raise NotImplementedError("flush")
+
+
+def foreach(*args):
+    raise NotImplementedError("foreach")
+
+
+def format_(*args):
+    raise NotImplementedError("format_")
+
+
+def if_(*args):
+    raise NotImplementedError("if_")
+
+
+def lappend(*args):
+    raise NotImplementedError("lappend")
+
+
+def list_(*args):
+    raise NotImplementedError("list_")
+
+
+def lsort(*args):
+    raise NotImplementedError("lsort")
+
+
+def random_int(*args):
+    raise NotImplementedError("random_int")
+
+
+def random_value(*args):
+    raise NotImplementedError("random_value")
+
+
+def string(*args):
+    raise NotImplementedError("string")

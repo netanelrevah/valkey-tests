@@ -1,4 +1,4 @@
-# ruff: noqa: F841, RUF043
+# ruff: noqa: F841, RUF043, ANN001, ANN002, ANN201
 
 import pytest
 
@@ -17,7 +17,7 @@ def test_incr_against_non_existing_key(r: ValkeyTestClient) -> None:
     } {11}
     """
     res = ""
-    # TODO: append res r incr novar
+    append("res", r.run("incr", "novar"))
     # TODO: append res r get novar
     assert False
 
@@ -200,7 +200,6 @@ def test_decrby_against_key_is_not_exist(r: ValkeyTestClient) -> None:
     assert "-1" == r.run("decrby", "key_not_exist", 1)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_incr_can_modify_objects_in_place(r: ValkeyTestClient) -> None:
     """
     test {INCR can modify objects in-place} {
@@ -217,13 +216,13 @@ def test_incr_can_modify_objects_in_place(r: ValkeyTestClient) -> None:
     """
     r.run("set", "foo", 20000)
     r.run("incr", "foo")
-    # TODO: assert_refcount 1 foo
-    # TODO: set old lindex [split [r debug object foo]] 1
+    assert_refcount(1, "foo")
+    old = split(r.run("debug", "object", "foo"))[1]
     r.run("incr", "foo")
-    # TODO: set new lindex [split [r debug object foo]] 1
-    # TODO: assert {[string range $old 0 2] eq "at:"}
-    # TODO: assert {[string range $new 0 2] eq "at:"}
-    # TODO: assert {$old eq $new}
+    new = split(r.run("debug", "object", "foo"))[1]
+    assert string("range", old, 0, 2) == "at:"
+    assert string("range", new, 0, 2) == "at:"
+    assert old == new
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -415,7 +414,6 @@ def test_string_to_double_with_null_terminator(r: ValkeyTestClient) -> None:
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_no_negative_zero(r: ValkeyTestClient) -> None:
     """
     test {No negative zero} {
@@ -426,8 +424,8 @@ def test_no_negative_zero(r: ValkeyTestClient) -> None:
     } {0}
     """
     r.run("del", "foo")
-    # TODO: r incrbyfloat foo expr double(1)/41
-    # TODO: r incrbyfloat foo expr double(-1)/41
+    r.run("incrbyfloat", "foo", expr("double(1)/41"))
+    r.run("incrbyfloat", "foo", expr("double(-1)/41"))
     assert r.run("get", "foo") == "0"
 
 
@@ -461,9 +459,8 @@ def test_incrby_incrbyfloat_decrby_against_unhappy_path(r: ValkeyTestClient) -> 
         r.run("incrbyfloat", "mykeyincr", "v")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd"], [("incr"), ("decr"), ("incrby"), ("decrby")])
-def test_cmd_operation_should_update_encoding_from_raw_to_int(r: ValkeyTestClient) -> None:
+def test_cmd_operation_should_update_encoding_from_raw_to_int(r: ValkeyTestClient, cmd) -> None:
     """
     test "$cmd operation should update encoding from raw to int" {
         set res {}
@@ -494,22 +491,57 @@ def test_cmd_operation_should_update_encoding_from_raw_to_int(r: ValkeyTestClien
     """
     res = ""
     expected = "1 12"
-    # TODO: if {[string match {*incr*} $cmd]} {
-    #       lappend expected 13
-    #   } else {
-    #       lappend expected 11
-    #   }
+    if string("match", "*incr*", cmd):
+        lappend("expected", 13)
+    else:
+        lappend("expected", 11)
     r.run("set", "foo", 1)
-    # TODO: assert_encoding "int" foo
-    # TODO: lappend res r get foo
+    assert_encoding("int", "foo")
+    lappend("res", r.run("get", "foo"))
     r.run("append", "foo", 2)
-    # TODO: assert_encoding "raw" foo
-    # TODO: lappend res r get foo
-    # TODO: if {[string match {*by*} $cmd]} {
-    #       r $cmd foo 1
-    #   } else {
-    #       r $cmd foo
-    #   }
-    # TODO: assert_encoding "int" foo
-    # TODO: lappend res r get foo
+    assert_encoding("raw", "foo")
+    lappend("res", r.run("get", "foo"))
+    if_(
+        "[string match {*by*} $cmd]",
+        "                r $cmd foo 1\n            ",
+        "else",
+        "                r $cmd foo\n            ",
+    )
+    assert_encoding("int", "foo")
+    lappend("res", r.run("get", "foo"))
     assert res == expected
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def append(*args):
+    raise NotImplementedError("append")
+
+
+def assert_encoding(*args):
+    raise NotImplementedError("assert_encoding")
+
+
+def assert_refcount(*args):
+    raise NotImplementedError("assert_refcount")
+
+
+def expr(*args):
+    raise NotImplementedError("expr")
+
+
+def if_(*args):
+    raise NotImplementedError("if_")
+
+
+def lappend(*args):
+    raise NotImplementedError("lappend")
+
+
+def split(*args):
+    raise NotImplementedError("split")
+
+
+def string(*args):
+    raise NotImplementedError("string")

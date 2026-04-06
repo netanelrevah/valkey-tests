@@ -1,3 +1,5 @@
+# ruff: noqa: ANN002, ANN201
+
 from fnmatch import fnmatch
 
 import pytest
@@ -52,7 +54,6 @@ def test_test_rm_call_auto_mode(r: ValkeyTestClient) -> None:
     assert reply["f2"] == "v2"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_get_resp(r: ValkeyTestClient) -> None:
     """
     test {test get resp} {
@@ -69,20 +70,13 @@ def test_test_get_resp(r: ValkeyTestClient) -> None:
         }
     }
     """
-    # TODO: foreach resp {3 2} {
-    #       if {[lsearch $::denytags "resp3"] >= 0} {
-    #           if {$resp == 3} {continue}
-    #       } elseif {$::force_resp3} {
-    #           if {$resp == 2} {continue}
-    #       }
-    #       r hello $resp
-    #       set reply [r test.getresp]
-    #       assert_equal $reply $resp
-    #       r hello 2
-    #   }
+    foreach(
+        "resp",
+        "3 2",
+        '            if {[lsearch $::denytags "resp3"] >= 0} {\n                if {$resp == 3} {continue}\n            } elseif {$::force_resp3} {\n                if {$resp == 2} {continue}\n            }\n            r hello $resp\n            set reply [r test.getresp]\n            assert_equal $reply $resp\n            r hello 2\n        ',
+    )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_busy_module_name(r: ValkeyTestClient) -> None:
     """
     test "Busy module name" {
@@ -90,8 +84,8 @@ def test_busy_module_name(r: ValkeyTestClient) -> None:
         verify_log_message 0 "*Module name is busy*" 0
     }
     """
-    # TODO: assert_error {ERR Error loading the extension. Please check the server logs.} {r module load $testmodule}
-    # TODO: verify_log_message 0 "*Module name is busy*" 0
+    assert_error("ERR Error loading the extension. Please check the server logs.", "r module load $testmodule")
+    verify_log_message(0, "*Module name is busy*", 0)
 
 
 def test_test_latency(r: ValkeyTestClient) -> None:
@@ -140,7 +134,6 @@ def test_unload_the_module_basics(r: ValkeyTestClient) -> None:
 pytestmark = [pytest.mark.modules_external_skip]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_command_disabled(r: ValkeyTestClient) -> None:
     """
     test {module command disabled} {
@@ -150,6 +143,21 @@ def test_module_command_disabled(r: ValkeyTestClient) -> None:
         assert_error "ERR *MODULE command not allowed*" {r module load $testmodule}
     }
     """
-    # TODO: assert_error "NOAUTH *" {r module load $testmodule}
+    assert_error("NOAUTH *", "r module load $testmodule")
     r.run("auth", "mypass")
-    # TODO: assert_error "ERR *MODULE command not allowed*" {r module load $testmodule}
+    assert_error("ERR *MODULE command not allowed*", "r module load $testmodule")
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def assert_error(*args):
+    raise NotImplementedError("assert_error")
+
+
+def foreach(*args):
+    raise NotImplementedError("foreach")
+
+
+def verify_log_message(*args):
+    raise NotImplementedError("verify_log_message")

@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841
+# ruff: noqa: PLR2004, F841, ANN002, ANN201
 import time
 
 import pytest
@@ -47,29 +47,30 @@ def test_temp_rdb_will_be_deleted_if_we_use_bg_unlink_when_shutdown(r: ValkeyTes
         i += 1
     r.run("config", "set", "rdb-key-save-delay", 10000000)
     r.run("bgsave")
-    # TODO: wait_for_condition 1000 10 {
-    #       [s rdb_bgsave_in_progress] eq 1
-    #   } else {
-    #       fail "bgsave did not start in time"
-    #   }
+    wait_for_condition(
+        1000,
+        10,
+        "            [s rdb_bgsave_in_progress] eq 1\n        ",
+        "else",
+        '            fail "bgsave did not start in time"\n        ',
+    )
     time.sleep(100 / 1000)
     dir = r.run("config", "get", "dir")[1]
-    # TODO: set child_pid get_child_pid 0
-    # TODO: set temp_rdb file join [lindex [r config get dir] 1] temp-${child_pid}.rdb
-    # TODO: assert {[file exists $temp_rdb]}
+    child_pid = get_child_pid(0)
+    temp_rdb = file("join", r.run("config", "get", "dir")[1], "temp-${child_pid}.rdb")
+    assert file("exists", temp_rdb)
     try:
         r.run("shutdown", "nosave")
     except Exception:
         pass
-    # TODO: catch {set rd [valkey_deferring_client]} e
+    catch("set rd [valkey_deferring_client]", "e")
     # TODO: assert_match {*connection refused*} e
-    # TODO: assert {![file exists $temp_rdb]}
+    assert_("![file exists $temp_rdb]")
 
 
 pytestmark = [pytest.mark.shutdown_external_skip]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_shutdown_abort_can_cancel_sigterm(r: ValkeyTestClient) -> None:
     """
     test {SHUTDOWN ABORT can cancel SIGTERM} {
@@ -84,16 +85,15 @@ def test_shutdown_abort_can_cancel_sigterm(r: ValkeyTestClient) -> None:
     } {PONG}
     """
     r.run("debug", "pause-cron", 1)
-    # TODO: set pid s process_id
-    # TODO: exec kill -SIGTERM pid
+    pid = s("process_id")
+    exec_("kill", "-SIGTERM", pid)
     time.sleep(10 / 1000)
     r.run("shutdown", "abort")
-    # TODO: verify_log_message 0 "*Shutdown manually aborted*" 0
+    verify_log_message(0, "*Shutdown manually aborted*", 0)
     r.run("debug", "pause-cron", 0)
     assert r.run("ping") == "PONG"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_temp_rdb_will_be_deleted_in_signal_handle(r: ValkeyTestClient) -> None:
     """
     test {Temp rdb will be deleted in signal handle} {
@@ -130,20 +130,24 @@ def test_temp_rdb_will_be_deleted_in_signal_handle(r: ValkeyTestClient) -> None:
         r.run("set", i, i)
         i += 1
     r.run("config", "set", "rdb-key-save-delay", 100000)
-    # TODO: set pid s process_id
-    # TODO: set temp_rdb file join [lindex [r config get dir] 1] temp-${pid}.rdb
-    # TODO: exec kill -SIGINT pid
-    # TODO: wait_for_condition 50 10 {
-    #       [file exists $temp_rdb]
-    #   } else {
-    #       fail "Can't trigger rdb save on shutdown"
-    #   }
-    # TODO: exec kill -SIGINT pid
-    # TODO: wait_for_condition 50 10 {
-    #       ![file exists $temp_rdb]
-    #   } else {
-    #       fail "Can't delete rdb temp file on shutdown"
-    #   }
+    pid = s("process_id")
+    temp_rdb = file("join", r.run("config", "get", "dir")[1], "temp-${pid}.rdb")
+    exec_("kill", "-SIGINT", pid)
+    wait_for_condition(
+        50,
+        10,
+        "            [file exists $temp_rdb]\n        ",
+        "else",
+        '            fail "Can\'t trigger rdb save on shutdown"\n        ',
+    )
+    exec_("kill", "-SIGINT", pid)
+    wait_for_condition(
+        50,
+        10,
+        "            ![file exists $temp_rdb]\n        ",
+        "else",
+        '            fail "Can\'t delete rdb temp file on shutdown"\n        ',
+    )
 
 
 pytestmark = [pytest.mark.shutdown_external_skip]
@@ -179,10 +183,8 @@ def test_rdb_save_will_be_failed_in_shutdown(r: ValkeyTestClient) -> None:
     while i < 20:
         r.run("set", i, i)
         i += 1
-    # TODO: if {[file exists $dump_rdb]} {
-    #       exec rm -f $dump_rdb
-    #   }
-    # TODO: exec mkdir -p dump _rdb
+    if_("[file exists $dump_rdb]", "            exec rm -f $dump_rdb\n        ")
+    # TODO: exec mkdir -p dump_rdb
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -195,7 +197,7 @@ def test_shutdown_will_abort_if_rdb_save_failed_on_signal(r: ValkeyTestClient) -
     }
     """
     # TODO: exec kill -SIGINT pid
-    # TODO: wait_for_log_messages 0 {"*Error trying to save the DB, can't exit*"} 0 100 10
+    wait_for_log_messages(0, '"*Error trying to save the DB, can\'t exit*"', 0, 100, 10)
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -208,12 +210,11 @@ def test_shutdown_will_abort_if_rdb_save_failed_on_shutdown_command(r: ValkeyTes
         assert_equal [r ping] {PONG}
     }
     """
-    # TODO: catch {[r shutdown]} err
+    catch("[r shutdown]", "err")
     # TODO: assert_match {*Errors trying to SHUTDOWN*} err
     assert r.run("ping") == "PONG"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_shutdown_can_proceed_if_shutdown_command_was_with_nosave(r: ValkeyTestClient) -> None:
     """
     test {SHUTDOWN can proceed if shutdown command was with nosave} {
@@ -221,8 +222,8 @@ def test_shutdown_can_proceed_if_shutdown_command_was_with_nosave(r: ValkeyTestC
         wait_for_log_messages 0 {"*ready to exit, bye bye*"} 0 100 10
     }
     """
-    # TODO: catch {[r shutdown nosave]}
-    # TODO: wait_for_log_messages 0 {"*ready to exit, bye bye*"} 0 100 10
+    catch("[r shutdown nosave]")
+    wait_for_log_messages(0, '"*ready to exit, bye bye*"', 0, 100, 10)
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -232,13 +233,12 @@ def test_clean_up_rdb_same_named_folder(r: ValkeyTestClient) -> None:
         exec rm -r $dump_rdb
     }
     """
-    # TODO: exec rm -r dump _rdb
+    # TODO: exec rm -r dump_rdb
 
 
 pytestmark = [pytest.mark.shutdown_external_skip]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_shutdown_sigterm_will_abort_if_there_s_an_initial_aofrw_default(r: ValkeyTestClient) -> None:
     """
     test {SHUTDOWN SIGTERM will abort if there's an initial AOFRW - default} {
@@ -269,12 +269,57 @@ def test_shutdown_sigterm_will_abort_if_there_s_an_initial_aofrw_default(r: Valk
         r.run("set", i, i)
         i += 1
     r.run("config", "set", "appendonly", "yes")
-    # TODO: wait_for_condition 1000 10 {
-    #       [s aof_rewrite_in_progress] eq 1
-    #   } else {
-    #       fail "aof rewrite did not start in time"
-    #   }
-    # TODO: set pid s process_id
-    # TODO: exec kill -SIGTERM pid
-    # TODO: wait_for_log_messages 0 {"*Writing initial AOF, can't exit*"} 0 1000 10
+    wait_for_condition(
+        1000,
+        10,
+        "            [s aof_rewrite_in_progress] eq 1\n        ",
+        "else",
+        '            fail "aof rewrite did not start in time"\n        ',
+    )
+    pid = s("process_id")
+    exec_("kill", "-SIGTERM", pid)
+    wait_for_log_messages(0, '"*Writing initial AOF, can\'t exit*"', 0, 1000, 10)
     r.run("config", "set", "shutdown-on-sigterm", "force")
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def assert_(*args):
+    raise NotImplementedError("assert_")
+
+
+def catch(*args):
+    raise NotImplementedError("catch")
+
+
+def exec_(*args):
+    raise NotImplementedError("exec_")
+
+
+def file(*args):
+    raise NotImplementedError("file")
+
+
+def get_child_pid(*args):
+    raise NotImplementedError("get_child_pid")
+
+
+def if_(*args):
+    raise NotImplementedError("if_")
+
+
+def s(*args):
+    raise NotImplementedError("s")
+
+
+def verify_log_message(*args):
+    raise NotImplementedError("verify_log_message")
+
+
+def wait_for_condition(*args):
+    raise NotImplementedError("wait_for_condition")
+
+
+def wait_for_log_messages(*args):
+    raise NotImplementedError("wait_for_log_messages")

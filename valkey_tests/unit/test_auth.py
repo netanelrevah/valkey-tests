@@ -1,4 +1,4 @@
-# ruff: noqa: F841
+# ruff: noqa: F841, ANN002, ANN201
 
 from fnmatch import fnmatch
 
@@ -118,13 +118,13 @@ def test_for_unauthenticated_clients_multibulk_and_bulk_length_are_limited(r: Va
     # TODO: set rr valkey [srv "host"] [srv "port"] 0 $::tls
     # TODO: $rr write "*100\r\n"
     # TODO: $rr flush
-    # TODO: catch {[$rr read]} e
+    catch("[$rr read]", "e")
     # TODO: assert_match {*unauthenticated multibulk length*} e
     # TODO: $rr close
     # TODO: set rr valkey [srv "host"] [srv "port"] 0 $::tls
     # TODO: $rr write "*1\r\n\$100000000\r\n"
     # TODO: $rr flush
-    # TODO: catch {[$rr read]} e
+    catch("[$rr read]", "e")
     # TODO: assert_match {*unauthenticated bulk length*} e
     # TODO: $rr close
 
@@ -156,11 +156,11 @@ def test_for_unauthenticated_clients_output_buffer_is_limited(r: ValkeyTestClien
     """
     # TODO: set rr valkey [srv "host"] [srv "port"] 1 $::tls
     # TODO: $rr SET x 5
-    # TODO: catch {[$rr read]} e
+    catch("[$rr read]", "e")
     # TODO: assert_match {*NOAUTH Authentication required*} e
     assert fnmatch(str(r.run("debug", "client-enforce-reply-list", 1)), "OK")
     # TODO: $rr SET x 5
-    # TODO: catch {[$rr read]} e
+    catch("[$rr read]", "e")
     # TODO: assert_match {I/O error reading reply} e
     assert fnmatch(str(r.run("debug", "client-enforce-reply-list", 0)), "OK")
 
@@ -205,11 +205,11 @@ def test_for_once_authenticated_clients_output_buffer_is_not_limited(r: ValkeyTe
     # TODO: $rr reset
     # TODO: assert_equal {RESET} $rr read
     # TODO: $rr SET x 5
-    # TODO: catch {[$rr read]} e
+    catch("[$rr read]", "e")
     # TODO: assert_match {*NOAUTH Authentication required*} e
     assert fnmatch(str(r.run("debug", "client-enforce-reply-list", 1)), "OK")
     # TODO: $rr SET x 5
-    # TODO: catch {[$rr read]} e
+    catch("[$rr read]", "e")
     # TODO: assert_match {*NOAUTH Authentication required*} e
     assert fnmatch(str(r.run("debug", "client-enforce-reply-list", 0)), "OK")
 
@@ -305,3 +305,14 @@ foreach dualchannel {yes no} {
     }
 }
 """
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def catch(*args):
+    raise NotImplementedError("catch")
+
+
+def srv(*args):
+    raise NotImplementedError("srv")

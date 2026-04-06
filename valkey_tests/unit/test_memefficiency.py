@@ -1,3 +1,5 @@
+# ruff: noqa: ANN001, ANN002, ANN201
+
 import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
@@ -30,20 +32,20 @@ proc test_memory_efficiency {range} {
 pytestmark = [pytest.mark.memefficiency_external_skip]
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(
-    ["size_range", "expected_min_efficiency"],
-    [("32", "0.15"), ("64", "0.25"), ("128", "0.35"), ("1024", "0.75"), ("16384", "0.82")],
+    ["size_range", "expected_min_efficiency"], [(32, 0.15), (64, 0.25), (128, 0.35), (1024, 0.75), (16384, 0.82)]
 )
-def test_memory_efficiency_with_values_in_range_size_range(r: ValkeyTestClient) -> None:
+def test_memory_efficiency_with_values_in_range_size_range(
+    r: ValkeyTestClient, size_range, expected_min_efficiency
+) -> None:
     """
     test "Memory efficiency with values in range $size_range" {
         set efficiency [test_memory_efficiency $size_range]
         assert {$efficiency >= $expected_min_efficiency}
     }
     """
-    # TODO: set efficiency test_memory_efficiency $size_range
-    # TODO: assert {$efficiency >= $expected_min_efficiency}
+    efficiency = test_memory_efficiency(size_range)
+    assert efficiency >= expected_min_efficiency
 
 
 """
@@ -632,3 +634,10 @@ run_solo {defrag} {
     }
 }
 """
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def test_memory_efficiency(*args):
+    raise NotImplementedError("test_memory_efficiency")

@@ -1,4 +1,4 @@
-# ruff: noqa: F841
+# ruff: noqa: F841, ANN002, ANN201
 
 import pytest
 
@@ -38,7 +38,6 @@ r module load testmodule
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_config_get_commands_work(r: ValkeyTestClient) -> None:
     """
     test {Config get commands work} {
@@ -53,7 +52,7 @@ def test_config_get_commands_work(r: ValkeyTestClient) -> None:
         assert_equal [r config get moduleconfigs.numeric] "moduleconfigs.numeric -1"
     }
     """
-    # TODO: assert_not_equal lsearch [lmap x [r module list] {dict get $x name}] moduleconfigs -1
+    assert_not_equal(lsearch(lmap("x", r.run("module", "list"), "dict get $x name"), "moduleconfigs"), -1)
     assert r.run("config", "get", "moduleconfigs.mutable_bool") == "moduleconfigs.mutable_bool yes"
     assert r.run("config", "get", "moduleconfigs.immutable_bool") == "moduleconfigs.immutable_bool no"
     assert r.run("config", "get", "moduleconfigs.memory_numeric") == "moduleconfigs.memory_numeric 1024"
@@ -93,8 +92,8 @@ def test_config_set_commands_work(r: ValkeyTestClient) -> None:
     assert r.run("config", "get", "moduleconfigs.memory_numeric") == "moduleconfigs.memory_numeric 1048576"
     r.run("config", "set", "moduleconfigs.string", "wafflewednesdays")
     assert r.run("config", "get", "moduleconfigs.string") == "moduleconfigs.string wafflewednesdays"
-    # TODO: set not_embstr string repeat A 50
-    # TODO: r config set moduleconfigs.string not _embstr
+    not_embstr = string("repeat", "A", 50)
+    r.run("config", "set", "moduleconfigs.string", not_embstr)
     # TODO: assert_equal r config get moduleconfigs.string "moduleconfigs.string $not_embstr"
     r.run(
         "config",
@@ -153,9 +152,9 @@ def test_immutable_flag_works_properly_and_rejected_strings_dont_leak(r: ValkeyT
         assert_match {*Cannot set string to 'rejectisfreed'*} $e
     }
     """
-    # TODO: catch {[r config set moduleconfigs.immutable_bool yes]} e
+    catch("[r config set moduleconfigs.immutable_bool yes]", "e")
     # TODO: assert_match {*can't set immutable config*} e
-    # TODO: catch {[r config set moduleconfigs.string rejectisfreed]} e
+    catch("[r config set moduleconfigs.string rejectisfreed]", "e")
     # TODO: assert_match {*Cannot set string to 'rejectisfreed'*} e
 
 
@@ -172,11 +171,11 @@ def test_numeric_limits_work_properly(r: ValkeyTestClient) -> None:
         assert_match {*argument must be between*} $e
     }
     """
-    # TODO: catch {[r config set moduleconfigs.memory_numeric 200gb]} e
+    catch("[r config set moduleconfigs.memory_numeric 200gb]", "e")
     # TODO: assert_match {*argument must be between*} e
-    # TODO: catch {[r config set moduleconfigs.memory_numeric -5]} e
+    catch("[r config set moduleconfigs.memory_numeric -5]", "e")
     # TODO: assert_match {*argument must be a memory value*} e
-    # TODO: catch {[r config set moduleconfigs.numeric -10]} e
+    catch("[r config set moduleconfigs.numeric -10]", "e")
     # TODO: assert_match {*argument must be between*} e
 
 
@@ -189,7 +188,7 @@ def test_enums_only_able_to_be_set_to_passed_in_values(r: ValkeyTestClient) -> N
         assert_match {*must be one of the following*} $e
     }
     """
-    # TODO: catch {[r config set moduleconfigs.enum asdf]} e
+    catch("[r config set moduleconfigs.enum asdf]", "e")
     # TODO: assert_match {*must be one of the following*} e
 
 
@@ -250,7 +249,7 @@ def test_test_loadex_functionality(r: ValkeyTestClient) -> None:
     }
     """
     # TODO: r module loadex testmodule CONFIG moduleconfigs.mutable_bool no CONFIG moduleconfigs.immutable_bool yes CONFIG moduleconfigs.memory_numeric 2mb CONFIG moduleconfigs.string tclortickle
-    # TODO: assert_not_equal lsearch [lmap x [r module list] {dict get $x name}] moduleconfigs -1
+    assert_not_equal(lsearch(lmap("x", r.run("module", "list"), "dict get $x name"), "moduleconfigs"), -1)
     assert r.run("config", "get", "moduleconfigs.mutable_bool") == "moduleconfigs.mutable_bool no"
     assert r.run("config", "get", "moduleconfigs.immutable_bool") == "moduleconfigs.immutable_bool yes"
     assert r.run("config", "get", "moduleconfigs.memory_numeric") == "moduleconfigs.memory_numeric 2097152"
@@ -274,10 +273,10 @@ def test_apply_function_works(r: ValkeyTestClient) -> None:
         r module unload moduleconfigs
     }
     """
-    # TODO: catch {[r config set moduleconfigs.mutable_bool yes]} e
+    catch("[r config set moduleconfigs.mutable_bool yes]", "e")
     # TODO: assert_match {*Bool configs*} e
     assert r.run("config", "get", "moduleconfigs.mutable_bool") == "moduleconfigs.mutable_bool no"
-    # TODO: catch {[r config set moduleconfigs.memory_numeric 1000 moduleconfigs.numeric 1000]} e
+    catch("[r config set moduleconfigs.memory_numeric 1000 moduleconfigs.numeric 1000]", "e")
     # TODO: assert_match {*cannot equal*} e
     assert r.run("config", "get", "moduleconfigs.memory_numeric") == "moduleconfigs.memory_numeric 2097152"
     assert r.run("config", "get", "moduleconfigs.numeric") == "moduleconfigs.numeric -1"
@@ -306,7 +305,7 @@ def test_missing_loadconfigs_call(r: ValkeyTestClient) -> None:
         assert_match {*ERR*} $e
     }
     """
-    # TODO: catch {[r module loadex $testmodule CONFIG moduleconfigs.string "cool" ARGS noload]} e
+    catch('[r module loadex $testmodule CONFIG moduleconfigs.string "cool" ARGS noload]', "e")
     # TODO: assert_match {*ERR*} e
 
 
@@ -340,21 +339,21 @@ def test_test_loadex_rejects_bad_configs(r: ValkeyTestClient) -> None:
         r module unload configs
     }
     """
-    # TODO: catch {[r module loadex $testmodule CONFIG moduleconfigs.memory_numeric 200gb ARGS]} e
+    catch("[r module loadex $testmodule CONFIG moduleconfigs.memory_numeric 200gb ARGS]", "e")
     # TODO: assert_match {*ERR*} e
     assert r.run("config", "get", "moduleconfigs.*") == ""
-    # TODO: catch {[r module loadex $testmodule CONFIG moduleconfigs.mutable_bool CONFIG moduleconfigs.enum two ARGS]} e
+    catch("[r module loadex $testmodule CONFIG moduleconfigs.mutable_bool CONFIG moduleconfigs.enum two ARGS]", "e")
     # TODO: assert_match {*ERR*} e
     assert r.run("config", "get", "moduleconfigs.*") == ""
-    # TODO: catch {[r module loadex $testmodule CONFIG moduleconfigs.string rejectisfreed]}
+    catch("[r module loadex $testmodule CONFIG moduleconfigs.string rejectisfreed]")
     # TODO: assert_match {*ERR*} e
     assert r.run("config", "get", "moduleconfigs.*") == ""
-    # TODO: catch {[r module loadex $testmodule CONFIG maxclients 333]}
+    catch("[r module loadex $testmodule CONFIG maxclients 333]")
     # TODO: assert_match {*ERR*} e
     assert r.run("config", "get", "moduleconfigs.*") == ""
-    # TODO: assert_not_equal r config get maxclients "maxclients 333"
+    assert_not_equal(r.run("config", "get", "maxclients"), "maxclients 333")
     # TODO: r module load testmoduletwo
-    # TODO: catch {[r module loadex $testmodule CONFIG configs.test no]}
+    catch("[r module loadex $testmodule CONFIG configs.test no]")
     # TODO: assert_match {*ERR*} e
     assert r.run("config", "get", "configs.test") == "configs.test yes"
     r.run("module", "unload", "configs")
@@ -385,14 +384,14 @@ def test_test_config_rewrite_with_dynamic_load(r: ValkeyTestClient) -> None:
     }
     """
     # TODO: r module loadex testmodule CONFIG moduleconfigs.string \x73\x75\x70\x65\x72\x20\x00\x73\x65\x63\x72\x65\x74\x20\x70\x61\x73\x73\x77\x6f\x72\x64 ARGS
-    # TODO: assert_not_equal lsearch [lmap x [r module list] {dict get $x name}] moduleconfigs -1
+    assert_not_equal(lsearch(lmap("x", r.run("module", "list"), "dict get $x name"), "moduleconfigs"), -1)
     # TODO: assert_equal r config get moduleconfigs.string "moduleconfigs.string {super \0secret password}"
     r.run("config", "set", "moduleconfigs.mutable_bool", "yes")
     r.run("config", "set", "moduleconfigs.memory_numeric", 750)
     r.run("config", "set", "moduleconfigs.enum", "two")
     r.run("config", "set", "moduleconfigs.flags", "four two")
     r.run("config", "rewrite")
-    # TODO: restart_server 0 true false
+    restart_server(0, "true", "false")
     assert r.run("config", "get", "moduleconfigs.mutable_bool") == "moduleconfigs.mutable_bool yes"
     assert r.run("config", "get", "moduleconfigs.memory_numeric") == "moduleconfigs.memory_numeric 750"
     # TODO: assert_equal r config get moduleconfigs.string "moduleconfigs.string {super \0secret password}"
@@ -452,7 +451,7 @@ def test_test_multiple_modules_with_configs(r: ValkeyTestClient) -> None:
     assert r.run("config", "get", "moduleconfigs.enum") == "moduleconfigs.enum two"
     assert r.run("config", "get", "configs.test") == "configs.test no"
     r.run("config", "rewrite")
-    # TODO: restart_server 0 true false
+    restart_server(0, "true", "false")
     assert r.run("config", "get", "moduleconfigs.mutable_bool") == "moduleconfigs.mutable_bool no"
     assert r.run("config", "get", "moduleconfigs.string") == "moduleconfigs.string nice"
     assert r.run("config", "get", "moduleconfigs.enum") == "moduleconfigs.enum two"
@@ -477,11 +476,11 @@ def test_test_1_module_load_2_config_rewrite_3_module_unload_4_config_rewrite_wo
     }
     """
     # TODO: r module loadex testmodule CONFIG moduleconfigs.memory_numeric 500 ARGS
-    # TODO: assert_not_equal lsearch [lmap x [r module list] {dict get $x name}] moduleconfigs -1
+    assert_not_equal(lsearch(lmap("x", r.run("module", "list"), "dict get $x name"), "moduleconfigs"), -1)
     r.run("config", "rewrite")
     r.run("module", "unload", "moduleconfigs")
     r.run("config", "rewrite")
-    # TODO: restart_server 0 true false
+    restart_server(0, "true", "false")
     assert r.run("config", "get", "moduleconfigs.*") == ""
 
 
@@ -513,11 +512,11 @@ def test_startup_moduleconfigs(r: ValkeyTestClient) -> None:
         }
     }
     """
-    # TODO: catch {exec $::VALKEY_SERVER_BIN --moduleconfigs.string "hello"} err
+    catch('exec $::VALKEY_SERVER_BIN --moduleconfigs.string "hello"', "err")
     # TODO: assert_match {*Module Configuration detected without loadmodule directive or no ApplyConfig call: aborting*} err
-    # TODO: catch {exec $::VALKEY_SERVER_BIN --loadmodule "$testmodule" --moduleconfigs.string "rejectisfreed"} err
+    catch('exec $::VALKEY_SERVER_BIN --loadmodule "$testmodule" --moduleconfigs.string "rejectisfreed"', "err")
     # TODO: assert_match {*Issue during loading of configuration moduleconfigs.string : Cannot set string to 'rejectisfreed'*} err
-    # TODO: catch {exec $::VALKEY_SERVER_BIN --loadmodule "$testmodule" noload --moduleconfigs.string "hello"} err
+    catch('exec $::VALKEY_SERVER_BIN --loadmodule "$testmodule" noload --moduleconfigs.string "hello"', "err")
     # TODO: assert_match {*Module Configurations were not set, likely a missing LoadConfigs call. Unloading the module.*} err
     # TODO: start_server list overrides [list loadmodule "$testmodule" moduleconfigs.string "bootedup" moduleconfigs.enum two moduleconfigs.flags "two four"] {
     #       assert_equal [r config get moduleconfigs.string] "moduleconfigs.string bootedup"
@@ -546,8 +545,39 @@ def test_module_update_args(r: ValkeyTestClient) -> None:
     """
     # TODO: r module load testmoduleparameter 10 20 30
     t = r.run("module", "list")
-    # TODO: set modulename lmap x [r module list] {dict get $x name}
-    # TODO: assert_not_equal lsearch $modulename moduleparameter -1
-    # TODO: assert_equal {10 20 30} module_get_args moduleparameter
+    modulename = lmap("x", r.run("module", "list"), "dict get $x name")
+    assert_not_equal(lsearch(modulename, "moduleparameter"), -1)
+    assert "10 20 30" == module_get_args("moduleparameter")
     assert "OK" == r.run("testmoduleparameter.update.parameter", 40, 50, 60, 70)
-    # TODO: assert_equal {40 50 60 70} module_get_args moduleparameter
+    assert "40 50 60 70" == module_get_args("moduleparameter")
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def assert_not_equal(*args):
+    raise NotImplementedError("assert_not_equal")
+
+
+def catch(*args):
+    raise NotImplementedError("catch")
+
+
+def lmap(*args):
+    raise NotImplementedError("lmap")
+
+
+def lsearch(*args):
+    raise NotImplementedError("lsearch")
+
+
+def module_get_args(*args):
+    raise NotImplementedError("module_get_args")
+
+
+def restart_server(*args):
+    raise NotImplementedError("restart_server")
+
+
+def string(*args):
+    raise NotImplementedError("string")

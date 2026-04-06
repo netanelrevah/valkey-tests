@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841, RUF043
+# ruff: noqa: PLR2004, N806, RUF043, ANN001, ANN002, ANN201
 
 import pytest
 
@@ -149,7 +149,6 @@ foreach vec list "" "\xaa" "\x00\x00\xff" "foobar" "123" {
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitcount_fuzzing_without_start_or_end(r: ValkeyTestClient) -> None:
     """
     test {BITCOUNT fuzzing without start/end} {
@@ -162,16 +161,16 @@ def test_bitcount_fuzzing_without_start_or_end(r: ValkeyTestClient) -> None:
         }
     }
     """
-    # TODO: for {set j 0} {$j < 100} {incr j} {
-    #       set str [randstring 0 3000]
-    #       r set str $str
-    #       set count [count_bits $str]
-    #       assert {[r bitcount str] == $count}
-    #       assert {[r bitcount str 0 -1 bit] == $count}
-    #   }
+    j = 0
+    while j < 100:
+        str = randstring(0, 3000)
+        r.run("set", "str", str)
+        count = count_bits(str)
+        assert r.run("bitcount", "str") == count
+        assert r.run("bitcount", "str", 0, -1, "bit") == count
+        j += 1
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitcount_fuzzing_with_start_or_end(r: ValkeyTestClient) -> None:
     """
     test {BITCOUNT fuzzing with start/end} {
@@ -202,33 +201,34 @@ def test_bitcount_fuzzing_with_start_or_end(r: ValkeyTestClient) -> None:
         }
     }
     """
-    # TODO: for {set j 0} {$j < 100} {incr j} {
-    #       set str [randstring 0 3000]
-    #       r set str $str
-    #       set l [string length $str]
-    #       set start [randomInt $l]
-    #       set end [randomInt $l]
-    #       if {$start > $end} {
-    #           # Swap start and end
-    #           lassign [list $end $start] start end
-    #       }
-    #       assert {[r bitcount str $start $end] == [count_bits [string range $str $start $end]]}
-    #   }
-    # TODO: for {set j 0} {$j < 100} {incr j} {
-    #       set str [randstring 0 3000]
-    #       r set str $str
-    #       set l [expr [string length $str] * 8]
-    #       set start [randomInt $l]
-    #       set end [randomInt $l]
-    #       if {$start > $end} {
-    #           # Swap start and end
-    #           lassign [list $end $start] start end
-    #       }
-    #       assert {[r bitcount str $start $end bit] == [count_bits_start_end $str $start $end]}
-    #   }
+    j = 0
+    while j < 100:
+        str = randstring(0, 3000)
+        r.run("set", "str", str)
+        L = len(str)
+        start = random_int(L)
+        end = random_int(L)
+        if_(
+            "$start > $end",
+            "                # Swap start and end\n                lassign [list $end $start] start end\n            ",
+        )
+        assert r.run("bitcount", "str", start, end) == count_bits(string("range", str, start, end))
+        j += 1
+    j = 0
+    while j < 100:
+        str = randstring(0, 3000)
+        r.run("set", "str", str)
+        L = expr(len(str), "*", 8)
+        start = random_int(L)
+        end = random_int(L)
+        if_(
+            "$start > $end",
+            "                # Swap start and end\n                lassign [list $end $start] start end\n            ",
+        )
+        assert r.run("bitcount", "str", start, end, "bit") == count_bits_start_end(str, start, end)
+        j += 1
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitcount_with_just_start(r: ValkeyTestClient) -> None:
     """
     test {BITCOUNT with just start} {
@@ -244,15 +244,14 @@ def test_bitcount_with_just_start(r: ValkeyTestClient) -> None:
     """
     s = "foobar"
     r.run("set", "s", s)
-    # TODO: assert_equal r bitcount s 0 count_bits "foobar"
-    # TODO: assert_equal r bitcount s 1 count_bits "oobar"
+    assert r.run("bitcount", "s", 0) == count_bits("foobar")
+    assert r.run("bitcount", "s", 1) == count_bits("oobar")
     assert r.run("bitcount", "s", 1000) == 0
-    # TODO: assert_equal r bitcount s -1 count_bits "r"
-    # TODO: assert_equal r bitcount s -2 count_bits "ar"
-    # TODO: assert_equal r bitcount s -1000 count_bits "foobar"
+    assert r.run("bitcount", "s", -1) == count_bits("r")
+    assert r.run("bitcount", "s", -2) == count_bits("ar")
+    assert r.run("bitcount", "s", -1000) == count_bits("foobar")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitcount_with_start_end(r: ValkeyTestClient) -> None:
     """
     test {BITCOUNT with start, end} {
@@ -280,23 +279,23 @@ def test_bitcount_with_start_end(r: ValkeyTestClient) -> None:
     """
     s = "foobar"
     r.run("set", "s", s)
-    # TODO: assert_equal r bitcount s 0 -1 count_bits "foobar"
-    # TODO: assert_equal r bitcount s 1 -2 count_bits "ooba"
+    assert r.run("bitcount", "s", 0, -1) == count_bits("foobar")
+    assert r.run("bitcount", "s", 1, -2) == count_bits("ooba")
     assert r.run("bitcount", "s", -2, 1) == 0
-    # TODO: assert_equal r bitcount s -1000 0 count_bits "f"
-    # TODO: assert_equal r bitcount s 0 1000 count_bits "foobar"
-    # TODO: assert_equal r bitcount s -1000 1000 count_bits "foobar"
-    # TODO: assert_equal r bitcount s 0 -1 bit count_bits $s
-    # TODO: assert_equal r bitcount s 10 14 bit count_bits_start_end $s 10 14
-    # TODO: assert_equal r bitcount s 3 14 bit count_bits_start_end $s 3 14
-    # TODO: assert_equal r bitcount s 3 29 bit count_bits_start_end $s 3 29
-    # TODO: assert_equal r bitcount s 10 -34 bit count_bits_start_end $s 10 14
-    # TODO: assert_equal r bitcount s 3 -34 bit count_bits_start_end $s 3 14
-    # TODO: assert_equal r bitcount s 3 -19 bit count_bits_start_end $s 3 29
+    assert r.run("bitcount", "s", -1000, 0) == count_bits("f")
+    assert r.run("bitcount", "s", 0, 1000) == count_bits("foobar")
+    assert r.run("bitcount", "s", -1000, 1000) == count_bits("foobar")
+    assert r.run("bitcount", "s", 0, -1, "bit") == count_bits(s)
+    assert r.run("bitcount", "s", 10, 14, "bit") == count_bits_start_end(s, 10, 14)
+    assert r.run("bitcount", "s", 3, 14, "bit") == count_bits_start_end(s, 3, 14)
+    assert r.run("bitcount", "s", 3, 29, "bit") == count_bits_start_end(s, 3, 29)
+    assert r.run("bitcount", "s", 10, -34, "bit") == count_bits_start_end(s, 10, 14)
+    assert r.run("bitcount", "s", 3, -34, "bit") == count_bits_start_end(s, 3, 14)
+    assert r.run("bitcount", "s", 3, -19, "bit") == count_bits_start_end(s, 3, 29)
     assert r.run("bitcount", "s", -2, 1, "bit") == 0
-    # TODO: assert_equal r bitcount s -1000 14 bit count_bits_start_end $s 0 14
-    # TODO: assert_equal r bitcount s 0 1000 bit count_bits $s
-    # TODO: assert_equal r bitcount s -1000 1000 bit count_bits $s
+    assert r.run("bitcount", "s", -1000, 14, "bit") == count_bits_start_end(s, 0, 14)
+    assert r.run("bitcount", "s", 0, 1000, "bit") == count_bits(s)
+    assert r.run("bitcount", "s", -1000, 1000, "bit") == count_bits(s)
 
 
 def test_bitcount_with_illegal_arguments(r: ValkeyTestClient) -> None:
@@ -458,7 +457,7 @@ def test_bitop_and_or_xor_don_t_change_the_string_with_single_input_key(r: Valke
     r.run("bitop", "and", "res1{t}", "a{t}")
     r.run("bitop", "or", "res2{t}", "a{t}")
     r.run("bitop", "xor", "res3{t}", "a{t}")
-    # TODO: list r get res1{t} r get res2{t} r get res3{t}
+    list_(r.run("get", "res1{t}"), r.run("get", "res2{t}"), r.run("get", "res3{t}"))
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -476,7 +475,7 @@ def test_bitop_missing_key_is_considered_a_stream_of_zero(r: ValkeyTestClient) -
     r.run("bitop", "and", "res1{t}", "no-suck-key{t}", "a{t}")
     r.run("bitop", "or", "res2{t}", "no-suck-key{t}", "a{t}", "no-such-key{t}")
     r.run("bitop", "xor", "res3{t}", "no-such-key{t}", "a{t}")
-    # TODO: list r get res1{t} r get res2{t} r get res3{t}
+    list_(r.run("get", "res1{t}"), r.run("get", "res2{t}"), r.run("get", "res3{t}"))
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -496,12 +495,11 @@ def test_bitop_shorter_keys_are_zero_padded_to_the_key_with_max_length(r: Valkey
     r.run("bitop", "and", "res1{t}", "a{t}", "b{t}")
     r.run("bitop", "or", "res2{t}", "a{t}", "b{t}")
     r.run("bitop", "xor", "res3{t}", "a{t}", "b{t}")
-    # TODO: list r get res1{t} r get res2{t} r get res3{t}
+    list_(r.run("get", "res1{t}"), r.run("get", "res2{t}"), r.run("get", "res3{t}"))
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["op"], [("and"), ("or"), ("xor")])
-def test_bitop_op_fuzzing(r: ValkeyTestClient) -> None:
+def test_bitop_op_fuzzing(r: ValkeyTestClient, op) -> None:
     """
     test "BITOP $op fuzzing" {
         for {set i 0} {$i < 10} {incr i} {
@@ -520,23 +518,24 @@ def test_bitop_op_fuzzing(r: ValkeyTestClient) -> None:
         }
     }
     """
-    # TODO: for {set i 0} {$i < 10} {incr i} {
-    #       r flushall
-    #       set vec {}
-    #       set veckeys {}
-    #       set numvec [expr {[randomInt 10]+1}]
-    #       for {set j 0} {$j < $numvec} {incr j} {
-    #           set str [randstring 0 1000]
-    #           lappend vec $str
-    #           lappend veckeys vector_$j{t}
-    #           r set vector_$j{t} $str
-    #       }
-    #       r bitop $op target{t} {*}$veckeys
-    #       assert_equal [r get target{t}] [simulate_bit_op $op {*}$vec]
-    #   }
+    i = 0
+    while i < 10:
+        r.run("flushall")
+        vec = ""
+        veckeys = ""
+        numvec = expr("[randomInt 10]+1")
+        j = 0
+        while j < numvec:
+            str = randstring(0, 1000)
+            lappend("vec", str)
+            lappend("veckeys", "vector_$j{t}")
+            r.run("set", "vector_$j{t}", str)
+            j += 1
+        r.run("bitop", op, "target{t}", "*", veckeys)
+        assert r.run("get", "target{t}") == simulate_bit_op(op, "*", vec)
+        i += 1
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitop_not_fuzzing(r: ValkeyTestClient) -> None:
     """
     test {BITOP NOT fuzzing} {
@@ -549,13 +548,14 @@ def test_bitop_not_fuzzing(r: ValkeyTestClient) -> None:
         }
     }
     """
-    # TODO: for {set i 0} {$i < 10} {incr i} {
-    #       r flushall
-    #       set str [randstring 0 1000]
-    #       r set str{t} $str
-    #       r bitop not target{t} str{t}
-    #       assert_equal [r get target{t}] [simulate_bit_op not $str]
-    #   }
+    i = 0
+    while i < 10:
+        r.run("flushall")
+        str = randstring(0, 1000)
+        r.run("set", "str{t}", str)
+        r.run("bitop", "not", "target{t}", "str{t}")
+        assert r.run("get", "target{t}") == simulate_bit_op("not", str)
+        i += 1
 
 
 def test_bitop_with_integer_encoded_source_objects(r: ValkeyTestClient) -> None:
@@ -887,7 +887,6 @@ def test_bitpos_bit_1_unaligned_full_word_reminder(r: ValkeyTestClient) -> None:
     assert r.run("bitpos", "str", 1, 65, -1, "bit") == 216
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitpos_bit_1_returns_1_if_string_is_all_0_bits(r: ValkeyTestClient) -> None:
     """
     test {BITPOS bit=1 returns -1 if string is all 0 bits} {
@@ -900,11 +899,12 @@ def test_bitpos_bit_1_returns_1_if_string_is_all_0_bits(r: ValkeyTestClient) -> 
     }
     """
     r.run("set", "str", "")
-    # TODO: for {set j 0} {$j < 20} {incr j} {
-    #       assert {[r bitpos str 1] == -1}
-    #       assert {[r bitpos str 1 0 -1 bit] == -1}
-    #       r append str "\x00"
-    #   }
+    for_(
+        "set j 0",
+        "$j < 20",
+        "incr j",
+        '            assert {[r bitpos str 1] == -1}\n            assert {[r bitpos str 1 0 -1 bit] == -1}\n            r append str "\\x00"\n        ',
+    )
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -987,7 +987,6 @@ def test_bitpos_bit_0_changes_behavior_if_end_is_given(r: ValkeyTestClient) -> N
     assert r.run("bitpos", "str", 0, 0, -1, "bit") == -1
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_setbit_or_bitfield_only_increase_dirty_when_the_value_changed(r: ValkeyTestClient) -> None:
     """
     test {SETBIT/BITFIELD only increase dirty when the value changed} {
@@ -1032,15 +1031,15 @@ def test_setbit_or_bitfield_only_increase_dirty_when_the_value_changed(r: Valkey
     }
     """
     r.run("del", "foo{t}", "foo2{t}", "foo3{t}")
-    # TODO: set dirty s rdb_changes_since_last_save
+    dirty = s("rdb_changes_since_last_save")
     r.run("setbit", "foo{t}", 0, 0)
     r.run("bitfield", "foo2{t}", "set", "i5", 0, 0)
-    # TODO: set dirty2 s rdb_changes_since_last_save
-    # TODO: assert {$dirty2 == $dirty + 2}
+    dirty2 = s("rdb_changes_since_last_save")
+    assert dirty2 == (dirty + 2)
     r.run("setbit", "foo{t}", 0, 0)
     r.run("bitfield", "foo2{t}", "set", "i5", 0, 0)
-    # TODO: set dirty3 s rdb_changes_since_last_save
-    # TODO: assert {$dirty3 == $dirty2}
+    dirty3 = s("rdb_changes_since_last_save")
+    assert dirty3 == dirty2
     r.run("setbit", "foo{t}", 0, 1)
     r.run("setbit", "foo{t}", 0, 1)
     r.run("setbit", "foo{t}", 0, 0)
@@ -1049,19 +1048,18 @@ def test_setbit_or_bitfield_only_increase_dirty_when_the_value_changed(r: Valkey
     r.run("bitfield", "foo2{t}", "set", "i5", 0, 1)
     r.run("bitfield", "foo2{t}", "set", "i5", 0, 0)
     r.run("bitfield", "foo2{t}", "set", "i5", 0, 0)
-    # TODO: set dirty4 s rdb_changes_since_last_save
-    # TODO: assert {$dirty4 == $dirty3 + 4}
+    dirty4 = s("rdb_changes_since_last_save")
+    assert dirty4 == (dirty3 + 4)
     r.run("bitfield", "foo3{t}", "incrby", "i5", 0, 1)
     r.run("bitfield", "foo3{t}", "incrby", "i5", 0, 1)
-    # TODO: set dirty5 s rdb_changes_since_last_save
-    # TODO: assert {$dirty5 == $dirty4 + 2}
+    dirty5 = s("rdb_changes_since_last_save")
+    assert dirty5 == (dirty4 + 2)
     r.run("setbit", "foo{t}", 90, 0)
     r.run("bitfield", "foo2{t}", "set", "i5", 90, 0)
-    # TODO: set dirty6 s rdb_changes_since_last_save
-    # TODO: assert {$dirty6 == $dirty5 + 2}
+    dirty6 = s("rdb_changes_since_last_save")
+    assert dirty6 == (dirty5 + 2)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitpos_bit_1_fuzzy_testing_using_setbit(r: ValkeyTestClient) -> None:
     """
     test {BITPOS bit=1 fuzzy testing using SETBIT} {
@@ -1084,17 +1082,17 @@ def test_bitpos_bit_1_fuzzy_testing_using_setbit(r: ValkeyTestClient) -> None:
     r.run("del", "str")
     max = 524288
     first_one_pos = -1
-    # TODO: for {set j 0} {$j < 1000} {incr j} {
-    #       assert {[r bitpos str 1] == $first_one_pos}
-    #       assert {[r bitpos str 1 0 -1 bit] == $first_one_pos}
-    #       set pos [randomInt $max]
-    #       r setbit str $pos 1
-    #       if {$first_one_pos == -1 || $first_one_pos > $pos} {
-    #           # Update the position of the first 1 bit in the array
-    #           # if the bit we set is on the left of the previous one.
-    #           set first_one_pos $pos
-    #       }
-    #   }
+    j = 0
+    while j < 1000:
+        assert r.run("bitpos", "str", 1) == first_one_pos
+        assert r.run("bitpos", "str", 1, 0, -1, "bit") == first_one_pos
+        pos = random_int(max)
+        r.run("setbit", "str", pos, 1)
+        if_(
+            "$first_one_pos == -1 || $first_one_pos > $pos",
+            "                # Update the position of the first 1 bit in the array\n                # if the bit we set is on the left of the previous one.\n                set first_one_pos $pos\n            ",
+        )
+        j += 1
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1124,24 +1122,22 @@ def test_bitpos_bit_0_fuzzy_testing_using_setbit(r: ValkeyTestClient) -> None:
     max = 524288
     first_zero_pos = max
     # TODO: r set str string repeat "\xff" [expr $max/8]
-    # TODO: for {set j 0} {$j < 1000} {incr j} {
-    #       assert {[r bitpos str 0] == $first_zero_pos}
-    #       if {$first_zero_pos == $max} {
-    #           assert {[r bitpos str 0 0 -1 bit] == -1}
-    #       } else {
-    #           assert {[r bitpos str 0 0 -1 bit] == $first_zero_pos}
-    #       }
-    #       set pos [randomInt $max]
-    #       r setbit str $pos 0
-    #       if {$first_zero_pos > $pos} {
-    #           # Update the position of the first 0 bit in the array
-    #           # if the bit we clear is on the left of the previous one.
-    #           set first_zero_pos $pos
-    #       }
-    #   }
+    j = 0
+    while j < 1000:
+        assert r.run("bitpos", "str", 0) == first_zero_pos
+        if first_zero_pos == max:
+            assert r.run("bitpos", "str", 0, 0, -1, "bit") == -1
+        else:
+            assert_("[r bitpos str 0 0 -1 bit] == $first_zero_pos")
+        pos = random_int(max)
+        r.run("setbit", "str", pos, 0)
+        if_(
+            "$first_zero_pos > $pos",
+            "                # Update the position of the first 0 bit in the array\n                # if the bit we clear is on the left of the previous one.\n                set first_zero_pos $pos\n            ",
+        )
+        j += 1
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitpos_or_bitcount_fuzzy_testing_using_setbit(r: ValkeyTestClient) -> None:
     """
     test {BITPOS/BITCOUNT fuzzy testing using SETBIT} {
@@ -1208,62 +1204,29 @@ def test_bitpos_or_bitcount_fuzzy_testing_using_setbit(r: ValkeyTestClient) -> N
         }
     }
     """
-    # TODO: proc test_one {start1 end1 start2 end2 pos bit pos_type} {
-    #       set start [randomRange $start1 $end1]
-    #       set end [randomRange $start2 $end2]
-    #       if {$start > $end} {
-    #           # Swap start and end
-    #           lassign [list $end $start] start end
-    #       }
-    #       set startbit $start
-    #       set endbit $end
-    #       # For byte index, we need to generate the real bit index
-    #       if {[string equal $pos_type byte]} {
-    #           set startbit [expr $start << 3]
-    #           set endbit [expr ($end << 3) + 7]
-    #       }
-    #       # This means whether the test bit index is in the range.
-    #       set inrange [expr ($pos >= $startbit && $pos <= $endbit) ? 1: 0]
-    #       # For bitcount, there are four different results.
-    #       # $inrange == 0 && $bit == 0, all bits in the range are set, so $endbit - $startbit + 1
-    #       # $inrange == 0 && $bit == 1, all bits in the range are clear, so 0
-    #       # $inrange == 1 && $bit == 0, all bits in the range are set but one, so $endbit - $startbit
-    #       # $inrange == 1 && $bit == 1, all bits in the range are clear but one, so 1
-    #       set res_count [expr ($endbit - $startbit + 1) * (1 - $bit) + $inrange * [expr $bit ? 1 : -1]]
-    #       assert {[r bitpos str $bit $start $end $pos_type] == [expr $inrange ? $pos : -1]}
-    #       assert {[r bitcount str $start $end $pos_type] == $res_count}
-    #   }
+    proc(
+        "test_one",
+        "start1 end1 start2 end2 pos bit pos_type",
+        "            set start [randomRange $start1 $end1]\n            set end [randomRange $start2 $end2]\n            if {$start > $end} {\n                # Swap start and end\n                lassign [list $end $start] start end\n            }\n            set startbit $start\n            set endbit $end\n            # For byte index, we need to generate the real bit index\n            if {[string equal $pos_type byte]} {\n                set startbit [expr $start << 3]\n                set endbit [expr ($end << 3) + 7]\n            }\n            # This means whether the test bit index is in the range.\n            set inrange [expr ($pos >= $startbit && $pos <= $endbit) ? 1: 0]\n            # For bitcount, there are four different results.\n            # $inrange == 0 && $bit == 0, all bits in the range are set, so $endbit - $startbit + 1\n            # $inrange == 0 && $bit == 1, all bits in the range are clear, so 0\n            # $inrange == 1 && $bit == 0, all bits in the range are set but one, so $endbit - $startbit\n            # $inrange == 1 && $bit == 1, all bits in the range are clear but one, so 1\n            set res_count [expr ($endbit - $startbit + 1) * (1 - $bit) + $inrange * [expr $bit ? 1 : -1]]\n            assert {[r bitpos str $bit $start $end $pos_type] == [expr $inrange ? $pos : -1]}\n            assert {[r bitcount str $start $end $pos_type] == $res_count}\n        ",
+    )
     r.run("del", "str")
     max = 80
-    # TODO: r setbit str expr $max - 1 0
-    # TODO: set bytes expr $max >> 3
-    # TODO: for {set bit 0} {$bit < 2} {incr bit} {
-    #       r bitop not str str
-    #       for {set j 0} {$j < $max} {incr j} {
-    #           r setbit str $j $bit
-    #
-    #           # First iteration tests byte index and second iteration tests bit index.
-    #           foreach {curr end pos_type} [list [expr $j >> 3] $bytes byte $j $max bit] {
-    #               # start==end set to bit position
-    #               test_one $curr $curr $curr $curr $j $bit $pos_type
-    #               # Both start and end are before bit position
-    #               if {$curr > 0} {
-    #                   test_one 0 $curr 0 $curr $j $bit $pos_type
-    #               }
-    #               # Both start and end are after bit position
-    #               if {$curr < [expr $end - 1]} {
-    #                   test_one [expr $curr + 1] $end [expr $curr + 1] $end $j $bit $pos_type
-    #               }
-    #               # start is before and end is after bit position
-    #               if {$curr > 0 && $curr < [expr $end - 1]} {
-    #                   test_one 0 $curr [expr $curr +1] $end $j $bit $pos_type
-    #               }
-    #           }
-    #
-    #           # restore bit
-    #           r setbit str $j [expr 1 - $bit]
-    #       }
-    #   }
+    r.run("setbit", "str", expr(max, "-", 1), 0)
+    bytes = expr(max, ">>", 3)
+    bit = 0
+    while bit < 2:
+        r.run("bitop", "not", "str", "str")
+        j = 0
+        while j < max:
+            r.run("setbit", "str", j, bit)
+            foreach(
+                "curr end pos_type",
+                list_(expr(j, ">>", 3), bytes, "byte", j, max, "bit"),
+                "                    # start==end set to bit position\n                    test_one $curr $curr $curr $curr $j $bit $pos_type\n                    # Both start and end are before bit position\n                    if {$curr > 0} {\n                        test_one 0 $curr 0 $curr $j $bit $pos_type\n                    }\n                    # Both start and end are after bit position\n                    if {$curr < [expr $end - 1]} {\n                        test_one [expr $curr + 1] $end [expr $curr + 1] $end $j $bit $pos_type\n                    }\n                    # start is before and end is after bit position\n                    if {$curr > 0 && $curr < [expr $end - 1]} {\n                        test_one 0 $curr [expr $curr +1] $end $j $bit $pos_type\n                    }\n                ",
+            )
+            r.run("setbit", "str", j, expr(1, "-", bit))
+            j += 1
+        bit += 1
 
 
 """
@@ -1311,3 +1274,66 @@ run_solo {bitops-large-memory} {
     }
 }
 """
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def assert_(*args):
+    raise NotImplementedError("assert_")
+
+
+def count_bits(*args):
+    raise NotImplementedError("count_bits")
+
+
+def count_bits_start_end(*args):
+    raise NotImplementedError("count_bits_start_end")
+
+
+def expr(*args):
+    raise NotImplementedError("expr")
+
+
+def for_(*args):
+    raise NotImplementedError("for_")
+
+
+def foreach(*args):
+    raise NotImplementedError("foreach")
+
+
+def if_(*args):
+    raise NotImplementedError("if_")
+
+
+def lappend(*args):
+    raise NotImplementedError("lappend")
+
+
+def list_(*args):
+    raise NotImplementedError("list_")
+
+
+def proc(*args):
+    raise NotImplementedError("proc")
+
+
+def random_int(*args):
+    raise NotImplementedError("random_int")
+
+
+def randstring(*args):
+    raise NotImplementedError("randstring")
+
+
+def s(*args):
+    raise NotImplementedError("s")
+
+
+def simulate_bit_op(*args):
+    raise NotImplementedError("simulate_bit_op")
+
+
+def string(*args):
+    raise NotImplementedError("string")

@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841, RUF043
+# ruff: noqa: PLR2004, F841, RUF043, ANN002, ANN201
 import time
 
 import pytest
@@ -30,7 +30,6 @@ def test_set_and_get_an_empty_item(r: ValkeyTestClient) -> None:
     r.run("get", "x")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_very_big_payload_in_get_or_set(r: ValkeyTestClient) -> None:
     """
     test {Very big payload in GET/SET} {
@@ -39,12 +38,11 @@ def test_very_big_payload_in_get_or_set(r: ValkeyTestClient) -> None:
         r get foo
     } string repeat "abcd" 1000000
     """
-    # TODO: set buf string repeat "abcd" 1000000
-    # TODO: r set foo buf
+    buf = string("repeat", "abcd", 1000000)
+    r.run("set", "foo", buf)
     r.run("get", "foo")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_memoryusage_of_string(r: ValkeyTestClient) -> None:
     """
     test {memoryusage of string} {
@@ -75,18 +73,18 @@ def test_memoryusage_of_string(r: ValkeyTestClient) -> None:
     key = "key"
     value = "value"
     r.run("set", key, value)
-    # TODO: assert_lessthan_equal expr [string length $key] + [string length $value] r memory usage key
+    assert_lessthan_equal(expr(len(key), "+", len(value)), r.run("memory", "usage", "key"))
     key = "key"
-    # TODO: set value string repeat A 100000
+    value = string("repeat", "A", 100000)
     r.run("set", key, value)
-    # TODO: assert_lessthan_equal expr [string length $key] + [string length $value] r memory usage key
-    # TODO: set key string repeat A 100000
+    assert_lessthan_equal(expr(len(key), "+", len(value)), r.run("memory", "usage", "key"))
+    key = string("repeat", "A", 100000)
     value = "value"
     r.run("set", key, value)
-    # TODO: assert_lessthan_equal expr [string length $key] + [string length $value] r memory usage key
-    # TODO: set key string repeat B 100000
+    assert_lessthan_equal(expr(len(key), "+", len(value)), r.run("memory", "usage", "key"))
+    key = string("repeat", "B", 100000)
     r.run("incr", key)
-    # TODO: assert_lessthan_equal string length $key r memory usage $key
+    assert_lessthan_equal(len(key), r.run("memory", "usage", key))
 
 
 def test_setnx_target_key_missing(r: ValkeyTestClient) -> None:
@@ -167,7 +165,6 @@ def test_setnx_against_expired_volatile_key(r: ValkeyTestClient) -> None:
     assert 20 == r.run("get", "x")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_getex_ex_option(r: ValkeyTestClient) -> None:
     """
     test "GETEX EX option" {
@@ -180,10 +177,9 @@ def test_getex_ex_option(r: ValkeyTestClient) -> None:
     r.run("del", "foo")
     r.run("set", "foo", "bar")
     r.run("getex", "foo", "ex", 10)
-    # TODO: assert_range r ttl foo 5 10
+    assert_range(r.run("ttl", "foo"), 5, 10)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_getex_px_option(r: ValkeyTestClient) -> None:
     """
     test "GETEX PX option" {
@@ -196,10 +192,9 @@ def test_getex_px_option(r: ValkeyTestClient) -> None:
     r.run("del", "foo")
     r.run("set", "foo", "bar")
     r.run("getex", "foo", "px", 10000)
-    # TODO: assert_range r pttl foo 5000 10000
+    assert_range(r.run("pttl", "foo"), 5000, 10000)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_getex_exat_option(r: ValkeyTestClient) -> None:
     """
     test "GETEX EXAT option" {
@@ -211,11 +206,10 @@ def test_getex_exat_option(r: ValkeyTestClient) -> None:
     """
     r.run("del", "foo")
     r.run("set", "foo", "bar")
-    # TODO: r getex foo exat expr [clock seconds] + 10
-    # TODO: assert_range r ttl foo 5 10
+    r.run("getex", "foo", "exat", expr(clock("seconds"), "+", 10))
+    assert_range(r.run("ttl", "foo"), 5, 10)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_getex_pxat_option(r: ValkeyTestClient) -> None:
     """
     test "GETEX PXAT option" {
@@ -227,11 +221,10 @@ def test_getex_pxat_option(r: ValkeyTestClient) -> None:
     """
     r.run("del", "foo")
     r.run("set", "foo", "bar")
-    # TODO: r getex foo pxat expr [clock milliseconds] + 10000
-    # TODO: assert_range r pttl foo 5000 10000
+    r.run("getex", "foo", "pxat", expr(clock("milliseconds"), "+", 10000))
+    assert_range(r.run("pttl", "foo"), 5000, 10000)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_getex_persist_option(r: ValkeyTestClient) -> None:
     """
     test "GETEX PERSIST option" {
@@ -244,7 +237,7 @@ def test_getex_persist_option(r: ValkeyTestClient) -> None:
     """
     r.run("del", "foo")
     r.run("set", "foo", "bar", "ex", 10)
-    # TODO: assert_range r ttl foo 5 10
+    assert_range(r.run("ttl", "foo"), 5, 10)
     r.run("getex", "foo", "persist")
     assert -1 == r.run("ttl", "foo")
 
@@ -328,7 +321,6 @@ def test_getdel_command(r: ValkeyTestClient) -> None:
     assert "" == r.run("getdel", "foo")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_getdel_propagate_as_del_command_to_replica(r: ValkeyTestClient) -> None:
     """
     test {GETDEL propagate as DEL command to replica} {
@@ -343,18 +335,15 @@ def test_getdel_propagate_as_del_command_to_replica(r: ValkeyTestClient) -> None
         close_replication_stream $repl
     } {} {needs:repl}
     """
-    # TODO: set repl attach_to_replication_stream
+    repl = attach_to_replication_stream()
     r.run("set", "foo", "bar")
     r.run("getdel", "foo")
-    # TODO: assert_replication_stream repl {
-    #       {select *}
-    #       {set foo bar}
-    #       {del foo}
-    #   }
-    # TODO: close_replication_stream repl
+    assert_replication_stream(
+        repl, "            {select *}\n            {set foo bar}\n            {del foo}\n        "
+    )
+    close_replication_stream(repl)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_getex_without_argument_does_not_propagate_to_replica(r: ValkeyTestClient) -> None:
     """
     test {GETEX without argument does not propagate to replica} {
@@ -370,16 +359,14 @@ def test_getex_without_argument_does_not_propagate_to_replica(r: ValkeyTestClien
         close_replication_stream $repl
     } {} {needs:repl}
     """
-    # TODO: set repl attach_to_replication_stream
+    repl = attach_to_replication_stream()
     r.run("set", "foo", "bar")
     r.run("getex", "foo")
     r.run("del", "foo")
-    # TODO: assert_replication_stream repl {
-    #       {select *}
-    #       {set foo bar}
-    #       {del foo}
-    #   }
-    # TODO: close_replication_stream repl
+    assert_replication_stream(
+        repl, "            {select *}\n            {set foo bar}\n            {del foo}\n        "
+    )
+    close_replication_stream(repl)
 
 
 def test_mget(r: ValkeyTestClient) -> None:
@@ -560,7 +547,6 @@ def test_strlen_against_plain_string(r: ValkeyTestClient) -> None:
     assert 20 == r.run("strlen", "mystring")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_setbit_against_non_existing_key(r: ValkeyTestClient) -> None:
     """
     test "SETBIT against non-existing key" {
@@ -571,10 +557,9 @@ def test_setbit_against_non_existing_key(r: ValkeyTestClient) -> None:
     """
     r.run("del", "mykey")
     assert 0 == r.run("setbit", "mykey", 1, 1)
-    # TODO: assert_equal binary format B* 01000000 r get mykey
+    assert binary("format", "B*", 1000000) == r.run("get", "mykey")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_setbit_against_string_encoded_key(r: ValkeyTestClient) -> None:
     """
     test "SETBIT against string-encoded key" {
@@ -589,12 +574,11 @@ def test_setbit_against_string_encoded_key(r: ValkeyTestClient) -> None:
     """
     r.run("set", "mykey", "@")
     assert 0 == r.run("setbit", "mykey", 2, 1)
-    # TODO: assert_equal binary format B* 01100000 r get mykey
+    assert binary("format", "B*", 1100000) == r.run("get", "mykey")
     assert 1 == r.run("setbit", "mykey", 1, 0)
-    # TODO: assert_equal binary format B* 00100000 r get mykey
+    assert binary("format", "B*", 100000) == r.run("get", "mykey")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_setbit_against_integer_encoded_key(r: ValkeyTestClient) -> None:
     """
     test "SETBIT against integer-encoded key" {
@@ -609,11 +593,11 @@ def test_setbit_against_integer_encoded_key(r: ValkeyTestClient) -> None:
     }
     """
     r.run("set", "mykey", 1)
-    # TODO: assert_encoding int mykey
+    assert_encoding("int", "mykey")
     assert 0 == r.run("setbit", "mykey", 6, 1)
-    # TODO: assert_equal binary format B* 00110011 r get mykey
+    assert binary("format", "B*", 110011) == r.run("get", "mykey")
     assert 1 == r.run("setbit", "mykey", 2, 0)
-    # TODO: assert_equal binary format B* 00010011 r get mykey
+    assert binary("format", "B*", 10011) == r.run("get", "mykey")
 
 
 def test_setbit_against_key_with_wrong_type(r: ValkeyTestClient) -> None:
@@ -630,7 +614,6 @@ def test_setbit_against_key_with_wrong_type(r: ValkeyTestClient) -> None:
         r.run("setbit", "mykey", 0, 1)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_setbit_with_out_of_range_bit_offset(r: ValkeyTestClient) -> None:
     """
     test "SETBIT with out of range bit offset" {
@@ -640,7 +623,8 @@ def test_setbit_with_out_of_range_bit_offset(r: ValkeyTestClient) -> None:
     }
     """
     r.run("del", "mykey")
-    # TODO: assert_error "*out of range*" {r setbit mykey [expr 4*1024*1024*1024] 1}
+    with pytest.raises(Exception, match=".*out\\ of\\ range.*"):
+        r.run("setbit", "mykey", expr("4*1024*1024*1024"), 1)
     with pytest.raises(Exception, match=".*out\\ of\\ range.*"):
         r.run("setbit", "mykey", -1, 1)
 
@@ -666,7 +650,6 @@ def test_setbit_with_non_bit_argument(r: ValkeyTestClient) -> None:
         r.run("setbit", "mykey", 0, 20)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_setbit_fuzzing(r: ValkeyTestClient) -> None:
     """
     test "SETBIT fuzzing" {
@@ -688,19 +671,19 @@ def test_setbit_fuzzing(r: ValkeyTestClient) -> None:
     }
     """
     str = ""
-    # TODO: set len expr 256*8
+    len = expr("256*8")
     r.run("del", "mykey")
-    # TODO: for {set i 0} {$i < 2000} {incr i} {
-    #       set bitnum [randomInt $len]
-    #       set bitval [randomInt 2]
-    #       set fmt [format "%%-%ds%%d%%-s" $bitnum]
-    #       set head [string range $str 0 $bitnum-1]
-    #       set tail [string range $str $bitnum+1 end]
-    #       set str [string map {" " 0} [format $fmt $head $bitval $tail]]
-    #
-    #       r setbit mykey $bitnum $bitval
-    #       assert_equal [binary format B* $str] [r get mykey]
-    #   }
+    i = 0
+    while i < 2000:
+        bitnum = random_int(len)
+        bitval = random_int(2)
+        fmt = format_("%%-%ds%%d%%-s", bitnum)
+        head = string("range", str, 0, bitnum, -1)
+        tail = string("range", str, bitnum, 1, "end")
+        str = string("map", '" " 0', format_(fmt, head, bitval, tail))
+        r.run("setbit", "mykey", bitnum, bitval)
+        assert binary("format", "B*", str) == r.run("get", "mykey")
+        i += 1
 
 
 def test_getbit_against_non_existing_key(r: ValkeyTestClient) -> None:
@@ -742,7 +725,6 @@ def test_getbit_against_string_encoded_key(r: ValkeyTestClient) -> None:
     assert 0 == r.run("getbit", "mykey", 10000)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_getbit_against_integer_encoded_key(r: ValkeyTestClient) -> None:
     """
     test "GETBIT against integer-encoded key" {
@@ -762,7 +744,7 @@ def test_getbit_against_integer_encoded_key(r: ValkeyTestClient) -> None:
     }
     """
     r.run("set", "mykey", 1)
-    # TODO: assert_encoding int mykey
+    assert_encoding("int", "mykey")
     assert 0 == r.run("getbit", "mykey", 0)
     assert 0 == r.run("getbit", "mykey", 1)
     assert 1 == r.run("getbit", "mykey", 2)
@@ -866,24 +848,24 @@ def test_setrange_against_integer_encoded_key(r: ValkeyTestClient) -> None:
     }
     """
     r.run("set", "mykey", 1234)
-    # TODO: assert_encoding int mykey
+    assert_encoding("int", "mykey")
     assert 4 == r.run("setrange", "mykey", 0, 2)
-    # TODO: assert_encoding raw mykey
+    assert_encoding("raw", "mykey")
     assert 2234 == r.run("get", "mykey")
     r.run("set", "mykey", 1234)
-    # TODO: assert_encoding int mykey
+    assert_encoding("int", "mykey")
     assert 4 == r.run("setrange", "mykey", 0, "")
-    # TODO: assert_encoding int mykey
+    assert_encoding("int", "mykey")
     assert 1234 == r.run("get", "mykey")
     r.run("set", "mykey", 1234)
-    # TODO: assert_encoding int mykey
+    assert_encoding("int", "mykey")
     assert 4 == r.run("setrange", "mykey", 1, 3)
-    # TODO: assert_encoding raw mykey
+    assert_encoding("raw", "mykey")
     assert 1334 == r.run("get", "mykey")
     r.run("set", "mykey", 1234)
-    # TODO: assert_encoding int mykey
+    assert_encoding("int", "mykey")
     assert 6 == r.run("setrange", "mykey", 5, 2)
-    # TODO: assert_encoding raw mykey
+    assert_encoding("raw", "mykey")
     # TODO: assert_equal "1234\0002" r get mykey
 
 
@@ -901,7 +883,6 @@ def test_setrange_against_key_with_wrong_type(r: ValkeyTestClient) -> None:
         r.run("setrange", "mykey", 0, "bar")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_setrange_with_out_of_range_offset(r: ValkeyTestClient) -> None:
     """
     test "SETRANGE with out of range offset" {
@@ -914,11 +895,13 @@ def test_setrange_with_out_of_range_offset(r: ValkeyTestClient) -> None:
     }
     """
     r.run("del", "mykey")
-    # TODO: assert_error "*maximum allowed size*" {r setrange mykey [expr 512*1024*1024-4] world}
+    with pytest.raises(Exception, match=".*maximum\\ allowed\\ size.*"):
+        r.run("setrange", "mykey", expr("512*1024*1024-4"), "world")
     r.run("set", "mykey", "hello")
     with pytest.raises(Exception, match=".*out\\ of\\ range.*"):
         r.run("setrange", "mykey", -1, "world")
-    # TODO: assert_error "*maximum allowed size*" {r setrange mykey [expr 512*1024*1024-4] world}
+    with pytest.raises(Exception, match=".*maximum\\ allowed\\ size.*"):
+        r.run("setrange", "mykey", expr("512*1024*1024-4"), "world")
 
 
 def test_getrange_against_non_existing_key(r: ValkeyTestClient) -> None:
@@ -988,7 +971,6 @@ def test_getrange_against_integer_encoded_value(r: ValkeyTestClient) -> None:
     assert "1234" == r.run("getrange", "mykey", -5000, 10000)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_getrange_fuzzing(r: ValkeyTestClient) -> None:
     """
     test "GETRANGE fuzzing" {
@@ -1002,14 +984,12 @@ def test_getrange_fuzzing(r: ValkeyTestClient) -> None:
         }
     }
     """
-    # TODO: for {set i 0} {$i < 1000} {incr i} {
-    #       r set bin [set bin [randstring 0 1024 binary]]
-    #       set _start [set start [randomInt 1500]]
-    #       set _end [set end [randomInt 1500]]
-    #       if {$_start < 0} {set _start "end-[abs($_start)-1]"}
-    #       if {$_end < 0} {set _end "end-[abs($_end)-1]"}
-    #       assert_equal [string range $bin $_start $_end] [r getrange bin $start $end]
-    #   }
+    for_(
+        "set i 0",
+        "$i < 1000",
+        "incr i",
+        '            r set bin [set bin [randstring 0 1024 binary]]\n            set _start [set start [randomInt 1500]]\n            set _end [set end [randomInt 1500]]\n            if {$_start < 0} {set _start "end-[abs($_start)-1]"}\n            if {$_end < 0} {set _end "end-[abs($_end)-1]"}\n            assert_equal [string range $bin $_start $_end] [r getrange bin $start $end]\n        ',
+    )
 
 
 def test_coverage_substr(r: ValkeyTestClient) -> None:
@@ -1033,7 +1013,6 @@ def test_coverage_substr(r: ValkeyTestClient) -> None:
     assert "" == r.run("substr", "nokey", 0, 1)
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.skipif("", reason="{[string match {*jemalloc*} [s mem_allocator]]}")
 def test_trim_on_set_with_big_value(r: ValkeyTestClient) -> None:
     """
@@ -1046,8 +1025,8 @@ def test_trim_on_set_with_big_value(r: ValkeyTestClient) -> None:
         assert {[r memory usage key] < 42000}; # 42K to count for Jemalloc's additional memory overhead.
     }
     """
-    # TODO: r set key string repeat A 100000
-    # TODO: r set key string repeat A 33000
+    r.run("set", "key", string("repeat", "A", 100000))
+    r.run("set", "key", string("repeat", "A", 33000))
     assert r.run("memory", "usage", "key") < 42000
 
 
@@ -1118,7 +1097,7 @@ def test_extended_set_get_option(r: ValkeyTestClient) -> None:
     r.run("set", "foo", "bar")
     old_value = r.run("set", "foo", "bar2", "GET")
     new_value = r.run("get", "foo")
-    # TODO: list old _value new _value
+    # TODO: list old_value new_value
     assert False
 
 
@@ -1135,7 +1114,7 @@ def test_extended_set_get_option_with_no_previous_value(r: ValkeyTestClient) -> 
     r.run("del", "foo")
     old_value = r.run("set", "foo", "bar", "GET")
     new_value = r.run("get", "foo")
-    # TODO: list old _value new _value
+    # TODO: list old_value new_value
     assert False
 
 
@@ -1154,7 +1133,7 @@ def test_extended_set_get_option_with_xx(r: ValkeyTestClient) -> None:
     r.run("set", "foo", "bar")
     old_value = r.run("set", "foo", "baz", "GET", "XX")
     new_value = r.run("get", "foo")
-    # TODO: list old _value new _value
+    # TODO: list old_value new_value
     assert False
 
 
@@ -1171,7 +1150,7 @@ def test_extended_set_get_option_with_xx_and_no_previous_value(r: ValkeyTestClie
     r.run("del", "foo")
     old_value = r.run("set", "foo", "bar", "GET", "XX")
     new_value = r.run("get", "foo")
-    # TODO: list old _value new _value
+    # TODO: list old_value new_value
     assert False
 
 
@@ -1188,7 +1167,7 @@ def test_extended_set_get_option_with_nx(r: ValkeyTestClient) -> None:
     r.run("del", "foo")
     old_value = r.run("set", "foo", "bar", "GET", "NX")
     new_value = r.run("get", "foo")
-    # TODO: list old _value new _value
+    # TODO: list old_value new_value
     assert False
 
 
@@ -1207,7 +1186,7 @@ def test_extended_set_get_option_with_nx_and_previous_value(r: ValkeyTestClient)
     r.run("set", "foo", "bar")
     old_value = r.run("set", "foo", "baz", "GET", "NX")
     new_value = r.run("get", "foo")
-    # TODO: list old _value new _value
+    # TODO: list old_value new_value
     assert False
 
 
@@ -1364,7 +1343,6 @@ def test_extended_set_px_option(r: ValkeyTestClient) -> None:
     assert (ttl <= 10) and (ttl > 5)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_extended_set_exat_option(r: ValkeyTestClient) -> None:
     """
     test "Extended SET EXAT option" {
@@ -1374,11 +1352,10 @@ def test_extended_set_exat_option(r: ValkeyTestClient) -> None:
     }
     """
     r.run("del", "foo")
-    # TODO: r set foo bar exat expr [clock seconds] + 10
-    # TODO: assert_range r ttl foo 5 10
+    r.run("set", "foo", "bar", "exat", expr(clock("seconds"), "+", 10))
+    assert_range(r.run("ttl", "foo"), 5, 10)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_extended_set_pxat_option(r: ValkeyTestClient) -> None:
     """
     test "Extended SET PXAT option" {
@@ -1388,11 +1365,10 @@ def test_extended_set_pxat_option(r: ValkeyTestClient) -> None:
     }
     """
     r.run("del", "foo")
-    # TODO: r set foo bar pxat expr [clock milliseconds] + 10000
-    # TODO: assert_range r ttl foo 5 10
+    r.run("set", "foo", "bar", "pxat", expr(clock("milliseconds"), "+", 10000))
+    assert_range(r.run("ttl", "foo"), 5, 10)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_set_exat_or_pxat_expiration_time_is_expired(r: ValkeyTestClient) -> None:
     """
     test "SET EXAT / PXAT Expiration time is expired" {
@@ -1429,33 +1405,29 @@ def test_set_exat_or_pxat_expiration_time_is_expired(r: ValkeyTestClient) -> Non
     } {} {needs:debug needs:repl}
     """
     r.run("debug", "set-active-expire", 0)
-    # TODO: set repl attach_to_replication_stream
+    repl = attach_to_replication_stream()
     r.run("set", "foo", "bar")
-    # TODO: r set foo bar exat expr [clock seconds] - 100
+    r.run("set", "foo", "bar", "exat", expr(clock("seconds"), "-", 100))
     with pytest.raises(Exception, match="ERR\\ no\\ such\\ key"):
         r.run("debug", "object", "foo")
     r.run("set", "foo", "bar")
-    # TODO: r set foo bar pxat expr [clock milliseconds] - 10000
+    r.run("set", "foo", "bar", "pxat", expr(clock("milliseconds"), "-", 10000))
     with pytest.raises(Exception, match="ERR\\ no\\ such\\ key"):
         r.run("debug", "object", "foo")
     r.run("del", "foo")
-    # TODO: r set foo bar exat expr [clock seconds] - 100
+    r.run("set", "foo", "bar", "exat", expr(clock("seconds"), "-", 100))
     with pytest.raises(Exception, match="ERR\\ no\\ such\\ key"):
         r.run("debug", "object", "foo")
-    # TODO: r set foo bar pxat expr [clock milliseconds] - 10000
+    r.run("set", "foo", "bar", "pxat", expr(clock("milliseconds"), "-", 10000))
     with pytest.raises(Exception, match="ERR\\ no\\ such\\ key"):
         r.run("debug", "object", "foo")
     r.run("incr", "foo")
-    # TODO: assert_replication_stream repl {
-    #       {select *}
-    #       {set foo bar}
-    #       {unlink foo}
-    #       {set foo bar}
-    #       {unlink foo}
-    #       {incr foo}
-    #   }
+    assert_replication_stream(
+        repl,
+        "           {select *}\n           {set foo bar}\n           {unlink foo}\n           {set foo bar}\n           {unlink foo}\n           {incr foo}\n        ",
+    )
     r.run("debug", "set-active-expire", 1)
-    # TODO: close_replication_stream repl
+    close_replication_stream(repl)
 
 
 def test_extended_set_using_multiple_options_at_once(r: ValkeyTestClient) -> None:
@@ -1563,7 +1535,6 @@ def test_lcs_indexes_with_match_len_and_minimum_match_len(r: ValkeyTestClient) -
     )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_setrange_with_huge_offset(r: ValkeyTestClient) -> None:
     """
     test {SETRANGE with huge offset} {
@@ -1576,13 +1547,11 @@ def test_setrange_with_huge_offset(r: ValkeyTestClient) -> None:
         }
     }
     """
-    # TODO: foreach value {9223372036854775807 2147483647} {
-    #       catch {[r setrange K $value A]} res
-    #        # expecting a different error on 32 and 64 bit systems
-    #        if {![string match "*string exceeds maximum allowed size*" $res] && ![string match "*out of range*" $res]} {
-    #            assert_equal $res "expecting an error"
-    #       }
-    #   }
+    foreach(
+        "value",
+        "9223372036854775807 2147483647",
+        '            catch {[r setrange K $value A]} res\n            # expecting a different error on 32 and 64 bit systems\n            if {![string match "*string exceeds maximum allowed size*" $res] && ![string match "*out of range*" $res]} {\n                assert_equal $res "expecting an error"\n           }\n        ',
+    )
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1605,13 +1574,13 @@ def test_append_modifies_the_encoding_from_int_to_raw(r: ValkeyTestClient) -> No
     """
     r.run("del", "foo")
     r.run("set", "foo", 1)
-    # TODO: assert_encoding "int" foo
+    assert_encoding("int", "foo")
     r.run("append", "foo", 2)
     res = ""
-    # TODO: lappend res r get foo
-    # TODO: assert_encoding "raw" foo
+    lappend("res", r.run("get", "foo"))
+    assert_encoding("raw", "foo")
     r.run("set", "bar", 12)
-    # TODO: assert_encoding "int" bar
+    assert_encoding("int", "bar")
     # TODO: lappend res r get bar
     assert False
 
@@ -1663,7 +1632,6 @@ def test_delifeq_existing_key_non_string_value(r: ValkeyTestClient) -> None:
         r.run("delifeq", "foo", "test")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_delifeq_propagate_as_del_command_to_replica(r: ValkeyTestClient) -> None:
     """
     test {DELIFEQ propagate as DEL command to replica} {
@@ -1678,18 +1646,15 @@ def test_delifeq_propagate_as_del_command_to_replica(r: ValkeyTestClient) -> Non
         close_replication_stream $repl
     } {} {needs:repl}
     """
-    # TODO: set repl attach_to_replication_stream
+    repl = attach_to_replication_stream()
     r.run("set", "foo", "bar")
     r.run("delifeq", "foo", "bar")
-    # TODO: assert_replication_stream repl {
-    #       {select *}
-    #       {set foo bar}
-    #       {del foo}
-    #   }
-    # TODO: close_replication_stream repl
+    assert_replication_stream(
+        repl, "            {select *}\n            {set foo bar}\n            {del foo}\n        "
+    )
+    close_replication_stream(repl)
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.skipif("", reason="{[string match {*jemalloc*} [s mem_allocator]]}")
 def test_memory_usage_of_embedded_string_value(r: ValkeyTestClient) -> None:
     """
@@ -1727,15 +1692,94 @@ def test_memory_usage_of_embedded_string_value(r: ValkeyTestClient) -> None:
     } {} {needs:debug}
     """
     r.run("set", "quux", "xyzzy")
-    # TODO: assert_lessthan_equal r memory usage quux 24
+    assert_lessthan_equal(r.run("memory", "usage", "quux"), 24)
     info_server = r.run("info", "server")
-    # TODO: regexp {arch_bits:(\d+)} info _server _ arch_bits
-    # TODO: set pointer_size expr {$arch_bits / 8}
-    # TODO: set content_size expr {[string length quux] + [string length xyzzy]}
-    # TODO: regexp {robj:(\d+)} r debug structsize _ obj_header_size
-    # TODO: set obj_header_size expr {$obj_header_size - $pointer_size}
+    regexp("arch_bits:(\\d+)", info_server, "_", "arch_bits")
+    pointer_size = expr("$arch_bits / 8")
+    content_size = expr("[string length quux] + [string length xyzzy]")
+    regexp("robj:(\\d+)", r.run("debug", "structsize"), "_", "obj_header_size")
+    obj_header_size = expr("$obj_header_size - $pointer_size")
     debug_sdslen = r.run("debug", "sdslen", "quux")
-    # TODO: regexp {key_sds_len:4 key_sds_avail:0 obj_alloc:(\d+)} debug _sdslen _ obj_alloc
-    # TODO: regexp {val_sds_len:5 val_sds_avail:(\d+) val_alloc:(\d+)} debug _sdslen _ avail val_alloc
-    # TODO: set sds_overhead expr {$obj_alloc + $val_alloc - $obj_header_size - 1 - $content_size - $avail}
-    # TODO: assert_equal 6 sds _overhead
+    regexp("key_sds_len:4 key_sds_avail:0 obj_alloc:(\\d+)", debug_sdslen, "_", "obj_alloc")
+    regexp("val_sds_len:5 val_sds_avail:(\\d+) val_alloc:(\\d+)", debug_sdslen, "_", "avail", "val_alloc")
+    sds_overhead = expr("$obj_alloc + $val_alloc - $obj_header_size - 1 - $content_size - $avail")
+    assert 6 == sds_overhead
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def assert_encoding(*args):
+    raise NotImplementedError("assert_encoding")
+
+
+def assert_lessthan_equal(*args):
+    raise NotImplementedError("assert_lessthan_equal")
+
+
+def assert_range(*args):
+    raise NotImplementedError("assert_range")
+
+
+def assert_replication_stream(*args):
+    raise NotImplementedError("assert_replication_stream")
+
+
+def attach_to_replication_stream(*args):
+    raise NotImplementedError("attach_to_replication_stream")
+
+
+def binary(*args):
+    raise NotImplementedError("binary")
+
+
+def clock(*args):
+    raise NotImplementedError("clock")
+
+
+def close_replication_stream(*args):
+    raise NotImplementedError("close_replication_stream")
+
+
+def expr(*args):
+    raise NotImplementedError("expr")
+
+
+def for_(*args):
+    raise NotImplementedError("for_")
+
+
+def foreach(*args):
+    raise NotImplementedError("foreach")
+
+
+def format_(*args):
+    raise NotImplementedError("format_")
+
+
+def if_(*args):
+    raise NotImplementedError("if_")
+
+
+def lappend(*args):
+    raise NotImplementedError("lappend")
+
+
+def random_int(*args):
+    raise NotImplementedError("random_int")
+
+
+def randstring(*args):
+    raise NotImplementedError("randstring")
+
+
+def regexp(*args):
+    raise NotImplementedError("regexp")
+
+
+def set_(*args):
+    raise NotImplementedError("set_")
+
+
+def string(*args):
+    raise NotImplementedError("string")

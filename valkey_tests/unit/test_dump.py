@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841
+# ruff: noqa: PLR2004, F841, ANN002, ANN201
 import time
 from fnmatch import fnmatch
 
@@ -31,7 +31,6 @@ def test_dump_or_restore_are_able_to_serialize_or_unserialize_a_simple_key(r: Va
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_restore_can_set_an_arbitrary_expire_to_the_materialized_key(r: ValkeyTestClient) -> None:
     """
     test {RESTORE can set an arbitrary expire to the materialized key} {
@@ -49,11 +48,10 @@ def test_restore_can_set_an_arbitrary_expire_to_the_materialized_key(r: ValkeyTe
     r.run("del", "foo")
     r.run("restore", "foo", 5000, encoded)
     ttl = r.run("pttl", "foo")
-    # TODO: assert_range ttl 3000 5000
+    assert_range(ttl, 3000, 5000)
     assert r.run("get", "foo") == "bar"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_restore_can_set_an_expire_that_overflows_a_32_bit_integer(r: ValkeyTestClient) -> None:
     """
     test {RESTORE can set an expire that overflows a 32 bit integer} {
@@ -71,11 +69,10 @@ def test_restore_can_set_an_expire_that_overflows_a_32_bit_integer(r: ValkeyTest
     r.run("del", "foo")
     r.run("restore", "foo", 2569591501, encoded)
     ttl = r.run("pttl", "foo")
-    # TODO: assert_range ttl (2569591501-3000) 2569591501
+    assert_range(ttl, "(2569591501-3000)", 2569591501)
     assert r.run("get", "foo") == "bar"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_restore_can_set_an_absolute_expire(r: ValkeyTestClient) -> None:
     """
     test {RESTORE can set an absolute expire} {
@@ -92,14 +89,13 @@ def test_restore_can_set_an_absolute_expire(r: ValkeyTestClient) -> None:
     r.run("set", "foo", "bar")
     encoded = r.run("dump", "foo")
     r.run("del", "foo")
-    # TODO: set now clock milliseconds
-    # TODO: r restore foo expr $now+3000 encoded absttl
+    now = clock("milliseconds")
+    r.run("restore", "foo", expr(now, 3000), encoded, "absttl")
     ttl = r.run("pttl", "foo")
-    # TODO: assert_range ttl 2000 3100
+    assert_range(ttl, 2000, 3100)
     assert r.run("get", "foo") == "bar"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_restore_with_absttl_in_the_past(r: ValkeyTestClient) -> None:
     """
     test {RESTORE with ABSTTL in the past} {
@@ -115,9 +111,9 @@ def test_restore_with_absttl_in_the_past(r: ValkeyTestClient) -> None:
     """
     r.run("set", "foo", "bar")
     encoded = r.run("dump", "foo")
-    # TODO: set now clock milliseconds
+    now = clock("milliseconds")
     r.run("debug", "set-active-expire", 0)
-    # TODO: r restore foo expr $now-3000 encoded absttl REPLACE
+    r.run("restore", "foo", expr(now, -3000), encoded, "absttl", "REPLACE")
     try:
         e = r.run("debug", "object", "foo")
     except Exception as _catch_err:
@@ -233,7 +229,6 @@ def test_restore_can_detect_a_syntax_error_for_unrecognized_options(r: ValkeyTes
     assert e == "*syntax*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_restore_should_not_store_key_that_are_already_expired_with_replace_will_propagate_it_as_del_or_unlink(
     r: ValkeyTestClient,
 ) -> None:
@@ -339,19 +334,17 @@ def test_restore_should_not_store_key_that_are_already_expired_with_replace_will
     )
     r.run("set", "key{t}", "value")
     encoded = r.run("dump", "key{t}")
-    # TODO: set now clock milliseconds
-    # TODO: set repl attach_to_replication_stream
+    now = clock("milliseconds")
+    repl = attach_to_replication_stream()
     r.run("config", "set", "lazyfree-lazy-server-del", "no")
-    # TODO: assert_equal {OK} r restore key1{t} [expr $now-5000] $encoded replace absttl
+    assert "OK" == r.run("restore", "key1{t}", expr(now, -5000), encoded, "replace", "absttl")
     r.run("config", "set", "lazyfree-lazy-server-del", "yes")
-    # TODO: assert_equal {OK} r restore key2{t} [expr $now-5000] $encoded replace absttl
+    assert "OK" == r.run("restore", "key2{t}", expr(now, -5000), encoded, "replace", "absttl")
     assert "0" == r.run("exists", "key1{t}", "key2{t}")
-    # TODO: assert_replication_stream repl {
-    #       {select *}
-    #       {del key1{t}}
-    #       {unlink key2{t}}
-    #   }
-    # TODO: close_replication_stream repl
+    assert_replication_stream(
+        repl, "            {select *}\n            {del key1{t}}\n            {unlink key2{t}}\n        "
+    )
+    close_replication_stream(repl)
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -365,7 +358,7 @@ def test_restore_key_with_future_rdb_version_strict_version_check(r: ValkeyTestC
     }
     """
     # TODO: set bar_dump "\x00\x03\x62\x61\x72\xde\x00\x0fYUza\xd3\xec\xe0"
-    # TODO: assert_error {ERR DUMP payload version or checksum are wrong} {r restore foo 0 $bar_dump replace}
+    assert_error("ERR DUMP payload version or checksum are wrong", "r restore foo 0 $bar_dump replace")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -395,7 +388,6 @@ def test_dump_of_non_existing_key_returns_nil(r: ValkeyTestClient) -> None:
     r.run("dump", "nonexisting_key")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_migrate_is_caching_connections(r: ValkeyTestClient) -> None:
     """
     test {MIGRATE is caching connections} {
@@ -414,17 +406,12 @@ def test_migrate_is_caching_connections(r: ValkeyTestClient) -> None:
         }
     } {} {external:skip}
     """
-    # TODO: set first srv 0 client
+    first = srv(0, "client")
     r.run("set", "key", "Some Value")
-    # TODO: start_server {tags {"repl"}} {
-    #       set second [srv 0 client]
-    #       set second_host [srv 0 host]
-    #       set second_port [srv 0 port]
-    #
-    #       assert_match {*migrate_cached_sockets:0*} [r -1 info]
-    #       r -1 migrate $second_host $second_port key $db 1000
-    #       assert_match {*migrate_cached_sockets:1*} [r -1 info]
-    #   }
+    start_server(
+        'tags {"repl"}',
+        "            set second [srv 0 client]\n            set second_host [srv 0 host]\n            set second_port [srv 0 port]\n\n            assert_match {*migrate_cached_sockets:0*} [r -1 info]\n            r -1 migrate $second_host $second_port key $db 1000\n            assert_match {*migrate_cached_sockets:1*} [r -1 info]\n        ",
+    )
 
 
 def test_migrate_cached_connections_are_released_after_some_time(r: ValkeyTestClient) -> None:
@@ -438,7 +425,6 @@ def test_migrate_cached_connections_are_released_after_some_time(r: ValkeyTestCl
     assert fnmatch(str(r.run("info")), "*migrate_cached_sockets:0*")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_migrate_is_able_to_migrate_a_key_between_two_instances(r: ValkeyTestClient) -> None:
     """
     test {MIGRATE is able to migrate a key between two instances} {
@@ -460,25 +446,14 @@ def test_migrate_is_able_to_migrate_a_key_between_two_instances(r: ValkeyTestCli
         }
     } {} {external:skip}
     """
-    # TODO: set first srv 0 client
+    first = srv(0, "client")
     r.run("set", "key", "Some Value")
-    # TODO: start_server {tags {"repl"}} {
-    #       set second [srv 0 client]
-    #       set second_host [srv 0 host]
-    #       set second_port [srv 0 port]
-    #
-    #       assert {[$first exists key] == 1}
-    #       assert {[$second exists key] == 0}
-    #       set ret [r -1 migrate $second_host $second_port key $db 5000]
-    #       assert {$ret eq {OK}}
-    #       assert {[$first exists key] == 0}
-    #       assert {[$second exists key] == 1}
-    #       assert {[$second get key] eq {Some Value}}
-    #       assert {[$second ttl key] == -1}
-    #   }
+    start_server(
+        'tags {"repl"}',
+        "            set second [srv 0 client]\n            set second_host [srv 0 host]\n            set second_port [srv 0 port]\n\n            assert {[$first exists key] == 1}\n            assert {[$second exists key] == 0}\n            set ret [r -1 migrate $second_host $second_port key $db 5000]\n            assert {$ret eq {OK}}\n            assert {[$first exists key] == 0}\n            assert {[$second exists key] == 1}\n            assert {[$second get key] eq {Some Value}}\n            assert {[$second ttl key] == -1}\n        ",
+    )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_migrate_is_able_to_copy_a_key_between_two_instances(r: ValkeyTestClient) -> None:
     """
     test {MIGRATE is able to copy a key between two instances} {
@@ -500,25 +475,15 @@ def test_migrate_is_able_to_copy_a_key_between_two_instances(r: ValkeyTestClient
         }
     } {} {external:skip}
     """
-    # TODO: set first srv 0 client
+    first = srv(0, "client")
     r.run("del", "list")
     r.run("lpush", "list", "a", "b", "c", "d")
-    # TODO: start_server {tags {"repl"}} {
-    #       set second [srv 0 client]
-    #       set second_host [srv 0 host]
-    #       set second_port [srv 0 port]
-    #
-    #       assert {[$first exists list] == 1}
-    #       assert {[$second exists list] == 0}
-    #       set ret [r -1 migrate $second_host $second_port list $db 5000 copy]
-    #       assert {$ret eq {OK}}
-    #       assert {[$first exists list] == 1}
-    #       assert {[$second exists list] == 1}
-    #       assert {[$first lrange list 0 -1] eq [$second lrange list 0 -1]}
-    #   }
+    start_server(
+        'tags {"repl"}',
+        "            set second [srv 0 client]\n            set second_host [srv 0 host]\n            set second_port [srv 0 port]\n\n            assert {[$first exists list] == 1}\n            assert {[$second exists list] == 0}\n            set ret [r -1 migrate $second_host $second_port list $db 5000 copy]\n            assert {$ret eq {OK}}\n            assert {[$first exists list] == 1}\n            assert {[$second exists list] == 1}\n            assert {[$first lrange list 0 -1] eq [$second lrange list 0 -1]}\n        ",
+    )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_migrate_will_not_overwrite_existing_keys_unless_replace_is_used(r: ValkeyTestClient) -> None:
     """
     test {MIGRATE will not overwrite existing keys, unless REPLACE is used} {
@@ -543,28 +508,15 @@ def test_migrate_will_not_overwrite_existing_keys_unless_replace_is_used(r: Valk
         }
     } {} {external:skip}
     """
-    # TODO: set first srv 0 client
+    first = srv(0, "client")
     r.run("del", "list")
     r.run("lpush", "list", "a", "b", "c", "d")
-    # TODO: start_server {tags {"repl"}} {
-    #       set second [srv 0 client]
-    #       set second_host [srv 0 host]
-    #       set second_port [srv 0 port]
-    #
-    #       assert {[$first exists list] == 1}
-    #       assert {[$second exists list] == 0}
-    #       $second set list somevalue
-    #       catch {r -1 migrate $second_host $second_port list $db 5000 copy} e
-    #       assert_match {ERR*} $e
-    #       set ret [r -1 migrate $second_host $second_port list $db 5000 copy replace]
-    #       assert {$ret eq {OK}}
-    #       assert {[$first exists list] == 1}
-    #       assert {[$second exists list] == 1}
-    #       assert {[$first lrange list 0 -1] eq [$second lrange list 0 -1]}
-    #   }
+    start_server(
+        'tags {"repl"}',
+        "            set second [srv 0 client]\n            set second_host [srv 0 host]\n            set second_port [srv 0 port]\n\n            assert {[$first exists list] == 1}\n            assert {[$second exists list] == 0}\n            $second set list somevalue\n            catch {r -1 migrate $second_host $second_port list $db 5000 copy} e\n            assert_match {ERR*} $e\n            set ret [r -1 migrate $second_host $second_port list $db 5000 copy replace]\n            assert {$ret eq {OK}}\n            assert {[$first exists list] == 1}\n            assert {[$second exists list] == 1}\n            assert {[$first lrange list 0 -1] eq [$second lrange list 0 -1]}\n        ",
+    )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_migrate_propagates_ttl_correctly(r: ValkeyTestClient) -> None:
     """
     test {MIGRATE propagates TTL correctly} {
@@ -587,26 +539,14 @@ def test_migrate_propagates_ttl_correctly(r: ValkeyTestClient) -> None:
         }
     } {} {external:skip}
     """
-    # TODO: set first srv 0 client
+    first = srv(0, "client")
     r.run("set", "key", "Some Value")
-    # TODO: start_server {tags {"repl"}} {
-    #       set second [srv 0 client]
-    #       set second_host [srv 0 host]
-    #       set second_port [srv 0 port]
-    #
-    #       assert {[$first exists key] == 1}
-    #       assert {[$second exists key] == 0}
-    #       $first expire key 10
-    #       set ret [r -1 migrate $second_host $second_port key $db 5000]
-    #       assert {$ret eq {OK}}
-    #       assert {[$first exists key] == 0}
-    #       assert {[$second exists key] == 1}
-    #       assert {[$second get key] eq {Some Value}}
-    #       assert {[$second ttl key] >= 7 && [$second ttl key] <= 10}
-    #   }
+    start_server(
+        'tags {"repl"}',
+        "            set second [srv 0 client]\n            set second_host [srv 0 host]\n            set second_port [srv 0 port]\n\n            assert {[$first exists key] == 1}\n            assert {[$second exists key] == 0}\n            $first expire key 10\n            set ret [r -1 migrate $second_host $second_port key $db 5000]\n            assert {$ret eq {OK}}\n            assert {[$first exists key] == 0}\n            assert {[$second exists key] == 1}\n            assert {[$second get key] eq {Some Value}}\n            assert {[$second ttl key] >= 7 && [$second ttl key] <= 10}\n        ",
+    )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_migrate_can_correctly_transfer_large_values(r: ValkeyTestClient) -> None:
     """
     test {MIGRATE can correctly transfer large values} {
@@ -634,7 +574,7 @@ def test_migrate_can_correctly_transfer_large_values(r: ValkeyTestClient) -> Non
         }
     } {} {external:skip}
     """
-    # TODO: set first srv 0 client
+    first = srv(0, "client")
     r.run("del", "key")
     j = 0
     while j < 40000:
@@ -654,24 +594,13 @@ def test_migrate_can_correctly_transfer_large_values(r: ValkeyTestClient) -> Non
             "item 10",
         )
         j += 1
-    # TODO: assert {[string length [r dump key]] > (1024*64)}
-    # TODO: start_server {tags {"repl"}} {
-    #       set second [srv 0 client]
-    #       set second_host [srv 0 host]
-    #       set second_port [srv 0 port]
-    #
-    #       assert {[$first exists key] == 1}
-    #       assert {[$second exists key] == 0}
-    #       set ret [r -1 migrate $second_host $second_port key $db 10000]
-    #       assert {$ret eq {OK}}
-    #       assert {[$first exists key] == 0}
-    #       assert {[$second exists key] == 1}
-    #       assert {[$second ttl key] == -1}
-    #       assert {[$second llen key] == 40000*20}
-    #   }
+    assert_("[string length [r dump key]] > (1024*64)")
+    start_server(
+        'tags {"repl"}',
+        "            set second [srv 0 client]\n            set second_host [srv 0 host]\n            set second_port [srv 0 port]\n\n            assert {[$first exists key] == 1}\n            assert {[$second exists key] == 0}\n            set ret [r -1 migrate $second_host $second_port key $db 10000]\n            assert {$ret eq {OK}}\n            assert {[$first exists key] == 0}\n            assert {[$second exists key] == 1}\n            assert {[$second ttl key] == -1}\n            assert {[$second llen key] == 40000*20}\n        ",
+    )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_migrate_can_correctly_transfer_hashes(r: ValkeyTestClient) -> None:
     """
     test {MIGRATE can correctly transfer hashes} {
@@ -694,7 +623,7 @@ def test_migrate_can_correctly_transfer_hashes(r: ValkeyTestClient) -> None:
         }
     } {} {external:skip}
     """
-    # TODO: set first srv 0 client
+    first = srv(0, "client")
     r.run("del", "key")
     r.run(
         "hmset",
@@ -712,22 +641,12 @@ def test_migrate_can_correctly_transfer_hashes(r: ValkeyTestClient) -> None:
         "field6",
         "item 6",
     )
-    # TODO: start_server {tags {"repl"}} {
-    #       set second [srv 0 client]
-    #       set second_host [srv 0 host]
-    #       set second_port [srv 0 port]
-    #
-    #       assert {[$first exists key] == 1}
-    #       assert {[$second exists key] == 0}
-    #       set ret [r -1 migrate $second_host $second_port key $db 10000]
-    #       assert {$ret eq {OK}}
-    #       assert {[$first exists key] == 0}
-    #       assert {[$second exists key] == 1}
-    #       assert {[$second ttl key] == -1}
-    #   }
+    start_server(
+        'tags {"repl"}',
+        "            set second [srv 0 client]\n            set second_host [srv 0 host]\n            set second_port [srv 0 port]\n\n            assert {[$first exists key] == 1}\n            assert {[$second exists key] == 0}\n            set ret [r -1 migrate $second_host $second_port key $db 10000]\n            assert {$ret eq {OK}}\n            assert {[$first exists key] == 0}\n            assert {[$second exists key] == 1}\n            assert {[$second ttl key] == -1}\n        ",
+    )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_migrate_timeout_actually_works(r: ValkeyTestClient) -> None:
     """
     test {MIGRATE timeout actually works} {
@@ -750,26 +669,14 @@ def test_migrate_timeout_actually_works(r: ValkeyTestClient) -> None:
         }
     } {} {external:skip}
     """
-    # TODO: set first srv 0 client
+    first = srv(0, "client")
     r.run("set", "key", "Some Value")
-    # TODO: start_server {tags {"repl"}} {
-    #       set second [srv 0 client]
-    #       set second_host [srv 0 host]
-    #       set second_port [srv 0 port]
-    #
-    #       assert {[$first exists key] == 1}
-    #       assert {[$second exists key] == 0}
-    #
-    #       set rd [valkey_deferring_client]
-    #       $rd debug sleep 1.0 ; # Make second server unable to reply.
-    #       after 100; # wait to make sure DEBUG command was executed.
-    #       set e {}
-    #       catch {r -1 migrate $second_host $second_port key $db 500} e
-    #       assert_match {IOERR*} $e
-    #   }
+    start_server(
+        'tags {"repl"}',
+        "            set second [srv 0 client]\n            set second_host [srv 0 host]\n            set second_port [srv 0 port]\n\n            assert {[$first exists key] == 1}\n            assert {[$second exists key] == 0}\n\n            set rd [valkey_deferring_client]\n            $rd debug sleep 1.0 ; # Make second server unable to reply.\n            after 100; # wait to make sure DEBUG command was executed.\n            set e {}\n            catch {r -1 migrate $second_host $second_port key $db 500} e\n            assert_match {IOERR*} $e\n        ",
+    )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_migrate_can_migrate_multiple_keys_at_once(r: ValkeyTestClient) -> None:
     """
     test {MIGRATE can migrate multiple keys at once} {
@@ -795,26 +702,14 @@ def test_migrate_can_migrate_multiple_keys_at_once(r: ValkeyTestClient) -> None:
         }
     } {} {external:skip}
     """
-    # TODO: set first srv 0 client
+    first = srv(0, "client")
     r.run("set", "key1", "v1")
     r.run("set", "key2", "v2")
     r.run("set", "key3", "v3")
-    # TODO: start_server {tags {"repl"}} {
-    #       set second [srv 0 client]
-    #       set second_host [srv 0 host]
-    #       set second_port [srv 0 port]
-    #
-    #       assert {[$first exists key1] == 1}
-    #       assert {[$second exists key1] == 0}
-    #       set ret [r -1 migrate $second_host $second_port "" $db 5000 keys key1 key2 key3]
-    #       assert {$ret eq {OK}}
-    #       assert {[$first exists key1] == 0}
-    #       assert {[$first exists key2] == 0}
-    #       assert {[$first exists key3] == 0}
-    #       assert {[$second get key1] eq {v1}}
-    #       assert {[$second get key2] eq {v2}}
-    #       assert {[$second get key3] eq {v3}}
-    #   }
+    start_server(
+        'tags {"repl"}',
+        '            set second [srv 0 client]\n            set second_host [srv 0 host]\n            set second_port [srv 0 port]\n\n            assert {[$first exists key1] == 1}\n            assert {[$second exists key1] == 0}\n            set ret [r -1 migrate $second_host $second_port "" $db 5000 keys key1 key2 key3]\n            assert {$ret eq {OK}}\n            assert {[$first exists key1] == 0}\n            assert {[$first exists key2] == 0}\n            assert {[$first exists key3] == 0}\n            assert {[$second get key1] eq {v1}}\n            assert {[$second get key2] eq {v2}}\n            assert {[$second get key3] eq {v3}}\n        ',
+    )
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -825,12 +720,11 @@ def test_migrate_with_multiple_keys_must_have_empty_key_arg(r: ValkeyTestClient)
         set e
     } {*empty string*} {external:skip}
     """
-    # TODO: catch {r MIGRATE 127.0.0.1 6379 NotEmpty $db 5000 keys a b c} e
+    catch("r MIGRATE 127.0.0.1 6379 NotEmpty $db 5000 keys a b c", "e")
     # TODO: set e
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_migrate_with_multiple_keys_migrate_just_existing_ones(r: ValkeyTestClient) -> None:
     """
     test {MIGRATE with multiple keys migrate just existing ones} {
@@ -859,32 +753,16 @@ def test_migrate_with_multiple_keys_migrate_just_existing_ones(r: ValkeyTestClie
         }
     } {} {external:skip}
     """
-    # TODO: set first srv 0 client
+    first = srv(0, "client")
     r.run("set", "key1", "v1")
     r.run("set", "key2", "v2")
     r.run("set", "key3", "v3")
-    # TODO: start_server {tags {"repl"}} {
-    #       set second [srv 0 client]
-    #       set second_host [srv 0 host]
-    #       set second_port [srv 0 port]
-    #
-    #       set ret [r -1 migrate $second_host $second_port "" $db 5000 keys nokey-1 nokey-2 nokey-2]
-    #       assert {$ret eq {NOKEY}}
-    #
-    #       assert {[$first exists key1] == 1}
-    #       assert {[$second exists key1] == 0}
-    #       set ret [r -1 migrate $second_host $second_port "" $db 5000 keys nokey-1 key1 nokey-2 key2 nokey-3 key3]
-    #       assert {$ret eq {OK}}
-    #       assert {[$first exists key1] == 0}
-    #       assert {[$first exists key2] == 0}
-    #       assert {[$first exists key3] == 0}
-    #       assert {[$second get key1] eq {v1}}
-    #       assert {[$second get key2] eq {v2}}
-    #       assert {[$second get key3] eq {v3}}
-    #   }
+    start_server(
+        'tags {"repl"}',
+        '            set second [srv 0 client]\n            set second_host [srv 0 host]\n            set second_port [srv 0 port]\n\n            set ret [r -1 migrate $second_host $second_port "" $db 5000 keys nokey-1 nokey-2 nokey-2]\n            assert {$ret eq {NOKEY}}\n\n            assert {[$first exists key1] == 1}\n            assert {[$second exists key1] == 0}\n            set ret [r -1 migrate $second_host $second_port "" $db 5000 keys nokey-1 key1 nokey-2 key2 nokey-3 key3]\n            assert {$ret eq {OK}}\n            assert {[$first exists key1] == 0}\n            assert {[$first exists key2] == 0}\n            assert {[$first exists key3] == 0}\n            assert {[$second get key1] eq {v1}}\n            assert {[$second get key2] eq {v2}}\n            assert {[$second get key3] eq {v3}}\n        ',
+    )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_migrate_with_multiple_keys_stress_command_rewriting(r: ValkeyTestClient) -> None:
     """
     test {MIGRATE with multiple keys: stress command rewriting} {
@@ -903,7 +781,7 @@ def test_migrate_with_multiple_keys_stress_command_rewriting(r: ValkeyTestClient
         }
     } {} {external:skip}
     """
-    # TODO: set first srv 0 client
+    first = srv(0, "client")
     r.run("flushdb")
     r.run(
         "mset",
@@ -940,19 +818,12 @@ def test_migrate_with_multiple_keys_stress_command_rewriting(r: ValkeyTestClient
         "q",
         16,
     )
-    # TODO: start_server {tags {"repl"}} {
-    #       set second [srv 0 client]
-    #       set second_host [srv 0 host]
-    #       set second_port [srv 0 port]
-    #
-    #       set ret [r -1 migrate $second_host $second_port "" $db 5000 keys a b c d e f g h i l m n o p q]
-    #
-    #       assert {[$first dbsize] == 0}
-    #       assert {[$second dbsize] == 15}
-    #   }
+    start_server(
+        'tags {"repl"}',
+        '            set second [srv 0 client]\n            set second_host [srv 0 host]\n            set second_port [srv 0 port]\n\n            set ret [r -1 migrate $second_host $second_port "" $db 5000 keys a b c d e f g h i l m n o p q]\n\n            assert {[$first dbsize] == 0}\n            assert {[$second dbsize] == 15}\n        ',
+    )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_migrate_with_multiple_keys_delete_just_ack_keys(r: ValkeyTestClient) -> None:
     """
     test {MIGRATE with multiple keys: delete just ack keys} {
@@ -975,7 +846,7 @@ def test_migrate_with_multiple_keys_delete_just_ack_keys(r: ValkeyTestClient) ->
         }
     } {} {external:skip}
     """
-    # TODO: set first srv 0 client
+    first = srv(0, "client")
     r.run("flushdb")
     r.run(
         "mset",
@@ -1012,23 +883,12 @@ def test_migrate_with_multiple_keys_delete_just_ack_keys(r: ValkeyTestClient) ->
         "q",
         16,
     )
-    # TODO: start_server {tags {"repl"}} {
-    #       set second [srv 0 client]
-    #       set second_host [srv 0 host]
-    #       set second_port [srv 0 port]
-    #
-    #       $second mset c _ d _; # Two busy keys and no REPLACE used
-    #
-    #       catch {r -1 migrate $second_host $second_port "" $db 5000 keys a b c d e f g h i l m n o p q} e
-    #
-    #       assert {[$first dbsize] == 2}
-    #       assert {[$second dbsize] == 15}
-    #       assert {[$first exists c] == 1}
-    #       assert {[$first exists d] == 1}
-    #   }
+    start_server(
+        'tags {"repl"}',
+        '            set second [srv 0 client]\n            set second_host [srv 0 host]\n            set second_port [srv 0 port]\n\n            $second mset c _ d _; # Two busy keys and no REPLACE used\n\n            catch {r -1 migrate $second_host $second_port "" $db 5000 keys a b c d e f g h i l m n o p q} e\n\n            assert {[$first dbsize] == 2}\n            assert {[$second dbsize] == 15}\n            assert {[$first exists c] == 1}\n            assert {[$first exists d] == 1}\n        ',
+    )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_migrate_auth_correct_and_wrong_password_cases(r: ValkeyTestClient) -> None:
     """
     test {MIGRATE AUTH: correct and wrong password cases} {
@@ -1056,25 +916,57 @@ def test_migrate_auth_correct_and_wrong_password_cases(r: ValkeyTestClient) -> N
         }
     } {} {external:skip}
     """
-    # TODO: set first srv 0 client
+    first = srv(0, "client")
     r.run("del", "list")
     r.run("lpush", "list", "a", "b", "c", "d")
-    # TODO: start_server {tags {"repl"}} {
-    #       set second [srv 0 client]
-    #       set second_host [srv 0 host]
-    #       set second_port [srv 0 port]
-    #       $second config set requirepass foobar
-    #       $second auth foobar
-    #
-    #       assert {[$first exists list] == 1}
-    #       assert {[$second exists list] == 0}
-    #       set ret [r -1 migrate $second_host $second_port list $db 5000 AUTH foobar]
-    #       assert {$ret eq {OK}}
-    #       assert {[$second exists list] == 1}
-    #       assert {[$second lrange list 0 -1] eq {d c b a}}
-    #
-    #       r -1 lpush list a b c d
-    #       $second config set requirepass foobar2
-    #       catch {r -1 migrate $second_host $second_port list $db 5000 AUTH foobar} err
-    #       assert_match {*WRONGPASS*} $err
-    #   }
+    start_server(
+        'tags {"repl"}',
+        "            set second [srv 0 client]\n            set second_host [srv 0 host]\n            set second_port [srv 0 port]\n            $second config set requirepass foobar\n            $second auth foobar\n\n            assert {[$first exists list] == 1}\n            assert {[$second exists list] == 0}\n            set ret [r -1 migrate $second_host $second_port list $db 5000 AUTH foobar]\n            assert {$ret eq {OK}}\n            assert {[$second exists list] == 1}\n            assert {[$second lrange list 0 -1] eq {d c b a}}\n\n            r -1 lpush list a b c d\n            $second config set requirepass foobar2\n            catch {r -1 migrate $second_host $second_port list $db 5000 AUTH foobar} err\n            assert_match {*WRONGPASS*} $err\n        ",
+    )
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def assert_(*args):
+    raise NotImplementedError("assert_")
+
+
+def assert_error(*args):
+    raise NotImplementedError("assert_error")
+
+
+def assert_range(*args):
+    raise NotImplementedError("assert_range")
+
+
+def assert_replication_stream(*args):
+    raise NotImplementedError("assert_replication_stream")
+
+
+def attach_to_replication_stream(*args):
+    raise NotImplementedError("attach_to_replication_stream")
+
+
+def catch(*args):
+    raise NotImplementedError("catch")
+
+
+def clock(*args):
+    raise NotImplementedError("clock")
+
+
+def close_replication_stream(*args):
+    raise NotImplementedError("close_replication_stream")
+
+
+def expr(*args):
+    raise NotImplementedError("expr")
+
+
+def srv(*args):
+    raise NotImplementedError("srv")
+
+
+def start_server(*args):
+    raise NotImplementedError("start_server")

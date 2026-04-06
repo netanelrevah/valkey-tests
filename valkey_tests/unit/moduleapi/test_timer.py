@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004
+# ruff: noqa: PLR2004, ANN002, ANN201
 import time
 from fnmatch import fnmatch
 
@@ -113,7 +113,6 @@ def test_timer_appears_non_existing_after_it_fires(r: ValkeyTestClient) -> None:
     assert "" == r.run("test.gettimer", id)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_can_be_unloaded_when_timer_was_finished(r: ValkeyTestClient) -> None:
     """
     test "Module can be unloaded when timer was finished" {
@@ -145,11 +144,13 @@ def test_module_can_be_unloaded_when_timer_was_finished(r: ValkeyTestClient) -> 
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*the module holds timer that is not fired*")
-    # TODO: wait_for_condition 10 500 {
-    #       [r get timer-incr-key] == 1
-    #   } else {
-    #       fail "Timer not fired"
-    #   }
+    wait_for_condition(
+        10,
+        500,
+        "            [r get timer-incr-key] == 1\n        ",
+        "else",
+        '            fail "Timer not fired"\n        ',
+    )
     assert "OK" == r.run("module", "unload", "timer")
 
 
@@ -186,3 +187,10 @@ def test_module_can_be_unloaded_when_timer_was_stopped(r: ValkeyTestClient) -> N
     assert 1 == r.run("test.stoptimer", id)
     assert 0 == r.run("get", "timer-incr-key")
     assert "OK" == r.run("module", "unload", "timer")
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def wait_for_condition(*args):
+    raise NotImplementedError("wait_for_condition")

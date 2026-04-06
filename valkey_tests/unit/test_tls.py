@@ -1,6 +1,4 @@
-# ruff: noqa: F841
-
-from fnmatch import fnmatch
+# ruff: noqa: F841, ANN002, ANN201
 
 import pytest
 
@@ -24,8 +22,8 @@ def test_tls_not_accepting_non_tls_connections_on_a_tls_port(r: ValkeyTestClient
         set e
     } {*I/O error*}
     """
-    # TODO: set s valkey [srv 0 host] [srv 0 port]
-    # TODO: catch {$s PING} e
+    s = valkey(srv(0, "host"), srv(0, "port"))
+    catch("$s PING", "e")
     # TODO: set e
     assert False
 
@@ -62,24 +60,24 @@ def test_tls_verify_tls_auth_clients_behaves_as_expected(r: ValkeyTestClient) ->
         assert_match {*error*} $e
     }
     """
-    # TODO: set s valkey [srv 0 host] [srv 0 port]
+    s = valkey(srv(0, "host"), srv(0, "port"))
     # TODO: ::tls::import $s channel
-    # TODO: catch {$s PING} e
+    catch("$s PING", "e")
     # TODO: assert_match {*error*} e
     r.run("CONFIG", "SET", "tls-auth-clients", "no")
-    # TODO: set s valkey [srv 0 host] [srv 0 port]
+    s = valkey(srv(0, "host"), srv(0, "port"))
     # TODO: ::tls::import $s channel
-    # TODO: catch {$s PING} e
+    catch("$s PING", "e")
     # TODO: assert_match {PONG} e
     r.run("CONFIG", "SET", "tls-auth-clients", "optional")
-    # TODO: set s valkey [srv 0 host] [srv 0 port]
+    s = valkey(srv(0, "host"), srv(0, "port"))
     # TODO: ::tls::import $s channel
-    # TODO: catch {$s PING} e
+    catch("$s PING", "e")
     # TODO: assert_match {PONG} e
     r.run("CONFIG", "SET", "tls-auth-clients", "yes")
-    # TODO: set s valkey [srv 0 host] [srv 0 port]
+    s = valkey(srv(0, "host"), srv(0, "port"))
     # TODO: ::tls::import $s channel
-    # TODO: catch {$s PING} e
+    catch("$s PING", "e")
     # TODO: assert_match {*error*} e
 
 
@@ -102,11 +100,11 @@ def test_tls_verify_tls_protocols_behaves_as_expected(r: ValkeyTestClient) -> No
     }
     """
     r.run("CONFIG", "SET", "tls-protocols", "TLSv1.2")
-    # TODO: set s valkey [srv 0 host] [srv 0 port] 0 1 {-tls1.2 0}
-    # TODO: catch {$s PING} e
+    s = valkey(srv(0, "host"), srv(0, "port"), 0, 1, "-tls1.2 0")
+    catch("$s PING", "e")
     # TODO: assert_match {*I/O error*} e
-    # TODO: set s valkey [srv 0 host] [srv 0 port] 0 1 {-tls1.2 1}
-    # TODO: catch {$s PING} e
+    s = valkey(srv(0, "host"), srv(0, "port"), 0, 1, "-tls1.2 1")
+    catch("$s PING", "e")
     # TODO: assert_match {PONG} e
     r.run("CONFIG", "SET", "tls-protocols", "")
 
@@ -139,15 +137,15 @@ def test_tls_verify_tls_ciphers_behaves_as_expected(r: ValkeyTestClient) -> None
     """
     r.run("CONFIG", "SET", "tls-protocols", "TLSv1.2")
     r.run("CONFIG", "SET", "tls-ciphers", "DEFAULT:-AES128-SHA256")
-    # TODO: set s valkey [srv 0 host] [srv 0 port] 0 1 {-cipher "-ALL:AES128-SHA256"}
-    # TODO: catch {$s PING} e
+    s = valkey(srv(0, "host"), srv(0, "port"), 0, 1, '-cipher "-ALL:AES128-SHA256"')
+    catch("$s PING", "e")
     # TODO: assert_match {*I/O error*} e
-    # TODO: set s valkey [srv 0 host] [srv 0 port] 0 1 {-cipher "-ALL:AES256-SHA256"}
-    # TODO: catch {$s PING} e
+    s = valkey(srv(0, "host"), srv(0, "port"), 0, 1, '-cipher "-ALL:AES256-SHA256"')
+    catch("$s PING", "e")
     # TODO: assert_match {PONG} e
     r.run("CONFIG", "SET", "tls-ciphers", "DEFAULT")
-    # TODO: set s valkey [srv 0 host] [srv 0 port] 0 1 {-cipher "-ALL:AES128-SHA256"}
-    # TODO: catch {$s PING} e
+    s = valkey(srv(0, "host"), srv(0, "port"), 0, 1, '-cipher "-ALL:AES128-SHA256"')
+    catch("$s PING", "e")
     # TODO: assert_match {PONG} e
     r.run("CONFIG", "SET", "tls-protocols", "")
     r.run("CONFIG", "SET", "tls-ciphers", "DEFAULT")
@@ -181,20 +179,19 @@ def test_tls_verify_tls_prefer_server_ciphers_behaves_as_expected(r: ValkeyTestC
     """
     r.run("CONFIG", "SET", "tls-protocols", "TLSv1.2")
     r.run("CONFIG", "SET", "tls-ciphers", "AES128-SHA256:AES256-SHA256")
-    # TODO: set s valkey [srv 0 host] [srv 0 port] 0 1 {-cipher "AES256-SHA256:AES128-SHA256"}
-    # TODO: catch {$s PING} e
+    s = valkey(srv(0, "host"), srv(0, "port"), 0, 1, '-cipher "AES256-SHA256:AES128-SHA256"')
+    catch("$s PING", "e")
     # TODO: assert_match {PONG} e
     # TODO: assert_equal "AES256-SHA256" dict get [::tls::status [$s channel]] cipher
     r.run("CONFIG", "SET", "tls-prefer-server-ciphers", "yes")
-    # TODO: set s valkey [srv 0 host] [srv 0 port] 0 1 {-cipher "AES256-SHA256:AES128-SHA256"}
-    # TODO: catch {$s PING} e
+    s = valkey(srv(0, "host"), srv(0, "port"), 0, 1, '-cipher "AES256-SHA256:AES128-SHA256"')
+    catch("$s PING", "e")
     # TODO: assert_match {PONG} e
     # TODO: assert_equal "AES128-SHA256" dict get [::tls::status [$s channel]] cipher
     r.run("CONFIG", "SET", "tls-protocols", "")
     r.run("CONFIG", "SET", "tls-ciphers", "DEFAULT")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.skipif("", reason="{$::tls}")
 def test_tls_verify_tls_cert_file_is_also_used_as_a_client_cert_if_none_specified(r: ValkeyTestClient) -> None:
     """
@@ -219,21 +216,20 @@ def test_tls_verify_tls_cert_file_is_also_used_as_a_client_cert_if_none_specifie
         }
     }
     """
-    # TODO: set master srv 0 client
-    # TODO: set master_host srv 0 host
-    # TODO: set master_port srv 0 port
-    # TODO: set valkey_crt format "%s/tests/tls/valkey.crt" [pwd]
-    # TODO: set valkey_key format "%s/tests/tls/valkey.key" [pwd]
-    # TODO: start_server list overrides [list tls-cert-file $valkey_crt tls-key-file $valkey_key] \
-    #                                  omit [list tls-client-cert-file tls-client-key-file] {
-    #       set replica [srv 0 client]
-    #       $replica replicaof $master_host $master_port
-    #       wait_for_condition 30 100 {
-    #           [string match {*master_link_status:up*} [$replica info replication]]
-    #       } else {
-    #           fail "Can't authenticate to master using just tls-cert-file!"
-    #       }
-    #   }
+    master = srv(0, "client")
+    master_host = srv(0, "host")
+    master_port = srv(0, "port")
+    valkey_crt = format_("%s/tests/tls/valkey.crt", pwd())
+    valkey_key = format_("%s/tests/tls/valkey.key", pwd())
+    start_server(
+        list_(
+            "overrides",
+            list_("tls-cert-file", valkey_crt, "tls-key-file", valkey_key),
+            "omit",
+            list_("tls-client-cert-file", "tls-client-key-file"),
+        ),
+        '                set replica [srv 0 client]\n                $replica replicaof $master_host $master_port\n                wait_for_condition 30 100 {\n                    [string match {*master_link_status:up*} [$replica info replication]]\n                } else {\n                    fail "Can\'t authenticate to master using just tls-cert-file!"\n                }\n            ',
+    )
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -265,18 +261,18 @@ def test_tls_switch_between_tcp_and_tls_ports(r: ValkeyTestClient) -> None:
         $rd close
     }
     """
-    # TODO: set srv_port srv 0 port
-    # TODO: set rd valkey [srv 0 host] $srv_port 0 1
+    srv_port = srv(0, "port")
+    rd = valkey(srv(0, "host"), srv_port, 0, 1)
     # TODO: $rd PING
     # TODO: $rd CONFIG SET tls-port 0
-    # TODO: $rd CONFIG SET port srv _port
+    # TODO: $rd CONFIG SET port srv_port
     # TODO: $rd close
-    # TODO: set rd valkey [srv 0 host] $srv_port 0 0
+    rd = valkey(srv(0, "host"), srv_port, 0, 0)
     # TODO: $rd PING
     # TODO: $rd CONFIG SET port 0
-    # TODO: $rd CONFIG SET tls-port srv _port
+    # TODO: $rd CONFIG SET tls-port srv_port
     # TODO: $rd close
-    # TODO: set rd valkey [srv 0 host] $srv_port 0 1
+    rd = valkey(srv(0, "host"), srv_port, 0, 1)
     # TODO: $rd PING
     # TODO: $rd close
 
@@ -302,14 +298,11 @@ def test_tls_working_with_an_encrypted_keyfile(r: ValkeyTestClient) -> None:
     """
     keyfile = r.run("config", "get", "tls-key-file")[1]
     # TODO: set keyfile_encrypted "$keyfile.encrypted"
-    # TODO: exec -ignorestderr openssl rsa -in keyfile -out keyfile _encrypted -aes256 -passout pass:1234 2>/dev/null
-    try:
-        e = r.run("config", "set", "tls-key-file", keyfile, "_encrypted")
-    except Exception as _catch_err:
-        e = str(_catch_err)
-    assert fnmatch(str(e), "*Unable to update TLS*")
+    # TODO: exec -ignorestderr openssl rsa -in keyfile -out keyfile_encrypted -aes256 -passout pass:1234 2>/dev/null
+    catch("r config set tls-key-file $keyfile_encrypted", "e")
+    # TODO: assert_match {*Unable to update TLS*} e
     r.run("config", "set", "tls-key-file-pass", 1234)
-    r.run("config", "set", "tls-key-file", keyfile, "_encrypted")
+    # TODO: r config set tls-key-file keyfile_encrypted
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -337,7 +330,7 @@ def test_tls_auto_authenticate_using_tls_auth_clients_user_cn(r: ValkeyTestClien
     """
     r.run("ACL", "SETUSER", "Client-only", "on", ">clientpass", "allcommands", "allkeys")
     r.run("CONFIG", "SET", "tls-auth-clients-user", "CN")
-    # TODO: set s valkey_client
+    s = valkey_client()
     # TODO: assert_equal "PONG" $s PING
     # TODO: assert_equal "Client-only" $s ACL WHOAMI
     # TODO: $s close
@@ -432,86 +425,23 @@ def test_tls_auto_reload_detects_changes(r: ValkeyTestClient) -> None:
         }
     }
     """
-    # TODO: if {$::tls_module} {
-    #       # Auto-reload requires built-in TLS
-    #       skip "Not supported with TLS built as a module"
-    #   }
+    if_(
+        "$::tls_module",
+        '                # Auto-reload requires built-in TLS\n                skip "Not supported with TLS built as a module"\n            ',
+    )
     orig_server_crt = r.run("config", "get", "tls-cert-file")[1]
     orig_server_key = r.run("config", "get", "tls-key-file")[1]
     # TODO: set temp_crt "$orig_server_crt.temp"
     # TODO: set temp_key "$orig_server_key.temp"
-    # TODO: file copy -force orig _server_crt temp _crt
-    # TODO: file copy -force orig _server_key temp _key
-    # TODO: try {
-    #       # Update server to use temporary certificate files
-    #       r CONFIG SET tls-cert-file $temp_crt tls-key-file $temp_key
-    #
-    #       # Enable auto-reload with 1 second interval for faster testing
-    #       r CONFIG SET tls-auto-reload-interval 1
-    #
-    #       # Verify initial connection works
-    #       set s [valkey_client]
-    #       assert_equal "PONG" [$s PING]
-    #       $s close
-    #       set info1 [r info tls]
-    #       if {![regexp {tls_server_cert_serial:([^\r\n]+)} $info1 -> serial1]} {
-    #           fail "INFO tls missing tls_server_cert_serial"
-    #       }
-    #       assert {$serial1 ne "none"}
-    #
-    #       # Wait for at least one auto-reload cycle to complete
-    #       after 1100
-    #
-    #       # Update temporary files with different certificate
-    #       set valkey_crt [format "%s/tests/tls/valkey.crt" [pwd]]
-    #       set valkey_key [format "%s/tests/tls/valkey.key" [pwd]]
-    #       file copy -force $valkey_crt $temp_crt
-    #       file copy -force $valkey_key $temp_key
-    #
-    #       # Wait for reload to actually complete by checking server logs
-    #       # Use generous timeout for slow/busy CI systems
-    #       wait_for_log_messages 0 {"*TLS materials reloaded successfully*"} 0 150 100
-    #
-    #       # Verify connection still works after reload
-    #       set s [valkey_client]
-    #       assert_equal "PONG" [$s PING]
-    #       $s close
-    #       set info2 [r info tls]
-    #       if {![regexp {tls_server_cert_serial:([^\r\n]+)} $info2 -> serial2]} {
-    #           fail "INFO tls missing tls_server_cert_serial after reload"
-    #       }
-    #       assert {$serial2 ne "none"}
-    #       assert {$serial1 ne $serial2}
-    #
-    #       # Wait again to ensure filesystem timestamp will be different
-    #       # for the second modification and next reload cycle can detect it
-    #       after 1100
-    #
-    #       # Restore original certificate content to temporary files
-    #       file copy -force $orig_server_crt $temp_crt
-    #       file copy -force $orig_server_key $temp_key
-    #
-    #       # Wait for second reload to complete
-    #       # Use generous timeout for slow/busy CI systems
-    #       wait_for_log_messages 0 {"*TLS materials reloaded successfully*"} 0 150 100
-    #
-    #       # Verify connection still works after restore
-    #       set s [valkey_client]
-    #       assert_equal "PONG" [$s PING]
-    #       $s close
-    #   } finally {
-    #       # Restore original configuration
-    #       r CONFIG SET tls-cert-file $orig_server_crt tls-key-file $orig_server_key
-    #
-    #       # Disable auto-reload
-    #       r CONFIG SET tls-auto-reload-interval 0
-    #
-    #       # Clean up temporary files
-    #       file delete -force $temp_crt $temp_key
-    #   }
+    # TODO: file copy -force orig_server_crt temp_crt
+    # TODO: file copy -force orig_server_key temp_key
+    try_(
+        '                # Update server to use temporary certificate files\n                r CONFIG SET tls-cert-file $temp_crt tls-key-file $temp_key\n\n                # Enable auto-reload with 1 second interval for faster testing\n                r CONFIG SET tls-auto-reload-interval 1\n\n                # Verify initial connection works\n                set s [valkey_client]\n                assert_equal "PONG" [$s PING]\n                $s close\n                set info1 [r info tls]\n                if {![regexp {tls_server_cert_serial:([^\\r\\n]+)} $info1 -> serial1]} {\n                    fail "INFO tls missing tls_server_cert_serial"\n                }\n                assert {$serial1 ne "none"}\n\n                # Wait for at least one auto-reload cycle to complete\n                after 1100\n\n                # Update temporary files with different certificate\n                set valkey_crt [format "%s/tests/tls/valkey.crt" [pwd]]\n                set valkey_key [format "%s/tests/tls/valkey.key" [pwd]]\n                file copy -force $valkey_crt $temp_crt\n                file copy -force $valkey_key $temp_key\n\n                # Wait for reload to actually complete by checking server logs\n                # Use generous timeout for slow/busy CI systems\n                wait_for_log_messages 0 {"*TLS materials reloaded successfully*"} 0 150 100\n\n                # Verify connection still works after reload\n                set s [valkey_client]\n                assert_equal "PONG" [$s PING]\n                $s close\n                set info2 [r info tls]\n                if {![regexp {tls_server_cert_serial:([^\\r\\n]+)} $info2 -> serial2]} {\n                    fail "INFO tls missing tls_server_cert_serial after reload"\n                }\n                assert {$serial2 ne "none"}\n                assert {$serial1 ne $serial2}\n\n                # Wait again to ensure filesystem timestamp will be different\n                # for the second modification and next reload cycle can detect it\n                after 1100\n\n                # Restore original certificate content to temporary files\n                file copy -force $orig_server_crt $temp_crt\n                file copy -force $orig_server_key $temp_key\n\n                # Wait for second reload to complete\n                # Use generous timeout for slow/busy CI systems\n                wait_for_log_messages 0 {"*TLS materials reloaded successfully*"} 0 150 100\n\n                # Verify connection still works after restore\n                set s [valkey_client]\n                assert_equal "PONG" [$s PING]\n                $s close\n            ',
+        "finally",
+        "                # Restore original configuration\n                r CONFIG SET tls-cert-file $orig_server_crt tls-key-file $orig_server_key\n\n                # Disable auto-reload\n                r CONFIG SET tls-auto-reload-interval 0\n\n                # Clean up temporary files\n                file delete -force $temp_crt $temp_key\n            ",
+    )
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.skipif("", reason="{$::tls}")
 def test_tls_auto_reload_skips_unchanged_materials(r: ValkeyTestClient) -> None:
     """
@@ -540,29 +470,18 @@ def test_tls_auto_reload_skips_unchanged_materials(r: ValkeyTestClient) -> None:
         }
     }
     """
-    # TODO: if {$::tls_module} {
-    #       # Auto-reload requires built-in TLS
-    #       skip "Not supported with TLS built as a module"
-    #   }
+    if_(
+        "$::tls_module",
+        '                # Auto-reload requires built-in TLS\n                skip "Not supported with TLS built as a module"\n            ',
+    )
     orig_loglevel = r.run("config", "get", "loglevel")[1]
-    # TODO: try {
-    #       # Enable auto-reload with 1 second interval
-    #       r CONFIG SET loglevel debug
-    #       r CONFIG SET tls-auto-reload-interval 1
-    #
-    #       # Wait for at least one cron cycle to ensure reload check happens
-    #       after 1100
-    #
-    #       # Wait for at least one reload check cycle
-    #       # Use generous timeout for slow/busy CI systems
-    #       wait_for_log_messages 0 {"*materials unchanged*"} 0 150 100
-    #   } finally {
-    #       # Disable auto-reload and restore loglevel
-    #       r CONFIG SET tls-auto-reload-interval 0 loglevel $orig_loglevel
-    #   }
+    try_(
+        '                # Enable auto-reload with 1 second interval\n                r CONFIG SET loglevel debug\n                r CONFIG SET tls-auto-reload-interval 1\n\n                # Wait for at least one cron cycle to ensure reload check happens\n                after 1100\n\n                # Wait for at least one reload check cycle\n                # Use generous timeout for slow/busy CI systems\n                wait_for_log_messages 0 {"*materials unchanged*"} 0 150 100\n            ',
+        "finally",
+        "                # Disable auto-reload and restore loglevel\n                r CONFIG SET tls-auto-reload-interval 0 loglevel $orig_loglevel\n            ",
+    )
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.skipif("", reason="{$::tls}")
 def test_tls_auto_reload_interval_validation(r: ValkeyTestClient) -> None:
     """
@@ -586,26 +505,17 @@ def test_tls_auto_reload_interval_validation(r: ValkeyTestClient) -> None:
         }
     }
     """
-    # TODO: if {$::tls_module} {
-    #       # Auto-reload requires built-in TLS
-    #       skip "Not supported with TLS built as a module"
-    #   }
-    # TODO: try {
-    #       # Valid intervals
-    #       r CONFIG SET tls-auto-reload-interval 0
-    #       r CONFIG SET tls-auto-reload-interval 5
-    #       r CONFIG SET tls-auto-reload-interval 3600
-    #
-    #       # Invalid intervals should fail
-    #       catch {r CONFIG SET tls-auto-reload-interval -1} e
-    #       assert_match {*ERR CONFIG SET failed*} $e
-    #   } finally {
-    #       # Reset to disabled
-    #       r CONFIG SET tls-auto-reload-interval 0
-    #   }
+    if_(
+        "$::tls_module",
+        '                # Auto-reload requires built-in TLS\n                skip "Not supported with TLS built as a module"\n            ',
+    )
+    try_(
+        "                # Valid intervals\n                r CONFIG SET tls-auto-reload-interval 0\n                r CONFIG SET tls-auto-reload-interval 5\n                r CONFIG SET tls-auto-reload-interval 3600\n\n                # Invalid intervals should fail\n                catch {r CONFIG SET tls-auto-reload-interval -1} e\n                assert_match {*ERR CONFIG SET failed*} $e\n            ",
+        "finally",
+        "                # Reset to disabled\n                r CONFIG SET tls-auto-reload-interval 0\n            ",
+    )
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.skipif("", reason="{$::tls}")
 def test_tls_auto_reload_with_ca_cert_directory(r: ValkeyTestClient) -> None:
     """
@@ -646,38 +556,15 @@ def test_tls_auto_reload_with_ca_cert_directory(r: ValkeyTestClient) -> None:
         }
     }
     """
-    # TODO: if {$::tls_module} {
-    #       # Auto-reload requires built-in TLS
-    #       skip "Not supported with TLS built as a module"
-    #   }
+    if_(
+        "$::tls_module",
+        '                # Auto-reload requires built-in TLS\n                skip "Not supported with TLS built as a module"\n            ',
+    )
     ca_cert_dir = r.run("config", "get", "tls-ca-cert-dir")[1]
-    # TODO: if {$ca_cert_dir ne ""} {
-    #       # Touch a file in the directory to trigger change detection
-    #       set test_file "$ca_cert_dir/test_marker"
-    #       set fd [open $test_file w]
-    #       puts $fd "test"
-    #       close $fd
-    #
-    #       # Ensure cleanup happens even if test fails
-    #       try {
-    #           # Enable auto-reload with 1 second interval
-    #           r CONFIG SET tls-auto-reload-interval 1
-    #
-    #           # Wait for reload to actually complete by checking server logs
-    #           wait_for_log_messages 0 {"*TLS materials reloaded successfully*"} 0 50 100
-    #
-    #           # Verify connection still works after reload
-    #           set s [valkey_client]
-    #           assert_equal "PONG" [$s PING]
-    #           $s close
-    #       } finally {
-    #           # Disable auto-reload
-    #           r CONFIG SET tls-auto-reload-interval 0
-    #
-    #           # Clean up test file
-    #           file delete -force $test_file
-    #       }
-    #   }
+    if_(
+        '$ca_cert_dir ne ""',
+        '                # Touch a file in the directory to trigger change detection\n                set test_file "$ca_cert_dir/test_marker"\n                set fd [open $test_file w]\n                puts $fd "test"\n                close $fd\n\n                # Ensure cleanup happens even if test fails\n                try {\n                    # Enable auto-reload with 1 second interval\n                    r CONFIG SET tls-auto-reload-interval 1\n\n                    # Wait for reload to actually complete by checking server logs\n                    wait_for_log_messages 0 {"*TLS materials reloaded successfully*"} 0 50 100\n\n                    # Verify connection still works after reload\n                    set s [valkey_client]\n                    assert_equal "PONG" [$s PING]\n                    $s close\n                } finally {\n                    # Disable auto-reload\n                    r CONFIG SET tls-auto-reload-interval 0\n\n                    # Clean up test file\n                    file delete -force $test_file\n                }\n            ',
+    )
 
 
 """
@@ -715,7 +602,6 @@ proc test_tls_cert_rejection {cert_type cert_path expected_error} {
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.skipif("", reason="{$::tls}")
 def test_tls_fail_fast_on_invalid_certificates_at_startup(r: ValkeyTestClient) -> None:
     """
@@ -747,15 +633,15 @@ def test_tls_fail_fast_on_invalid_certificates_at_startup(r: ValkeyTestClient) -
         test_tls_cert_rejection ca-dir $tlsdir/ca-notyet {*One or more loaded CA certificates are invalid*}
     }
     """
-    # TODO: set tlsdir file normalize ./tests/tls
-    # TODO: test_tls_cert_rejection server tlsdir /server-expired.crt {*Server TLS certificate is invalid*}
-    # TODO: test_tls_cert_rejection server tlsdir /server-notyet.crt {*Server TLS certificate is invalid*}
-    # TODO: test_tls_cert_rejection client tlsdir /client-expired.crt {*Client TLS certificate is invalid*}
-    # TODO: test_tls_cert_rejection client tlsdir /client-notyet.crt {*Client TLS certificate is invalid*}
-    # TODO: test_tls_cert_rejection ca-file tlsdir /ca-expired.crt {*One or more loaded CA certificates are invalid*}
-    # TODO: test_tls_cert_rejection ca-file tlsdir /ca-notyet.crt {*One or more loaded CA certificates are invalid*}
-    # TODO: test_tls_cert_rejection ca-dir tlsdir /ca-expired {*One or more loaded CA certificates are invalid*}
-    # TODO: test_tls_cert_rejection ca-dir tlsdir /ca-notyet {*One or more loaded CA certificates are invalid*}
+    tlsdir = file("normalize", "./tests/tls")
+    test_tls_cert_rejection("server", tlsdir, "/server-expired.crt", "*Server TLS certificate is invalid*")
+    test_tls_cert_rejection("server", tlsdir, "/server-notyet.crt", "*Server TLS certificate is invalid*")
+    test_tls_cert_rejection("client", tlsdir, "/client-expired.crt", "*Client TLS certificate is invalid*")
+    test_tls_cert_rejection("client", tlsdir, "/client-notyet.crt", "*Client TLS certificate is invalid*")
+    test_tls_cert_rejection("ca-file", tlsdir, "/ca-expired.crt", "*One or more loaded CA certificates are invalid*")
+    test_tls_cert_rejection("ca-file", tlsdir, "/ca-notyet.crt", "*One or more loaded CA certificates are invalid*")
+    test_tls_cert_rejection("ca-dir", tlsdir, "/ca-expired", "*One or more loaded CA certificates are invalid*")
+    test_tls_cert_rejection("ca-dir", tlsdir, "/ca-notyet", "*One or more loaded CA certificates are invalid*")
 
 
 """
@@ -779,7 +665,6 @@ proc test_tls_cert_rejection_runtime {r cert_type cert_path} {
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.skipif("", reason="{$::tls}")
 def test_tls_fail_fast_on_invalid_certificates_at_runtime(r: ValkeyTestClient) -> None:
     """
@@ -811,18 +696,17 @@ def test_tls_fail_fast_on_invalid_certificates_at_runtime(r: ValkeyTestClient) -
         test_tls_cert_rejection_runtime r ca-dir $tlsdir/ca-notyet
     }
     """
-    # TODO: set tlsdir file normalize ./tests/tls
-    # TODO: test_tls_cert_rejection_runtime r server tlsdir /server-expired.crt
-    # TODO: test_tls_cert_rejection_runtime r server tlsdir /server-notyet.crt
-    # TODO: test_tls_cert_rejection_runtime r client tlsdir /client-expired.crt
-    # TODO: test_tls_cert_rejection_runtime r client tlsdir /client-notyet.crt
-    # TODO: test_tls_cert_rejection_runtime r ca-file tlsdir /ca-expired.crt
-    # TODO: test_tls_cert_rejection_runtime r ca-file tlsdir /ca-notyet.crt
-    # TODO: test_tls_cert_rejection_runtime r ca-dir tlsdir /ca-expired
-    # TODO: test_tls_cert_rejection_runtime r ca-dir tlsdir /ca-notyet
+    tlsdir = file("normalize", "./tests/tls")
+    test_tls_cert_rejection_runtime("r", "server", tlsdir, "/server-expired.crt")
+    test_tls_cert_rejection_runtime("r", "server", tlsdir, "/server-notyet.crt")
+    test_tls_cert_rejection_runtime("r", "client", tlsdir, "/client-expired.crt")
+    test_tls_cert_rejection_runtime("r", "client", tlsdir, "/client-notyet.crt")
+    test_tls_cert_rejection_runtime("r", "ca-file", tlsdir, "/ca-expired.crt")
+    test_tls_cert_rejection_runtime("r", "ca-file", tlsdir, "/ca-notyet.crt")
+    test_tls_cert_rejection_runtime("r", "ca-dir", tlsdir, "/ca-expired")
+    test_tls_cert_rejection_runtime("r", "ca-dir", tlsdir, "/ca-notyet")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_info_tls_reports_empty_values_when_tls_disabled(r: ValkeyTestClient) -> None:
     """
     test {INFO tls reports empty values when TLS disabled} {
@@ -846,24 +730,18 @@ def test_info_tls_reports_empty_values_when_tls_disabled(r: ValkeyTestClient) ->
         }
     }
     """
-    # TODO: if {$::tls} {
-    #       skip "TLS enabled"
-    #   }
+    if_("$::tls", '            skip "TLS enabled"\n        ')
     info = r.run("info", "tls")
-    # TODO: foreach field {tls_server_cert_serial tls_client_cert_serial tls_ca_cert_serial} {
-    #       set pattern [format {%s:([^\r\n]+)} $field]
-    #       if {![regexp $pattern $info -> value]} {
-    #           fail "INFO tls missing $field"
-    #       }
-    #       assert_equal "none" $value
-    #   }
-    # TODO: foreach field {tls_server_cert_expires_in_seconds tls_client_cert_expires_in_seconds tls_ca_cert_expires_in_seconds} {
-    #       set pattern [format {%s:(-?[0-9]+)} $field]
-    #       if {![regexp $pattern $info -> value]} {
-    #           fail "INFO tls missing $field"
-    #       }
-    #       assert_equal 0 $value
-    #   }
+    foreach(
+        "field",
+        "tls_server_cert_serial tls_client_cert_serial tls_ca_cert_serial",
+        '            set pattern [format {%s:([^\\r\\n]+)} $field]\n            if {![regexp $pattern $info -> value]} {\n                fail "INFO tls missing $field"\n            }\n            assert_equal "none" $value\n        ',
+    )
+    foreach(
+        "field",
+        "tls_server_cert_expires_in_seconds tls_client_cert_expires_in_seconds tls_ca_cert_expires_in_seconds",
+        '            set pattern [format {%s:(-?[0-9]+)} $field]\n            if {![regexp $pattern $info -> value]} {\n                fail "INFO tls missing $field"\n            }\n            assert_equal 0 $value\n        ',
+    )
 
 
 pytestmark = [pytest.mark.tls]
@@ -912,41 +790,42 @@ def test_tls_info_tls_reports_decreasing_expiration_countdown(r: ValkeyTestClien
     }
     """
     info1 = r.run("info", "tls")
-    # TODO: if {![regexp {tls_server_cert_serial:([^\r\n]+)} $info1 -> server_serial]} {
-    #       fail "INFO tls missing tls_server_cert_serial"
-    #   }
-    # TODO: assert {$server_serial ne "none"}
-    # TODO: set client_serial getInfoProperty $info1 tls_client_cert_serial
-    # TODO: assert_not_equal client _serial {}
-    # TODO: assert {$client_serial ne "none"}
-    # TODO: if {![regexp {tls_ca_cert_serial:([^\r\n]+)} $info1 -> ca_serial]} {
-    #       fail "INFO tls missing tls_ca_cert_serial"
-    #   }
-    # TODO: assert {$ca_serial ne "none"}
-    # TODO: if {![regexp {tls_server_cert_expires_in_seconds:(-?[0-9]+)} $info1 -> expire1]} {
-    #       fail "INFO tls missing tls_server_cert_expires_in_seconds"
-    #   }
+    if_(
+        "![regexp {tls_server_cert_serial:([^\\r\\n]+)} $info1 -> server_serial]",
+        '                fail "INFO tls missing tls_server_cert_serial"\n            ',
+    )
+    assert_('$server_serial ne "none"')
+    client_serial = get_info_property(info1, "tls_client_cert_serial")
+    assert_not_equal(client_serial, "")
+    assert client_serial != "none"
+    if_(
+        "![regexp {tls_ca_cert_serial:([^\\r\\n]+)} $info1 -> ca_serial]",
+        '                fail "INFO tls missing tls_ca_cert_serial"\n            ',
+    )
+    assert_('$ca_serial ne "none"')
+    if_(
+        "![regexp {tls_server_cert_expires_in_seconds:(-?[0-9]+)} $info1 -> expire1]",
+        '                fail "INFO tls missing tls_server_cert_expires_in_seconds"\n            ',
+    )
     # TODO: assert_morethan expire1 0
-    # TODO: foreach field {tls_client_cert_expires_in_seconds tls_ca_cert_expires_in_seconds} {
-    #       set pattern [format {%s:(-?[0-9]+)} $field]
-    #       if {![regexp $pattern $info1 -> exp_value]} {
-    #           fail "INFO tls missing $field"
-    #       }
-    #       assert_morethan $exp_value 0
-    #   }
+    foreach(
+        "field",
+        "tls_client_cert_expires_in_seconds tls_ca_cert_expires_in_seconds",
+        '                set pattern [format {%s:(-?[0-9]+)} $field]\n                if {![regexp $pattern $info1 -> exp_value]} {\n                    fail "INFO tls missing $field"\n                }\n                assert_morethan $exp_value 0\n            ',
+    )
     expire2 = -1
-    # TODO: wait_for_condition 10 500 {
-    #       [regexp {tls_server_cert_expires_in_seconds:(-?[0-9]+)} [r info tls] -> expire2] &&
-    #       $expire2 < $expire1
-    #   } else {
-    #       fail "INFO tls expiration countdown did not decrease"
-    #   }
+    wait_for_condition(
+        10,
+        500,
+        "                [regexp {tls_server_cert_expires_in_seconds:(-?[0-9]+)} [r info tls] -> expire2] &&\n                $expire2 < $expire1\n            ",
+        "else",
+        '                fail "INFO tls expiration countdown did not decrease"\n            ',
+    )
     # TODO: assert_morethan expire1 expire2
-    # TODO: set delta expr {$expire1 - $expire2}
-    # TODO: assert_morethan_equal delta 1
+    delta = expr("$expire1 - $expire2")
+    assert_morethan_equal(delta, 1)
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.skipif("", reason="{$::tls}")
 def test_tls_info_tls_uses_earliest_ca_expiry_in_bundle(r: ValkeyTestClient) -> None:
     """
@@ -975,31 +854,19 @@ def test_tls_info_tls_uses_earliest_ca_expiry_in_bundle(r: ValkeyTestClient) -> 
         }
     }
     """
-    # TODO: set ca_cert format "%s/tests/tls/ca.crt" [pwd]
-    # TODO: set server_cert format "%s/tests/tls/server.crt" [pwd]
-    # TODO: set ca_bundle format "%s/tests/tls/ca-multi.crt" [pwd]
-    # TODO: if {![file exists $ca_bundle]} {
-    #       fail "missing $ca_bundle; run utils/gen-test-certs.sh"
-    #   }
-    # TODO: start_server list overrides [list tls-ca-cert-file $ca_bundle] {
-    #       set info [r info tls]
-    #       if {![regexp {tls_server_cert_expires_in_seconds:(-?[0-9]+)} $info -> server_exp]} {
-    #           fail "INFO tls missing tls_server_cert_expires_in_seconds"
-    #       }
-    #       if {![regexp {tls_ca_cert_expires_in_seconds:(-?[0-9]+)} $info -> ca_exp]} {
-    #           fail "INFO tls missing tls_ca_cert_expires_in_seconds"
-    #       }
-    #       if {![regexp {tls_ca_cert_serial:([^\r\n]+)} $info -> ca_serial]} {
-    #           fail "INFO tls missing tls_ca_cert_serial"
-    #       }
-    #       assert_morethan $server_exp 0
-    #       assert_morethan $ca_exp 0
-    #       assert {$ca_serial ne "none"}
-    #       assert_morethan_equal $server_exp $ca_exp
-    #   }
+    ca_cert = format_("%s/tests/tls/ca.crt", pwd())
+    server_cert = format_("%s/tests/tls/server.crt", pwd())
+    ca_bundle = format_("%s/tests/tls/ca-multi.crt", pwd())
+    if_(
+        "![file exists $ca_bundle]",
+        '                fail "missing $ca_bundle; run utils/gen-test-certs.sh"\n            ',
+    )
+    start_server(
+        list_("overrides", list_("tls-ca-cert-file", ca_bundle)),
+        '                set info [r info tls]\n                if {![regexp {tls_server_cert_expires_in_seconds:(-?[0-9]+)} $info -> server_exp]} {\n                    fail "INFO tls missing tls_server_cert_expires_in_seconds"\n                }\n                if {![regexp {tls_ca_cert_expires_in_seconds:(-?[0-9]+)} $info -> ca_exp]} {\n                    fail "INFO tls missing tls_ca_cert_expires_in_seconds"\n                }\n                if {![regexp {tls_ca_cert_serial:([^\\r\\n]+)} $info -> ca_serial]} {\n                    fail "INFO tls missing tls_ca_cert_serial"\n                }\n                assert_morethan $server_exp 0\n                assert_morethan $ca_exp 0\n                assert {$ca_serial ne "none"}\n                assert_morethan_equal $server_exp $ca_exp\n            ',
+    )
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.skipif("", reason="{$::tls}")
 def test_tls_info_tls_reports_ca_cert_info_from_directory(r: ValkeyTestClient) -> None:
     """
@@ -1021,24 +888,17 @@ def test_tls_info_tls_reports_ca_cert_info_from_directory(r: ValkeyTestClient) -
         }
     }
     """
-    # TODO: set ca_dir format "%s/tests/tls/ca-dir" [pwd]
-    # TODO: if {![file isdirectory $ca_dir]} {
-    #       fail "missing $ca_dir; run utils/gen-test-certs.sh"
-    #   }
-    # TODO: start_server list overrides [list tls-ca-cert-dir $ca_dir] {
-    #       set info [r info tls]
-    #       if {![regexp {tls_ca_cert_serial:([^\r\n]+)} $info -> ca_serial]} {
-    #           fail "INFO tls missing tls_ca_cert_serial"
-    #       }
-    #       assert {$ca_serial ne "none"}
-    #       if {![regexp {tls_ca_cert_expires_in_seconds:(-?[0-9]+)} $info -> ca_exp]} {
-    #           fail "INFO tls missing tls_ca_cert_expires_in_seconds"
-    #       }
-    #       assert_morethan $ca_exp 0
-    #   }
+    ca_dir = format_("%s/tests/tls/ca-dir", pwd())
+    if_(
+        "![file isdirectory $ca_dir]",
+        '                fail "missing $ca_dir; run utils/gen-test-certs.sh"\n            ',
+    )
+    start_server(
+        list_("overrides", list_("tls-ca-cert-dir", ca_dir)),
+        '                set info [r info tls]\n                if {![regexp {tls_ca_cert_serial:([^\\r\\n]+)} $info -> ca_serial]} {\n                    fail "INFO tls missing tls_ca_cert_serial"\n                }\n                assert {$ca_serial ne "none"}\n                if {![regexp {tls_ca_cert_expires_in_seconds:(-?[0-9]+)} $info -> ca_exp]} {\n                    fail "INFO tls missing tls_ca_cert_expires_in_seconds"\n                }\n                assert_morethan $ca_exp 0\n            ',
+    )
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.skipif("", reason="{$::tls}")
 def test_tls_info_tls_reports_ca_cert_info_from_directory_only(r: ValkeyTestClient) -> None:
     """
@@ -1061,25 +921,17 @@ def test_tls_info_tls_reports_ca_cert_info_from_directory_only(r: ValkeyTestClie
         }
     }
     """
-    # TODO: set ca_dir format "%s/tests/tls/ca-dir" [pwd]
-    # TODO: if {![file isdirectory $ca_dir]} {
-    #       fail "missing $ca_dir; run utils/gen-test-certs.sh"
-    #   }
-    # TODO: start_server list overrides [list tls-ca-cert-dir $ca_dir] \
-    #                                  omit [list tls-ca-cert-file] {
-    #       set info [r info tls]
-    #       if {![regexp {tls_ca_cert_serial:([^\r\n]+)} $info -> ca_serial]} {
-    #           fail "INFO tls missing tls_ca_cert_serial"
-    #       }
-    #       assert {$ca_serial ne "none"}
-    #       if {![regexp {tls_ca_cert_expires_in_seconds:(-?[0-9]+)} $info -> ca_exp]} {
-    #           fail "INFO tls missing tls_ca_cert_expires_in_seconds"
-    #       }
-    #       assert_morethan $ca_exp 0
-    #   }
+    ca_dir = format_("%s/tests/tls/ca-dir", pwd())
+    if_(
+        "![file isdirectory $ca_dir]",
+        '                fail "missing $ca_dir; run utils/gen-test-certs.sh"\n            ',
+    )
+    start_server(
+        list_("overrides", list_("tls-ca-cert-dir", ca_dir), "omit", list_("tls-ca-cert-file")),
+        '                set info [r info tls]\n                if {![regexp {tls_ca_cert_serial:([^\\r\\n]+)} $info -> ca_serial]} {\n                    fail "INFO tls missing tls_ca_cert_serial"\n                }\n                assert {$ca_serial ne "none"}\n                if {![regexp {tls_ca_cert_expires_in_seconds:(-?[0-9]+)} $info -> ca_exp]} {\n                    fail "INFO tls missing tls_ca_cert_expires_in_seconds"\n                }\n                assert_morethan $ca_exp 0\n            ',
+    )
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.skipif("", reason="{$::tls}")
 def test_tls_info_tls_shows_none_for_missing_client_cert(r: ValkeyTestClient) -> None:
     """
@@ -1097,17 +949,12 @@ def test_tls_info_tls_shows_none_for_missing_client_cert(r: ValkeyTestClient) ->
         }
     }
     """
-    # TODO: start_server list overrides [list tls-auth-clients no] \
-    #                                  omit [list tls-client-cert-file tls-client-key-file] {
-    #       set info [r info tls]
-    #       set client_serial [getInfoProperty $info tls_client_cert_serial]
-    #       assert_not_equal $client_serial {}
-    #       assert_equal "none" $client_serial
-    #       if {![regexp {tls_client_cert_expires_in_seconds:(-?[0-9]+)} $info -> client_exp]} {
-    #           fail "INFO tls missing tls_client_cert_expires_in_seconds"
-    #       }
-    #       assert_equal 0 $client_exp
-    #   }
+    start_server(
+        list_(
+            "overrides", list_("tls-auth-clients", "no"), "omit", list_("tls-client-cert-file", "tls-client-key-file")
+        ),
+        '                set info [r info tls]\n                set client_serial [getInfoProperty $info tls_client_cert_serial]\n                assert_not_equal $client_serial {}\n                assert_equal "none" $client_serial\n                if {![regexp {tls_client_cert_expires_in_seconds:(-?[0-9]+)} $info -> client_exp]} {\n                    fail "INFO tls missing tls_client_cert_expires_in_seconds"\n                }\n                assert_equal 0 $client_exp\n            ',
+    )
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1193,69 +1040,60 @@ def test_tls_info_tls_clears_expiration_countdown_when_tls_disabled(r: ValkeyTes
         $plain_client close
     }
     """
-    # TODO: set host srv 0 host
-    # TODO: set tls_port srv 0 port
-    # TODO: set plain_port srv 0 pport
-    # TODO: if {$plain_port == 0} {
-    #       fail "Plaintext port not available for TLS test harness"
-    #   }
-    # TODO: set plain_client valkey $host $plain_port 0 0
-    # TODO: $plain_client CONFIG SET port plain _port
-    # TODO: $plain_client CONFIG SET tls-port tls _port
+    host = srv(0, "host")
+    tls_port = srv(0, "port")
+    plain_port = srv(0, "pport")
+    if plain_port == 0:
+        fail("Plaintext port not available for TLS test harness")
+    plain_client = valkey(host, plain_port, 0, 0)
+    # TODO: $plain_client CONFIG SET port plain_port
+    # TODO: $plain_client CONFIG SET tls-port tls_port
     # TODO: $plain_client CONFIG SET tls-replication yes
     # TODO: $plain_client CONFIG SET tls-cluster yes
-    # TODO: if {$::tls_module} {
-    #       # Force TLS module to refresh cert info after re-enable.
-    #       set cert [lindex [$plain_client config get tls-cert-file] 1]
-    #       set key [lindex [$plain_client config get tls-key-file] 1]
-    #       set cafile [lindex [$plain_client config get tls-ca-cert-file] 1]
-    #       $plain_client config set tls-cert-file $cert
-    #       $plain_client config set tls-key-file $key
-    #       $plain_client config set tls-ca-cert-file $cafile
-    #   }
-    # TODO: wait_for_condition 50 100 {
-    #       [catch {set tls_client [valkey $host $tls_port 0 1]} err] == 0
-    #   } else {
-    #       fail "Timed out waiting for TLS listener to restart ($err)"
-    #   }
+    if_(
+        "$::tls_module",
+        "                # Force TLS module to refresh cert info after re-enable.\n                set cert [lindex [$plain_client config get tls-cert-file] 1]\n                set key [lindex [$plain_client config get tls-key-file] 1]\n                set cafile [lindex [$plain_client config get tls-ca-cert-file] 1]\n                $plain_client config set tls-cert-file $cert\n                $plain_client config set tls-key-file $key\n                $plain_client config set tls-ca-cert-file $cafile\n            ",
+    )
+    wait_for_condition(
+        50,
+        100,
+        "                [catch {set tls_client [valkey $host $tls_port 0 1]} err] == 0\n            ",
+        "else",
+        '                fail "Timed out waiting for TLS listener to restart ($err)"\n            ',
+    )
     # TODO: set info_enabled $tls_client info tls
-    # TODO: if {![regexp {tls_server_cert_expires_in_seconds:(-?[0-9]+)} $info_enabled -> expire_enabled]} {
-    #       fail "INFO tls missing tls_server_cert_expires_in_seconds (enabled)"
-    #   }
-    # TODO: assert_morethan expire _enabled 0
+    if_(
+        "![regexp {tls_server_cert_expires_in_seconds:(-?[0-9]+)} $info_enabled -> expire_enabled]",
+        '                fail "INFO tls missing tls_server_cert_expires_in_seconds (enabled)"\n            ',
+    )
+    # TODO: assert_morethan expire_enabled 0
     # TODO: $tls_client close
     # TODO: $plain_client CONFIG SET tls-replication no
     # TODO: $plain_client CONFIG SET tls-cluster no
     # TODO: $plain_client CONFIG SET tls-port 0
-    # TODO: wait_for_condition 50 100 {
-    #       [regexp {tls_server_cert_serial:none} [$plain_client info tls]] &&
-    #       [regexp {tls_client_cert_serial:none} [$plain_client info tls]] &&
-    #       [regexp {tls_ca_cert_serial:none} [$plain_client info tls]] &&
-    #       [regexp {tls_server_cert_expires_in_seconds:0} [$plain_client info tls]] &&
-    #       [regexp {tls_client_cert_expires_in_seconds:0} [$plain_client info tls]] &&
-    #       [regexp {tls_ca_cert_expires_in_seconds:0} [$plain_client info tls]]
-    #   } else {
-    #       fail "Timed out waiting for TLS to disable"
-    #   }
+    wait_for_condition(
+        50,
+        100,
+        "                [regexp {tls_server_cert_serial:none} [$plain_client info tls]] &&\n                [regexp {tls_client_cert_serial:none} [$plain_client info tls]] &&\n                [regexp {tls_ca_cert_serial:none} [$plain_client info tls]] &&\n                [regexp {tls_server_cert_expires_in_seconds:0} [$plain_client info tls]] &&\n                [regexp {tls_client_cert_expires_in_seconds:0} [$plain_client info tls]] &&\n                [regexp {tls_ca_cert_expires_in_seconds:0} [$plain_client info tls]]\n            ",
+        "else",
+        '                fail "Timed out waiting for TLS to disable"\n            ',
+    )
     # TODO: set info_disabled $plain_client info tls
-    # TODO: foreach field {tls_server_cert_serial tls_client_cert_serial tls_ca_cert_serial} {
-    #       set pattern [format {%s:([^\r\n]+)} $field]
-    #       if {![regexp $pattern $info_disabled -> serial_value]} {
-    #           fail "INFO tls missing $field (disabled)"
-    #       }
-    #       assert_equal "none" $serial_value
-    #   }
-    # TODO: if {![regexp {tls_server_cert_expires_in_seconds:(-?[0-9]+)} $info_disabled -> expire_disabled]} {
-    #       fail "INFO tls missing tls_server_cert_expires_in_seconds (disabled)"
-    #   }
-    # TODO: assert_equal 0 expire _disabled
-    # TODO: foreach field {tls_client_cert_expires_in_seconds tls_ca_cert_expires_in_seconds} {
-    #       set pattern [format {%s:(-?[0-9]+)} $field]
-    #       if {![regexp $pattern $info_disabled -> exp_value]} {
-    #           fail "INFO tls missing $field (disabled)"
-    #       }
-    #       assert_equal 0 $exp_value
-    #   }
+    foreach(
+        "field",
+        "tls_server_cert_serial tls_client_cert_serial tls_ca_cert_serial",
+        '                set pattern [format {%s:([^\\r\\n]+)} $field]\n                if {![regexp $pattern $info_disabled -> serial_value]} {\n                    fail "INFO tls missing $field (disabled)"\n                }\n                assert_equal "none" $serial_value\n            ',
+    )
+    if_(
+        "![regexp {tls_server_cert_expires_in_seconds:(-?[0-9]+)} $info_disabled -> expire_disabled]",
+        '                fail "INFO tls missing tls_server_cert_expires_in_seconds (disabled)"\n            ',
+    )
+    # TODO: assert_equal 0 expire_disabled
+    foreach(
+        "field",
+        "tls_client_cert_expires_in_seconds tls_ca_cert_expires_in_seconds",
+        '                set pattern [format {%s:(-?[0-9]+)} $field]\n                if {![regexp $pattern $info_disabled -> exp_value]} {\n                    fail "INFO tls missing $field (disabled)"\n                }\n                assert_equal 0 $exp_value\n            ',
+    )
     # TODO: $plain_client close
 
 
@@ -1335,62 +1173,139 @@ def test_tls_info_tls_shows_expiration_countdown_when_tls_re_enabled(r: ValkeyTe
         $plain_client close
     }
     """
-    # TODO: set host srv 0 host
-    # TODO: set tls_port srv 0 port
-    # TODO: set plain_port srv 0 pport
-    # TODO: if {$plain_port == 0} {
-    #       fail "Plaintext port not available for TLS test harness"
-    #   }
-    # TODO: set plain_client valkey $host $plain_port 0 0
-    # TODO: $plain_client CONFIG SET port plain _port
+    host = srv(0, "host")
+    tls_port = srv(0, "port")
+    plain_port = srv(0, "pport")
+    if plain_port == 0:
+        fail("Plaintext port not available for TLS test harness")
+    plain_client = valkey(host, plain_port, 0, 0)
+    # TODO: $plain_client CONFIG SET port plain_port
     # TODO: $plain_client CONFIG SET tls-replication no
     # TODO: $plain_client CONFIG SET tls-cluster no
     # TODO: $plain_client CONFIG SET tls-port 0
-    # TODO: wait_for_condition 50 100 {
-    #       [regexp {tls_server_cert_serial:none} [$plain_client info tls]] &&
-    #       [regexp {tls_client_cert_serial:none} [$plain_client info tls]] &&
-    #       [regexp {tls_ca_cert_serial:none} [$plain_client info tls]] &&
-    #       [regexp {tls_server_cert_expires_in_seconds:0} [$plain_client info tls]] &&
-    #       [regexp {tls_client_cert_expires_in_seconds:0} [$plain_client info tls]] &&
-    #       [regexp {tls_ca_cert_expires_in_seconds:0} [$plain_client info tls]]
-    #   } else {
-    #       fail "Timed out waiting for TLS to disable"
-    #   }
-    # TODO: $plain_client CONFIG SET tls-port tls _port
+    wait_for_condition(
+        50,
+        100,
+        "                [regexp {tls_server_cert_serial:none} [$plain_client info tls]] &&\n                [regexp {tls_client_cert_serial:none} [$plain_client info tls]] &&\n                [regexp {tls_ca_cert_serial:none} [$plain_client info tls]] &&\n                [regexp {tls_server_cert_expires_in_seconds:0} [$plain_client info tls]] &&\n                [regexp {tls_client_cert_expires_in_seconds:0} [$plain_client info tls]] &&\n                [regexp {tls_ca_cert_expires_in_seconds:0} [$plain_client info tls]]\n            ",
+        "else",
+        '                fail "Timed out waiting for TLS to disable"\n            ',
+    )
+    # TODO: $plain_client CONFIG SET tls-port tls_port
     # TODO: $plain_client CONFIG SET tls-replication yes
     # TODO: $plain_client CONFIG SET tls-cluster yes
-    # TODO: if {$::tls_module} {
-    #       # Force TLS module to refresh cert info after re-enable.
-    #       set cert [lindex [$plain_client config get tls-cert-file] 1]
-    #       set key [lindex [$plain_client config get tls-key-file] 1]
-    #       set cafile [lindex [$plain_client config get tls-ca-cert-file] 1]
-    #       $plain_client config set tls-cert-file $cert
-    #       $plain_client config set tls-key-file $key
-    #       $plain_client config set tls-ca-cert-file $cafile
-    #   }
-    # TODO: wait_for_condition 50 100 {
-    #       [catch {set tls_client [valkey $host $tls_port 0 1]} err] == 0
-    #   } else {
-    #       fail "Timed out waiting for TLS listener to restart ($err)"
-    #   }
+    if_(
+        "$::tls_module",
+        "                # Force TLS module to refresh cert info after re-enable.\n                set cert [lindex [$plain_client config get tls-cert-file] 1]\n                set key [lindex [$plain_client config get tls-key-file] 1]\n                set cafile [lindex [$plain_client config get tls-ca-cert-file] 1]\n                $plain_client config set tls-cert-file $cert\n                $plain_client config set tls-key-file $key\n                $plain_client config set tls-ca-cert-file $cafile\n            ",
+    )
+    wait_for_condition(
+        50,
+        100,
+        "                [catch {set tls_client [valkey $host $tls_port 0 1]} err] == 0\n            ",
+        "else",
+        '                fail "Timed out waiting for TLS listener to restart ($err)"\n            ',
+    )
     # TODO: set info_reenabled $tls_client info tls
-    # TODO: foreach field {tls_server_cert_serial tls_client_cert_serial tls_ca_cert_serial} {
-    #       set pattern [format {%s:([^\r\n]+)} $field]
-    #       if {![regexp $pattern $info_reenabled -> serial_enabled]} {
-    #           fail "INFO tls missing $field after re-enable"
-    #       }
-    #       assert {$serial_enabled ne "none"}
-    #   }
-    # TODO: if {![regexp {tls_server_cert_expires_in_seconds:(-?[0-9]+)} $info_reenabled -> expire_reenabled]} {
-    #       fail "INFO tls missing tls_server_cert_expires_in_seconds (re-enabled)"
-    #   }
-    # TODO: assert_morethan expire _reenabled 0
-    # TODO: foreach field {tls_client_cert_expires_in_seconds tls_ca_cert_expires_in_seconds} {
-    #       set pattern [format {%s:(-?[0-9]+)} $field]
-    #       if {![regexp $pattern $info_reenabled -> exp_value]} {
-    #           fail "INFO tls missing $field (re-enabled)"
-    #       }
-    #       assert_morethan $exp_value 0
-    #   }
+    foreach(
+        "field",
+        "tls_server_cert_serial tls_client_cert_serial tls_ca_cert_serial",
+        '                set pattern [format {%s:([^\\r\\n]+)} $field]\n                if {![regexp $pattern $info_reenabled -> serial_enabled]} {\n                    fail "INFO tls missing $field after re-enable"\n                }\n                assert {$serial_enabled ne "none"}\n            ',
+    )
+    if_(
+        "![regexp {tls_server_cert_expires_in_seconds:(-?[0-9]+)} $info_reenabled -> expire_reenabled]",
+        '                fail "INFO tls missing tls_server_cert_expires_in_seconds (re-enabled)"\n            ',
+    )
+    # TODO: assert_morethan expire_reenabled 0
+    foreach(
+        "field",
+        "tls_client_cert_expires_in_seconds tls_ca_cert_expires_in_seconds",
+        '                set pattern [format {%s:(-?[0-9]+)} $field]\n                if {![regexp $pattern $info_reenabled -> exp_value]} {\n                    fail "INFO tls missing $field (re-enabled)"\n                }\n                assert_morethan $exp_value 0\n            ',
+    )
     # TODO: $tls_client close
     # TODO: $plain_client close
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def assert_(*args):
+    raise NotImplementedError("assert_")
+
+
+def assert_morethan_equal(*args):
+    raise NotImplementedError("assert_morethan_equal")
+
+
+def assert_not_equal(*args):
+    raise NotImplementedError("assert_not_equal")
+
+
+def catch(*args):
+    raise NotImplementedError("catch")
+
+
+def expr(*args):
+    raise NotImplementedError("expr")
+
+
+def fail(*args):
+    raise NotImplementedError("fail")
+
+
+def file(*args):
+    raise NotImplementedError("file")
+
+
+def foreach(*args):
+    raise NotImplementedError("foreach")
+
+
+def format_(*args):
+    raise NotImplementedError("format_")
+
+
+def get_info_property(*args):
+    raise NotImplementedError("get_info_property")
+
+
+def if_(*args):
+    raise NotImplementedError("if_")
+
+
+def list_(*args):
+    raise NotImplementedError("list_")
+
+
+def pwd(*args):
+    raise NotImplementedError("pwd")
+
+
+def srv(*args):
+    raise NotImplementedError("srv")
+
+
+def start_server(*args):
+    raise NotImplementedError("start_server")
+
+
+def test_tls_cert_rejection(*args):
+    raise NotImplementedError("test_tls_cert_rejection")
+
+
+def test_tls_cert_rejection_runtime(*args):
+    raise NotImplementedError("test_tls_cert_rejection_runtime")
+
+
+def try_(*args):
+    raise NotImplementedError("try_")
+
+
+def valkey(*args):
+    raise NotImplementedError("valkey")
+
+
+def valkey_client(*args):
+    raise NotImplementedError("valkey_client")
+
+
+def wait_for_condition(*args):
+    raise NotImplementedError("wait_for_condition")

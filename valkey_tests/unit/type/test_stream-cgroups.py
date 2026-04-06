@@ -1,5 +1,6 @@
-# ruff: noqa: PLR2004, F841, RUF043
+# ruff: noqa: PLR2004, F841, RUF043, ANN002, ANN201
 import time
+from fnmatch import fnmatch
 
 import pytest
 
@@ -22,7 +23,7 @@ def test_xgroup_create_creation_and_duplicate_group_name_detection(r: ValkeyTest
     r.run("DEL", "mystream")
     r.run("XADD", "mystream", "*", "foo", "bar")
     # TODO: r XGROUP CREATE mystream mygroup
-    # TODO: catch {r XGROUP CREATE mystream mygroup $} err
+    catch("r XGROUP CREATE mystream mygroup $", "err")
     # TODO: set err
     assert False
 
@@ -58,19 +59,15 @@ def test_xgroup_create_with_entriesread_parameter(r: ValkeyTestClient) -> None:
     r.run("XADD", "mystream", "1-2", "b", 2)
     r.run("XADD", "mystream", "1-3", "c", 3)
     r.run("XADD", "mystream", "1-4", "d", 4)
-    # TODO: assert_error "*value for ENTRIESREAD must be positive or -1*" {r XGROUP CREATE mystream mygroup $ ENTRIESREAD -3}
+    assert_error("*value for ENTRIESREAD must be positive or -1*", "r XGROUP CREATE mystream mygroup $ ENTRIESREAD -3")
     # TODO: r XGROUP CREATE mystream mygroup1  ENTRIESREAD 0
     # TODO: r XGROUP CREATE mystream mygroup2  ENTRIESREAD 3
     reply = r.run("xinfo", "groups", "mystream")
-    # TODO: foreach group_info reply {
-    #       set group_name [dict get $group_info name]
-    #       set entries_read [dict get $group_info entries-read]
-    #       if {$group_name == "mygroup1"} {
-    #           assert_equal $entries_read 0
-    #       } else {
-    #           assert_equal $entries_read 3
-    #       }
-    #   }
+    foreach(
+        "group_info",
+        reply,
+        '            set group_name [dict get $group_info name]\n            set entries_read [dict get $group_info entries-read]\n            if {$group_name == "mygroup1"} {\n                assert_equal $entries_read 0\n            } else {\n                assert_equal $entries_read 3\n            }\n        ',
+    )
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -83,7 +80,7 @@ def test_xgroup_create_automatic_stream_creation_fails_without_mkstream(r: Valke
     } {ERR*}
     """
     r.run("DEL", "mystream")
-    # TODO: catch {r XGROUP CREATE mystream mygroup $} err
+    catch("r XGROUP CREATE mystream mygroup $", "err")
     # TODO: set err
     assert False
 
@@ -120,12 +117,11 @@ def test_xreadgroup_will_return_only_new_elements(r: ValkeyTestClient) -> None:
     r.run("XADD", "mystream", "*", "a", 1)
     r.run("XADD", "mystream", "*", "b", 2)
     reply = r.run("XREADGROUP", "GROUP", "mygroup", "consumer-1", "STREAMS", "mystream", ">")
-    # TODO: assert {[llength [lindex $reply 0 1]] == 2}
+    assert len(lindex(reply, 0, 1)) == 2
     # TODO: lindex reply 0 1 0 1
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_xreadgroup_can_read_the_history_of_the_elements_we_own(r: ValkeyTestClient) -> None:
     """
     test {XREADGROUP can read the history of the elements we own} {
@@ -148,15 +144,14 @@ def test_xreadgroup_can_read_the_history_of_the_elements_we_own(r: ValkeyTestCli
     r.run("XADD", "mystream", "*", "c", 3)
     r.run("XADD", "mystream", "*", "d", 4)
     reply = r.run("XREADGROUP", "GROUP", "mygroup", "consumer-2", "STREAMS", "mystream", ">")
-    # TODO: assert {[llength [lindex $reply 0 1]] == 2}
-    # TODO: assert {[lindex $reply 0 1 0 1] eq {c 3}}
+    assert len(lindex(reply, 0, 1)) == 2
+    assert lindex(reply, 0, 1, 0, 1) == "c 3"
     r1 = r.run("XREADGROUP", "GROUP", "mygroup", "consumer-1", "COUNT", 10, "STREAMS", "mystream", 0)
     r2 = r.run("XREADGROUP", "GROUP", "mygroup", "consumer-2", "COUNT", 10, "STREAMS", "mystream", 0)
-    # TODO: assert {[lindex $r1 0 1 0 1] eq {a 1}}
-    # TODO: assert {[lindex $r2 0 1 0 1] eq {c 3}}
+    assert lindex(r1, 0, 1, 0, 1) == "a 1"
+    assert lindex(r2, 0, 1, 0, 1) == "c 3"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_xpending_is_able_to_return_pending_items(r: ValkeyTestClient) -> None:
     """
     test {XPENDING is able to return pending items} {
@@ -176,16 +171,16 @@ def test_xpending_is_able_to_return_pending_items(r: ValkeyTestClient) -> None:
     """
     pending = r.run("XPENDING", "mystream", "mygroup", "-", "+", 10)
     assert len(pending) == 4
-    # TODO: for {set j 0} {$j < 4} {incr j} {
-    #       set item [lindex $pending $j]
-    #       if {$j < 2} {
-    #           set owner consumer-1
-    #       } else {
-    #           set owner consumer-2
-    #       }
-    #       assert {[lindex $item 1] eq $owner}
-    #       assert {[lindex $item 1] eq $owner}
-    #   }
+    j = 0
+    while j < 4:
+        item = pending[j]
+        if j < 2:
+            owner = "consumer-1"
+        else:
+            owner = "consumer-2"
+        assert item[1] == owner
+        assert item[1] == owner
+        j += 1
 
 
 def test_xpending_can_return_single_consumer_items(r: ValkeyTestClient) -> None:
@@ -265,7 +260,6 @@ def test_xpending_with_exclusive_range_intervals_works_as_expected(r: ValkeyTest
         j += 1
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_xack_is_able_to_remove_items_from_the_consumer_or_group_pel(r: ValkeyTestClient) -> None:
     """
     test {XACK is able to remove items from the consumer/group PEL} {
@@ -282,28 +276,26 @@ def test_xack_is_able_to_remove_items_from_the_consumer_or_group_pel(r: ValkeyTe
     }
     """
     pending = r.run("XPENDING", "mystream", "mygroup", "-", "+", 10, "consumer-1")
-    # TODO: set id1 lindex $pending 0 0
-    # TODO: set id2 lindex $pending 1 0
-    # TODO: assert {[r XACK mystream mygroup $id1] eq 1}
+    id1 = lindex(pending, 0, 0)
+    id2 = lindex(pending, 1, 0)
+    assert r.run("XACK", "mystream", "mygroup", id1) == 1
     pending = r.run("XPENDING", "mystream", "mygroup", "-", "+", 10, "consumer-1")
     assert len(pending) == 1
-    # TODO: set id lindex $pending 0 0
-    # TODO: assert {$id eq $id2}
+    id = lindex(pending, 0, 0)
+    assert id == id2
     global_pel = r.run("XPENDING", "mystream", "mygroup", "-", "+", 10)
-    # TODO: assert {[llength $global_pel] == 3}
+    assert len(global_pel) == 3
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_xack_can_t_remove_the_same_item_multiple_times(r: ValkeyTestClient) -> None:
     """
     test {XACK can't remove the same item multiple times} {
         assert {[r XACK mystream mygroup $id1] eq 0}
     }
     """
-    # TODO: assert {[r XACK mystream mygroup $id1] eq 0}
+    assert_("[r XACK mystream mygroup $id1] eq 0")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_xack_is_able_to_accept_multiple_arguments(r: ValkeyTestClient) -> None:
     """
     test {XACK is able to accept multiple arguments} {
@@ -312,7 +304,7 @@ def test_xack_is_able_to_accept_multiple_arguments(r: ValkeyTestClient) -> None:
         assert {[r XACK mystream mygroup $id1 $id2] eq 1}
     }
     """
-    # TODO: assert {[r XACK mystream mygroup $id1 $id2] eq 1}
+    assert_("[r XACK mystream mygroup $id1 $id2] eq 1")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -333,12 +325,13 @@ def test_xack_should_fail_if_got_at_least_one_invalid_id(r: ValkeyTestClient) ->
     r.run("del", "mystream")
     # TODO: r xgroup create s g  MKSTREAM
     r.run("xadd", "s", "*", "f1", "v1")
-    # TODO: set c llength [lindex [r xreadgroup group g c streams s >] 0 1]
-    # TODO: assert {$c == 1}
+    c = len(lindex(r.run("xreadgroup", "group", "g", "c", "streams", "s", ">"), 0, 1))
+    assert c == 1
     pending = r.run("xpending", "s", "g", "-", "+", 10, "c")
-    # TODO: set id1 lindex $pending 0 0
-    # TODO: assert_error "*Invalid stream ID specified*" {r xack s g $id1 invalid-id}
-    # TODO: assert {[r xack s g $id1] eq 1}
+    id1 = lindex(pending, 0, 0)
+    with pytest.raises(Exception, match=".*Invalid\\ stream\\ ID\\ specified.*"):
+        r.run("xack", "s", "g", id1, "invalid-id")
+    assert r.run("xack", "s", "g", id1) == 1
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -366,14 +359,13 @@ def test_pel_nack_reassignment_after_xgroup_setid_event(r: ValkeyTestClient) -> 
     r.run("xadd", "events", "*", "f1", "v1")
     # TODO: r xgroup create events g1
     r.run("xadd", "events", "*", "f1", "v1")
-    # TODO: set c llength [lindex [r xreadgroup group g1 c1 streams events >] 0 1]
-    # TODO: assert {$c == 1}
+    c = len(lindex(r.run("xreadgroup", "group", "g1", "c1", "streams", "events", ">"), 0, 1))
+    assert c == 1
     r.run("xgroup", "setid", "events", "g1", "-")
-    # TODO: set c llength [lindex [r xreadgroup group g1 c2 streams events >] 0 1]
-    # TODO: assert {$c == 5}
+    c = len(lindex(r.run("xreadgroup", "group", "g1", "c2", "streams", "events", ">"), 0, 1))
+    assert c == 5
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_xreadgroup_will_not_report_data_on_empty_history_bug_5577(r: ValkeyTestClient) -> None:
     """
     test {XREADGROUP will not report data on empty history. Bug #5577} {
@@ -408,11 +400,11 @@ def test_xreadgroup_will_not_report_data_on_empty_history_bug_5577(r: ValkeyTest
     res = r.run("xpending", "events", "mygroup", "-", "+", 10)
     assert len(res) == 0
     res = r.run("xreadgroup", "group", "mygroup", "myconsumer", "count", 3, "streams", "events", 0)
-    # TODO: assert {[llength [lindex $res 0 1]] == 0}
+    assert len(lindex(res, 0, 1)) == 0
     res = r.run("xreadgroup", "group", "mygroup", "myconsumer", "count", 3, "streams", "events", ">")
-    # TODO: assert {[llength [lindex $res 0 1]] == 3}
+    assert len(lindex(res, 0, 1)) == 3
     res = r.run("xreadgroup", "group", "mygroup", "myconsumer", "count", 3, "streams", "events", 0)
-    # TODO: assert {[llength [lindex $res 0 1]] == 3}
+    assert len(lindex(res, 0, 1)) == 3
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -440,8 +432,8 @@ def test_xreadgroup_history_reporting_of_deleted_entries_bug_5570(r: ValkeyTestC
     r.run("XADD", "mystream", "MAXLEN", 1, 2, "field1", "B")
     r.run("XREADGROUP", "GROUP", "mygroup", "myconsumer", "STREAMS", "mystream", ">")
     res = r.run("XREADGROUP", "GROUP", "mygroup", "myconsumer", "STREAMS", "mystream", "0-1")
-    # TODO: assert {[lindex $res 0 1 0] == {1-0 {}}}
-    # TODO: assert {[lindex $res 0 1 1] == {2-0 {field1 B}}}
+    assert lindex(res, 0, 1, 0) == "1-0 {}"
+    assert lindex(res, 0, 1, 1) == "2-0 {field1 B}"
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -466,13 +458,13 @@ def test_blocking_xreadgroup_will_not_reply_with_an_empty_array(r: ValkeyTestCli
     # TODO: r XGROUP CREATE mystream mygroup  MKSTREAM
     r.run("XADD", "mystream", 666, "f", "v")
     res = r.run("XREADGROUP", "GROUP", "mygroup", "Alice", "BLOCK", 10, "STREAMS", "mystream", ">")
-    # TODO: assert {[lindex $res 0 1 0] == {666-0 {f v}}}
+    assert lindex(res, 0, 1, 0) == "666-0 {f v}"
     r.run("XADD", "mystream", 667, "f2", "v2")
     r.run("XDEL", "mystream", 667)
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd XREADGROUP GROUP mygroup Alice BLOCK 10 STREAMS mystream ">"
-    # TODO: wait_for_blocked_clients_count 0
-    # TODO: assert {[$rd read] == {}}
+    wait_for_blocked_clients_count(0)
+    assert_("[$rd read] == {}")
     # TODO: $rd close
 
 
@@ -494,11 +486,11 @@ def test_blocking_xreadgroup_key_deleted(r: ValkeyTestClient) -> None:
     r.run("DEL", "mystream")
     r.run("XADD", "mystream", 666, "f", "v")
     # TODO: r XGROUP CREATE mystream mygroup
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd XREADGROUP GROUP mygroup Alice BLOCK 0 STREAMS mystream ">"
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("DEL", "mystream")
-    # TODO: assert_error "NOGROUP*" {$rd read}
+    assert_error("NOGROUP*", "$rd read")
     # TODO: $rd close
 
 
@@ -520,11 +512,11 @@ def test_blocking_xreadgroup_key_type_changed_with_set(r: ValkeyTestClient) -> N
     r.run("DEL", "mystream")
     r.run("XADD", "mystream", 666, "f", "v")
     # TODO: r XGROUP CREATE mystream mygroup
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd XREADGROUP GROUP mygroup Alice BLOCK 0 STREAMS mystream ">"
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("SET", "mystream", "val1")
-    # TODO: assert_error "*WRONGTYPE*" {$rd read}
+    assert_error("*WRONGTYPE*", "$rd read")
     # TODO: $rd close
 
 
@@ -549,14 +541,14 @@ def test_blocking_xreadgroup_key_type_changed_with_transaction(r: ValkeyTestClie
     r.run("DEL", "mystream")
     r.run("XADD", "mystream", 666, "f", "v")
     # TODO: r XGROUP CREATE mystream mygroup
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd XREADGROUP GROUP mygroup Alice BLOCK 0 STREAMS mystream ">"
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("MULTI")
     r.run("DEL", "mystream")
     r.run("SADD", "mystream", "e1")
     r.run("EXEC")
-    # TODO: assert_error "*WRONGTYPE*" {$rd read}
+    assert_error("*WRONGTYPE*", "$rd read")
     # TODO: $rd close
 
 
@@ -578,11 +570,11 @@ def test_blocking_xreadgroup_flushed_db(r: ValkeyTestClient) -> None:
     r.run("DEL", "mystream")
     r.run("XADD", "mystream", 666, "f", "v")
     # TODO: r XGROUP CREATE mystream mygroup
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd XREADGROUP GROUP mygroup Alice BLOCK 0 STREAMS mystream ">"
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("FLUSHALL")
-    # TODO: assert_error "*NOGROUP*" {$rd read}
+    assert_error("*NOGROUP*", "$rd read")
     # TODO: $rd close
 
 
@@ -612,13 +604,13 @@ def test_blocking_xreadgroup_swapped_db_key_doesn_t_exist(r: ValkeyTestClient) -
     r.run("DEL", "mystream")
     r.run("XADD", "mystream", 666, "f", "v")
     # TODO: r XGROUP CREATE mystream mygroup
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd SELECT 9
     # TODO: $rd read
     # TODO: $rd XREADGROUP GROUP mygroup Alice BLOCK 0 STREAMS mystream ">"
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("SWAPDB", 4, 9)
-    # TODO: assert_error "*NOGROUP*" {$rd read}
+    assert_error("*NOGROUP*", "$rd read")
     # TODO: $rd close
     assert False
 
@@ -651,13 +643,13 @@ def test_blocking_xreadgroup_swapped_db_key_is_not_a_stream(r: ValkeyTestClient)
     r.run("DEL", "mystream")
     r.run("XADD", "mystream", 666, "f", "v")
     # TODO: r XGROUP CREATE mystream mygroup
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd SELECT 9
     # TODO: $rd read
     # TODO: $rd XREADGROUP GROUP mygroup Alice BLOCK 0 STREAMS mystream ">"
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("SWAPDB", 4, 9)
-    # TODO: assert_error "*WRONGTYPE*" {$rd read}
+    assert_error("*WRONGTYPE*", "$rd read")
     # TODO: $rd close
     assert False
 
@@ -707,9 +699,9 @@ def test_blocking_xread_key_deleted(r: ValkeyTestClient) -> None:
     """
     r.run("DEL", "mystream")
     r.run("XADD", "mystream", 666, "f", "v")
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd XREAD BLOCK 0 STREAMS mystream "$"
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("DEL", "mystream")
     r.run("XADD", "mystream", 667, "f", "v")
     # TODO: set res $rd read
@@ -737,9 +729,9 @@ def test_blocking_xread_key_type_changed_with_set(r: ValkeyTestClient) -> None:
     """
     r.run("DEL", "mystream")
     r.run("XADD", "mystream", 666, "f", "v")
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd XREAD BLOCK 0 STREAMS mystream "$"
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("SET", "mystream", "val1")
     r.run("DEL", "mystream")
     r.run("XADD", "mystream", 667, "f", "v")
@@ -777,7 +769,7 @@ def test_blocking_xreadgroup_for_stream_that_ran_dry_issue_5299(r: ValkeyTestCli
         $rd close
     }
     """
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     r.run("DEL", "mystream")
     # TODO: r XGROUP CREATE mystream mygroup  MKSTREAM
     r.run("XADD", "mystream", 666, "key", "value")
@@ -789,7 +781,7 @@ def test_blocking_xreadgroup_for_stream_that_ran_dry_issue_5299(r: ValkeyTestCli
     with pytest.raises(Exception, match="ERR.*equal.*smaller.*"):
         r.run("XADD", "mystream", 666, "key", "value")
     # TODO: $rd XREADGROUP GROUP mygroup myconsumer BLOCK 0 STREAMS mystream >
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("XADD", "mystream", 667, "key", "value")
     # TODO: assert_equal $rd read {{mystream {{667-0 {key value}}}}}
     # TODO: $rd close
@@ -847,35 +839,40 @@ def test_blocking_xreadgroup_will_ignore_block_if_id_is_not(r: ValkeyTestClient)
         $rd close
     }
     """
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     r.run("DEL", "mystream")
     # TODO: r XGROUP CREATE mystream mygroup  MKSTREAM
     r.run("XADD", "mystream", 666, "key", "value")
     r.run("XDEL", "mystream", 666)
-    # TODO: foreach id {0 600 666 700} {
-    #       $rd XREADGROUP GROUP mygroup myconsumer BLOCK 0 STREAMS mystream $id
-    #       assert_equal [$rd read] {{mystream {}}}
-    #   }
+    foreach(
+        "id",
+        "0 600 666 700",
+        "            $rd XREADGROUP GROUP mygroup myconsumer BLOCK 0 STREAMS mystream $id\n            assert_equal [$rd read] {{mystream {}}}\n        ",
+    )
     r.run("XADD", "mystream", 667, "key", "value")
-    # TODO: foreach id {0 600 666 667 700} {
-    #       $rd XREADGROUP GROUP mygroup myconsumer BLOCK 0 STREAMS mystream $id
-    #       assert_equal [$rd read] {{mystream {}}}
-    #   }
+    foreach(
+        "id",
+        "0 600 666 667 700",
+        "            $rd XREADGROUP GROUP mygroup myconsumer BLOCK 0 STREAMS mystream $id\n            assert_equal [$rd read] {{mystream {}}}\n        ",
+    )
     res = r.run("XREADGROUP", "GROUP", "mygroup", "myconsumer", "BLOCK", 0, "STREAMS", "mystream", ">")
     assert res == "{mystream {{667-0 {key value}}}}"
-    # TODO: foreach id {0 600 666} {
-    #       $rd XREADGROUP GROUP mygroup myconsumer BLOCK 0 STREAMS mystream $id
-    #       assert_equal [$rd read] {{mystream {{667-0 {key value}}}}}
-    #   }
-    # TODO: foreach id {667 700} {
-    #       $rd XREADGROUP GROUP mygroup myconsumer BLOCK 0 STREAMS mystream $id
-    #       assert_equal [$rd read] {{mystream {}}}
-    #   }
+    foreach(
+        "id",
+        "0 600 666",
+        "            $rd XREADGROUP GROUP mygroup myconsumer BLOCK 0 STREAMS mystream $id\n            assert_equal [$rd read] {{mystream {{667-0 {key value}}}}}\n        ",
+    )
+    foreach(
+        "id",
+        "667 700",
+        "            $rd XREADGROUP GROUP mygroup myconsumer BLOCK 0 STREAMS mystream $id\n            assert_equal [$rd read] {{mystream {}}}\n        ",
+    )
     r.run("XACK", "mystream", "mygroup", 667)
-    # TODO: foreach id {0 600 666 667 700} {
-    #       $rd XREADGROUP GROUP mygroup myconsumer BLOCK 0 STREAMS mystream $id
-    #       assert_equal [$rd read] {{mystream {}}}
-    #   }
+    foreach(
+        "id",
+        "0 600 666 667 700",
+        "            $rd XREADGROUP GROUP mygroup myconsumer BLOCK 0 STREAMS mystream $id\n            assert_equal [$rd read] {{mystream {}}}\n        ",
+    )
     # TODO: $rd close
 
 
@@ -931,27 +928,27 @@ def test_blocking_xreadgroup_for_stream_key_that_has_clients_blocked_on_list(r: 
         $rd close
     }
     """
-    # TODO: set rd valkey_deferring_client
-    # TODO: set rd2 valkey_deferring_client
+    rd = valkey_deferring_client()
+    rd2 = valkey_deferring_client()
     r.run("DEL", "mystream")
     # TODO: $rd2 BLPOP mystream 0
-    # TODO: wait_for_blocked_clients_count 1
-    # TODO: assert_equal 1 getInfoProperty [r info clients] total_blocking_keys
-    # TODO: assert_equal 0 getInfoProperty [r info clients] total_blocking_keys_on_nokey
+    wait_for_blocked_clients_count(1)
+    assert 1 == get_info_property(r.run("info", "clients"), "total_blocking_keys")
+    assert 0 == get_info_property(r.run("info", "clients"), "total_blocking_keys_on_nokey")
     r.run("XADD", "mystream", 666, "key", "value")
     # TODO: r XGROUP CREATE mystream mygroup  MKSTREAM
     # TODO: $rd XREADGROUP GROUP mygroup myconsumer BLOCK 0 STREAMS mystream ">"
-    # TODO: wait_for_blocked_clients_count 2
-    # TODO: assert_equal 1 getInfoProperty [r info clients] total_blocking_keys
-    # TODO: assert_equal 1 getInfoProperty [r info clients] total_blocking_keys_on_nokey
+    wait_for_blocked_clients_count(2)
+    assert 1 == get_info_property(r.run("info", "clients"), "total_blocking_keys")
+    assert 1 == get_info_property(r.run("info", "clients"), "total_blocking_keys_on_nokey")
     r.run("DEL", "mystream")
-    # TODO: assert_error "NOGROUP*" {$rd read}
-    # TODO: assert_equal 1 getInfoProperty [r info clients] total_blocking_keys
-    # TODO: assert_equal 0 getInfoProperty [r info clients] total_blocking_keys_on_nokey
+    assert_error("NOGROUP*", "$rd read")
+    assert 1 == get_info_property(r.run("info", "clients"), "total_blocking_keys")
+    assert 0 == get_info_property(r.run("info", "clients"), "total_blocking_keys_on_nokey")
     # TODO: $rd2 close
-    # TODO: wait_for_blocked_clients_count 0
-    # TODO: assert_equal 0 getInfoProperty [r info clients] total_blocking_keys
-    # TODO: assert_equal 0 getInfoProperty [r info clients] total_blocking_keys_on_nokey
+    wait_for_blocked_clients_count(0)
+    assert 0 == get_info_property(r.run("info", "clients"), "total_blocking_keys")
+    assert 0 == get_info_property(r.run("info", "clients"), "total_blocking_keys_on_nokey")
     # TODO: $rd close
 
 
@@ -985,13 +982,13 @@ def test_blocking_xreadgroup_for_stream_key_that_has_clients_blocked_on_stream_a
     """
     r.run("DEL", "mystream")
     # TODO: r XGROUP CREATE mystream mygroup  MKSTREAM
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: set rd2 valkey_deferring_client
-    # TODO: set rd3 valkey_deferring_client
+    rd1 = valkey_deferring_client()
+    rd2 = valkey_deferring_client()
+    rd3 = valkey_deferring_client()
     # TODO: $rd1 xreadgroup GROUP mygroup myuser COUNT 10 BLOCK 10000 STREAMS mystream >
     # TODO: $rd2 xreadgroup GROUP mygroup myuser COUNT 10 BLOCK 10000 STREAMS mystream >
     # TODO: $rd3 xreadgroup GROUP mygroup myuser COUNT 10 BLOCK 10000 STREAMS mystream >
-    # TODO: wait_for_blocked_clients_count 3
+    wait_for_blocked_clients_count(3)
     r.run("xadd", "mystream", "MAXLEN", 5000, "*", "field1", "value1", "field2", "value2", "field3", "value3")
     # TODO: $rd1 close
     # TODO: $rd2 close
@@ -1034,18 +1031,18 @@ def test_blocking_xreadgroup_for_stream_key_that_has_clients_blocked_on_stream_r
     """
     r.run("DEL", "mystream")
     # TODO: r XGROUP CREATE mystream mygroup  MKSTREAM
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: set rd2 valkey_deferring_client
+    rd1 = valkey_deferring_client()
+    rd2 = valkey_deferring_client()
     # TODO: $rd1 xreadgroup GROUP mygroup myuser BLOCK 0 STREAMS mystream >
-    # TODO: wait_for_blocked_clients_count 1
-    # TODO: set start clock milliseconds
+    wait_for_blocked_clients_count(1)
+    start = clock("milliseconds")
     # TODO: $rd2 xreadgroup GROUP mygroup myuser BLOCK 1000 STREAMS mystream >
-    # TODO: wait_for_blocked_clients_count 2
+    wait_for_blocked_clients_count(2)
     time.sleep(200 / 1000)
     r.run("xadd", "mystream", "*", "field", "value")
     # TODO: assert_equal {} $rd2 read
-    # TODO: set end clock milliseconds
-    # TODO: assert_range expr $end-$start 1000 1199
+    end = clock("milliseconds")
+    assert_range(expr(end, "-$start"), 1000, 1199)
     # TODO: $rd1 close
     # TODO: $rd2 close
 
@@ -1073,15 +1070,15 @@ def test_xgroup_destroy_should_unblock_xreadgroup_with_nogroup(r: ValkeyTestClie
     r.run("config", "resetstat")
     r.run("del", "mystream")
     # TODO: r XGROUP CREATE mystream mygroup  MKSTREAM
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd XREADGROUP GROUP mygroup Alice BLOCK 0 STREAMS mystream ">"
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("XGROUP", "DESTROY", "mystream", "mygroup")
-    # TODO: assert_error "NOGROUP*" {$rd read}
+    assert_error("NOGROUP*", "$rd read")
     # TODO: $rd close
-    # TODO: assert_match {*count=1*} errorrstat NOGROUP r
-    # TODO: assert_match {*calls=1,*,rejected_calls=0,failed_calls=1} cmdrstat xreadgroup r
-    # TODO: assert_equal s total_error_replies 1
+    assert fnmatch(str(errorrstat("NOGROUP", "r")), "*count=1*")
+    assert fnmatch(str(cmdrstat("xreadgroup", "r")), "*calls=1,*,rejected_calls=0,failed_calls=1")
+    assert s("total_error_replies") == 1
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1102,9 +1099,9 @@ def test_rename_can_unblock_xreadgroup_with_data(r: ValkeyTestClient) -> None:
     """
     r.run("del", "mystream{t}")
     # TODO: r XGROUP CREATE mystream{t} mygroup  MKSTREAM
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd XREADGROUP GROUP mygroup Alice BLOCK 0 STREAMS mystream{t} ">"
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     # TODO: r XGROUP CREATE mystream2{t} mygroup  MKSTREAM
     r.run("XADD", "mystream2{t}", 100, "f1", "v1")
     r.run("RENAME", "mystream2{t}", "mystream{t}")
@@ -1129,16 +1126,15 @@ def test_rename_can_unblock_xreadgroup_with_nogroup(r: ValkeyTestClient) -> None
     """
     r.run("del", "mystream{t}")
     # TODO: r XGROUP CREATE mystream{t} mygroup  MKSTREAM
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     # TODO: $rd XREADGROUP GROUP mygroup Alice BLOCK 0 STREAMS mystream{t} ">"
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     r.run("XADD", "mystream2{t}", 100, "f1", "v1")
     r.run("RENAME", "mystream2{t}", "mystream{t}")
-    # TODO: assert_error "*NOGROUP*" {$rd read}
+    assert_error("*NOGROUP*", "$rd read")
     # TODO: $rd close
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_xclaim_can_claim_pel_items_from_another_consumer(r: ValkeyTestClient) -> None:
     """
     test {XCLAIM can claim PEL items from another consumer} {
@@ -1204,15 +1200,15 @@ def test_xclaim_can_claim_pel_items_from_another_consumer(r: ValkeyTestClient) -
     id3 = r.run("XADD", "mystream", "*", "c", 3)
     r.run("XGROUP", "CREATE", "mystream", "mygroup", 0)
     reply = r.run("XREADGROUP", "GROUP", "mygroup", "consumer1", "count", 1, "STREAMS", "mystream", ">")
-    # TODO: assert {[llength [lindex $reply 0 1 0 1]] == 2}
-    # TODO: assert {[lindex $reply 0 1 0 1] eq {a 1}}
+    assert len(lindex(reply, 0, 1, 0, 1)) == 2
+    assert lindex(reply, 0, 1, 0, 1) == "a 1"
     assert len(r.run("XPENDING", "mystream", "mygroup", "-", "+", 10)) == 1
     assert len(r.run("XPENDING", "mystream", "mygroup", "-", "+", 10, "consumer1")) == 1
     assert len(r.run("XPENDING", "mystream", "mygroup", "-", "+", 10, "consumer2")) == 0
     time.sleep(200 / 1000)
     reply = r.run("XCLAIM", "mystream", "mygroup", "consumer2", 10, id1)
-    # TODO: assert {[llength [lindex $reply 0 1]] == 2}
-    # TODO: assert {[lindex $reply 0 1] eq {a 1}}
+    assert len(lindex(reply, 0, 1)) == 2
+    assert lindex(reply, 0, 1) == "a 1"
     assert len(r.run("XPENDING", "mystream", "mygroup", "-", "+", 10)) == 1
     assert len(r.run("XPENDING", "mystream", "mygroup", "-", "+", 10, "consumer1")) == 0
     assert len(r.run("XPENDING", "mystream", "mygroup", "-", "+", 10, "consumer2")) == 1
@@ -1227,7 +1223,6 @@ def test_xclaim_can_claim_pel_items_from_another_consumer(r: ValkeyTestClient) -
     assert len(reply) == 0
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_xclaim_without_justid_increments_delivery_count(r: ValkeyTestClient) -> None:
     """
     test {XCLAIM without JUSTID increments delivery count} {
@@ -1279,25 +1274,24 @@ def test_xclaim_without_justid_increments_delivery_count(r: ValkeyTestClient) ->
     id3 = r.run("XADD", "mystream", "*", "c", 3)
     r.run("XGROUP", "CREATE", "mystream", "mygroup", 0)
     reply = r.run("XREADGROUP", "GROUP", "mygroup", "consumer1", "count", 1, "STREAMS", "mystream", ">")
-    # TODO: assert {[llength [lindex $reply 0 1 0 1]] == 2}
-    # TODO: assert {[lindex $reply 0 1 0 1] eq {a 1}}
+    assert len(lindex(reply, 0, 1, 0, 1)) == 2
+    assert lindex(reply, 0, 1, 0, 1) == "a 1"
     time.sleep(200 / 1000)
     reply = r.run("XCLAIM", "mystream", "mygroup", "consumer2", 10, id1)
-    # TODO: assert {[llength [lindex $reply 0 1]] == 2}
-    # TODO: assert {[lindex $reply 0 1] eq {a 1}}
+    assert len(lindex(reply, 0, 1)) == 2
+    assert lindex(reply, 0, 1) == "a 1"
     reply = r.run("XPENDING", "mystream", "mygroup", "-", "+", 10)
     assert len(reply[0]) == 4
-    # TODO: assert {[lindex $reply 0 3] == 2}
+    assert lindex(reply, 0, 3) == 2
     time.sleep(200 / 1000)
     reply = r.run("XCLAIM", "mystream", "mygroup", "consumer3", 10, id1, "JUSTID")
     assert len(reply) == 1
     assert reply[0] == id1
     reply = r.run("XPENDING", "mystream", "mygroup", "-", "+", 10)
     assert len(reply[0]) == 4
-    # TODO: assert {[lindex $reply 0 3] == 2}
+    assert lindex(reply, 0, 3) == 2
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_xclaim_same_consumer(r: ValkeyTestClient) -> None:
     """
     test {XCLAIM same consumer} {
@@ -1327,16 +1321,15 @@ def test_xclaim_same_consumer(r: ValkeyTestClient) -> None:
     id3 = r.run("XADD", "mystream", "*", "c", 3)
     r.run("XGROUP", "CREATE", "mystream", "mygroup", 0)
     reply = r.run("XREADGROUP", "GROUP", "mygroup", "consumer1", "count", 1, "STREAMS", "mystream", ">")
-    # TODO: assert {[llength [lindex $reply 0 1 0 1]] == 2}
-    # TODO: assert {[lindex $reply 0 1 0 1] eq {a 1}}
+    assert len(lindex(reply, 0, 1, 0, 1)) == 2
+    assert lindex(reply, 0, 1, 0, 1) == "a 1"
     time.sleep(200 / 1000)
     assert len(r.run("XCLAIM", "mystream", "mygroup", "consumer1", 10, id1)) == 1
     reply = r.run("XPENDING", "mystream", "mygroup", "-", "+", 10)
     assert len(reply) == 1
-    # TODO: assert {[lindex $reply 0 1] eq {consumer1}}
+    assert lindex(reply, 0, 1) == "consumer1"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_xautoclaim_can_claim_pel_items_from_another_consumer(r: ValkeyTestClient) -> None:
     """
     test {XAUTOCLAIM can claim PEL items from another consumer} {
@@ -1414,16 +1407,16 @@ def test_xautoclaim_can_claim_pel_items_from_another_consumer(r: ValkeyTestClien
     id4 = r.run("XADD", "mystream", "*", "d", 4)
     r.run("XGROUP", "CREATE", "mystream", "mygroup", 0)
     reply = r.run("XREADGROUP", "GROUP", "mygroup", "consumer1", "count", 1, "STREAMS", "mystream", ">")
-    # TODO: assert_equal llength [lindex $reply 0 1 0 1] 2
-    # TODO: assert_equal lindex $reply 0 1 0 1 {a 1}
+    assert len(lindex(reply, 0, 1, 0, 1)) == 2
+    assert lindex(reply, 0, 1, 0, 1) == "a 1"
     time.sleep(200 / 1000)
     reply = r.run("XAUTOCLAIM", "mystream", "mygroup", "consumer2", 10, "-", "COUNT", 1)
     assert len(reply) == 3
     assert reply[0] == "0-0"
     assert len(reply[1]) == 1
-    # TODO: assert_equal llength [lindex $reply 1 0] 2
-    # TODO: assert_equal llength [lindex $reply 1 0 1] 2
-    # TODO: assert_equal lindex $reply 1 0 1 {a 1}
+    assert len(lindex(reply, 1, 0)) == 2
+    assert len(lindex(reply, 1, 0, 1)) == 2
+    assert lindex(reply, 1, 0, 1) == "a 1"
     r.run("XREADGROUP", "GROUP", "mygroup", "consumer1", "count", 3, "STREAMS", "mystream", ">")
     time.sleep(200 / 1000)
     r.run("XDEL", "mystream", id2)
@@ -1431,23 +1424,22 @@ def test_xautoclaim_can_claim_pel_items_from_another_consumer(r: ValkeyTestClien
     assert len(reply) == 3
     assert reply[0] == id4
     assert len(reply[1]) == 2
-    # TODO: assert_equal llength [lindex $reply 1 0] 2
-    # TODO: assert_equal llength [lindex $reply 1 0 1] 2
-    # TODO: assert_equal lindex $reply 1 0 1 {a 1}
-    # TODO: assert_equal lindex $reply 1 1 1 {c 3}
+    assert len(lindex(reply, 1, 0)) == 2
+    assert len(lindex(reply, 1, 0, 1)) == 2
+    assert lindex(reply, 1, 0, 1) == "a 1"
+    assert lindex(reply, 1, 1, 1) == "c 3"
     assert len(reply[2]) == 1
-    # TODO: assert_equal llength [lindex $reply 2 0] 1
+    assert len(lindex(reply, 2, 0)) == 1
     time.sleep(200 / 1000)
     r.run("XDEL", "mystream", id4)
     reply = r.run("XAUTOCLAIM", "mystream", "mygroup", "consumer2", 10, "-", "JUSTID")
     assert len(reply) == 3
     assert reply[0] == "0-0"
     assert len(reply[1]) == 2
-    # TODO: assert_equal lindex $reply 1 0 id1
-    # TODO: assert_equal lindex $reply 1 1 id3
+    assert lindex(reply, 1, 0) == id1
+    assert lindex(reply, 1, 1) == id3
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_xautoclaim_as_an_iterator(r: ValkeyTestClient) -> None:
     """
     test {XAUTOCLAIM as an iterator} {
@@ -1508,22 +1500,22 @@ def test_xautoclaim_as_an_iterator(r: ValkeyTestClient) -> None:
     cursor = reply[0]
     assert cursor == id3
     assert len(reply[1]) == 2
-    # TODO: assert_equal llength [lindex $reply 1 0 1] 2
-    # TODO: assert_equal lindex $reply 1 0 1 {a 1}
+    assert len(lindex(reply, 1, 0, 1)) == 2
+    assert lindex(reply, 1, 0, 1) == "a 1"
     reply = r.run("XAUTOCLAIM", "mystream", "mygroup", "consumer2", 10, cursor, "COUNT", 2)
     assert len(reply) == 3
     cursor = reply[0]
     assert cursor == id5
     assert len(reply[1]) == 2
-    # TODO: assert_equal llength [lindex $reply 1 0 1] 2
-    # TODO: assert_equal lindex $reply 1 0 1 {c 3}
+    assert len(lindex(reply, 1, 0, 1)) == 2
+    assert lindex(reply, 1, 0, 1) == "c 3"
     reply = r.run("XAUTOCLAIM", "mystream", "mygroup", "consumer2", 10, cursor, "COUNT", 1)
     assert len(reply) == 3
     cursor = reply[0]
     assert cursor == "0-0"
     assert len(reply[1]) == 1
-    # TODO: assert_equal llength [lindex $reply 1 0 1] 2
-    # TODO: assert_equal lindex $reply 1 0 1 {e 5}
+    assert len(lindex(reply, 1, 0, 1)) == 2
+    assert lindex(reply, 1, 0, 1) == "e 5"
 
 
 def test_xautoclaim_count_must_be_0(r: ValkeyTestClient) -> None:
@@ -1691,7 +1683,6 @@ def test_xclaim_with_trimming_1(r: ValkeyTestClient) -> None:
     assert r.run("XPENDING", "x", "grp", "-", "+", 10, "Alice") == ""
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_xinfo_full_output(r: ValkeyTestClient) -> None:
     """
     test {XINFO FULL output} {
@@ -1755,16 +1746,16 @@ def test_xinfo_full_output(r: ValkeyTestClient) -> None:
     assert reply["entries"] == "{100-0 {a 1}} {101-0 {b 1}} {102-0 {c 1}} {104-0 {f 1}}"
     group = reply["groups"][0]
     assert group["name"] == "g1"
-    # TODO: assert_equal lindex [dict get $group pending] 0 0 "100-0"
+    assert lindex(group["pending"], 0, 0) == "100-0"
     consumer = group["consumers"][0]
     assert consumer["name"] == "Alice"
-    # TODO: assert_equal lindex [dict get $consumer pending] 0 0 "100-0"
+    assert lindex(consumer["pending"], 0, 0) == "100-0"
     group = reply["groups"][1]
     assert group["name"] == "g2"
     consumer = group["consumers"][0]
     assert consumer["name"] == "Charlie"
-    # TODO: assert_equal lindex [dict get $consumer pending] 0 0 "100-0"
-    # TODO: assert_equal lindex [dict get $consumer pending] 1 0 "101-0"
+    assert lindex(consumer["pending"], 0, 0) == "100-0"
+    assert lindex(consumer["pending"], 1, 0) == "101-0"
     reply = r.run("XINFO", "STREAM", "x", "FULL", "COUNT", 1)
     assert len(reply) == 18
     assert reply["length"] == 4
@@ -1825,21 +1816,21 @@ def test_consumer_seen_time_and_active_time(r: ValkeyTestClient) -> None:
     time.sleep(100 / 1000)
     reply = r.run("xinfo", "consumers", "mystream", "mygroup")
     consumer_info = reply[0]
-    # TODO: assert {[dict get $consumer_info idle] >= 100}
-    # TODO: assert_equal dict get $consumer_info inactive "-1"
+    assert consumer_info["idle"] >= 100
+    assert consumer_info["inactive"] == "-1"
     r.run("XADD", "mystream", "*", "f", "v")
     r.run("XREADGROUP", "GROUP", "mygroup", "Alice", "COUNT", 1, "STREAMS", "mystream", ">")
     reply = r.run("xinfo", "consumers", "mystream", "mygroup")
     consumer_info = reply[0]
-    # TODO: assert_equal lindex $consumer_info 1 "Alice"
-    # TODO: assert {[dict get $consumer_info idle] < 300}
-    # TODO: assert {[dict get $consumer_info inactive] < 300}
+    assert consumer_info[1] == "Alice"
+    assert consumer_info["idle"] < 300
+    assert consumer_info["inactive"] < 300
     time.sleep(100 / 1000)
     r.run("XREADGROUP", "GROUP", "mygroup", "Alice", "COUNT", 1, "STREAMS", "mystream", ">")
     reply = r.run("xinfo", "consumers", "mystream", "mygroup")
     consumer_info = reply[0]
-    # TODO: assert {[dict get $consumer_info idle] < 300}
-    # TODO: assert {[dict get $consumer_info inactive] >= 100}
+    assert consumer_info["idle"] < 300
+    assert consumer_info["inactive"] >= 100
     reply = r.run("XINFO", "STREAM", "mystream", "FULL")
     group = reply["groups"][0]
     consumer = group["consumers"][0]
@@ -1851,8 +1842,8 @@ def test_consumer_seen_time_and_active_time(r: ValkeyTestClient) -> None:
     reply = r.run("XINFO", "STREAM", "mystream", "FULL")
     group = reply["groups"][0]
     consumer = group["consumers"][0]
-    # TODO: assert_equal prev _seen dict get $consumer seen-time
-    # TODO: assert_equal prev _active dict get $consumer active-time
+    assert prev_seen == consumer["seen-time"]
+    assert prev_active == consumer["active-time"]
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1905,29 +1896,29 @@ def test_xgroup_createconsumer_create_consumer_if_does_not_exist(r: ValkeyTestCl
     r.run("XADD", "mystream", "*", "f", "v")
     reply = r.run("xinfo", "groups", "mystream")
     group_info = reply[0]
-    # TODO: set n_consumers lindex $group_info 3
-    # TODO: assert_equal n _consumers 0
+    n_consumers = group_info[3]
+    assert n_consumers == 0
     r.run("XREADGROUP", "GROUP", "mygroup", "Alice", "COUNT", 1, "STREAMS", "mystream", ">")
     reply = r.run("xinfo", "groups", "mystream")
     group_info = reply[0]
-    # TODO: set n_consumers lindex $group_info 3
-    # TODO: assert_equal n _consumers 1
+    n_consumers = group_info[3]
+    assert n_consumers == 1
     reply = r.run("xinfo", "consumers", "mystream", "mygroup")
     consumer_info = reply[0]
-    # TODO: assert_equal lindex $consumer_info 1 "Alice"
+    assert consumer_info[1] == "Alice"
     created = r.run("XGROUP", "CREATECONSUMER", "mystream", "mygroup", "Alice")
     assert created == 0
     created = r.run("XGROUP", "CREATECONSUMER", "mystream", "mygroup", "Bob")
     assert created == 1
     reply = r.run("xinfo", "groups", "mystream")
     group_info = reply[0]
-    # TODO: set n_consumers lindex $group_info 3
-    # TODO: assert_equal n _consumers 2
+    n_consumers = group_info[3]
+    assert n_consumers == 2
     reply = r.run("xinfo", "consumers", "mystream", "mygroup")
     consumer_info = reply[0]
-    # TODO: assert_equal lindex $consumer_info 1 "Alice"
+    assert consumer_info[1] == "Alice"
     consumer_info = reply[1]
-    # TODO: assert_equal lindex $consumer_info 1 "Bob"
+    assert consumer_info[1] == "Bob"
 
 
 def test_xgroup_createconsumer_group_must_exist(r: ValkeyTestClient) -> None:
@@ -2699,3 +2690,62 @@ start_server {tags {"stream needs:debug"} overrides {appendonly yes aof-use-rdb-
     }
 }
 """
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def assert_(*args):
+    raise NotImplementedError("assert_")
+
+
+def assert_error(*args):
+    raise NotImplementedError("assert_error")
+
+
+def assert_range(*args):
+    raise NotImplementedError("assert_range")
+
+
+def catch(*args):
+    raise NotImplementedError("catch")
+
+
+def clock(*args):
+    raise NotImplementedError("clock")
+
+
+def cmdrstat(*args):
+    raise NotImplementedError("cmdrstat")
+
+
+def errorrstat(*args):
+    raise NotImplementedError("errorrstat")
+
+
+def expr(*args):
+    raise NotImplementedError("expr")
+
+
+def foreach(*args):
+    raise NotImplementedError("foreach")
+
+
+def get_info_property(*args):
+    raise NotImplementedError("get_info_property")
+
+
+def lindex(*args):
+    raise NotImplementedError("lindex")
+
+
+def s(*args):
+    raise NotImplementedError("s")
+
+
+def valkey_deferring_client(*args):
+    raise NotImplementedError("valkey_deferring_client")
+
+
+def wait_for_blocked_clients_count(*args):
+    raise NotImplementedError("wait_for_blocked_clients_count")

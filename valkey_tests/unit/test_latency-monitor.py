@@ -1,5 +1,4 @@
-# ruff: noqa: PLR2004
-
+# ruff: noqa: PLR2004, ANN002, ANN201
 from fnmatch import fnmatch
 
 import pytest
@@ -19,7 +18,6 @@ r latency reset
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_latency_histogram_with_empty_histogram(r: ValkeyTestClient) -> None:
     """
     test {LATENCY HISTOGRAM with empty histogram} {
@@ -31,12 +29,11 @@ def test_latency_histogram_with_empty_histogram(r: ValkeyTestClient) -> None:
     }
     """
     r.run("config", "resetstat")
-    # TODO: set histo dict create {*}[r latency histogram]
-    # TODO: assert_equal dict size $histo 1
-    # TODO: assert_match {*config|resetstat*} histo
+    histo = dict_("create", "*", r.run("latency", "histogram"))
+    assert dict_("size", histo) == 1
+    assert fnmatch(str(histo), "*config|resetstat*")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_latency_histogram_all_commands(r: ValkeyTestClient) -> None:
     """
     test {LATENCY HISTOGRAM all commands} {
@@ -51,12 +48,11 @@ def test_latency_histogram_all_commands(r: ValkeyTestClient) -> None:
     r.run("config", "resetstat")
     r.run("set", "a", "b")
     r.run("set", "c", "d")
-    # TODO: set histo dict create {*}[r latency histogram]
-    # TODO: assert_match {calls 2 histogram_usec *} dict get $histo set
-    # TODO: assert_match {calls 1 histogram_usec *} dict get $histo "config|resetstat"
+    histo = dict_("create", "*", r.run("latency", "histogram"))
+    assert fnmatch(str(histo["set"]), "calls 2 histogram_usec *")
+    assert fnmatch(str(histo["config|resetstat"]), "calls 1 histogram_usec *")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_latency_histogram_sub_commands(r: ValkeyTestClient) -> None:
     """
     test {LATENCY HISTOGRAM sub commands} {
@@ -78,16 +74,15 @@ def test_latency_histogram_sub_commands(r: ValkeyTestClient) -> None:
     r.run("config", "resetstat")
     r.run("client", "id")
     r.run("client", "list")
-    # TODO: set histo dict create {*}[r latency histogram client]
-    # TODO: assert {[dict size $histo] == 2}
-    # TODO: assert_match {calls 1 histogram_usec *} dict get $histo "client|id"
-    # TODO: assert_match {calls 1 histogram_usec *} dict get $histo "client|list"
-    # TODO: set histo dict create {*}[r latency histogram "client|id"]
-    # TODO: assert {[dict size $histo] == 1}
-    # TODO: assert_match {calls 1 histogram_usec *} dict get $histo "client|id"
+    histo = dict_("create", "*", r.run("latency", "histogram", "client"))
+    assert dict_("size", histo) == 2
+    assert fnmatch(str(histo["client|id"]), "calls 1 histogram_usec *")
+    assert fnmatch(str(histo["client|list"]), "calls 1 histogram_usec *")
+    histo = dict_("create", "*", r.run("latency", "histogram", "client|id"))
+    assert dict_("size", histo) == 1
+    assert fnmatch(str(histo["client|id"]), "calls 1 histogram_usec *")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_latency_histogram_with_a_subset_of_commands(r: ValkeyTestClient) -> None:
     """
     test {LATENCY HISTOGRAM with a subset of commands} {
@@ -113,14 +108,14 @@ def test_latency_histogram_with_a_subset_of_commands(r: ValkeyTestClient) -> Non
     r.run("get", "a")
     r.run("hset", "f", "k", "v")
     r.run("hgetall", "f")
-    # TODO: set histo dict create {*}[r latency histogram set hset]
-    # TODO: assert_match {calls 2 histogram_usec *} dict get $histo set
-    # TODO: assert_match {calls 1 histogram_usec *} dict get $histo hset
-    # TODO: assert_equal dict size $histo 2
-    # TODO: set histo dict create {*}[r latency histogram hgetall get zadd]
-    # TODO: assert_match {calls 1 histogram_usec *} dict get $histo hgetall
-    # TODO: assert_match {calls 1 histogram_usec *} dict get $histo get
-    # TODO: assert_equal dict size $histo 2
+    histo = dict_("create", "*", r.run("latency", "histogram", "set", "hset"))
+    assert fnmatch(str(histo["set"]), "calls 2 histogram_usec *")
+    assert fnmatch(str(histo["hset"]), "calls 1 histogram_usec *")
+    assert dict_("size", histo) == 2
+    histo = dict_("create", "*", r.run("latency", "histogram", "hgetall", "get", "zadd"))
+    assert fnmatch(str(histo["hgetall"]), "calls 1 histogram_usec *")
+    assert fnmatch(str(histo["get"]), "calls 1 histogram_usec *")
+    assert dict_("size", histo) == 2
 
 
 def test_latency_histogram_command(r: ValkeyTestClient) -> None:
@@ -195,7 +190,7 @@ def test_latency_of_expire_events_are_correctly_collected(r: ValkeyTestClient) -
     r.run("config", "set", "latency-monitor-threshold", 1)
     r.run("config", "set", "lazyfree-lazy-expire", "no")
     r.run("flushdb")
-    # TODO: if {$::valgrind} {set count 100000} else {set count 1000000}
+    if_("$::valgrind", "set count 100000", "else", "set count 1000000")
     # TODO: r eval {
     #       local i = 0
     #       while (i < tonumber(ARGV[1])) do
@@ -204,15 +199,14 @@ def test_latency_of_expire_events_are_correctly_collected(r: ValkeyTestClient) -
     #        end
     #   } 1 mybigkey count
     r.run("pexpire", "mybigkey", 50)
-    # TODO: wait_for_condition 5 100 {
-    #       [r dbsize] == 0
-    #   } else {
-    #       fail "key wasn't expired"
-    #   }
+    wait_for_condition(
+        5, 100, "            [r dbsize] == 0\n        ", "else", '            fail "key wasn\'t expired"\n        '
+    )
     assert fnmatch(str(r.run("latency", "latest")), "*expire-cycle*")
-    # TODO: test {LATENCY GRAPH can output the expire event graph} {
-    #       assert_match {*expire-cycle*high*low*} [r latency graph expire-cycle]
-    #   }
+    test(
+        "LATENCY GRAPH can output the expire event graph",
+        "             assert_match {*expire-cycle*high*low*} [r latency graph expire-cycle]\n        ",
+    )
     r.run("config", "set", "latency-monitor-threshold", 200)
     r.run("config", "set", "lazyfree-lazy-expire", "yes")
 
@@ -275,3 +269,22 @@ start_cluster 1 1 {tags {"latency-monitor cluster external:skip needs:latency"} 
     }
 }
 """
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def dict_(*args):
+    raise NotImplementedError("dict_")
+
+
+def if_(*args):
+    raise NotImplementedError("if_")
+
+
+def test(*args):
+    raise NotImplementedError("test")
+
+
+def wait_for_condition(*args):
+    raise NotImplementedError("wait_for_condition")

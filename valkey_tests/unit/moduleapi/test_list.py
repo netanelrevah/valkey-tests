@@ -1,4 +1,4 @@
-# ruff: noqa: RUF043
+# ruff: noqa: RUF043, ANN002, ANN201
 
 import pytest
 
@@ -99,7 +99,6 @@ def test_module_list_iteration(r: ValkeyTestClient) -> None:
     assert "z y x" == r.run("list.getall", "k", "REVERSE")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_list_insert_delete(r: ValkeyTestClient) -> None:
     """
     test {Module list insert & delete} {
@@ -111,11 +110,10 @@ def test_module_list_insert_delete(r: ValkeyTestClient) -> None:
     """
     r.run("del", "k")
     r.run("rpush", "k", "x", "y", "z")
-    # TODO: verify_list_edit_reply r list.edit k ikikdi foo bar baz {i 3 index 5}
+    verify_list_edit_reply(r.run("list.edit", "k", "ikikdi", "foo", "bar", "baz"), "i 3 index 5")
     assert r.run("list.getall", "k") == "foo x bar y baz"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_list_insert_delete_neg_index(r: ValkeyTestClient) -> None:
     """
     test {Module list insert & delete, neg index} {
@@ -127,11 +125,10 @@ def test_module_list_insert_delete_neg_index(r: ValkeyTestClient) -> None:
     """
     r.run("del", "k")
     r.run("rpush", "k", "x", "y", "z")
-    # TODO: verify_list_edit_reply r list.edit k REVERSE ikikdi foo bar baz {i 3 index -6}
+    verify_list_edit_reply(r.run("list.edit", "k", "REVERSE", "ikikdi", "foo", "bar", "baz"), "i 3 index -6")
     assert r.run("list.getall", "k") == "baz y bar z foo"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_list_set_while_iterating(r: ValkeyTestClient) -> None:
     """
     test {Module list set while iterating} {
@@ -143,11 +140,10 @@ def test_module_list_set_while_iterating(r: ValkeyTestClient) -> None:
     """
     r.run("del", "k")
     r.run("rpush", "k", "x", "y", "z")
-    # TODO: verify_list_edit_reply r list.edit k rkr foo bar {r 2 index 3}
+    verify_list_edit_reply(r.run("list.edit", "k", "rkr", "foo", "bar"), "r 2 index 3")
     assert r.run("list.getall", "k") == "foo y bar"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_list_set_while_iterating_neg_index(r: ValkeyTestClient) -> None:
     """
     test {Module list set while iterating, neg index} {
@@ -159,11 +155,10 @@ def test_module_list_set_while_iterating_neg_index(r: ValkeyTestClient) -> None:
     """
     r.run("del", "k")
     r.run("rpush", "k", "x", "y", "z")
-    # TODO: verify_list_edit_reply r list.edit k reverse rkr foo bar {r 2 index -4}
+    verify_list_edit_reply(r.run("list.edit", "k", "reverse", "rkr", "foo", "bar"), "r 2 index -4")
     assert r.run("list.getall", "k") == "bar y foo"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_list_encoding_conversion_while_inserting(r: ValkeyTestClient) -> None:
     """
     test {Module list - encoding conversion while inserting} {
@@ -186,12 +181,12 @@ def test_module_list_encoding_conversion_while_inserting(r: ValkeyTestClient) ->
     r.run("config", "set", "list-max-listpack-size", 4)
     r.run("del", "k")
     r.run("rpush", "k", "a", "b", "c", "d")
-    # TODO: assert_encoding listpack k
+    assert_encoding("listpack", "k")
     r.run("list.edit", "k", "dii", "foo", "bar")
-    # TODO: assert_encoding quicklist k
+    assert_encoding("quicklist", "k")
     assert r.run("list.getall", "k") == "foo bar b c d"
     r.run("list.edit", "k", "ddd", "e")
-    # TODO: assert_encoding listpack k
+    assert_encoding("listpack", "k")
     assert r.run("list.getall", "k") == "c d"
 
 
@@ -219,17 +214,16 @@ def test_module_list_encoding_conversion_while_replacing(r: ValkeyTestClient) ->
     r.run("config", "set", "list-max-listpack-size", -1)
     r.run("del", "k")
     r.run("rpush", "k", "x", "y", "z")
-    # TODO: assert_encoding listpack k
-    # TODO: set big string repeat "x" 4096
-    # TODO: r list.edit k r big
-    # TODO: assert_encoding quicklist k
+    assert_encoding("listpack", "k")
+    big = string("repeat", "x", 4096)
+    r.run("list.edit", "k", "r", big)
+    assert_encoding("quicklist", "k")
     # TODO: assert_equal r list.getall k "$big y z"
     r.run("list.edit", "k", "d")
-    # TODO: assert_encoding listpack k
+    assert_encoding("listpack", "k")
     assert r.run("list.getall", "k") == "y z"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_list_list_entry_and_index_should_be_updated_when_deletion(r: ValkeyTestClient) -> None:
     """
     test {Module list - list entry and index should be updated when deletion} {
@@ -274,32 +268,32 @@ def test_module_list_list_entry_and_index_should_be_updated_when_deletion(r: Val
         config_set list-max-listpack-size $original_config
     }
     """
-    # TODO: set original_config config_get_set list-max-listpack-size 1
+    original_config = config_get_set("list-max-listpack-size", 1)
     r.run("del", "l")
     r.run("rpush", "l", "x", "y", "z")
-    # TODO: verify_list_edit_reply r list.edit l dd {d 2 index 0 entry z}
+    verify_list_edit_reply(r.run("list.edit", "l", "dd"), "d 2 index 0 entry z")
     assert r.run("list.getall", "l") == "z"
     r.run("del", "l")
     r.run("rpush", "l", "x", "y", "z")
-    # TODO: verify_list_edit_reply r list.edit l reverse kkd {d 1 index -3}
+    verify_list_edit_reply(r.run("list.edit", "l", "reverse", "kkd"), "d 1 index -3")
     assert r.run("list.getall", "l") == "y z"
     r.run("del", "l")
     r.run("rpush", "l", "x", "y", "z")
-    # TODO: verify_list_edit_reply r list.edit l kkd {d 1 index 2}
+    verify_list_edit_reply(r.run("list.edit", "l", "kkd"), "d 1 index 2")
     assert r.run("list.getall", "l") == "x y"
     r.run("del", "l")
     r.run("rpush", "l", "x", "y", "z")
-    # TODO: verify_list_edit_reply r list.edit l reverse dd {d 2 index -1 entry x}
+    verify_list_edit_reply(r.run("list.edit", "l", "reverse", "dd"), "d 2 index -1 entry x")
     assert r.run("list.getall", "l") == "x"
     r.run("del", "l")
     r.run("rpush", "l", "x", "y", "z")
-    # TODO: verify_list_edit_reply r list.edit l kdd {d 2 index 1}
+    verify_list_edit_reply(r.run("list.edit", "l", "kdd"), "d 2 index 1")
     assert r.run("list.getall", "l") == "x"
     r.run("del", "l")
     r.run("rpush", "l", "x", "y", "z")
-    # TODO: verify_list_edit_reply r list.edit l reverse kdd {d 2 index -2}
+    verify_list_edit_reply(r.run("list.edit", "l", "reverse", "kdd"), "d 2 index -2")
     assert r.run("list.getall", "l") == "z"
-    # TODO: config_set list-max-listpack-size original _config
+    config_set("list-max-listpack-size", original_config)
 
 
 def test_unload_the_module_list(r: ValkeyTestClient) -> None:
@@ -309,3 +303,26 @@ def test_unload_the_module_list(r: ValkeyTestClient) -> None:
     }
     """
     assert "OK" == r.run("module", "unload", "list")
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def assert_encoding(*args):
+    raise NotImplementedError("assert_encoding")
+
+
+def config_get_set(*args):
+    raise NotImplementedError("config_get_set")
+
+
+def config_set(*args):
+    raise NotImplementedError("config_set")
+
+
+def string(*args):
+    raise NotImplementedError("string")
+
+
+def verify_list_edit_reply(*args):
+    raise NotImplementedError("verify_list_edit_reply")

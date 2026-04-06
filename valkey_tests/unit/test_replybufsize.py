@@ -1,3 +1,5 @@
+# ruff: noqa: ANN002, ANN201
+
 import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
@@ -69,22 +71,43 @@ def test_verify_reply_buffer_limits(r: ValkeyTestClient) -> None:
     } {0} {needs:debug}
     """
     r.run("debug", "replybuffer", "peak-reset-time", 100)
-    # TODO: variable tc valkey_client
+    variable("tc", valkey_client())
     # TODO: $tc client setname test_client
-    # TODO: wait_for_condition 10 100 {
-    #       [get_reply_buffer_size test_client] >= 1024 && [get_reply_buffer_size test_client] < 2046
-    #   } else {
-    #       set rbs [get_reply_buffer_size test_client]
-    #       fail "reply buffer of idle client is $rbs after 1 seconds"
-    #   }
-    # TODO: r set bigval string repeat x 32768
+    wait_for_condition(
+        10,
+        100,
+        "            [get_reply_buffer_size test_client] >= 1024 && [get_reply_buffer_size test_client] < 2046\n        ",
+        "else",
+        '            set rbs [get_reply_buffer_size test_client]\n            fail "reply buffer of idle client is $rbs after 1 seconds"\n        ',
+    )
+    r.run("set", "bigval", string("repeat", "x", 32768))
     r.run("debug", "replybuffer", "peak-reset-time", "never")
-    # TODO: wait_for_condition 10 100 {
-    #       [$tc get bigval ; get_reply_buffer_size test_client] >= 16384 && [get_reply_buffer_size test_client] < 32768
-    #   } else {
-    #       set rbs [get_reply_buffer_size test_client]
-    #       fail "reply buffer of busy client is $rbs after 1 seconds"
-    #   }
+    wait_for_condition(
+        10,
+        100,
+        "            [$tc get bigval ; get_reply_buffer_size test_client] >= 16384 && [get_reply_buffer_size test_client] < 32768\n        ",
+        "else",
+        '            set rbs [get_reply_buffer_size test_client]\n            fail "reply buffer of busy client is $rbs after 1 seconds"\n        ',
+    )
     r.run("debug", "replybuffer", "peak-reset-time", "reset")
     # TODO: $tc close
     assert False
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def string(*args):
+    raise NotImplementedError("string")
+
+
+def valkey_client(*args):
+    raise NotImplementedError("valkey_client")
+
+
+def variable(*args):
+    raise NotImplementedError("variable")
+
+
+def wait_for_condition(*args):
+    raise NotImplementedError("wait_for_condition")

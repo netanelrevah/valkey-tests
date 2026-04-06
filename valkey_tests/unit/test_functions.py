@@ -1,4 +1,4 @@
-# ruff: noqa: F841
+# ruff: noqa: PLR2004, F841, ANN002, ANN201
 import time
 from fnmatch import fnmatch
 
@@ -22,7 +22,6 @@ proc get_no_writes_function_code {args} {
 pytestmark = [pytest.mark.scripting]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_basic_usage(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - Basic usage} {
@@ -30,7 +29,7 @@ def test_function_basic_usage(r: ValkeyTestClient) -> None:
         r fcall test 0
     } {hello}
     """
-    # TODO: r function load get_function_code LUA test test {return 'hello'}
+    r.run("function", "load", get_function_code("LUA", "test", "test", "return 'hello'"))
     assert r.run("fcall", "test", 0) == "hello"
 
 
@@ -44,9 +43,10 @@ def test_function_load_with_unknown_argument(r: ValkeyTestClient) -> None:
         set _ $e
     } {*Unknown option given*}
     """
-    # TODO: catch {
-    #       r function load foo bar [get_function_code LUA test test {return 'hello'}]
-    #   } e
+    try:
+        e = r.run("function", "load", "foo", "bar", get_function_code("LUA", "test", "test", "return 'hello'"))
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -61,9 +61,10 @@ def test_function_create_an_already_exiting_library_raise_error(r: ValkeyTestCli
         set _ $e
     } {*already exists*}
     """
-    # TODO: catch {
-    #       r function load [get_function_code LUA test test {return 'hello1'}]
-    #   } e
+    try:
+        e = r.run("function", "load", get_function_code("LUA", "test", "test", "return 'hello1'"))
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -78,9 +79,10 @@ def test_function_create_an_already_exiting_library_raise_error_case_insensitive
         set _ $e
     } {*already exists*}
     """
-    # TODO: catch {
-    #       r function load [get_function_code LUA test test {return 'hello1'}]
-    #   } e
+    try:
+        e = r.run("function", "load", get_function_code("LUA", "test", "test", "return 'hello1'"))
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -95,9 +97,10 @@ def test_function_create_a_library_with_wrong_name_format(r: ValkeyTestClient) -
         set _ $e
     } {*Library names can only contain letters, numbers, or underscores(_)*}
     """
-    # TODO: catch {
-    #       r function load [get_function_code LUA {bad\0foramat} test {return 'hello1'}]
-    #   } e
+    try:
+        e = r.run("function", "load", get_function_code("LUA", "bad\\0foramat", "test", "return 'hello1'"))
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -112,9 +115,10 @@ def test_function_create_library_with_unexisting_engine(r: ValkeyTestClient) -> 
         set _ $e
     } {*Engine 'bad_engine' not found*}
     """
-    # TODO: catch {
-    #       r function load [get_function_code bad_engine test test {return 'hello1'}]
-    #   } e
+    try:
+        e = r.run("function", "load", get_function_code("bad_engine", "test", "test", "return 'hello1'"))
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
@@ -129,14 +133,14 @@ def test_function_test_uncompiled_script(r: ValkeyTestClient) -> None:
         set _ $e
     } {*Error compiling function*}
     """
-    # TODO: catch {
-    #       r function load replace [get_function_code LUA test test {bad script}]
-    #   } e
+    try:
+        e = r.run("function", "load", "replace", get_function_code("LUA", "test", "test", "bad script"))
+    except Exception as _catch_err:
+        e = str(_catch_err)
     # TODO: set _ e
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_test_replace_argument(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - test replace argument} {
@@ -144,7 +148,7 @@ def test_function_test_replace_argument(r: ValkeyTestClient) -> None:
         r fcall test 0
     } {hello1}
     """
-    # TODO: r function load REPLACE get_function_code LUA test test {return 'hello1'}
+    r.run("function", "load", "REPLACE", get_function_code("LUA", "test", "test", "return 'hello1'"))
     assert r.run("fcall", "test", 0) == "hello1"
 
 
@@ -157,7 +161,6 @@ def test_function_test_function_case_insensitive(r: ValkeyTestClient) -> None:
     assert r.run("fcall", "TEST", 0) == "hello1"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_test_replace_argument_with_failure_keeps_old_libraries(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - test replace argument with failure keeps old libraries} {
@@ -166,8 +169,11 @@ def test_function_test_replace_argument_with_failure_keeps_old_libraries(r: Valk
         r fcall test 0
     } {hello1}
     """
-    # TODO: catch {r function load REPLACE [get_function_code LUA test test {error}]} e
-    # TODO: assert_match {ERR Error compiling function*} e
+    try:
+        e = r.run("function", "load", "REPLACE", get_function_code("LUA", "test", "test", "error"))
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "ERR Error compiling function*")
     assert r.run("fcall", "test", 0) == "hello1"
 
 
@@ -202,7 +208,7 @@ def test_function_test_fcall_bad_arguments(r: ValkeyTestClient) -> None:
         set _ $e
     } {*Bad number of keys provided*}
     """
-    # TODO: r function load get_function_code LUA test test {return 'hello'}
+    r.run("function", "load", get_function_code("LUA", "test", "test", "return 'hello'"))
     try:
         e = r.run("fcall", "test", "bad_arg")
     except Exception as _catch_err:
@@ -330,7 +336,6 @@ def test_function_test_debug_reload_different_options(r: ValkeyTestClient) -> No
     assert r.run("function", "list") == "{library_name test engine LUA functions {{name test description {} flags {}}}}"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_test_debug_reload_with_nosave_and_noflush(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - test debug reload with nosave and noflush} {
@@ -346,15 +351,14 @@ def test_function_test_debug_reload_with_nosave_and_noflush(r: ValkeyTestClient)
     """
     r.run("function", "delete", "test")
     r.run("set", "x", 1)
-    # TODO: r function load get_function_code LUA test1 test1 {return 'hello'}
+    r.run("function", "load", get_function_code("LUA", "test1", "test1", "return 'hello'"))
     r.run("debug", "reload")
-    # TODO: r function load get_function_code LUA test2 test2 {return 'hello'}
+    r.run("function", "load", get_function_code("LUA", "test2", "test2", "return 'hello'"))
     r.run("debug", "reload", "nosave", "noflush", "merge")
     assert r.run("fcall", "test1", 0) == "hello"
     assert r.run("fcall", "test2", 0) == "hello"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_test_flushall_and_flushdb_do_not_clean_functions(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - test flushall and flushdb do not clean functions} {
@@ -366,13 +370,12 @@ def test_function_test_flushall_and_flushdb_do_not_clean_functions(r: ValkeyTest
     } {{library_name test engine LUA functions {{name test description {} flags {}}}}}
     """
     r.run("function", "flush")
-    # TODO: r function load REPLACE get_function_code lua test test {return redis.call('set', 'x', '1')}
+    r.run("function", "load", "REPLACE", get_function_code("lua", "test", "test", "return redis.call('set', 'x', '1')"))
     r.run("flushall")
     r.run("flushdb")
     assert r.run("function", "list") == "{library_name test engine LUA functions {{name test description {} flags {}}}}"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_test_function_dump_and_restore(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - test function dump and restore} {
@@ -386,7 +389,7 @@ def test_function_test_function_dump_and_restore(r: ValkeyTestClient) -> None:
     } {{library_name test engine LUA functions {{name test description {} flags {}}}}}
     """
     r.run("function", "flush")
-    # TODO: r function load get_function_code lua test test {return 'hello'}
+    r.run("function", "load", get_function_code("lua", "test", "test", "return 'hello'"))
     e = r.run("function", "dump")
     r.run("function", "delete", "test")
     assert fnmatch(str(r.run("function", "list")), "")
@@ -411,7 +414,6 @@ def test_function_test_function_dump_and_restore_with_flush_argument(r: ValkeyTe
     assert r.run("function", "list") == "{library_name test engine LUA functions {{name test description {} flags {}}}}"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_test_function_dump_and_restore_with_append_argument(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - test function dump and restore with append argument} {
@@ -431,20 +433,19 @@ def test_function_test_function_dump_and_restore_with_append_argument(r: ValkeyT
     e = r.run("function", "dump")
     r.run("function", "flush")
     assert fnmatch(str(r.run("function", "list")), "")
-    # TODO: r function load get_function_code lua test test {return 'hello1'}
+    r.run("function", "load", get_function_code("lua", "test", "test", "return 'hello1'"))
     try:
         err = r.run("function", "restore", e, "APPEND")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*already exists*")
     r.run("function", "flush")
-    # TODO: r function load get_function_code lua test1 test1 {return 'hello1'}
+    r.run("function", "load", get_function_code("lua", "test1", "test1", "return 'hello1'"))
     r.run("function", "restore", e, "APPEND")
     assert fnmatch(str(r.run("fcall", "test", 0)), "hello")
     assert fnmatch(str(r.run("fcall", "test1", 0)), "hello1")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_test_function_dump_and_restore_with_replace_argument(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - test function dump and restore with replace argument} {
@@ -460,17 +461,16 @@ def test_function_test_function_dump_and_restore_with_replace_argument(r: Valkey
     }
     """
     r.run("function", "flush")
-    # TODO: r function load get_function_code LUA test test {return 'hello'}
+    r.run("function", "load", get_function_code("LUA", "test", "test", "return 'hello'"))
     e = r.run("function", "dump")
     r.run("function", "flush")
     assert fnmatch(str(r.run("function", "list")), "")
-    # TODO: r function load get_function_code lua test test {return 'hello1'}
+    r.run("function", "load", get_function_code("lua", "test", "test", "return 'hello1'"))
     assert fnmatch(str(r.run("fcall", "test", 0)), "hello1")
     r.run("function", "restore", e, "REPLACE")
     assert fnmatch(str(r.run("fcall", "test", 0)), "hello")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_test_function_restore_with_bad_payload_do_not_drop_existing_functions(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - test function restore with bad payload do not drop existing functions} {
@@ -482,7 +482,7 @@ def test_function_test_function_restore_with_bad_payload_do_not_drop_existing_fu
     } {{library_name test engine LUA functions {{name test description {} flags {}}}}}
     """
     r.run("function", "flush")
-    # TODO: r function load get_function_code LUA test test {return 'hello'}
+    r.run("function", "load", get_function_code("LUA", "test", "test", "return 'hello'"))
     try:
         e = r.run("function", "restore", "bad_payload")
     except Exception as _catch_err:
@@ -516,7 +516,12 @@ def test_function_test_fcall_ro_with_write_command(r: ValkeyTestClient) -> None:
         set _ $e
     } {*Write commands are not allowed from read-only scripts*}
     """
-    # TODO: r function load REPLACE get_no_writes_function_code lua test test {return redis.call('set', 'x', '1')}
+    r.run(
+        "function",
+        "load",
+        "REPLACE",
+        get_no_writes_function_code("lua", "test", "test", "return redis.call('set', 'x', '1')"),
+    )
     try:
         e = r.run("fcall_ro", "test", 1, "x")
     except Exception as _catch_err:
@@ -525,7 +530,6 @@ def test_function_test_fcall_ro_with_write_command(r: ValkeyTestClient) -> None:
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_test_fcall_ro_with_read_only_commands(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - test fcall_ro with read only commands} {
@@ -534,12 +538,16 @@ def test_function_test_fcall_ro_with_read_only_commands(r: ValkeyTestClient) -> 
         r fcall_ro test 1 x
     } {1}
     """
-    # TODO: r function load REPLACE get_no_writes_function_code lua test test {return redis.call('get', 'x')}
+    r.run(
+        "function",
+        "load",
+        "REPLACE",
+        get_no_writes_function_code("lua", "test", "test", "return redis.call('get', 'x')"),
+    )
     r.run("set", "x", 1)
     assert r.run("fcall_ro", "test", 1, "x") == "1"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_test_keys_and_argv(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - test keys and argv} {
@@ -548,7 +556,12 @@ def test_function_test_keys_and_argv(r: ValkeyTestClient) -> None:
         r get x
     } {foo}
     """
-    # TODO: r function load REPLACE get_function_code lua test test {return redis.call('set', KEYS[1], ARGV[1])}
+    r.run(
+        "function",
+        "load",
+        "REPLACE",
+        get_function_code("lua", "test", "test", "return redis.call('set', KEYS[1], ARGV[1])"),
+    )
     r.run("fcall", "test", 1, "x", "foo")
     assert r.run("get", "x") == "foo"
 
@@ -590,9 +603,14 @@ def test_function_test_function_kill(r: ValkeyTestClient) -> None:
         $rd close
     }
     """
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     r.run("config", "set", "busy-reply-threshold", 10)
-    # TODO: r function load REPLACE get_function_code lua test test {local a = 1 while true do a = a + 1 end}
+    r.run(
+        "function",
+        "load",
+        "REPLACE",
+        get_function_code("lua", "test", "test", "local a = 1 while true do a = a + 1 end"),
+    )
     # TODO: $rd fcall test 0
     time.sleep(200 / 1000)
     try:
@@ -606,7 +624,7 @@ def test_function_test_function_kill(r: ValkeyTestClient) -> None:
     r.run("function", "kill")
     time.sleep(200 / 1000)
     assert r.run("ping") == "PONG"
-    # TODO: assert_error {ERR Script killed by user with FUNCTION KILL*} {$rd read}
+    assert_error("ERR Script killed by user with FUNCTION KILL*", "$rd read")
     # TODO: $rd close
 
 
@@ -630,9 +648,14 @@ def test_function_test_script_kill_not_working_on_function(r: ValkeyTestClient) 
         $rd close
     }
     """
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     r.run("config", "set", "busy-reply-threshold", 10)
-    # TODO: r function load REPLACE get_function_code lua test test {local a = 1 while true do a = a + 1 end}
+    r.run(
+        "function",
+        "load",
+        "REPLACE",
+        get_function_code("lua", "test", "test", "local a = 1 while true do a = a + 1 end"),
+    )
     # TODO: $rd fcall test 0
     time.sleep(200 / 1000)
     try:
@@ -648,7 +671,7 @@ def test_function_test_script_kill_not_working_on_function(r: ValkeyTestClient) 
     r.run("function", "kill")
     time.sleep(200 / 1000)
     assert r.run("ping") == "PONG"
-    # TODO: assert_error {ERR Script killed by user with FUNCTION KILL*} {$rd read}
+    assert_error("ERR Script killed by user with FUNCTION KILL*", "$rd read")
     # TODO: $rd close
 
 
@@ -671,7 +694,7 @@ def test_function_test_function_kill_not_working_on_eval(r: ValkeyTestClient) ->
         $rd close
     }
     """
-    # TODO: set rd valkey_deferring_client
+    rd = valkey_deferring_client()
     r.run("config", "set", "busy-reply-threshold", 10)
     # TODO: $rd eval {local a = 1 while true do a = a + 1 end} 0
     time.sleep(200 / 1000)
@@ -688,11 +711,10 @@ def test_function_test_function_kill_not_working_on_eval(r: ValkeyTestClient) ->
     r.run("script", "kill")
     time.sleep(200 / 1000)
     assert r.run("ping") == "PONG"
-    # TODO: assert_error {ERR Script killed by user with SCRIPT KILL*} {$rd read}
+    assert_error("ERR Script killed by user with SCRIPT KILL*", "$rd read")
     # TODO: $rd close
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_test_function_flush(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - test function flush} {
@@ -712,19 +734,34 @@ def test_function_test_function_flush(r: ValkeyTestClient) -> None:
         assert_match {} [r function list]
     }
     """
-    # TODO: r function load REPLACE get_function_code lua test test {local a = 1 while true do a = a + 1 end}
+    r.run(
+        "function",
+        "load",
+        "REPLACE",
+        get_function_code("lua", "test", "test", "local a = 1 while true do a = a + 1 end"),
+    )
     assert fnmatch(
         str(r.run("function", "list")), "{library_name test engine LUA functions {{name test description {} flags {}}}}"
     )
     r.run("function", "flush")
     assert fnmatch(str(r.run("function", "list")), "")
-    # TODO: r function load REPLACE get_function_code lua test test {local a = 1 while true do a = a + 1 end}
+    r.run(
+        "function",
+        "load",
+        "REPLACE",
+        get_function_code("lua", "test", "test", "local a = 1 while true do a = a + 1 end"),
+    )
     assert fnmatch(
         str(r.run("function", "list")), "{library_name test engine LUA functions {{name test description {} flags {}}}}"
     )
     r.run("function", "flush", "async")
     assert fnmatch(str(r.run("function", "list")), "")
-    # TODO: r function load REPLACE get_function_code lua test test {local a = 1 while true do a = a + 1 end}
+    r.run(
+        "function",
+        "load",
+        "REPLACE",
+        get_function_code("lua", "test", "test", "local a = 1 while true do a = a + 1 end"),
+    )
     assert fnmatch(
         str(r.run("function", "list")), "{library_name test engine LUA functions {{name test description {} flags {}}}}"
     )
@@ -732,7 +769,6 @@ def test_function_test_function_flush(r: ValkeyTestClient) -> None:
     assert fnmatch(str(r.run("function", "list")), "")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_test_function_flush_will_re_create_the_lua_engine(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - test function flush will re-create the lua engine} {
@@ -753,23 +789,32 @@ def test_function_test_function_flush_will_re_create_the_lua_engine(r: ValkeyTes
         assert_lessthan $after_flush_memory $before_flush_memory
     }
     """
-    # TODO: for {set i 0} {$i < 60} {incr i} {
-    #       r function load [get_function_code lua test_$i test_$i {local a = 1 while true do a = a + 1 end}]
-    #   }
-    # TODO: set before_flush_memory s used_memory_vm_functions
+    i = 0
+    while i < 60:
+        r.run(
+            "function",
+            "load",
+            get_function_code("lua", "test_$i", "test_$i", "local a = 1 while true do a = a + 1 end"),
+        )
+        i += 1
+    before_flush_memory = s("used_memory_vm_functions")
     r.run("function", "flush", "sync")
-    # TODO: set after_flush_memory s used_memory_vm_functions
-    # TODO: assert_lessthan after _flush_memory before _flush_memory
-    # TODO: for {set i 0} {$i < 100} {incr i} {
-    #       r function load [get_function_code lua test_$i test_$i {local a = 1 while true do a = a + 1 end}]
-    #   }
-    # TODO: set before_flush_memory s used_memory_vm_functions
+    after_flush_memory = s("used_memory_vm_functions")
+    assert_lessthan(after_flush_memory, before_flush_memory)
+    i = 0
+    while i < 100:
+        r.run(
+            "function",
+            "load",
+            get_function_code("lua", "test_$i", "test_$i", "local a = 1 while true do a = a + 1 end"),
+        )
+        i += 1
+    before_flush_memory = s("used_memory_vm_functions")
     r.run("function", "flush", "async")
-    # TODO: set after_flush_memory s used_memory_vm_functions
-    # TODO: assert_lessthan after _flush_memory before _flush_memory
+    after_flush_memory = s("used_memory_vm_functions")
+    assert_lessthan(after_flush_memory, before_flush_memory)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_test_loading_function_during_the_flush_async(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - test loading function during the flush async} {
@@ -789,17 +834,20 @@ def test_function_test_loading_function_during_the_flush_async(r: ValkeyTestClie
         r function flush
     }
     """
-    # TODO: for {set i 0} {$i < 10000} {incr i} {
-    #       r function load [get_function_code LUA test_$i test_$i {return 'hello'}]
-    #   }
+    i = 0
+    while i < 10000:
+        r.run("function", "load", get_function_code("LUA", "test_$i", "test_$i", "return 'hello'"))
+        i += 1
     r.run("function", "flush", "sync")
-    # TODO: for {set i 0} {$i < 10000} {incr i} {
-    #       r function load [get_function_code LUA test_$i test_$i {return 'hello'}]
-    #   }
+    i = 0
+    while i < 10000:
+        r.run("function", "load", get_function_code("LUA", "test_$i", "test_$i", "return 'hello'"))
+        i += 1
     r.run("function", "flush", "async")
-    # TODO: for {set i 0} {$i < 10000} {incr i} {
-    #       r function load [get_function_code LUA test_$i test_$i {return 'hello'}]
-    #   }
+    i = 0
+    while i < 10000:
+        r.run("function", "load", get_function_code("LUA", "test_$i", "test_$i", "return 'hello'"))
+        i += 1
     r.run("function", "flush")
 
 
@@ -1468,21 +1516,13 @@ def test_libraries_malicious_access_test(r: ValkeyTestClient) -> None:
         "replace",
         "#!lua name=lib1\n            local lib = redis\n            lib.register_function('f1', function ()\n                lib.redis = redis\n                lib.math = math\n                return {ok='OK'}\n            end)\n\n            lib.register_function('f2', function ()\n                lib.register_function('f1', function ()\n                    lib.redis = redis\n                    lib.math = math\n                    return {ok='OK'}\n                end)\n            end)\n        ",
     )
-    # TODO: catch {[r fcall f1 0]} e
+    catch("[r fcall f1 0]", "e")
     # TODO: assert_match {*Attempt to modify a readonly table*} e
-    # TODO: catch {
-    #       [r function load {#!lua name=lib2
-    #                   redis.math.random()
-    #               }]
-    #   } e
+    catch("[r function load {#!lua name=lib2\n            redis.math.random()\n        }]", "e")
     # TODO: assert_match {*Script attempted to access nonexistent global variable 'math'*} e
-    # TODO: catch {
-    #       [r function load {#!lua name=lib2
-    #                   redis.redis.call('ping')
-    #               }]
-    #   } e
+    catch("[r function load {#!lua name=lib2\n            redis.redis.call('ping')\n        }]", "e")
     # TODO: assert_match {*Script attempted to access nonexistent global variable 'redis'*} e
-    # TODO: catch {[r fcall f2 0]} e
+    catch("[r fcall f2 0]", "e")
     # TODO: assert_match {*can only be called on FUNCTION LOAD command*} e
 
 
@@ -2275,7 +2315,7 @@ def test_function_deny_oom(r: ValkeyTestClient) -> None:
         "#!lua name=test\n            server.register_function('f1', function() return redis.call('set', 'x', '1') end)\n        ",
     )
     r.run("config", "set", "maxmemory", 1)
-    # TODO: catch {[r fcall f1 1 x]} e
+    catch("[r fcall f1 1 x]", "e")
     # TODO: assert_match {OOM *when used memory > 'maxmemory'*} e
     assert r.run("config", "set", "maxmemory", 0) == "OK"
 
@@ -2344,10 +2384,10 @@ def test_function_allow_stale(r: ValkeyTestClient) -> None:
     )
     r.run("config", "set", "replica-serve-stale-data", "no")
     r.run("replicaof", "127.0.0.1", 1)
-    # TODO: catch {[r fcall f1 0]} e
+    catch("[r fcall f1 0]", "e")
     # TODO: assert_match {MASTERDOWN *} e
     assert "hello" == r.run("fcall", "f2", 0)
-    # TODO: catch {[r fcall f3 1 x]} e
+    catch("[r fcall f3 1 x]", "e")
     # TODO: assert_match {ERR *Can not execute the command on a stale replica*} e
     assert fnmatch(str(r.run("fcall", "f4", 0)), "*redis_version*")
     r.run("replicaof", "no", "one")
@@ -2355,7 +2395,6 @@ def test_function_allow_stale(r: ValkeyTestClient) -> None:
     _ = ""
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_valkey_version_api(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - valkey version api} {
@@ -2381,7 +2420,7 @@ def test_function_valkey_version_api(r: ValkeyTestClient) -> None:
         "replace",
         "#!lua name=test\n            local version = redis.REDIS_VERSION_NUM\n\n            server.register_function{function_name='get_version_v1', callback=function()\n              return string.format('%s.%s.%s',\n                                    bit.band(bit.rshift(version, 16), 0x000000ff),\n                                    bit.band(bit.rshift(version, 8), 0x000000ff),\n                                    bit.band(version, 0x000000ff))\n            end}\n            server.register_function{function_name='get_version_v2', callback=function() return redis.REDIS_VERSION end}\n        ",
     )
-    # TODO: catch {[r fcall f1 0]} e
+    catch("[r fcall f1 0]", "e")
     assert r.run("fcall", "get_version_v1", 0) == r.run("fcall", "get_version_v2", 0)
 
 
@@ -2621,7 +2660,7 @@ def test_function_trick_global_protection_1(r: ValkeyTestClient) -> None:
         "load",
         "#!lua name=test1\n            server.register_function('f1', function()\n                mt = getmetatable(_G)\n                original_globals = mt.__index\n                original_globals['redis'] = function() return 1 end\n            end)\n        ",
     )
-    # TODO: catch {[r fcall f1 0]} e
+    catch("[r fcall f1 0]", "e")
     # TODO: set _ e
     assert False
 
@@ -2648,3 +2687,34 @@ def test_function_test_getmetatable_on_script_load(r: ValkeyTestClient) -> None:
         e = str(_catch_err)
     # TODO: set _ e
     assert False
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def assert_error(*args):
+    raise NotImplementedError("assert_error")
+
+
+def assert_lessthan(*args):
+    raise NotImplementedError("assert_lessthan")
+
+
+def catch(*args):
+    raise NotImplementedError("catch")
+
+
+def get_function_code(*args):
+    raise NotImplementedError("get_function_code")
+
+
+def get_no_writes_function_code(*args):
+    raise NotImplementedError("get_no_writes_function_code")
+
+
+def s(*args):
+    raise NotImplementedError("s")
+
+
+def valkey_deferring_client(*args):
+    raise NotImplementedError("valkey_deferring_client")

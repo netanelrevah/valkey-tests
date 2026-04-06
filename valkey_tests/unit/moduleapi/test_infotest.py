@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841
+# ruff: noqa: PLR2004, F841, ANN002, ANN201
 
 from fnmatch import fnmatch
 
@@ -65,14 +65,13 @@ def test_module_reading_info(r: ValkeyTestClient) -> None:
     assert r.run("info.geti", "infotest_italian", "infotest_due") == 2
     tre = r.run("info.getd", "infotest_italian", "infotest_tre")
     assert (tre > 3.2) and (tre < 3.4)
-    # TODO: catch { [r info.gets badname redis_version] } e
+    catch(" [r info.gets badname redis_version] ", "e")
     # TODO: assert_match {*not found*} e
-    # TODO: assert { [string match "*usec_per_call*" [r info.gets all cmdstat_info.gets] ] }
-    # TODO: catch { [r info.gets default cmdstat_info.gets] ] } e
+    assert string("match", "*usec_per_call*", r.run("info.gets", "all", "cmdstat_info.gets"))
+    catch(" [r info.gets default cmdstat_info.gets] ] ", "e")
     # TODO: assert_match {*not found*} e
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_info_all(r: ValkeyTestClient) -> None:
     """
     test {module info all} {
@@ -84,12 +83,11 @@ def test_module_info_all(r: ValkeyTestClient) -> None:
     }
     """
     info = r.run("info", "all")
-    # TODO: assert { ![string match "*Spanish*" $info] }
-    # TODO: assert { ![string match "*infotest_*" $info] }
-    # TODO: assert { [string match "*used_memory*" $info] }
+    assert_(' ![string match "*Spanish*" $info] ')
+    assert_(' ![string match "*infotest_*" $info] ')
+    assert string("match", "*used_memory*", info)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_info_all_infotest(r: ValkeyTestClient) -> None:
     """
     test {module info all infotest} {
@@ -101,9 +99,9 @@ def test_module_info_all_infotest(r: ValkeyTestClient) -> None:
     }
     """
     info = r.run("info", "all", "infotest")
-    # TODO: assert { [string match "*Spanish*" $info] }
-    # TODO: assert { [string match "*infotest_*" $info] }
-    # TODO: assert { [string match "*used_memory*" $info] }
+    assert string("match", "*Spanish*", info)
+    assert string("match", "*infotest_*", info)
+    assert string("match", "*used_memory*", info)
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -121,16 +119,15 @@ def test_module_info_everything(r: ValkeyTestClient) -> None:
     } {2}
     """
     info = r.run("info", "everything")
-    # TODO: assert { [string match "*infotest_global*" $info] }
-    # TODO: assert { [string match "*Spanish*" $info] }
-    # TODO: assert { [string match "*Italian*" $info] }
-    # TODO: assert { [string match "*used_memory*" $info] }
-    # TODO: assert { ![string match "*Klingon*" $info] }
+    assert string("match", "*infotest_global*", info)
+    assert string("match", "*Spanish*", info)
+    assert string("match", "*Italian*", info)
+    assert string("match", "*used_memory*", info)
+    assert_(' ![string match "*Klingon*" $info] ')
     # TODO: field info infotest_dos
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_info_modules(r: ValkeyTestClient) -> None:
     """
     test {module info modules} {
@@ -142,9 +139,9 @@ def test_module_info_modules(r: ValkeyTestClient) -> None:
     }
     """
     info = r.run("info", "modules")
-    # TODO: assert { [string match "*Spanish*" $info] }
-    # TODO: assert { [string match "*infotest_global*" $info] }
-    # TODO: assert { ![string match "*used_memory*" $info] }
+    assert string("match", "*Spanish*", info)
+    assert string("match", "*infotest_global*", info)
+    assert_(' ![string match "*used_memory*" $info] ')
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -159,8 +156,8 @@ def test_module_info_one_module(r: ValkeyTestClient) -> None:
     } {-2}
     """
     info = r.run("info", "INFOtest")
-    # TODO: assert { [string match "*Spanish*" $info] }
-    # TODO: assert { ![string match "*used_memory*" $info] }
+    assert string("match", "*Spanish*", info)
+    assert_(' ![string match "*used_memory*" $info] ')
     # TODO: field info infotest_global
     assert False
 
@@ -177,9 +174,9 @@ def test_module_info_one_section(r: ValkeyTestClient) -> None:
     } {one}
     """
     info = r.run("info", "INFOtest_SpanisH")
-    # TODO: assert { ![string match "*used_memory*" $info] }
-    # TODO: assert { ![string match "*Italian*" $info] }
-    # TODO: assert { ![string match "*infotest_global*" $info] }
+    assert_(' ![string match "*used_memory*" $info] ')
+    assert_(' ![string match "*Italian*" $info] ')
+    assert_(' ![string match "*infotest_global*" $info] ')
     # TODO: field info infotest_uno
     assert False
 
@@ -194,7 +191,7 @@ def test_module_info_dict(r: ValkeyTestClient) -> None:
     } {3}
     """
     info = r.run("info", "infotest_keyspace")
-    # TODO: set keyspace field $info infotest_db0
+    keyspace = field(info, "infotest_db0")
     # TODO: set keys scan [regexp -inline {keys\=([\d]*)} $keyspace] keys=%d
     assert False
 
@@ -210,7 +207,6 @@ def test_module_info_unsafe_fields(r: ValkeyTestClient) -> None:
     assert fnmatch(str(info), "*infotest_unsafe_field:value=1*")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_info_multiply_sections_without_all_everything_default_keywords(r: ValkeyTestClient) -> None:
     """
     test {module info multiply sections without all, everything, default keywords} {
@@ -221,12 +217,11 @@ def test_module_info_multiply_sections_without_all_everything_default_keywords(r
     }
     """
     info = r.run("info", "replication", "INFOTEST")
-    # TODO: assert { [string match "*Spanish*" $info] }
-    # TODO: assert { ![string match "*used_memory*" $info] }
-    # TODO: assert { [string match "*repl_offset*" $info] }
+    assert string("match", "*Spanish*", info)
+    assert_(' ![string match "*used_memory*" $info] ')
+    assert string("match", "*repl_offset*", info)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_info_multiply_sections_with_all_keyword_and_modules(r: ValkeyTestClient) -> None:
     """
     test {module info multiply sections with all keyword and modules} {
@@ -237,9 +232,9 @@ def test_module_info_multiply_sections_with_all_keyword_and_modules(r: ValkeyTes
     }
     """
     info = r.run("info", "all", "modules")
-    # TODO: assert { [string match "*cluster*" $info] }
-    # TODO: assert { [string match "*cmdstat_info*" $info] }
-    # TODO: assert { [string match "*infotest_global*" $info] }
+    assert string("match", "*cluster*", info)
+    assert string("match", "*cmdstat_info*", info)
+    assert string("match", "*infotest_global*", info)
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -257,11 +252,11 @@ def test_module_info_multiply_sections_with_everything_keyword(r: ValkeyTestClie
     } {2}
     """
     info = r.run("info", "replication", "everything", "cpu")
-    # TODO: assert { [string match "*client_recent*" $info] }
-    # TODO: assert { [string match "*cmdstat_info*" $info] }
-    # TODO: assert { [string match "*Italian*" $info] }
-    # TODO: assert { ![string match "*used_cpu_user_children*used_cpu_user_children*" $info] }
-    # TODO: assert { ![string match "*Italian*Italian*" $info] }
+    assert string("match", "*client_recent*", info)
+    assert string("match", "*cmdstat_info*", info)
+    assert string("match", "*Italian*", info)
+    assert_(' ![string match "*used_cpu_user_children*used_cpu_user_children*" $info] ')
+    assert_(' ![string match "*Italian*Italian*" $info] ')
     # TODO: field info infotest_dos
     assert False
 
@@ -273,3 +268,22 @@ def test_unload_the_module_infotest(r: ValkeyTestClient) -> None:
     }
     """
     assert "OK" == r.run("module", "unload", "infotest")
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def assert_(*args):
+    raise NotImplementedError("assert_")
+
+
+def catch(*args):
+    raise NotImplementedError("catch")
+
+
+def field(*args):
+    raise NotImplementedError("field")
+
+
+def string(*args):
+    raise NotImplementedError("string")

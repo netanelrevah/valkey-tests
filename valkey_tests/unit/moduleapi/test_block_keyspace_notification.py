@@ -1,3 +1,4 @@
+# ruff: noqa: F841, ANN002, ANN201
 import time
 
 import pytest
@@ -16,7 +17,6 @@ r module load testmodule
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_blocking_keyspace_notification_one(r: ValkeyTestClient) -> None:
     """
     test {Blocking keyspace notification one} {
@@ -26,7 +26,7 @@ def test_blocking_keyspace_notification_one(r: ValkeyTestClient) -> None:
         assert_equal "{event hset key a}" [r b_keyspace.events]
     }
     """
-    # TODO: wait_for_blocked_clients_count 0
+    wait_for_blocked_clients_count(0)
     r.run("b_keyspace.clear")
     assert "1" == r.run("hset", "a", "b", "c")
     assert "{event hset key a}" == r.run("b_keyspace.events")
@@ -51,18 +51,18 @@ def test_blocking_keyspace_notification_two(r: ValkeyTestClient) -> None:
         assert_equal "{event hset key b} {event hset key c}" [r b_keyspace.events]
     }
     """
-    # TODO: wait_for_blocked_clients_count 0
+    wait_for_blocked_clients_count(0)
     r.run("b_keyspace.clear")
-    # TODO: set rd1 valkey_deferring_client
+    rd1 = valkey_deferring_client()
     # TODO: $rd1 hset b c d
     time.sleep(500 / 1000)
-    # TODO: set rd2 valkey_deferring_client
+    rd2 = valkey_deferring_client()
     # TODO: $rd2 hset c d e
-    # TODO: wait_for_blocked_clients_count 2
+    wait_for_blocked_clients_count(2)
     assert "" == r.run("b_keyspace.events")
-    # TODO: wait_for_blocked_clients_count 1
+    wait_for_blocked_clients_count(1)
     assert "{event hset key b}" == r.run("b_keyspace.events")
-    # TODO: wait_for_blocked_clients_count 0
+    wait_for_blocked_clients_count(0)
     assert "{event hset key b} {event hset key c}" == r.run("b_keyspace.events")
 
 
@@ -94,27 +94,27 @@ def test_blocking_keyspace_notification_with_pipelining_hset_after_hget(r: Valke
         wait_for_blocked_clients_count 0
     }
     """
-    # TODO: wait_for_blocked_clients_count 0
+    wait_for_blocked_clients_count(0)
     r.run("b_keyspace.clear")
-    # TODO: set rd1 valkey_deferring_client
+    rd1 = valkey_deferring_client()
     # TODO: $rd1 hset key_10 field_10 value_10
-    # TODO: wait_for_blocked_clients_count 0
+    wait_for_blocked_clients_count(0)
     # TODO: assert_equal "1" $rd1 read
-    # TODO: pause_process srv 0 pid
+    pause_process(srv(0, "pid"))
     # TODO: $rd1 hget key_10 field_10
     # TODO: $rd1 hset key_10 value_10 ss
     # TODO: $rd1 hget key_10 field_10
-    # TODO: set start clock milliseconds
-    # TODO: resume_process srv 0 pid
+    start = clock("milliseconds")
+    resume_process(srv(0, "pid"))
     # TODO: assert_equal "value_10" $rd1 read
-    # TODO: set first_hget expr [clock milliseconds] - $start
+    first_hget = expr(clock("milliseconds"), "-", start)
     # TODO: assert_equal "1" $rd1 read
-    # TODO: set first_hset expr [clock milliseconds] - $start
+    first_hset = expr(clock("milliseconds"), "-", start)
     # TODO: assert_equal "value_10" $rd1 read
-    # TODO: set second_hget expr [clock milliseconds] - $start
-    # TODO: assert {[expr {$first_hget * 10 < $first_hset}]}
-    # TODO: assert {[expr {$second_hget - $first_hset <= 50}]}
-    # TODO: wait_for_blocked_clients_count 0
+    second_hget = expr(clock("milliseconds"), "-", start)
+    assert expr("$first_hget * 10 < $first_hset")
+    assert expr("$second_hget - $first_hset <= 50")
+    wait_for_blocked_clients_count(0)
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -136,22 +136,21 @@ def test_blocking_keyspace_notification_with_pipelining_hget_after_hset(r: Valke
         assert_equal "value_1" [$rd1 read]
     }
     """
-    # TODO: wait_for_blocked_clients_count 0
+    wait_for_blocked_clients_count(0)
     r.run("b_keyspace.clear")
-    # TODO: set rd1 valkey_deferring_client
-    # TODO: pause_process srv 0 pid
+    rd1 = valkey_deferring_client()
+    pause_process(srv(0, "pid"))
     # TODO: $rd1 hset key_2 field_1 value_1
     # TODO: $rd1 hget key_2 field_1
-    # TODO: resume_process srv 0 pid
-    # TODO: wait_for_blocked_clients_count 1
+    resume_process(srv(0, "pid"))
+    wait_for_blocked_clients_count(1)
     assert "" == r.run("b_keyspace.events")
-    # TODO: wait_for_blocked_clients_count 0
+    wait_for_blocked_clients_count(0)
     assert "{event hset key key_2}" == r.run("b_keyspace.events")
     # TODO: assert_equal "1" $rd1 read
     # TODO: assert_equal "value_1" $rd1 read
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_blocking_keyspace_notif_during_multi(r: ValkeyTestClient) -> None:
     """
     test {Blocking keyspace notif during multi} {
@@ -172,19 +171,21 @@ def test_blocking_keyspace_notif_during_multi(r: ValkeyTestClient) -> None:
         }
     }
     """
-    # TODO: wait_for_blocked_clients_count 0
+    wait_for_blocked_clients_count(0)
     r.run("b_keyspace.clear")
     r.run("multi")
     r.run("hset", "d", "e", "f")
     r.run("hset", "e", "f", "g")
     assert "1 1" == r.run("exec")
-    # TODO: assert_equal s 0 blocked_clients 0
+    assert s(0, "blocked_clients") == 0
     assert r.run("b_keyspace.events") == ""
-    # TODO: wait_for_condition 1000 50 {
-    #       [string match "{event hset key *} {event hset key *}" [set latest [r b_keyspace.events]]]
-    #   } else {
-    #       fail "Keyspace event not propagated within 5 seconds"
-    #   }
+    wait_for_condition(
+        1000,
+        50,
+        '            [string match "{event hset key *} {event hset key *}" [set latest [r b_keyspace.events]]]\n        ',
+        "else",
+        '            fail "Keyspace event not propagated within 5 seconds"\n        ',
+    )
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -209,23 +210,24 @@ def test_event_that_fires_twice(r: ValkeyTestClient) -> None:
         }
     }
     """
-    # TODO: wait_for_blocked_clients_count 0
+    wait_for_blocked_clients_count(0)
     r.run("b_keyspace.clear")
     r.run("hset", "f", "g", "h")
-    # TODO: wait_for_blocked_clients_count 0
+    wait_for_blocked_clients_count(0)
     assert "OK" == r.run("b_keyspace.clear")
-    # TODO: set rd1 valkey_deferring_client
+    rd1 = valkey_deferring_client()
     # TODO: $rd1 RENAME f g
-    # TODO: assert_equal s 0 blocked_clients 1
+    assert s(0, "blocked_clients") == 1
     assert "" == r.run("b_keyspace.events")
-    # TODO: wait_for_condition 1000 50 {
-    #       [string match "{event rename_* key *} {event rename_* key *}" [set latest [r b_keyspace.events]]]
-    #   } else {
-    #       fail "Rename event not propagated within 5 seconds: latest value ${latest}"
-    #   }
+    wait_for_condition(
+        1000,
+        50,
+        '            [string match "{event rename_* key *} {event rename_* key *}" [set latest [r b_keyspace.events]]]\n        ',
+        "else",
+        '            fail "Rename event not propagated within 5 seconds: latest value ${latest}"\n        ',
+    )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_server_created_keyspace_notification(r: ValkeyTestClient) -> None:
     """
     test {Server-created keyspace notification} {
@@ -250,22 +252,26 @@ def test_server_created_keyspace_notification(r: ValkeyTestClient) -> None:
         }
     }
     """
-    # TODO: wait_for_blocked_clients_count 0
+    wait_for_blocked_clients_count(0)
     r.run("b_keyspace.clear")
     assert "1" == r.run("hset", "h", "i", "j")
     assert "1" == r.run("expire", "h", 1)
-    # TODO: assert_equal s 0 blocked_clients 0
-    # TODO: wait_for_condition 1000 50 {
-    #       [r b_keyspace.events] eq "{event hset key h} {event expire key h}"
-    #   } else {
-    #       fail "Expire event not propagated within 5 seconds"
-    #   }
+    assert s(0, "blocked_clients") == 0
+    wait_for_condition(
+        1000,
+        50,
+        '            [r b_keyspace.events] eq "{event hset key h} {event expire key h}"\n        ',
+        "else",
+        '            fail "Expire event not propagated within 5 seconds"\n        ',
+    )
     assert "OK" == r.run("b_keyspace.clear")
-    # TODO: wait_for_condition 1000 50 {
-    #       [r b_keyspace.events] eq "{event expired key h}"
-    #   } else {
-    #       fail "Expired event not propagated within 5 seconds"
-    #   }
+    wait_for_condition(
+        1000,
+        50,
+        '            [r b_keyspace.events] eq "{event expired key h}"\n        ',
+        "else",
+        '            fail "Expired event not propagated within 5 seconds"\n        ',
+    )
 
 
 def test_unload_the_module_testblockingkeyspacenotif(r: ValkeyTestClient) -> None:
@@ -275,3 +281,42 @@ def test_unload_the_module_testblockingkeyspacenotif(r: ValkeyTestClient) -> Non
     }
     """
     assert "OK" == r.run("module", "unload", "testblockingkeyspacenotif")
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def clock(*args):
+    raise NotImplementedError("clock")
+
+
+def expr(*args):
+    raise NotImplementedError("expr")
+
+
+def pause_process(*args):
+    raise NotImplementedError("pause_process")
+
+
+def resume_process(*args):
+    raise NotImplementedError("resume_process")
+
+
+def s(*args):
+    raise NotImplementedError("s")
+
+
+def srv(*args):
+    raise NotImplementedError("srv")
+
+
+def valkey_deferring_client(*args):
+    raise NotImplementedError("valkey_deferring_client")
+
+
+def wait_for_blocked_clients_count(*args):
+    raise NotImplementedError("wait_for_blocked_clients_count")
+
+
+def wait_for_condition(*args):
+    raise NotImplementedError("wait_for_condition")
