@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, ClassVar
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-from pytcl.commands import TCLBracesWord, TCLScript
+from pytcl.commands import TCLBracesWord, TCLCommandIf, TCLExpression, TCLScript
 from pytcl.words import (
     TCLBracketWord,
     TCLCommandArguments,
@@ -185,6 +185,92 @@ class TCLBodyTranslator:
             lines.extend(f"#   {rest}" for rest in rest_lines)
             if is_last and expected is not None:
                 lines.append("assert False")
+
+        return lines
+
+
+_BINARY_OPERATORS = {"==", "!=", "<", ">", "<=", ">=", "+", "-", "*", "/", "%", "**", "<<", ">>", "|", "&", "^"}
+_BINARY_OPERATOR_MAP = {"||": "or", "&&": "and", **{op: op for op in _BINARY_OPERATORS}}
+_ALL_OPERATORS = _BINARY_OPERATOR_MAP | {"!": "not ", "~": "~"}
+
+
+def _translate_str_literal(token: str) -> str:
+    try:
+        int(token)
+        return token
+    except ValueError:
+        pass
+    try:
+        float(token)
+        return token
+    except ValueError:
+        pass
+    return repr(token)
+
+
+def _translate_tcl_expression(expression: TCLExpression, defined_vars: set[str]) -> str | None:
+    stack: list[str] = []
+    for token in expression.postfix:
+        if isinstance(token, str):
+            if token not in _ALL_OPERATORS:
+                stack.append(_translate_str_literal(token))
+            elif token == "!":
+                if not stack:
+                    return None
+                stack.append(f"not {stack.pop()}")
+            elif token == "~":
+                if not stack:
+                    return None
+                stack.append(f"~{stack.pop()}")
+            elif token in _BINARY_OPERATOR_MAP:
+                if len(stack) < 2:
+                    return None
+                right, left = stack.pop(), stack.pop()
+                stack.append(f"({left} {_BINARY_OPERATOR_MAP[token]} {right})")
+            else:
+                return None
+        else:
+            translated = ArgumentTranslator.translate(token, defined_vars)
+            if translated is None:
+                return None
+            stack.append(translated)
+    if len(stack) != 1:
+        return None
+    result = stack[0]
+    return result[1:-1] if result.startswith("(") and result.endswith(")") else result
+
+
+@StatementTranslator.register("if")
+class IfStatementTranslator(StatementTranslator):
+    def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
+        try:
+            if_command = TCLCommandIf.build(arguments, {})
+        except ValueError:
+            return None
+
+        lines: list[str] = []
+        for keyword, (condition, body) in [("if", if_command.if_part), *[("elif", p) for p in if_command.elseif_parts]]:
+            cond_str = _translate_tcl_expression(condition, defined_vars)
+            if cond_str is None:
+                return None
+            body_lines = TCLBodyTranslator().translate(body, None)
+            if _has_todos(body_lines):
+                return None
+            lines.append(f"{keyword} {cond_str}:")
+            if body_lines:
+                lines.extend(f"    {line}" for line in body_lines)
+            else:
+                lines.append("    pass")
+
+        if if_command.else_part is not None:
+            body_lines = TCLBodyTranslator().translate(if_command.else_part, None)
+            if _has_todos(body_lines):
+                return None
+            lines.append("else:")
+            if body_lines:
+                lines.extend(f"    {line}" for line in body_lines)
+            else:
+                lines.append("    pass")
 
         return lines
 

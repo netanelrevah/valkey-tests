@@ -269,6 +269,93 @@ def test_generate_file__if_with_variable_condition_becomes_comment():
     assert "if" in output
 
 
+_IF_IN_BODY_TCL = """
+    start_server {tags {}} {
+        test {if test} {
+            set x [r get key]
+            if {$x == 1} {
+                r set key 2
+            }
+        }
+    }
+"""
+
+_IF_IN_BODY_EXPECTED = """
+    x = r.run('get', 'key')
+    if x == 1:
+        r.run('set', 'key', 2)
+"""
+
+_IF_ELSE_IN_BODY_TCL = """
+    start_server {tags {}} {
+        test {if else test} {
+            set x [r get key]
+            if {$x == 1} {
+                r set key 2
+            } else {
+                r set key 3
+            }
+        }
+    }
+"""
+
+_IF_ELSE_IN_BODY_EXPECTED = """
+    if x == 1:
+        r.run('set', 'key', 2)
+    else:
+        r.run('set', 'key', 3)
+"""
+
+_IF_ELSEIF_IN_BODY_TCL = """
+    start_server {tags {}} {
+        test {if elseif test} {
+            set x [r get key]
+            if {$x == 1} {
+                r set key 2
+            } elseif {$x == 2} {
+                r set key 3
+            }
+        }
+    }
+"""
+
+_IF_ELSEIF_IN_BODY_EXPECTED = """
+    if x == 1:
+        r.run('set', 'key', 2)
+    elif x == 2:
+        r.run('set', 'key', 3)
+"""
+
+_IF_UNTRANSLATABLE_TCL = """
+    start_server {tags {}} {
+        test {if ne test} {
+            set x [r get key]
+            if {$x ne {hello}} {
+                r set key 2
+            }
+        }
+    }
+"""
+
+
+def test_generate_file__if_in_body():
+    assert _IF_IN_BODY_EXPECTED in generate(_IF_IN_BODY_TCL)
+
+
+def test_generate_file__if_else_in_body():
+    assert _IF_ELSE_IN_BODY_EXPECTED in generate(_IF_ELSE_IN_BODY_TCL)
+
+
+def test_generate_file__if_elseif_in_body():
+    assert _IF_ELSEIF_IN_BODY_EXPECTED in generate(_IF_ELSEIF_IN_BODY_TCL)
+
+
+def test_generate_file__if_untranslatable_condition_falls_back():
+    output = generate(_IF_UNTRANSLATABLE_TCL)
+    assert "@pytest.mark.xfail(reason='not implemented')" in output
+    assert "# TODO: if" in output
+
+
 def test_generate_file__foreach_with_variable_list_becomes_comment():
     output = generate("""
         start_server {tags {}} {
