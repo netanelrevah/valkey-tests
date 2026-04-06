@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import builtins
+import keyword
 import math
 from typing import TYPE_CHECKING, ClassVar
 
@@ -18,6 +20,17 @@ from pytcl.words import (
 
 ArgumentTranslatorType = type["ArgumentTranslator"]
 ExpressionTranslatorType = type["ExpressionTranslator"]
+
+# Collects unknown function names encountered during translation of one file.
+# Managed by TCLTestFileGenerator: call clear() before each file, read after.
+collected_stubs: set[str] = set()
+
+
+def _safe_stub_name(name: str) -> str:
+    """Return a Python-safe name for a stub, avoiding builtins and keywords."""
+    if keyword.iskeyword(name) or hasattr(builtins, name):
+        return name + "_"
+    return name
 
 
 class ArgumentTranslator:
@@ -102,7 +115,18 @@ class BracketArgumentTranslator(ArgumentTranslator):
         commands = [c for c in argument.script.commands if c.name]
         if len(commands) != 1:
             return None
-        return ExpressionTranslator.translate(commands[0], defined_vars)
+        result = ExpressionTranslator.translate(commands[0], defined_vars)
+        if result is not None:
+            return result
+        # Fallback: unknown function call with translatable args → emit stub
+        name = commands[0].name
+        if name.isidentifier():
+            args = ArgumentTranslator.translate_all(commands[0].args, defined_vars)
+            if args is not None:
+                safe_name = _safe_stub_name(name)
+                collected_stubs.add(safe_name)
+                return f"{safe_name}({', '.join(args)})"
+        return None
 
 
 @ArgumentTranslator.register(TCLBracesWord)
@@ -127,8 +151,7 @@ class WordArgumentTranslator(ArgumentTranslator):
         assert isinstance(argument, TCLWord)
         s = argument.value
         try:
-            int(s)
-            return s
+            return str(int(s))
         except ValueError:
             pass
         try:

@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 from pytcl.commands import TCLBracesWord, TCLCommandForEach, TCLList, TCLScript
 from pytcl.words import TCLCommandWord
 
+import valkey_tests_generator.argument_translators as _arg_translators
 from valkey_tests_generator.command_generators import CommandGenerator
 from valkey_tests_generator.statement_translators import TCLBodyTranslator, _extract_todo_commands, _has_todos
 
@@ -28,12 +29,16 @@ def _test_name_from(raw: str) -> str:
     return "test_" + normalized
 
 
-def _translate_test_body(test_command: TCLCommandWord) -> list[str]:
+def _translate_test_body(test_command: TCLCommandWord, initial_vars: set[str] | None = None) -> list[str]:
     body_arg = test_command.args[1] if len(test_command.args) > 1 else None
     expected_arg = test_command.args[2] if test_command.args[2:] else None
     body = TCLScript.read(iter(body_arg.value)) if isinstance(body_arg, TCLBracesWord) else None
     expected = expected_arg.value if isinstance(expected_arg, TCLBracesWord) else None
-    return TCLBodyTranslator().translate(body, expected) if body is not None else ["assert False"]
+    return (
+        TCLBodyTranslator().translate(body, expected, initial_vars=initial_vars)
+        if body is not None
+        else ["assert False"]
+    )
 
 
 def _format_parametrize_value(value: str | None) -> str:
@@ -41,6 +46,14 @@ def _format_parametrize_value(value: str | None) -> str:
         return '"""None"""'
     if "\n" in value:
         return f'"""{value}"""'
+    try:
+        return str(int(value))
+    except ValueError:
+        pass
+    try:
+        return str(float(value))
+    except ValueError:
+        pass
     return f'"{value}"'
 
 
@@ -70,6 +83,7 @@ class TCLTestFileGenerator:
         test_command: TCLCommandWord,
         if_expressions: list[str] | None = None,
         parametrizes: list[str] | None = None,
+        parametrize_vars: list[str] | None = None,
     ) -> None:
         raw_name = (
             test_command.args[0].value if isinstance(test_command.args[0], TCLBracesWord) else str(test_command.args[0])
@@ -79,7 +93,8 @@ class TCLTestFileGenerator:
         self._used_names[base_name] += 1
         test_name = base_name if count == 0 else f"{base_name}_{count}"
 
-        lines = _translate_test_body(test_command)
+        initial_vars = set(parametrize_vars) if parametrize_vars else None
+        lines = _translate_test_body(test_command, initial_vars=initial_vars)
 
         self._total_tests += 1
         if _has_todos(lines):
@@ -94,7 +109,8 @@ class TCLTestFileGenerator:
             self.output.write(f"@pytest.mark.skipif('', reason={if_expression!r})\n")
         if parametrizes:
             self.output.writelines(parametrizes)
-        self.output.write(f"def {test_name}(r: ValkeyTestClient) -> None:\n")
+        extra_params = "".join(f", {v}" for v in (parametrize_vars or []))
+        self.output.write(f"def {test_name}(r: ValkeyTestClient{extra_params}) -> None:\n")
         self.output.write('    """\n')
         self.output.write(textwrap.indent(test_command.formatted(), "    ") + "\n")
         self.output.write('    """\n')
@@ -107,14 +123,18 @@ class TCLTestFileGenerator:
         self.output.write('"""\n')
 
     def generate_tests(
-        self, script: TCLScript, if_expressions: list[str] | None = None, foreach_commands: list[str] | None = None
+        self,
+        script: TCLScript,
+        if_expressions: list[str] | None = None,
+        foreach_commands: list[str] | None = None,
+        parametrize_vars: list[str] | None = None,
     ) -> None:
         for command in script.commands:
             if not isinstance(command, TCLCommandWord):
                 continue
             handler = CommandGenerator.MAPPING.get(command.name)
             if handler is not None:
-                handler.generate(command, self, if_expressions, foreach_commands)
+                handler.generate(command, self, if_expressions, foreach_commands, parametrize_vars)
             else:
                 self.generate_comment(command)
 
@@ -143,7 +163,9 @@ class TCLTestFileGenerator:
             self.generate_tests(start_server_code)
 
     def generate(self, source_file: TextIO) -> None:
-        self.output.write("# ruff: noqa: PLR2004, PLR1714, F841, N806, RUF043\n")
+        _arg_translators.collected_stubs.clear()
+
+        self.output.write("# ruff: noqa: PLR2004, PLR1714, F841, N806, RUF043, ANN001, ANN002, ANN201, N802, E741\n")
         self.output.write("import time\n\n")
         self.output.write("import pytest\n")
         self.output.write("from fnmatch import fnmatch\n\n")
@@ -158,6 +180,11 @@ class TCLTestFileGenerator:
                 self._process_start_server(command)
             else:
                 self.generate_comment(command)
+
+        if _arg_translators.collected_stubs:
+            self.output.write("\n\n# --- stubs for unimplemented TCL helpers ---\n")
+            for name in sorted(_arg_translators.collected_stubs):
+                self.output.write(f"\ndef {name}(*args):\n    raise NotImplementedError({name!r})\n")
 
     def generate_file(self, source_file_path: Path) -> None:
         with open(source_file_path, encoding="utf-8", errors="replace") as source_file:

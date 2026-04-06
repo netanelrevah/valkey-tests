@@ -15,7 +15,12 @@ from pytcl.words import (
     TCLWord,
 )
 
-from valkey_tests_generator.argument_translators import ArgumentTranslator, ExpressionTranslator
+from valkey_tests_generator.argument_translators import (
+    ArgumentTranslator,
+    ExpressionTranslator,
+    _safe_stub_name,
+    collected_stubs,
+)
 
 StatementTranslatorType = type["StatementTranslator"]
 
@@ -55,7 +60,7 @@ class SetStatementTranslator(StatementTranslator):
         if not arguments[1:]:
             return None
         name_argument = arguments[0]
-        if not isinstance(name_argument, TCLWord) or "(" in name_argument.value:
+        if not isinstance(name_argument, TCLWord) or not name_argument.value.isidentifier():
             return None
         val = ArgumentTranslator.translate(arguments[1], defined_vars)
         return None if val is None else [f"{name_argument.value} = {val}"]
@@ -190,6 +195,14 @@ class TCLBodyTranslator:
                     elif command.name == "catch" and len(command.args) > 1 and isinstance(command.args[1], TCLWord):
                         defined_vars.add(command.args[1].value)
                     continue
+                # Generic fallback: unknown command with translatable args → stub call
+                if command.name.isidentifier():
+                    args = ArgumentTranslator.translate_all(command.args, defined_vars)
+                    if args is not None:
+                        safe_name = _safe_stub_name(command.name)
+                        collected_stubs.add(safe_name)
+                        lines.append(f"{safe_name}({', '.join(args)})")
+                        continue
 
             formatted = command.formatted()
             first_line, *rest_lines = formatted.splitlines()

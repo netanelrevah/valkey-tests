@@ -96,6 +96,38 @@ def test_generate_file__foreach_parametrize():
     assert '"cmd"' in output
 
 
+def test_generate_file__foreach_var_in_signature_and_body():
+    output = generate("""
+        start_server {tags {}} {
+            foreach cmd {get set} {
+                test {run $cmd} {
+                    set result [r $cmd foo]
+                } {}
+            }
+        }
+    """)
+    assert "def test_run_cmd(r: ValkeyTestClient, cmd) -> None:" in output
+    assert "@pytest.mark.xfail" not in output
+    assert "result = r.run(cmd, 'foo')" in output
+
+
+def test_generate_file__unknown_bracket_call_generates_stub():
+    output = generate("""
+        start_server {tags {}} {
+            foreach cmd {EX PX} {
+                test {ttl $cmd} {
+                    set ttl_cmd [get_ttl_command $cmd]
+                    r set key val
+                } {}
+            }
+        }
+    """)
+    assert "@pytest.mark.xfail" not in output
+    assert "ttl_cmd = get_ttl_command(cmd)" in output
+    assert "def get_ttl_command(*args):" in output
+    assert "raise NotImplementedError('get_ttl_command')" in output
+
+
 def test_generate_file__if_with_tests():
     output = generate("""
         start_server {tags {}} {
