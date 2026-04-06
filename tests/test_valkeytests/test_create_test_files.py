@@ -391,6 +391,47 @@ _CATCH_WITHOUT_VAR_EXPECTED = """
 """
 
 
+_ASSERT_BRACES_TCL = """
+    start_server {tags {}} {
+        test {assert braces} {
+            set ttl [r ttl foo]
+            assert {$ttl <= 10}
+        }
+    }
+"""
+
+_ASSERT_BRACES_EXPECTED = """
+    ttl = r.run('ttl', 'foo')
+    assert ttl <= 10
+"""
+
+_EMPTY_EXPECTED_LAST_ASSERT_TCL = """
+    start_server {tags {}} {
+        test {empty expected with assert last} {
+            r SET foo bar
+            assert_equal [r TTL foo] -1
+        } {}
+    }
+"""
+
+_EMPTY_EXPECTED_LAST_ASSERT_EXPECTED = """
+    r.run('SET', 'foo', 'bar')
+    assert r.run('TTL', 'foo') == -1
+"""
+
+
+def test_generate_file__assert_braces():
+    output = generate(_ASSERT_BRACES_TCL)
+    assert "@pytest.mark.xfail" not in output
+    assert _ASSERT_BRACES_EXPECTED in output
+
+
+def test_generate_file__empty_expected_with_last_assert():
+    output = generate(_EMPTY_EXPECTED_LAST_ASSERT_TCL)
+    assert "@pytest.mark.xfail" not in output
+    assert _EMPTY_EXPECTED_LAST_ASSERT_EXPECTED in output
+
+
 def test_generate_file__catch_with_var():
     output = generate(_CATCH_WITH_VAR_TCL)
     assert "@pytest.mark.xfail" not in output

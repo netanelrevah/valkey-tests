@@ -84,13 +84,23 @@ class AssertMatchStatementTranslator(StatementTranslator):
 @StatementTranslator.register("assert")
 class AssertStatementTranslator(StatementTranslator):
     def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
-        if not arguments or not isinstance(arguments[0], TCLBracketWord):
+        if not arguments:
             return None
-        inner = [c for c in arguments[0].script.commands if c.name]
-        if len(inner) != 1:
-            return None
-        expr = ExpressionTranslator.translate(inner[0], defined_vars)
-        return None if expr is None else [f"assert {expr}"]
+        argument = arguments[0]
+        if isinstance(argument, TCLBracketWord):
+            inner = [c for c in argument.script.commands if c.name]
+            if len(inner) != 1:
+                return None
+            expr = ExpressionTranslator.translate(inner[0], defined_vars)
+            return None if expr is None else [f"assert {expr}"]
+        if isinstance(argument, TCLBracesWord):
+            try:
+                expression = TCLExpression.build([argument], {})
+            except Exception:
+                return None
+            expr = _translate_tcl_expression(expression, defined_vars)
+            return None if expr is None else [f"assert {expr}"]
+        return None
 
 
 @StatementTranslator.register("incr")
@@ -166,7 +176,7 @@ class TCLBodyTranslator:
         for i, command in enumerate(commands):
             is_last = i == len(commands) - 1
 
-            if is_last and expected is not None:
+            if is_last and expected:
                 expr = ExpressionTranslator.translate(command, defined_vars)
                 if expr is not None:
                     lines.append(f"assert {expr} == {expected!r}")
@@ -185,7 +195,7 @@ class TCLBodyTranslator:
             first_line, *rest_lines = formatted.splitlines()
             lines.append(f"# TODO: {first_line}")
             lines.extend(f"#   {rest}" for rest in rest_lines)
-            if is_last and expected is not None:
+            if is_last and expected:
                 lines.append("assert False")
 
         return lines
