@@ -2857,9 +2857,10 @@ def test_hrandfield_case_1_negative_count(r: ValkeyTestClient) -> None:
     #   }
     assert fnmatch(str(r.run("hrandfield", "myhash", 1)), "")
     assert "1" == r.run("HSET", "myhash", "f5", "v5")
-    # TODO: for {set i 1} {$i <= 50} {incr i} {
-    #       assert_equal {f5 f5 f5 f5 f5} [r hrandfield myhash -5]
-    #   }
+    i = 1
+    while i <= 50:
+        assert "f5 f5 f5 f5 f5" == r.run("hrandfield", "myhash", -5)
+        i += 1
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -6103,9 +6104,10 @@ def test_command_active_expiry_processes_multiple_hash_keys_with_different_field
     """
     r.run("FLUSHALL")
     # TODO: set initial_expired info_field [r info stats] expired_fields
-    # TODO: for {set i 1} {$i <= 5} {incr i} {
-    #       r HSET hash$i f1 v1_$i f2 v2_$i f3 v3_$i
-    #   }
+    i = 1
+    while i <= 5:
+        r.run("HSET", "hash$i", "f1", "v1_$i", "f2", "v2_$i", "f3", "v3_$i")
+        i += 1
     # TODO: assert_equal 5 get_keys r
     # TODO: assert_equal 0 get_keys_with_volatile_items r
     # TODO: r command hash1 get_short_expire_value $command FIELDS 1 f1
@@ -6236,9 +6238,10 @@ def test_command_deletes_entire_keys_when_all_fields_expire_while_preserving_par
     """
     r.run("FLUSHALL")
     # TODO: set initial_expired info_field [r info stats] expired_fields
-    # TODO: for {set i 1} {$i <= 4} {incr i} {
-    #       r HSET delkey$i f1 v1
-    #   }
+    i = 1
+    while i <= 4:
+        r.run("HSET", "delkey$i", "f1", "v1")
+        i += 1
     r.run("HSET", "keepkey", "f1", "v1", "f2", "v2")
     # TODO: for {set i 1} {$i <= 4} {incr i} {
     #       r $command delkey$i [get_short_expire_value $command] FIELDS 1 f1

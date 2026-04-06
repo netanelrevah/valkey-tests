@@ -130,7 +130,6 @@ def test_setnx_against_not_expired_volatile_key(r: ValkeyTestClient) -> None:
     assert 10 == r.run("get", "x")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_setnx_against_expired_volatile_key(r: ValkeyTestClient) -> None:
     """
     test "SETNX against expired volatile key" {
@@ -157,9 +156,10 @@ def test_setnx_against_expired_volatile_key(r: ValkeyTestClient) -> None:
         assert_equal 20 [r get x]
     }
     """
-    # TODO: for {set x 0} {$x < 9999} {incr x} {
-    #       r setex key-$x 3600 value
-    #   }
+    x = 0
+    while x < 9999:
+        r.run("setex", "key-$x", 3600, "value")
+        x += 1
     r.run("set", "x", 10)
     r.run("expire", "x", 1)
     time.sleep(2000 / 1000)

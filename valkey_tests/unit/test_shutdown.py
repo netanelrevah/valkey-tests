@@ -1,4 +1,4 @@
-# ruff: noqa: F841
+# ruff: noqa: PLR2004, F841
 import time
 
 import pytest
@@ -41,9 +41,10 @@ def test_temp_rdb_will_be_deleted_if_we_use_bg_unlink_when_shutdown(r: ValkeyTes
         assert {![file exists $temp_rdb]}
     }
     """
-    # TODO: for {set i 0} {$i < 20} {incr i} {
-    #       r set $i $i
-    #   }
+    i = 0
+    while i < 20:
+        r.run("set", i, i)
+        i += 1
     r.run("config", "set", "rdb-key-save-delay", 10000000)
     r.run("bgsave")
     # TODO: wait_for_condition 1000 10 {
@@ -124,9 +125,10 @@ def test_temp_rdb_will_be_deleted_in_signal_handle(r: ValkeyTestClient) -> None:
         }
     }
     """
-    # TODO: for {set i 0} {$i < 20} {incr i} {
-    #       r set $i $i
-    #   }
+    i = 0
+    while i < 20:
+        r.run("set", i, i)
+        i += 1
     r.run("config", "set", "rdb-key-save-delay", 100000)
     # TODO: set pid s process_id
     # TODO: set temp_rdb file join [lindex [r config get dir] 1] temp-${pid}.rdb
@@ -173,9 +175,10 @@ def test_rdb_save_will_be_failed_in_shutdown(r: ValkeyTestClient) -> None:
         exec mkdir -p $dump_rdb
     }
     """
-    # TODO: for {set i 0} {$i < 20} {incr i} {
-    #       r set $i $i
-    #   }
+    i = 0
+    while i < 20:
+        r.run("set", i, i)
+        i += 1
     # TODO: if {[file exists $dump_rdb]} {
     #       exec rm -f $dump_rdb
     #   }
@@ -261,9 +264,10 @@ def test_shutdown_sigterm_will_abort_if_there_s_an_initial_aofrw_default(r: Valk
     """
     r.run("config", "set", "shutdown-on-sigterm", "default")
     r.run("config", "set", "rdb-key-save-delay", 10000000)
-    # TODO: for {set i 0} {$i < 10} {incr i} {
-    #       r set $i $i
-    #   }
+    i = 0
+    while i < 10:
+        r.run("set", i, i)
+        i += 1
     r.run("config", "set", "appendonly", "yes")
     # TODO: wait_for_condition 1000 10 {
     #       [s aof_rewrite_in_progress] eq 1

@@ -1,4 +1,5 @@
-# ruff: noqa: RUF043
+# ruff: noqa: PLR2004, RUF043
+
 from fnmatch import fnmatch
 
 import pytest
@@ -2571,7 +2572,6 @@ def test_allow_stale_shebang_flag(r: ValkeyTestClient) -> None:
     _ = ""
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_reject_script_do_not_cause_a_lua_stack_leak(r: ValkeyTestClient) -> None:
     """
     test "reject script do not cause a Lua stack leak" {
@@ -2588,11 +2588,11 @@ def test_reject_script_do_not_cause_a_lua_stack_leak(r: ValkeyTestClient) -> Non
     }
     """
     r.run("config", "set", "maxmemory", 1)
-    # TODO: for {set i 0} {$i < 50} {incr i} {
-    #       assert_error {OOM *} {r eval {#!lua
-    #           return 1
-    #       } 0}
-    #   }
+    i = 0
+    while i < 50:
+        with pytest.raises(Exception, match="OOM\\ .*"):
+            r.run("eval", "#!lua\n                return 1\n            ", 0)
+        i += 1
     r.run("config", "set", "maxmemory", 0)
     assert r.run("eval", "#!lua            return 1        ", 0) == 1
 

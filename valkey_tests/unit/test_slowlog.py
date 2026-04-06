@@ -40,7 +40,6 @@ def test_slowlog_only_logs_commands_taking_more_time_than_specified(r: ValkeyTes
     assert r.run("slowlog", "len") == 1
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_slowlog_zero_max_length_is_correctly_handled(r: ValkeyTestClient) -> None:
     """
     test {SLOWLOG - zero max length is correctly handled} {
@@ -56,13 +55,13 @@ def test_slowlog_zero_max_length_is_correctly_handled(r: ValkeyTestClient) -> No
     r.run("SLOWLOG", "reset")
     r.run("config", "set", "slowlog-max-len", 0)
     r.run("config", "set", "slowlog-log-slower-than", 0)
-    # TODO: for {set i 0} {$i < 100} {incr i} {
-    #       r ping
-    #   }
+    i = 0
+    while i < 100:
+        r.run("ping")
+        i += 1
     assert r.run("slowlog", "len") == "0"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_slowlog_max_entries_is_correctly_handled(r: ValkeyTestClient) -> None:
     """
     test {SLOWLOG - max entries is correctly handled} {
@@ -76,9 +75,10 @@ def test_slowlog_max_entries_is_correctly_handled(r: ValkeyTestClient) -> None:
     """
     r.run("config", "set", "slowlog-log-slower-than", 0)
     r.run("config", "set", "slowlog-max-len", 10)
-    # TODO: for {set i 0} {$i < 100} {incr i} {
-    #       r ping
-    #   }
+    i = 0
+    while i < 100:
+        r.run("ping")
+        i += 1
     assert r.run("slowlog", "len") == "10"
 
 

@@ -18,7 +18,6 @@ r module load testmodule
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_rm_createtimer_a_sequence_of_timers_work(r: ValkeyTestClient) -> None:
     """
     test {RM_CreateTimer: a sequence of timers work} {
@@ -34,9 +33,10 @@ def test_rm_createtimer_a_sequence_of_timers_work(r: ValkeyTestClient) -> None:
     }
     """
     r.run("multi")
-    # TODO: for {set i 0} {$i < 20} {incr i} {
-    #       r test.createtimer 10 timer-incr-key
-    #   }
+    i = 0
+    while i < 20:
+        r.run("test.createtimer", 10, "timer-incr-key")
+        i += 1
     r.run("exec")
     time.sleep(500 / 1000)
     assert 20 == r.run("get", "timer-incr-key")

@@ -871,12 +871,14 @@ def test_server_can_resize_empty_dict(r: ValkeyTestClient) -> None:
     }
     """
     r.run("flushall")
-    # TODO: for {set j 1} {$j <= 128} {incr j} {
-    #       r set $j{b} a
-    #   }
-    # TODO: for {set j 1} {$j <= 128} {incr j} {
-    #       r del $j{b}
-    #   }
+    j = 1
+    while j <= 128:
+        r.run("set", j, "b", "a")
+        j += 1
+    j = 1
+    while j <= 128:
+        r.run("del", j, "b")
+        j += 1
     # TODO: set dbnum expr {$::singledb ? 0 : 9}
     # TODO: wait_for_condition 100 50 {
     #       [dict get [r memory stats] db.$dbnum overhead.hashtable.main] < 400

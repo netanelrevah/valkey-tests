@@ -75,7 +75,6 @@ def test_commandlog_only_logs_commands_exceeding_the_threshold(r: ValkeyTestClie
     assert r.run("commandlog", "len", "large-reply") == 1
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_commandlog_zero_max_length_is_correctly_handled(r: ValkeyTestClient) -> None:
     """
     test {COMMANDLOG - zero max length is correctly handled} {
@@ -105,15 +104,15 @@ def test_commandlog_zero_max_length_is_correctly_handled(r: ValkeyTestClient) ->
     r.run("config", "set", "commandlog-request-larger-than", 0)
     r.run("config", "set", "commandlog-large-reply-max-len", 0)
     r.run("config", "set", "commandlog-reply-larger-than", 0)
-    # TODO: for {set i 0} {$i < 100} {incr i} {
-    #       r ping
-    #   }
+    i = 0
+    while i < 100:
+        r.run("ping")
+        i += 1
     assert r.run("commandlog", "len", "slow") == 0
     assert r.run("commandlog", "len", "large-request") == 0
     assert r.run("commandlog", "len", "large-reply") == 0
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_commandlog_max_entries_is_correctly_handled(r: ValkeyTestClient) -> None:
     """
     test {COMMANDLOG - max entries is correctly handled} {
@@ -137,9 +136,10 @@ def test_commandlog_max_entries_is_correctly_handled(r: ValkeyTestClient) -> Non
     r.run("config", "set", "commandlog-request-larger-than", 0)
     r.run("config", "set", "commandlog-large-reply-max-len", 10)
     r.run("config", "set", "commandlog-reply-larger-than", 0)
-    # TODO: for {set i 0} {$i < 100} {incr i} {
-    #       r ping
-    #   }
+    i = 0
+    while i < 100:
+        r.run("ping")
+        i += 1
     assert r.run("commandlog", "len", "slow") == 10
     assert r.run("commandlog", "len", "large-request") == 10
     assert r.run("commandlog", "len", "large-reply") == 10

@@ -827,9 +827,10 @@ def test_copy_basic_usage_for_stream(r: ValkeyTestClient) -> None:
     }
     """
     r.run("del", "mystream{t}", "mynewstream{t}")
-    # TODO: for {set i 0} {$i < 1000} {incr i} {
-    #       r XADD mystream{t} * item 2 value b
-    #   }
+    i = 0
+    while i < 1000:
+        r.run("XADD", "mystream{t}", "*", "item", 2, "value", "b")
+        i += 1
     r.run("copy", "mystream{t}", "mynewstream{t}")
     # TODO: set digest debug_digest_value mystream{t}
     # TODO: assert_equal digest debug_digest_value mynewstream{t}
