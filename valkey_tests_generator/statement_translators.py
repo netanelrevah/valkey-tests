@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, ClassVar
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-from pytcl.commands import TCLBracesWord, TCLCommandCatch, TCLCommandIf, TCLExpression, TCLScript
+from pytcl.commands import TCLBracesWord, TCLCommandCatch, TCLCommandFor, TCLCommandIf, TCLExpression, TCLScript
 from pytcl.words import (
     TCLBracketWord,
     TCLCommandArguments,
@@ -163,7 +163,7 @@ class PutsStatementTranslator(StatementTranslator):
 
 
 class TCLBodyTranslator:
-    def translate(self, body: TCLScript, expected: str | None) -> list[str]:
+    def translate(self, body: TCLScript, expected: str | None, initial_vars: set[str] | None = None) -> list[str]:
         commands = [c for c in body.commands if c.name]
         if not commands:
             if expected is not None:
@@ -171,7 +171,7 @@ class TCLBodyTranslator:
             return []
 
         lines: list[str] = []
-        defined_vars: set[str] = set()
+        defined_vars: set[str] = set(initial_vars) if initial_vars else set()
 
         for i, command in enumerate(commands):
             is_last = i == len(commands) - 1
@@ -326,6 +326,56 @@ class IfStatementTranslator(StatementTranslator):
             else:
                 lines.append("    pass")
 
+        return lines
+
+
+@StatementTranslator.register("for")
+class ForStatementTranslator(StatementTranslator):
+    def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
+        try:
+            for_command = TCLCommandFor.build(arguments, {})
+        except Exception:
+            return None
+
+        # Translate init script as assignment statements
+        init_commands = [c for c in for_command.init.commands if c.name]
+        init_lines: list[str] = []
+        loop_vars: set[str] = set()
+        for command in init_commands:
+            statement = StatementTranslator.translate(command, defined_vars)
+            if statement is None:
+                return None
+            init_lines.extend(statement)
+            if command.name == "set" and len(command.args) >= 1 and isinstance(command.args[0], TCLWord):
+                loop_vars.add(command.args[0].value)
+
+        body_vars = defined_vars | loop_vars
+
+        # Translate condition
+        cond_str = _translate_tcl_expression(for_command.condition, body_vars)
+        if cond_str is None:
+            return None
+
+        # Translate step script
+        step_commands = [c for c in for_command.step.commands if c.name]
+        step_lines: list[str] = []
+        for command in step_commands:
+            statement = StatementTranslator.translate(command, body_vars)
+            if statement is None:
+                return None
+            step_lines.extend(statement)
+
+        # Translate body (loop vars are in scope)
+        body_lines = TCLBodyTranslator().translate(for_command.body, None, initial_vars=body_vars)
+        if _has_todos(body_lines):
+            return None
+
+        lines: list[str] = [*init_lines, f"while {cond_str}:"]
+        if body_lines:
+            lines.extend(f"    {line}" for line in body_lines)
+        else:
+            lines.append("    pass")
+        lines.extend(f"    {line}" for line in step_lines)
         return lines
 
 

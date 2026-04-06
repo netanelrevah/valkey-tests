@@ -456,3 +456,27 @@ def test_generate_file__foreach_with_variable_list_becomes_comment():
     """)
     assert '"""' in output
     assert "foreach" in output
+
+
+_FOR_LOOP_TCL = """
+    start_server {tags {}} {
+        test {for loop test} {
+            for {set i 0} {$i < 3} {incr i} {
+                r set key $i
+            }
+        }
+    }
+"""
+
+_FOR_LOOP_EXPECTED = """
+    i = 0
+    while i < 3:
+        r.run('set', 'key', i)
+        i += 1
+"""
+
+
+def test_generate_file__for_loop():
+    output = generate(_FOR_LOOP_TCL)
+    assert "@pytest.mark.xfail" not in output
+    assert _FOR_LOOP_EXPECTED in output
