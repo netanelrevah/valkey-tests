@@ -274,7 +274,7 @@ def test_stress_tester_for_3343_alike_bugs_comp_comp(r: ValkeyTestClient, comp) 
     }
     """
     r.run("del", "key")
-    sent = ""
+    sent = []
     for_(
         "set j 0",
         "$j < $cycles",

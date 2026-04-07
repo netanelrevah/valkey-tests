@@ -1,5 +1,7 @@
 # ruff: noqa: PLR2004, F841, RUF043, ANN001, ANN002, ANN201
 
+from fnmatch import fnmatch
+
 import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
@@ -114,7 +116,7 @@ def test_hrandfield_type(r: ValkeyTestClient, type, contents) -> None:
         key = r.run("hrandfield", "myhash")
         set_("myhash($key)", 1)
         i += 1
-    assert lsort(get_keys(contents)) == lsort(array("names", "myhash"))
+    assert sorted(get_keys(contents)) == sorted(array("names", "myhash"))
 
 
 """
@@ -193,7 +195,7 @@ def test_hrandfield_count_of_0_is_handled_correctly_emptyarray(r: ValkeyTestClie
         r hrandfield myhash 0
     } {*0}
     """
-    assert r.run("hrandfield", "myhash", 0) == "*0"
+    assert fnmatch(str(r.run("hrandfield", "myhash", 0)), "*0")
 
 
 def test_hrandfield_with_count_against_non_existing_key_emptyarray(r: ValkeyTestClient) -> None:
@@ -202,7 +204,7 @@ def test_hrandfield_with_count_against_non_existing_key_emptyarray(r: ValkeyTest
         r hrandfield nonexisting_key 100
     } {*0}
     """
-    assert r.run("hrandfield", "nonexisting_key", 100) == "*0"
+    assert fnmatch(str(r.run("hrandfield", "nonexisting_key", 100)), "*0")
 
 
 """
@@ -477,9 +479,9 @@ def test_hget_against_non_existing_key(r: ValkeyTestClient) -> None:
         set _ $rv
     } {{} {}}
     """
-    rv = ""
-    lappend("rv", r.run("hget", "smallhash", "__123123123__"))
-    lappend("rv", r.run("hget", "bighash", "__123123123__"))
+    rv = []
+    rv.append(r.run("hget", "smallhash", "__123123123__"))
+    rv.append(r.run("hget", "bighash", "__123123123__"))
     assert rv == "{} {}"
 
 
@@ -502,19 +504,19 @@ def test_hset_in_update_and_insert_mode(r: ValkeyTestClient) -> None:
         set _ $rv
     } {0 newval1 1 0 newval2 1 1 1}
     """
-    rv = ""
+    rv = []
     k = array("names", "smallhash", "*")[0]
-    lappend("rv", r.run("hset", "smallhash", k, "newval1"))
+    rv.append(r.run("hset", "smallhash", k, "newval1"))
     set_("smallhash($k)", "newval1")
-    lappend("rv", r.run("hget", "smallhash", k))
-    lappend("rv", r.run("hset", "smallhash", "__foobar123__", "newval"))
+    rv.append(r.run("hget", "smallhash", k))
+    rv.append(r.run("hset", "smallhash", "__foobar123__", "newval"))
     k = array("names", "bighash", "*")[0]
-    lappend("rv", r.run("hset", "bighash", k, "newval2"))
+    rv.append(r.run("hset", "bighash", k, "newval2"))
     set_("bighash($k)", "newval2")
-    lappend("rv", r.run("hget", "bighash", k))
-    lappend("rv", r.run("hset", "bighash", "__foobar123__", "newval"))
-    lappend("rv", r.run("hdel", "smallhash", "__foobar123__"))
-    lappend("rv", r.run("hdel", "bighash", "__foobar123__"))
+    rv.append(r.run("hget", "bighash", k))
+    rv.append(r.run("hset", "bighash", "__foobar123__", "newval"))
+    rv.append(r.run("hdel", "smallhash", "__foobar123__"))
+    rv.append(r.run("hdel", "bighash", "__foobar123__"))
     assert rv == "0 newval1 1 0 newval2 1 1 1"
 
 
@@ -595,7 +597,7 @@ def test_hmset_small_hash(r: ValkeyTestClient) -> None:
         r hmset smallhash {*}$args
     } {OK}
     """
-    args = ""
+    args = []
     foreach(
         "k v",
         array("get", "smallhash"),
@@ -616,7 +618,7 @@ def test_hmset_big_hash(r: ValkeyTestClient) -> None:
         r hmset bighash {*}$args
     } {OK}
     """
-    args = ""
+    args = []
     foreach(
         "k v",
         array("get", "bighash"),
@@ -635,10 +637,10 @@ def test_hmget_against_non_existing_key_and_fields(r: ValkeyTestClient) -> None:
         set _ $rv
     } {{{} {}} {{} {}} {{} {}}}
     """
-    rv = ""
-    lappend("rv", r.run("hmget", "doesntexist", "__123123123__", "__456456456__"))
-    lappend("rv", r.run("hmget", "smallhash", "__123123123__", "__456456456__"))
-    lappend("rv", r.run("hmget", "bighash", "__123123123__", "__456456456__"))
+    rv = []
+    rv.append(r.run("hmget", "doesntexist", "__123123123__", "__456456456__"))
+    rv.append(r.run("hmget", "smallhash", "__123123123__", "__456456456__"))
+    rv.append(r.run("hmget", "bighash", "__123123123__", "__456456456__"))
     assert rv == "{{} {}} {{} {}} {{} {}}"
 
 
@@ -717,8 +719,8 @@ def test_hmget_small_hash(r: ValkeyTestClient) -> None:
         set _ $err
     } {}
     """
-    keys = ""
-    vals = ""
+    keys = []
+    vals = []
     foreach("k v", array("get", "smallhash"), "            lappend keys $k\n            lappend vals $v\n        ")
     err = ""
     result = r.run("hmget", "smallhash", "*", keys)
@@ -744,8 +746,8 @@ def test_hmget_big_hash(r: ValkeyTestClient) -> None:
         set _ $err
     } {}
     """
-    keys = ""
-    vals = ""
+    keys = []
+    vals = []
     foreach("k v", array("get", "bighash"), "            lappend keys $k\n            lappend vals $v\n        ")
     err = ""
     result = r.run("hmget", "bighash", "*", keys)
@@ -781,9 +783,9 @@ def test_hvals_small_hash(r: ValkeyTestClient) -> None:
         set _ [lsort $vals]
     } lsort [r hvals smallhash]
     """
-    vals = ""
+    vals = []
     foreach("k v", array("get", "smallhash"), "            lappend vals $v\n        ")
-    _ = lsort(vals)
+    _ = sorted(vals)
 
 
 def test_hvals_big_hash(r: ValkeyTestClient) -> None:
@@ -796,9 +798,9 @@ def test_hvals_big_hash(r: ValkeyTestClient) -> None:
         set _ [lsort $vals]
     } lsort [r hvals bighash]
     """
-    vals = ""
+    vals = []
     foreach("k v", array("get", "bighash"), "            lappend vals $v\n        ")
-    _ = lsort(vals)
+    _ = sorted(vals)
 
 
 def test_hgetall_small_hash(r: ValkeyTestClient) -> None:
@@ -844,10 +846,10 @@ def test_hgetdel_single_field(r: ValkeyTestClient) -> None:
     """
     r.run("del", "myhash")
     r.run("hset", "myhash", "field1", "value1")
-    rv = ""
-    lappend("rv", r.run("hgetdel", "myhash", "FIELDS", 1, "field1"))
-    lappend("rv", r.run("hexists", "myhash", "field1"))
-    lappend("rv", r.run("exists", "myhash"))
+    rv = []
+    rv.append(r.run("hgetdel", "myhash", "FIELDS", 1, "field1"))
+    rv.append(r.run("hexists", "myhash", "field1"))
+    rv.append(r.run("exists", "myhash"))
     assert rv == "value1 0 0"
 
 
@@ -867,12 +869,12 @@ def test_hgetdel_multiple_fields(r: ValkeyTestClient) -> None:
     """
     r.run("del", "myhash")
     r.run("hmset", "myhash", "field1", "value1", "field2", "value2", "field3", "value3")
-    rv = ""
-    lappend("rv", r.run("hgetdel", "myhash", "FIELDS", 2, "field1", "field3"))
-    lappend("rv", r.run("hexists", "myhash", "field1"))
-    lappend("rv", r.run("hexists", "myhash", "field2"))
-    lappend("rv", r.run("hexists", "myhash", "field3"))
-    lappend("rv", r.run("hget", "myhash", "field2"))
+    rv = []
+    rv.append(r.run("hgetdel", "myhash", "FIELDS", 2, "field1", "field3"))
+    rv.append(r.run("hexists", "myhash", "field1"))
+    rv.append(r.run("hexists", "myhash", "field2"))
+    rv.append(r.run("hexists", "myhash", "field3"))
+    rv.append(r.run("hget", "myhash", "field2"))
     assert rv == "{value1 value3} 0 1 0 value2"
 
 
@@ -889,9 +891,9 @@ def test_hgetdel_non_existing_field(r: ValkeyTestClient) -> None:
     """
     r.run("del", "myhash")
     r.run("hset", "myhash", "field1", "value1")
-    rv = ""
-    lappend("rv", r.run("hgetdel", "myhash", "FIELDS", 1, "nonexisting"))
-    lappend("rv", r.run("hexists", "myhash", "field1"))
+    rv = []
+    rv.append(r.run("hgetdel", "myhash", "FIELDS", 1, "nonexisting"))
+    rv.append(r.run("hexists", "myhash", "field1"))
     assert rv == "{{}} 1"
 
 
@@ -934,11 +936,11 @@ def test_hgetdel_mix_of_existing_and_non_existing_fields(r: ValkeyTestClient) ->
     """
     r.run("del", "myhash")
     r.run("hmset", "myhash", "a", 1, "b", 2, "c", 3)
-    rv = ""
-    lappend("rv", r.run("hgetdel", "myhash", "FIELDS", 3, "a", "nonexist", "b"))
-    lappend("rv", r.run("hexists", "myhash", "a"))
-    lappend("rv", r.run("hexists", "myhash", "b"))
-    lappend("rv", r.run("hexists", "myhash", "c"))
+    rv = []
+    rv.append(r.run("hgetdel", "myhash", "FIELDS", 3, "a", "nonexist", "b"))
+    rv.append(r.run("hexists", "myhash", "a"))
+    rv.append(r.run("hexists", "myhash", "b"))
+    rv.append(r.run("hexists", "myhash", "c"))
     assert rv == "{1 {} 2} 0 0 1"
 
 
@@ -955,9 +957,9 @@ def test_hgetdel_hash_becomes_empty_after_deletion(r: ValkeyTestClient) -> None:
     """
     r.run("del", "myhash")
     r.run("hmset", "myhash", "a", 1, "b", 2)
-    rv = ""
-    lappend("rv", r.run("hgetdel", "myhash", "FIELDS", 2, "a", "b"))
-    lappend("rv", r.run("exists", "myhash"))
+    rv = []
+    rv.append(r.run("hgetdel", "myhash", "FIELDS", 2, "a", "b"))
+    rv.append(r.run("exists", "myhash"))
     assert rv == "{1 2} 0"
 
 
@@ -1029,18 +1031,18 @@ def test_hdel_and_return_value(r: ValkeyTestClient) -> None:
         set _ $rv
     } {0 0 1 0 {} 1 0 {}}
     """
-    rv = ""
-    lappend("rv", r.run("hdel", "smallhash", "nokey"))
-    lappend("rv", r.run("hdel", "bighash", "nokey"))
+    rv = []
+    rv.append(r.run("hdel", "smallhash", "nokey"))
+    rv.append(r.run("hdel", "bighash", "nokey"))
     k = array("names", "smallhash", "*")[0]
-    lappend("rv", r.run("hdel", "smallhash", k))
-    lappend("rv", r.run("hdel", "smallhash", k))
-    lappend("rv", r.run("hget", "smallhash", k))
+    rv.append(r.run("hdel", "smallhash", k))
+    rv.append(r.run("hdel", "smallhash", k))
+    rv.append(r.run("hget", "smallhash", k))
     unset("smallhash($k)")
     k = array("names", "bighash", "*")[0]
-    lappend("rv", r.run("hdel", "bighash", k))
-    lappend("rv", r.run("hdel", "bighash", k))
-    lappend("rv", r.run("hget", "bighash", k))
+    rv.append(r.run("hdel", "bighash", k))
+    rv.append(r.run("hdel", "bighash", k))
+    rv.append(r.run("hget", "bighash", k))
     unset("bighash($k)")
     assert rv == "0 0 1 0 {} 1 0 {}"
 
@@ -1092,12 +1094,12 @@ def test_hexists(r: ValkeyTestClient) -> None:
         lappend rv [r hexists bighash nokey]
     } {1 0 1 0}
     """
-    rv = ""
+    rv = []
     k = array("names", "smallhash", "*")[0]
-    lappend("rv", r.run("hexists", "smallhash", k))
-    lappend("rv", r.run("hexists", "smallhash", "nokey"))
+    rv.append(r.run("hexists", "smallhash", k))
+    rv.append(r.run("hexists", "smallhash", "nokey"))
     k = array("names", "bighash", "*")[0]
-    lappend("rv", r.run("hexists", "bighash", k))
+    rv.append(r.run("hexists", "bighash", k))
     # TODO: lappend rv r hexists bighash nokey
     assert False
 
@@ -1112,7 +1114,7 @@ def test_is_a_ziplist_encoded_hash_promoted_on_big_payload(r: ValkeyTestClient) 
     """
     r.run("config", "set", "hash-max-listpack-value", 64)
     r.run("hset", "smallhash", "foo", string("repeat", "a", 1024))
-    assert r.run("debug", "object", "smallhash") == "*hashtable*"
+    assert fnmatch(str(r.run("debug", "object", "smallhash")), "*hashtable*")
 
 
 def test_hincrby_against_non_existing_database_key(r: ValkeyTestClient) -> None:
@@ -1156,12 +1158,12 @@ def test_hincrby_against_non_existing_hash_key(r: ValkeyTestClient) -> None:
         lappend rv [r hget bighash tmp]
     } {2 2 2 2}
     """
-    rv = ""
+    rv = []
     r.run("hdel", "smallhash", "tmp")
     r.run("hdel", "bighash", "tmp")
-    lappend("rv", r.run("hincrby", "smallhash", "tmp", 2))
-    lappend("rv", r.run("hget", "smallhash", "tmp"))
-    lappend("rv", r.run("hincrby", "bighash", "tmp", 2))
+    rv.append(r.run("hincrby", "smallhash", "tmp", 2))
+    rv.append(r.run("hget", "smallhash", "tmp"))
+    rv.append(r.run("hincrby", "bighash", "tmp", 2))
     # TODO: lappend rv r hget bighash tmp
     assert False
 
@@ -1177,10 +1179,10 @@ def test_hincrby_against_hash_key_created_by_hincrby_itself(r: ValkeyTestClient)
         lappend rv [r hget bighash tmp]
     } {5 5 5 5}
     """
-    rv = ""
-    lappend("rv", r.run("hincrby", "smallhash", "tmp", 3))
-    lappend("rv", r.run("hget", "smallhash", "tmp"))
-    lappend("rv", r.run("hincrby", "bighash", "tmp", 3))
+    rv = []
+    rv.append(r.run("hincrby", "smallhash", "tmp", 3))
+    rv.append(r.run("hget", "smallhash", "tmp"))
+    rv.append(r.run("hincrby", "bighash", "tmp", 3))
     # TODO: lappend rv r hget bighash tmp
     assert False
 
@@ -1250,8 +1252,8 @@ def test_hincrby_fails_against_hash_value_with_spaces_left(r: ValkeyTestClient) 
         bigerr = r.run("hincrby", "bighash", "str", 1)
     except Exception as _catch_err:
         bigerr = str(_catch_err)
-    rv = ""
-    lappend("rv", string("match", "ERR *not an integer*", smallerr))
+    rv = []
+    rv.append(string("match", "ERR *not an integer*", smallerr))
     # TODO: lappend rv string match "ERR *not an integer*" $bigerr
     assert False
 
@@ -1279,8 +1281,8 @@ def test_hincrby_fails_against_hash_value_with_spaces_right(r: ValkeyTestClient)
         bigerr = r.run("hincrby", "bighash", "str", 1)
     except Exception as _catch_err:
         bigerr = str(_catch_err)
-    rv = ""
-    lappend("rv", string("match", "ERR *not an integer*", smallerr))
+    rv = []
+    rv.append(string("match", "ERR *not an integer*", smallerr))
     # TODO: lappend rv string match "ERR *not an integer*" $bigerr
     assert False
 
@@ -1302,7 +1304,7 @@ def test_hincrby_can_detect_overflows(r: ValkeyTestClient) -> None:
         e = r.run("hincrby", "hash", "n", -10000)
     except Exception as _catch_err:
         e = str(_catch_err)
-    assert e == "*overflow*"
+    assert fnmatch(str(e), "*overflow*")
 
 
 def test_hincrbyfloat_against_non_existing_database_key(r: ValkeyTestClient) -> None:
@@ -1329,12 +1331,12 @@ def test_hincrbyfloat_against_non_existing_hash_key(r: ValkeyTestClient) -> None
         lappend rv [roundFloat [r hget bighash tmp]]
     } {2.5 2.5 2.5 2.5}
     """
-    rv = ""
+    rv = []
     r.run("hdel", "smallhash", "tmp")
     r.run("hdel", "bighash", "tmp")
-    lappend("rv", round_float(r.run("hincrbyfloat", "smallhash", "tmp", 2.5)))
-    lappend("rv", round_float(r.run("hget", "smallhash", "tmp")))
-    lappend("rv", round_float(r.run("hincrbyfloat", "bighash", "tmp", 2.5)))
+    rv.append(round_float(r.run("hincrbyfloat", "smallhash", "tmp", 2.5)))
+    rv.append(round_float(r.run("hget", "smallhash", "tmp")))
+    rv.append(round_float(r.run("hincrbyfloat", "bighash", "tmp", 2.5)))
     # TODO: lappend rv roundFloat [r hget bighash tmp]
     assert False
 
@@ -1350,10 +1352,10 @@ def test_hincrbyfloat_against_hash_key_created_by_hincrby_itself(r: ValkeyTestCl
         lappend rv [roundFloat [r hget bighash tmp]]
     } {6 6 6 6}
     """
-    rv = ""
-    lappend("rv", round_float(r.run("hincrbyfloat", "smallhash", "tmp", 3.5)))
-    lappend("rv", round_float(r.run("hget", "smallhash", "tmp")))
-    lappend("rv", round_float(r.run("hincrbyfloat", "bighash", "tmp", 3.5)))
+    rv = []
+    rv.append(round_float(r.run("hincrbyfloat", "smallhash", "tmp", 3.5)))
+    rv.append(round_float(r.run("hget", "smallhash", "tmp")))
+    rv.append(round_float(r.run("hincrbyfloat", "bighash", "tmp", 3.5)))
     # TODO: lappend rv roundFloat [r hget bighash tmp]
     assert False
 
@@ -1432,8 +1434,8 @@ def test_hincrbyfloat_fails_against_hash_value_with_spaces_left(r: ValkeyTestCli
         bigerr = r.run("hincrbyfloat", "bighash", "str", 1)
     except Exception as _catch_err:
         bigerr = str(_catch_err)
-    rv = ""
-    lappend("rv", string("match", "ERR *not*float*", smallerr))
+    rv = []
+    rv.append(string("match", "ERR *not*float*", smallerr))
     # TODO: lappend rv string match "ERR *not*float*" $bigerr
     assert False
 
@@ -1461,8 +1463,8 @@ def test_hincrbyfloat_fails_against_hash_value_with_spaces_right(r: ValkeyTestCl
         bigerr = r.run("hincrbyfloat", "bighash", "str", 1)
     except Exception as _catch_err:
         bigerr = str(_catch_err)
-    rv = ""
-    lappend("rv", string("match", "ERR *not*float*", smallerr))
+    rv = []
+    rv.append(string("match", "ERR *not*float*", smallerr))
     # TODO: lappend rv string match "ERR *not*float*" $bigerr
     assert False
 
@@ -1479,12 +1481,12 @@ def test_hincrbyfloat_fails_against_hash_value_that_contains_a_null_terminator_i
         lappend rv [string match "ERR *not*float*" $err]
     } {1}
     """
-    # TODO: r hset h f "1\x002"
+    r.run("hset", "h", "f", "1\x002")
     try:
         err = r.run("hincrbyfloat", "h", "f", 1)
     except Exception as _catch_err:
         err = str(_catch_err)
-    rv = ""
+    rv = []
     # TODO: lappend rv string match "ERR *not*float*" $err
     assert False
 
@@ -1545,9 +1547,9 @@ def test_hstrlen_against_non_existing_field(r: ValkeyTestClient) -> None:
         set _ $rv
     } {0 0}
     """
-    rv = ""
-    lappend("rv", r.run("hstrlen", "smallhash", "__123123123__"))
-    lappend("rv", r.run("hstrlen", "bighash", "__123123123__"))
+    rv = []
+    rv.append(r.run("hstrlen", "smallhash", "__123123123__"))
+    rv.append(r.run("hstrlen", "bighash", "__123123123__"))
     assert rv == "0 0"
 
 
@@ -1847,7 +1849,7 @@ def test_hash_ziplist_of_various_encodings(r: ValkeyTestClient) -> None:
     config_set("sanitize-dump-payload", "no", "mayfail")
     r.run("restore", "kk", 0, dump)
     kk = r.run("hgetall", "kk")
-    assert lsort(k) == lsort(kk)
+    assert sorted(k) == sorted(kk)
     assert k["ZIP_STR_06B"] == string("repeat", "x", 31)
     k = dict_("remove", k, "ZIP_STR_06B")
     assert k["ZIP_STR_14B"] == string("repeat", "x", 8191)
@@ -1884,7 +1886,7 @@ def test_hash_ziplist_of_various_encodings_sanitize_dump(r: ValkeyTestClient) ->
     # TODO: r restore kk 0 dump replace
     k = r.run("hgetall", "k")
     kk = r.run("hgetall", "kk")
-    assert lsort(k) == lsort(kk)
+    assert sorted(k) == sorted(kk)
     assert k["ZIP_STR_06B"] == string("repeat", "x", 31)
     k = dict_("remove", k, "ZIP_STR_06B")
     assert k["ZIP_STR_14B"] == string("repeat", "x", 8191)
@@ -1954,10 +1956,6 @@ def get_keys(*args):
 
 def if_(*args):
     raise NotImplementedError("if_")
-
-
-def lappend(*args):
-    raise NotImplementedError("lappend")
 
 
 def lsort(*args):

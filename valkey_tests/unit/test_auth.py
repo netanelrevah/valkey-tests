@@ -19,7 +19,7 @@ def test_auth_fails_if_there_is_no_password_configured_server_side(r: ValkeyTest
         err = r.run("auth", "foo")
     except Exception as _catch_err:
         err = str(_catch_err)
-    assert err == "ERR *any password*"
+    assert fnmatch(str(err), "ERR *any password*")
 
 
 def test_arity_check_for_auth_command(r: ValkeyTestClient) -> None:
@@ -33,7 +33,7 @@ def test_arity_check_for_auth_command(r: ValkeyTestClient) -> None:
         err = r.run("auth", "a", "b", "c")
     except Exception as _catch_err:
         err = str(_catch_err)
-    assert err == "*syntax error*"
+    assert fnmatch(str(err), "*syntax error*")
 
 
 pytestmark = [pytest.mark.auth_external_skip]
@@ -50,7 +50,7 @@ def test_auth_fails_when_a_wrong_password_is_given(r: ValkeyTestClient) -> None:
         err = r.run("auth", "wrong!")
     except Exception as _catch_err:
         err = str(_catch_err)
-    assert err == "WRONGPASS*"
+    assert fnmatch(str(err), "WRONGPASS*")
 
 
 def test_arbitrary_command_gives_an_error_when_auth_is_required(r: ValkeyTestClient) -> None:
@@ -64,7 +64,7 @@ def test_arbitrary_command_gives_an_error_when_auth_is_required(r: ValkeyTestCli
         err = r.run("set", "foo", "bar")
     except Exception as _catch_err:
         err = str(_catch_err)
-    assert err == "NOAUTH*"
+    assert fnmatch(str(err), "NOAUTH*")
 
 
 def test_auth_succeeds_when_the_right_password_is_given(r: ValkeyTestClient) -> None:
@@ -237,9 +237,9 @@ def test_unauthenticated_multibulk_limit_works_in_pipeline_after_auth(r: ValkeyT
         $rd close
     }
     """
-    auth_proto = "*2\\r\\n\\$4\\r\\nAUTH\\r\\n\\$6\\r\\nfoobar\\r\\n"
-    set_proto = "*3\\r\\n\\$3\\r\\nSET\\r\\n\\$1\\r\\nA\\r\\n\\$1\\r\\nX\\r\\n"
-    A = "\\$1\\r\\nA\\r\\n"
+    auth_proto = "*2\r\n$4\r\nAUTH\r\n$6\r\nfoobar\r\n"
+    set_proto = "*3\r\n$3\r\nSET\r\n$1\r\nA\r\n$1\r\nX\r\n"
+    A = "$1\r\nA\r\n"
     mget_proto = f"*11\r\n$4\r\nMGET\r\n{A}{A}{A}{A}{A}{A}{A}{A}{A}{A}"
     proto = f"{auth_proto}{set_proto}{mget_proto}"
     # TODO: set rd valkey [srv "host"] [srv "port"] 1 $::tls

@@ -33,10 +33,10 @@ def test_unlink_can_reclaim_memory_in_background(r: ValkeyTestClient) -> None:
     """
     wait_lazyfree_done("r")
     orig_mem = s("used_memory")
-    args = ""
+    args = []
     i = 0
     while i < 100000:
-        lappend("args", i)
+        args.append(i)
         i += 1
     r.run("sadd", "myset", "*", args)
     assert r.run("scard", "myset") == 100000
@@ -77,10 +77,10 @@ def test_flushdb_async_can_reclaim_memory_in_background(r: ValkeyTestClient) -> 
     """
     wait_lazyfree_done("r")
     orig_mem = s("used_memory")
-    args = ""
+    args = []
     i = 0
     while i < 100000:
-        lappend("args", i)
+        args.append(i)
         i += 1
     r.run("sadd", "myset", "*", args)
     assert r.run("scard", "myset") == 100000
@@ -191,10 +191,6 @@ def fail(*args):
 
 def if_(*args):
     raise NotImplementedError("if_")
-
-
-def lappend(*args):
-    raise NotImplementedError("lappend")
 
 
 def s(*args):

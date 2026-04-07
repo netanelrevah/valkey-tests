@@ -127,11 +127,11 @@ def test_pfcount_returns_approximated_cardinality_of_set(r: ValkeyTestClient) ->
     } {5 10}
     """
     r.run("del", "hll")
-    res = ""
+    res = []
     r.run("pfadd", "hll", 1, 2, 3, 4, 5)
-    lappend("res", r.run("pfcount", "hll"))
+    res.append(r.run("pfcount", "hll"))
     r.run("pfadd", "hll", 6, 7, 8, 8, 9, 10)
-    lappend("res", r.run("pfcount", "hll"))
+    res.append(r.run("pfcount", "hll"))
     assert res == "5 10"
 
 
@@ -248,10 +248,10 @@ def test_hyperloglog_sparse_encoding_stress_test(r: ValkeyTestClient) -> None:
         r.run("del", "hll1")
         r.run("del", "hll2")
         numele = random_int(100)
-        elements = ""
+        elements = []
         j = 0
         while j < numele:
-            lappend("elements", expr("rand()"))
+            elements.append(expr("rand()"))
             j += 1
         r.run("pfadd", "hll2")
         r.run("pfdebug", "todense", "hll2")
@@ -282,7 +282,7 @@ def test_corrupted_sparse_hyperloglogs_are_detected_additional_at_tail(r: Valkey
         e = r.run("pfcount", "hll")
     except Exception as _catch_err:
         e = str(_catch_err)
-    assert e == "*INVALIDOBJ*"
+    assert fnmatch(str(e), "*INVALIDOBJ*")
 
 
 def test_corrupted_sparse_hyperloglogs_are_detected_broken_magic(r: ValkeyTestClient) -> None:
@@ -304,7 +304,7 @@ def test_corrupted_sparse_hyperloglogs_are_detected_broken_magic(r: ValkeyTestCl
         e = r.run("pfcount", "hll")
     except Exception as _catch_err:
         e = str(_catch_err)
-    assert e == "*WRONGTYPE*"
+    assert fnmatch(str(e), "*WRONGTYPE*")
 
 
 def test_corrupted_sparse_hyperloglogs_are_detected_invalid_encoding(r: ValkeyTestClient) -> None:
@@ -326,10 +326,9 @@ def test_corrupted_sparse_hyperloglogs_are_detected_invalid_encoding(r: ValkeyTe
         e = r.run("pfcount", "hll")
     except Exception as _catch_err:
         e = str(_catch_err)
-    assert e == "*WRONGTYPE*"
+    assert fnmatch(str(e), "*WRONGTYPE*")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_corrupted_dense_hyperloglogs_are_detected_wrong_length(r: ValkeyTestClient) -> None:
     """
     test {Corrupted dense HyperLogLogs are detected: Wrong length} {
@@ -343,13 +342,13 @@ def test_corrupted_dense_hyperloglogs_are_detected_wrong_length(r: ValkeyTestCli
     """
     r.run("del", "hll")
     r.run("pfadd", "hll", "a", "b", "c")
-    # TODO: r setrange hll 4 "\x00"
+    r.run("setrange", "hll", 4, "\x00")
     e = ""
     try:
         e = r.run("pfcount", "hll")
     except Exception as _catch_err:
         e = str(_catch_err)
-    assert e == "*WRONGTYPE*"
+    assert fnmatch(str(e), "*WRONGTYPE*")
 
 
 def test_fuzzing_dense_or_sparse_encoding_server_should_always_detect_errors(r: ValkeyTestClient) -> None:
@@ -385,11 +384,11 @@ def test_fuzzing_dense_or_sparse_encoding_server_should_always_detect_errors(r: 
     j = 0
     while j < 1000:
         r.run("del", "hll")
-        items = ""
+        items = []
         numitems = random_int(3000)
         i = 0
         while i < numitems:
-            lappend("items", expr("rand()"))
+            items.append(expr("rand()"))
             i += 1
         r.run("pfadd", "hll", "*", items)
         i = 0
@@ -644,17 +643,17 @@ def test_pfcount_multiple_keys_merge_returns_cardinality_of_union_2(r: ValkeyTes
     }
     """
     r.run("del", "hll1{t}", "hll2{t}", "hll3{t}")
-    elements = ""
+    elements = []
     x = 1
     while x < 10000:
         j = 1
         while j <= 3:
             rint = random_int(20000)
             r.run("pfadd", "hll$j{t}", rint)
-            lappend("elements", rint)
+            elements.append(rint)
             j += 1
         x += 1
-    realcard = len(lsort("-unique", elements))
+    realcard = len(sorted(elements))
     card = r.run("pfcount", "hll1{t}", "hll2{t}", "hll3{t}")
     err = expr("abs($card-$realcard)")
     assert_("$err < (double($card)/100)*5")
@@ -689,11 +688,11 @@ def test_pfadd_or_pfcount_cache_invalidation_works(r: ValkeyTestClient) -> None:
     r.run("del", "hll")
     r.run("pfadd", "hll", "a", "b", "c")
     r.run("pfcount", "hll")
-    assert_('[r getrange hll 15 15] eq "\\x00"')
+    assert r.run("getrange", "hll", 15, 15) == "\x00"
     r.run("pfadd", "hll", "a", "b", "c")
-    assert_('[r getrange hll 15 15] eq "\\x00"')
+    assert r.run("getrange", "hll", 15, 15) == "\x00"
     r.run("pfadd", "hll", 1, 2, 3)
-    assert_('[r getrange hll 15 15] eq "\\x80"')
+    assert r.run("getrange", "hll", 15, 15) == "\x80"
 
 
 # --- stubs for unimplemented TCL helpers ---
@@ -725,14 +724,6 @@ def for_(*args):
 
 def if_(*args):
     raise NotImplementedError("if_")
-
-
-def lappend(*args):
-    raise NotImplementedError("lappend")
-
-
-def lsort(*args):
-    raise NotImplementedError("lsort")
 
 
 def random_int(*args):

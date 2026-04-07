@@ -88,7 +88,7 @@ def test_query_buffer_resized_correctly(r: ValkeyTestClient) -> None:
     rd.run("read")
     assert client_query_buffer("test_client") == 0
     r.run("debug", "pause-cron", 1)
-    rd.run("write", "*3\\r\\n\\$3\\r\\nset\\r\\n\\$2\\r\\na")
+    rd.run("write", "*3\r\n$3\r\nset\r\n$2\r\na")
     rd.run("flush")
     wait_for_condition(
         1000,
@@ -96,7 +96,7 @@ def test_query_buffer_resized_correctly(r: ValkeyTestClient) -> None:
         lambda: client_query_buffer("test_client") > 0,
         lambda: fail("client should start using a private query buffer"),
     )
-    rd.run("write", "a\\r\\n\\$1\\r\\nb\\r\\n")
+    rd.run("write", "a\r\n$1\r\nb\r\n")
     rd.run("flush")
     assert "OK" == rd.run("read")
     orig_test_client_qbuf = client_query_buffer("test_client")
@@ -194,7 +194,7 @@ def test_query_buffer_resized_correctly_with_fat_argv(r: ValkeyTestClient) -> No
     """
     rd = ValkeyTestClient.create_from(r)
     rd.run("client", "setname", "test_client")
-    rd.run("write", "*3\\r\\n\\$3\\r\\nset\\r\\n\\$1\\r\\na\\r\\n\\$1000000\\r\\n")
+    rd.run("write", "*3\r\n$3\r\nset\r\n$1\r\na\r\n$1000000\r\n")
     rd.run("flush")
     time.sleep(200 / 1000)
     rd.run("write", "a")

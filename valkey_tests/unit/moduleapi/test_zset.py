@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, RUF043, ANN002, ANN201
+# ruff: noqa: PLR2004, RUF043
 
 import pytest
 
@@ -202,7 +202,7 @@ def test_module_zset_members(r: ValkeyTestClient) -> None:
     while i < 4:
         r.run("zadd", "k", 0, f"ele{i}")
         i += 1
-    assert "ele0 ele1 ele2 ele3" == lsort(r.run("zset.members", "k"))
+    assert "ele0 ele1 ele2 ele3" == sorted(r.run("zset.members", "k"))
     r.run("del", "k")
     r.run("config", "set", "zset-max-listpack-entries", 128)
     r.run("config", "set", "zset-max-listpack-value", 64)
@@ -210,7 +210,7 @@ def test_module_zset_members(r: ValkeyTestClient) -> None:
     while i < 4:
         r.run("zadd", "k", 0, f"ele{i}")
         i += 1
-    assert "ele0 ele1 ele2 ele3" == lsort(r.run("zset.members", "k"))
+    assert "ele0 ele1 ele2 ele3" == sorted(r.run("zset.members", "k"))
 
 
 def test_unload_the_module_zset(r: ValkeyTestClient) -> None:
@@ -220,10 +220,3 @@ def test_unload_the_module_zset(r: ValkeyTestClient) -> None:
     }
     """
     assert "OK" == r.run("module", "unload", "zset")
-
-
-# --- stubs for unimplemented TCL helpers ---
-
-
-def lsort(*args):
-    raise NotImplementedError("lsort")

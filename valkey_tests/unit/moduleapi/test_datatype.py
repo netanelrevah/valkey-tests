@@ -71,7 +71,7 @@ def test_datatype_handle_truncated_rm_loaddatatypefromstringencver(r: ValkeyTest
         e = r.run("datatype.restore", "dtkeycopy", truncated, 4)
     except Exception as _catch_err:
         e = str(_catch_err)
-    assert e == "*Invalid*"
+    assert fnmatch(str(e), "*Invalid*")
 
 
 def test_datatype_moduletypereplacevalue_happy_path_works(r: ValkeyTestClient) -> None:
@@ -108,7 +108,7 @@ def test_datatype_moduletypereplacevalue_fails_on_non_module_keys(r: ValkeyTestC
         e = r.run("datatype.swap", "key-a", "key-b")
     except Exception as _catch_err:
         e = str(_catch_err)
-    assert e == "*ERR*"
+    assert fnmatch(str(e), "*ERR*")
 
 
 def test_datatype_copy_command_works_for_modules(r: ValkeyTestClient) -> None:
@@ -228,7 +228,7 @@ def test_scan_module_datatype(r: ValkeyTestClient) -> None:
     r.run("datatype.set", "foo", 111, "bar")
     type = r.run("type", "foo")
     cur = 0
-    keys = ""
+    keys = []
     while_(
         1,
         "            set res [r scan $cur type $type]\n            set cur [lindex $res 0]\n            set k [lindex $res 1]\n            lappend keys {*}$k\n            if {$cur == 0} break\n        ",
@@ -261,7 +261,7 @@ def test_scan_module_datatype_with_case_sensitive(r: ValkeyTestClient) -> None:
     r.run("datatype.set", "foo", 111, "bar")
     type = "tEsT___dT"
     cur = 0
-    keys = ""
+    keys = []
     while_(
         1,
         "            set res [r scan $cur type $type]\n            set cur [lindex $res 0]\n            set k [lindex $res 1]\n            lappend keys {*}$k\n            if {$cur == 0} break\n        ",

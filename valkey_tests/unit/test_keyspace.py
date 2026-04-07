@@ -55,7 +55,6 @@ def test_untagged_multi_key_commands(r: ValkeyTestClient) -> None:
     assert r.run("del", "foo1", "foo2", "foo3", "foo4") == "3"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_keys_with_pattern(r: ValkeyTestClient) -> None:
     """
     test {KEYS with pattern} {
@@ -66,19 +65,16 @@ def test_keys_with_pattern(r: ValkeyTestClient) -> None:
     } {foo_a foo_b foo_c}
     """
     foreach("key", "key_x key_y key_z foo_a foo_b foo_c", "            r set $key hello\n        ")
-    # TODO: lsort r keys foo*
-    assert False
+    assert sorted(r.run("keys", "foo*")) == "foo_a foo_b foo_c"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_keys_to_get_all_keys(r: ValkeyTestClient) -> None:
     """
     test {KEYS to get all keys} {
         lsort [r keys *]
     } {foo_a foo_b foo_c key_x key_y key_z}
     """
-    # TODO: lsort r keys *
-    assert False
+    assert sorted(r.run("keys", "*")) == "foo_a foo_b foo_c key_x key_y key_z"
 
 
 def test_dbsize(r: ValkeyTestClient) -> None:
@@ -101,8 +97,8 @@ def test_keys_with_hashtag(r: ValkeyTestClient) -> None:
     }
     """
     foreach("key", '"{a}x" "{a}y" "{a}z" "{b}a" "{b}b" "{b}c"', "            r set $key hello\n        ")
-    assert lsort(r.run("keys", "{a}*")) == ["{a}x", "{a}y", "{a}z"]
-    assert lsort(r.run("keys", "*{b}*")) == ["{b}a", "{b}b", "{b}c"]
+    assert sorted(r.run("keys", "{a}*")) == ["{a}x", "{a}y", "{a}z"]
+    assert sorted(r.run("keys", "*{b}*")) == ["{b}a", "{b}b", "{b}c"]
 
 
 def test_del_all_keys(r: ValkeyTestClient) -> None:
@@ -461,10 +457,10 @@ def test_copy_basic_usage_for_string(r: ValkeyTestClient) -> None:
     }
     """
     r.run("set", "mykey{t}", "foobar")
-    res = ""
+    res = []
     r.run("copy", "mykey{t}", "mynewkey{t}")
-    lappend("res", r.run("get", "mynewkey{t}"))
-    lappend("res", r.run("dbsize"))
+    res.append(r.run("get", "mynewkey{t}"))
+    res.append(r.run("dbsize"))
     if_(
         "$::singledb",
         "            assert_equal [list foobar 2] [format $res]\n        ",
@@ -525,14 +521,14 @@ def test_copy_for_string_ensures_that_copied_data_is_independent_of_copying_data
     r.run("flushdb")
     r.run("select", 9)
     r.run("set", "mykey{t}", "foobar")
-    res = ""
+    res = []
     r.run("copy", "mykey{t}", "mynewkey{t}", "DB", 10)
     r.run("select", 10)
-    lappend("res", r.run("get", "mynewkey{t}"))
+    res.append(r.run("get", "mynewkey{t}"))
     r.run("set", "mynewkey{t}", "hoge")
-    lappend("res", r.run("get", "mynewkey{t}"))
+    res.append(r.run("get", "mynewkey{t}"))
     r.run("select", 9)
-    lappend("res", r.run("get", "mykey{t}"))
+    res.append(r.run("get", "mykey{t}"))
     r.run("select", 10)
     r.run("flushdb")
     r.run("select", 9)
@@ -889,12 +885,12 @@ def test_move_basic_usage(r: ValkeyTestClient) -> None:
     """
     r.run("set", "mykey", "foobar")
     r.run("move", "mykey", 10)
-    res = ""
-    lappend("res", r.run("exists", "mykey"))
-    lappend("res", r.run("dbsize"))
+    res = []
+    res.append(r.run("exists", "mykey"))
+    res.append(r.run("dbsize"))
     r.run("select", 10)
-    lappend("res", r.run("get", "mykey"))
-    lappend("res", r.run("dbsize"))
+    res.append(r.run("get", "mykey"))
+    res.append(r.run("dbsize"))
     r.run("select", 9)
     format_(res)
 
@@ -1006,12 +1002,12 @@ def test_set_or_get_keys_in_different_dbs(r: ValkeyTestClient) -> None:
     r.run("set", "a", "foo")
     r.run("set", "b", "bared")
     r.run("select", 9)
-    res = ""
-    lappend("res", r.run("get", "a"))
-    lappend("res", r.run("get", "b"))
+    res = []
+    res.append(r.run("get", "a"))
+    res.append(r.run("get", "b"))
     r.run("select", 10)
-    lappend("res", r.run("get", "a"))
-    lappend("res", r.run("get", "b"))
+    res.append(r.run("get", "a"))
+    res.append(r.run("get", "b"))
     r.run("select", 9)
     # TODO: format res
     assert False
@@ -1255,14 +1251,6 @@ def format_(*args):
 
 def if_(*args):
     raise NotImplementedError("if_")
-
-
-def lappend(*args):
-    raise NotImplementedError("lappend")
-
-
-def lsort(*args):
-    raise NotImplementedError("lsort")
 
 
 def random_int(*args):

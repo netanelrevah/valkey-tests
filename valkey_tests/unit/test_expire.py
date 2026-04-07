@@ -27,7 +27,7 @@ def test_expire_set_timeouts_multiple_times(r: ValkeyTestClient) -> None:
     v3 = r.run("expire", "x", 10)
     v4 = r.run("ttl", "x")
     r.run("expire", "x", 2)
-    assert [v1, v2, v3, v4] == "1 [45] 1 10"
+    assert fnmatch(str([v1, v2, v3, v4]), "1 [45] 1 10")
 
 
 def test_expire_it_should_be_still_possible_to_read_x(r: ValkeyTestClient) -> None:
@@ -68,7 +68,7 @@ def test_expireat_check_for_expire_alike_behavior(r: ValkeyTestClient) -> None:
     r.run("del", "x")
     r.run("set", "x", "foo")
     r.run("expireat", "x", expr(clock("seconds"), 15))
-    assert r.run("ttl", "x") == "1[345]"
+    assert fnmatch(str(r.run("ttl", "x")), "1[345]")
 
 
 def test_setex_set_expire_combo_operation_check_for_ttl(r: ValkeyTestClient) -> None:
@@ -79,7 +79,7 @@ def test_setex_set_expire_combo_operation_check_for_ttl(r: ValkeyTestClient) -> 
     } {1[012]}
     """
     r.run("setex", "x", 12, "test")
-    assert r.run("ttl", "x") == "1[012]"
+    assert fnmatch(str(r.run("ttl", "x")), "1[012]")
 
 
 def test_setex_check_value(r: ValkeyTestClient) -> None:
@@ -113,7 +113,7 @@ def test_setex_wrong_time_parameter(r: ValkeyTestClient) -> None:
         e = r.run("setex", "z", -10, "foo")
     except Exception as _catch_err:
         e = str(_catch_err)
-    assert e == "*invalid expire*"
+    assert fnmatch(str(e), "*invalid expire*")
 
 
 def test_persist_can_undo_an_expire(r: ValkeyTestClient) -> None:
@@ -519,7 +519,7 @@ def test_5_keys_in_5_keys_out(r: ValkeyTestClient) -> None:
     r.run("set", "e", "c")
     r.run("set", "s", "c")
     r.run("set", "foo", "b")
-    assert lsort(r.run("keys", "*")) == "a e foo s t"
+    assert sorted(r.run("keys", "*")) == "a e foo s t"
     r.run("del", "a")
 
 
@@ -536,7 +536,7 @@ def test_expire_with_empty_string_as_ttl_should_report_an_error(r: ValkeyTestCli
         e = r.run("expire", "foo", "")
     except Exception as _catch_err:
         e = str(_catch_err)
-    assert e == "*not an integer*"
+    assert fnmatch(str(e), "*not an integer*")
 
 
 def test_set_with_ex_with_big_integer_should_report_an_error(r: ValkeyTestClient) -> None:
@@ -1983,10 +1983,6 @@ def fail(*args):
 
 def if_(*args):
     raise NotImplementedError("if_")
-
-
-def lsort(*args):
-    raise NotImplementedError("lsort")
 
 
 def main_hash_table_size(*args):

@@ -291,7 +291,7 @@ def test_module_command_list_filtering(r: ValkeyTestClient) -> None:
     """
     reply = r.run("command", "list", "filterby", "module", "keyspecs")
     assert (
-        lsort(reply)
+        sorted(reply)
         == "kspec.complex1 kspec.complex2 kspec.keyword kspec.none kspec.nonewithgetkeys kspec.tworanges kspec.tworangeswithgap"
     )
     assert (
@@ -438,7 +438,3 @@ def test_unload_the_module_keyspecs(r: ValkeyTestClient) -> None:
 
 def assert_no_match(*args):
     raise NotImplementedError("assert_no_match")
-
-
-def lsort(*args):
-    raise NotImplementedError("lsort")

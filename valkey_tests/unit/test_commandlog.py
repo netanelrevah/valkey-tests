@@ -743,7 +743,7 @@ def test_commandlog_slow_the_commands_in_script_are_recorded_normally_is_eval_is
             "function",
             "load",
             "replace",
-            "#!lua name=mylib \\n redis.register_function('myfunc', function(KEYS, ARGS) server.call('ping') end)",
+            "#!lua name=mylib \n redis.register_function('myfunc', function(KEYS, ARGS) server.call('ping') end)",
         )
     r.run("client", "setname", "test-client")
     r.run("config", "set", "commandlog-execution-slower-than", 0)

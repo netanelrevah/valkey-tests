@@ -734,10 +734,10 @@ def test_client_tracking_don_t_cause_eviction_feedback_loop(r: ValkeyTestClient)
     r.run("config", "set", "maxmemory", 0)
     r.run("config", "set", "maxmemory-policy", "allkeys-lru")
     r.run("config", "set", "maxmemory-eviction-tenacity", 100)
-    clients = ""
+    clients = []
     j = 0
     while j < 10:
-        lappend("clients", ValkeyTestClient.create_from(r))
+        clients.append(ValkeyTestClient.create_from(r))
         j += 1
     foreach(
         "rd",

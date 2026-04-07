@@ -109,6 +109,23 @@ class AssertStatementTranslator(StatementTranslator):
         return None
 
 
+@StatementTranslator.register("lappend")
+class LAppendStatementTranslator(StatementTranslator):
+    def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
+        if len(arguments) < 2:
+            return None
+        if not isinstance(arguments[0], TCLWord) or arguments[0].value not in defined_vars:
+            return None
+        var = _safe_var_name(arguments[0].value)
+        lines = []
+        for val_arg in arguments[1:]:
+            val = ArgumentTranslator.translate(val_arg, defined_vars)
+            if val is None:
+                return None
+            lines.append(f"{var}.append({val})")
+        return lines
+
+
 @StatementTranslator.register("incr")
 class IncrStatementTranslator(StatementTranslator):
     def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
@@ -213,6 +230,34 @@ def _collect_set_vars(script: TCLScript) -> set[str]:
     return result
 
 
+def _collect_lappend_vars_deep(script: TCLScript) -> set[str]:
+    """Return all variable names used with lappend anywhere in the script (recursively)."""
+    result: set[str] = set()
+    for cmd in script.commands:
+        if cmd.name == "lappend" and cmd.args and isinstance(cmd.args[0], TCLWord):
+            result.add(cmd.args[0].value)
+        # Recurse into braces body arguments (while/for/if bodies etc.)
+        for arg in cmd.args:
+            if isinstance(arg, TCLBracesWord) and arg.value.strip():
+                try:
+                    sub = TCLScript.read(iter(arg.value))
+                    result.update(_collect_lappend_vars_deep(sub))
+                except Exception:
+                    pass
+    return result
+
+
+def _collect_list_vars(script: TCLScript) -> set[str]:
+    """Return names of vars initialized with `set var {}` and later used with lappend (deep)."""
+    empty_set: set[str] = set()
+    for cmd in script.commands:
+        if cmd.name == "set" and len(cmd.args) == 2 and isinstance(cmd.args[0], TCLWord):
+            if isinstance(cmd.args[1], TCLBracesWord) and cmd.args[1].value == "":
+                empty_set.add(cmd.args[0].value)
+    lappend_vars = _collect_lappend_vars_deep(script)
+    return empty_set & lappend_vars
+
+
 class TCLBodyTranslator:
     def translate(self, body: TCLScript, expected: str | None, initial_vars: set[str] | None = None) -> list[str]:
         commands = [c for c in body.commands if c.name]
@@ -223,6 +268,7 @@ class TCLBodyTranslator:
 
         lines: list[str] = []
         defined_vars: set[str] = set(initial_vars) if initial_vars else set()
+        list_vars: set[str] = _collect_list_vars(body)
 
         for i, command in enumerate(commands):
             is_last = i == len(commands) - 1
@@ -230,9 +276,25 @@ class TCLBodyTranslator:
             if is_last and expected:
                 expr = ExpressionTranslator.translate(command, defined_vars)
                 if expr is not None:
-                    lines.append(f"assert {expr} == {expected!r}")
+                    if any(c in expected for c in "*?["):
+                        lines.append(f"assert fnmatch(str({expr}), {expected!r})")
+                    else:
+                        lines.append(f"assert {expr} == {expected!r}")
                     continue
             else:
+                # Intercept `set var {}` for vars used with lappend → emit `var = []`
+                if (
+                    command.name == "set"
+                    and len(command.args) == 2
+                    and isinstance(command.args[0], TCLWord)
+                    and command.args[0].value in list_vars
+                    and isinstance(command.args[1], TCLBracesWord)
+                    and command.args[1].value == ""
+                ):
+                    var = _safe_var_name(command.args[0].value)
+                    lines.append(f"{var} = []")
+                    defined_vars.add(command.args[0].value)
+                    continue
                 statement = StatementTranslator.translate(command, defined_vars)
                 if statement is not None:
                     lines.extend(statement)

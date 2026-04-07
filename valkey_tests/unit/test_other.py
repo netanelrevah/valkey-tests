@@ -159,7 +159,7 @@ def test_select_an_out_of_range_db(r: ValkeyTestClient) -> None:
         err = r.run("select", 1000000)
     except Exception as _catch_err:
         err = str(_catch_err)
-    assert err == "*index is out of range*"
+    assert fnmatch(str(err), "*index is out of range*")
 
 
 def test_expires_after_a_reload_snapshot_append_only_file_rewrite(r: ValkeyTestClient) -> None:
@@ -299,11 +299,11 @@ def test_append_basics_integer_encoded_values(r: ValkeyTestClient) -> None:
         lappend res [r get foo]
     } {12 12}
     """
-    res = ""
+    res = []
     r.run("del", "foo")
     r.run("append", "foo", 1)
     r.run("append", "foo", 2)
-    lappend("res", r.run("get", "foo"))
+    res.append(r.run("get", "foo"))
     r.run("set", "foo", 1)
     r.run("append", "foo", 2)
     # TODO: lappend res r get foo
@@ -357,7 +357,7 @@ def test_flushdb(r: ValkeyTestClient) -> None:
         }
     } {0 0}
     """
-    aux = ""
+    aux = []
     # TODO: if {$::singledb} {
     #       r flushdb
     #       lappend aux 0 [r dbsize]
@@ -914,10 +914,6 @@ def get_child_pid(*args):
 
 def if_(*args):
     raise NotImplementedError("if_")
-
-
-def lappend(*args):
-    raise NotImplementedError("lappend")
 
 
 def main_hash_table_keys_before_rehashing_starts(*args):

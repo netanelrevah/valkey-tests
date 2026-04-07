@@ -129,7 +129,7 @@ def test_test_module_check_acl_for_channel_perm(r: ValkeyTestClient) -> None:
         e = r.run("aclcheck.publish.check.channel", "ch2", "msg")
     except Exception as _catch_err:
         e = str(_catch_err)
-    assert e == "*DENIED CHANNEL*"
+    assert fnmatch(str(e), "*DENIED CHANNEL*")
 
 
 def test_test_module_check_acl_in_rm_call(r: ValkeyTestClient) -> None:

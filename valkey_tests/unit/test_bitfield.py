@@ -20,10 +20,10 @@ def test_bitfield_signed_set_and_get_basics(r: ValkeyTestClient) -> None:
     } {0 -100 101}
     """
     r.run("del", "bits")
-    results = ""
-    lappend("results", r.run("bitfield", "bits", "set", "i8", 0, -100))
-    lappend("results", r.run("bitfield", "bits", "set", "i8", 0, 101))
-    lappend("results", r.run("bitfield", "bits", "get", "i8", 0))
+    results = []
+    results.append(r.run("bitfield", "bits", "set", "i8", 0, -100))
+    results.append(r.run("bitfield", "bits", "set", "i8", 0, 101))
+    results.append(r.run("bitfield", "bits", "get", "i8", 0))
     assert results == "0 -100 101"
 
 
@@ -39,10 +39,10 @@ def test_bitfield_unsigned_set_and_get_basics(r: ValkeyTestClient) -> None:
     } {0 255 100}
     """
     r.run("del", "bits")
-    results = ""
-    lappend("results", r.run("bitfield", "bits", "set", "u8", 0, 255))
-    lappend("results", r.run("bitfield", "bits", "set", "u8", 0, 100))
-    lappend("results", r.run("bitfield", "bits", "get", "u8", 0))
+    results = []
+    results.append(r.run("bitfield", "bits", "set", "u8", 0, 255))
+    results.append(r.run("bitfield", "bits", "set", "u8", 0, 100))
+    results.append(r.run("bitfield", "bits", "get", "u8", 0))
     assert results == "0 255 100"
 
 
@@ -112,10 +112,10 @@ def test_bitfield_basic_incrby_form(r: ValkeyTestClient) -> None:
     } {110 210}
     """
     r.run("del", "bits")
-    results = ""
+    results = []
     r.run("bitfield", "bits", "set", "u8", "#0", 10)
-    lappend("results", r.run("bitfield", "bits", "incrby", "u8", "#0", 100))
-    lappend("results", r.run("bitfield", "bits", "incrby", "u8", "#0", 100))
+    results.append(r.run("bitfield", "bits", "incrby", "u8", "#0", 100))
+    results.append(r.run("bitfield", "bits", "incrby", "u8", "#0", 100))
     assert results == "110 210"
 
 
@@ -130,9 +130,9 @@ def test_bitfield_chaining_of_multiple_commands(r: ValkeyTestClient) -> None:
     } {{110 210}}
     """
     r.run("del", "bits")
-    results = ""
+    results = []
     r.run("bitfield", "bits", "set", "u8", "#0", 10)
-    lappend("results", r.run("bitfield", "bits", "incrby", "u8", "#0", 100, "incrby", "u8", "#0", 100))
+    results.append(r.run("bitfield", "bits", "incrby", "u8", "#0", 100, "incrby", "u8", "#0", 100))
     assert results == "{110 210}"
 
 
@@ -150,11 +150,11 @@ def test_bitfield_unsigned_overflow_wrap(r: ValkeyTestClient) -> None:
     } {101 101 100 100}
     """
     r.run("del", "bits")
-    results = ""
+    results = []
     r.run("bitfield", "bits", "set", "u8", "#0", 100)
-    lappend("results", r.run("bitfield", "bits", "overflow", "wrap", "incrby", "u8", "#0", 257))
-    lappend("results", r.run("bitfield", "bits", "get", "u8", "#0"))
-    lappend("results", r.run("bitfield", "bits", "overflow", "wrap", "incrby", "u8", "#0", 255))
+    results.append(r.run("bitfield", "bits", "overflow", "wrap", "incrby", "u8", "#0", 257))
+    results.append(r.run("bitfield", "bits", "get", "u8", "#0"))
+    results.append(r.run("bitfield", "bits", "overflow", "wrap", "incrby", "u8", "#0", 255))
     # TODO: lappend results r bitfield bits get u8 #0
     assert False
 
@@ -173,11 +173,11 @@ def test_bitfield_unsigned_overflow_sat(r: ValkeyTestClient) -> None:
     } {255 255 0 0}
     """
     r.run("del", "bits")
-    results = ""
+    results = []
     r.run("bitfield", "bits", "set", "u8", "#0", 100)
-    lappend("results", r.run("bitfield", "bits", "overflow", "sat", "incrby", "u8", "#0", 257))
-    lappend("results", r.run("bitfield", "bits", "get", "u8", "#0"))
-    lappend("results", r.run("bitfield", "bits", "overflow", "sat", "incrby", "u8", "#0", -255))
+    results.append(r.run("bitfield", "bits", "overflow", "sat", "incrby", "u8", "#0", 257))
+    results.append(r.run("bitfield", "bits", "get", "u8", "#0"))
+    results.append(r.run("bitfield", "bits", "overflow", "sat", "incrby", "u8", "#0", -255))
     # TODO: lappend results r bitfield bits get u8 #0
     assert False
 
@@ -196,11 +196,11 @@ def test_bitfield_signed_overflow_wrap(r: ValkeyTestClient) -> None:
     } {101 101 100 100}
     """
     r.run("del", "bits")
-    results = ""
+    results = []
     r.run("bitfield", "bits", "set", "i8", "#0", 100)
-    lappend("results", r.run("bitfield", "bits", "overflow", "wrap", "incrby", "i8", "#0", 257))
-    lappend("results", r.run("bitfield", "bits", "get", "i8", "#0"))
-    lappend("results", r.run("bitfield", "bits", "overflow", "wrap", "incrby", "i8", "#0", 255))
+    results.append(r.run("bitfield", "bits", "overflow", "wrap", "incrby", "i8", "#0", 257))
+    results.append(r.run("bitfield", "bits", "get", "i8", "#0"))
+    results.append(r.run("bitfield", "bits", "overflow", "wrap", "incrby", "i8", "#0", 255))
     # TODO: lappend results r bitfield bits get i8 #0
     assert False
 
@@ -219,11 +219,11 @@ def test_bitfield_signed_overflow_sat(r: ValkeyTestClient) -> None:
     } {127 127 -128 -128}
     """
     r.run("del", "bits")
-    results = ""
+    results = []
     r.run("bitfield", "bits", "set", "u8", "#0", 100)
-    lappend("results", r.run("bitfield", "bits", "overflow", "sat", "incrby", "i8", "#0", 257))
-    lappend("results", r.run("bitfield", "bits", "get", "i8", "#0"))
-    lappend("results", r.run("bitfield", "bits", "overflow", "sat", "incrby", "i8", "#0", -255))
+    results.append(r.run("bitfield", "bits", "overflow", "sat", "incrby", "i8", "#0", 257))
+    results.append(r.run("bitfield", "bits", "get", "i8", "#0"))
+    results.append(r.run("bitfield", "bits", "overflow", "sat", "incrby", "i8", "#0", -255))
     # TODO: lappend results r bitfield bits get i8 #0
     assert False
 
@@ -463,10 +463,6 @@ def if_(*args):
 
 def incr(*args):
     raise NotImplementedError("incr")
-
-
-def lappend(*args):
-    raise NotImplementedError("lappend")
 
 
 def random_int(*args):

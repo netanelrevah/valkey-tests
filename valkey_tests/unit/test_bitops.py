@@ -1,4 +1,5 @@
 # ruff: noqa: PLR2004, N806, RUF043, ANN001, ANN002, ANN201
+from fnmatch import fnmatch
 
 import pytest
 
@@ -414,7 +415,6 @@ def test_bitop_not_empty_string(r: ValkeyTestClient) -> None:
     r.run("get", "dest{t}")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitop_not_known_string(r: ValkeyTestClient) -> None:
     """
     test {BITOP NOT (known string)} {
@@ -423,12 +423,11 @@ def test_bitop_not_known_string(r: ValkeyTestClient) -> None:
         r get dest{t}
     } "\x55\xff\x00\xaa"
     """
-    # TODO: r set s{t} "\xaa\x00\xff\x55"
+    r.run("set", "s{t}", "\xaa\x00\xff\x55")
     r.run("bitop", "not", "dest{t}", "s{t}")
     r.run("get", "dest{t}")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitop_where_dest_and_target_are_the_same_key(r: ValkeyTestClient) -> None:
     """
     test {BITOP where dest and target are the same key} {
@@ -437,12 +436,11 @@ def test_bitop_where_dest_and_target_are_the_same_key(r: ValkeyTestClient) -> No
         r get s
     } "\x55\xff\x00\xaa"
     """
-    # TODO: r set s "\xaa\x00\xff\x55"
+    r.run("set", "s", "\xaa\x00\xff\x55")
     r.run("bitop", "not", "s", "s")
     r.run("get", "s")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitop_and_or_xor_don_t_change_the_string_with_single_input_key(r: ValkeyTestClient) -> None:
     """
     test {BITOP AND|OR|XOR don't change the string with single input key} {
@@ -453,14 +451,13 @@ def test_bitop_and_or_xor_don_t_change_the_string_with_single_input_key(r: Valke
         list [r get res1{t}] [r get res2{t}] [r get res3{t}]
     } list "\x01\x02\xff" "\x01\x02\xff" "\x01\x02\xff"
     """
-    # TODO: r set a{t} "\x01\x02\xff"
+    r.run("set", "a{t}", "\x01\x02\xff")
     r.run("bitop", "and", "res1{t}", "a{t}")
     r.run("bitop", "or", "res2{t}", "a{t}")
     r.run("bitop", "xor", "res3{t}", "a{t}")
     list_(r.run("get", "res1{t}"), r.run("get", "res2{t}"), r.run("get", "res3{t}"))
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitop_missing_key_is_considered_a_stream_of_zero(r: ValkeyTestClient) -> None:
     """
     test {BITOP missing key is considered a stream of zero} {
@@ -471,14 +468,13 @@ def test_bitop_missing_key_is_considered_a_stream_of_zero(r: ValkeyTestClient) -
         list [r get res1{t}] [r get res2{t}] [r get res3{t}]
     } list "\x00\x00\x00" "\x01\x02\xff" "\x01\x02\xff"
     """
-    # TODO: r set a{t} "\x01\x02\xff"
+    r.run("set", "a{t}", "\x01\x02\xff")
     r.run("bitop", "and", "res1{t}", "no-suck-key{t}", "a{t}")
     r.run("bitop", "or", "res2{t}", "no-suck-key{t}", "a{t}", "no-such-key{t}")
     r.run("bitop", "xor", "res3{t}", "no-such-key{t}", "a{t}")
     list_(r.run("get", "res1{t}"), r.run("get", "res2{t}"), r.run("get", "res3{t}"))
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitop_shorter_keys_are_zero_padded_to_the_key_with_max_length(r: ValkeyTestClient) -> None:
     """
     test {BITOP shorter keys are zero-padded to the key with max length} {
@@ -490,8 +486,8 @@ def test_bitop_shorter_keys_are_zero_padded_to_the_key_with_max_length(r: Valkey
         list [r get res1{t}] [r get res2{t}] [r get res3{t}]
     } list "\x01\x02\xff\x00" "\x01\x02\xff\xff" "\x00\x00\x00\xff"
     """
-    # TODO: r set a{t} "\x01\x02\xff\xff"
-    # TODO: r set b{t} "\x01\x02\xff"
+    r.run("set", "a{t}", "\x01\x02\xff\xff")
+    r.run("set", "b{t}", "\x01\x02\xff")
     r.run("bitop", "and", "res1{t}", "a{t}", "b{t}")
     r.run("bitop", "or", "res2{t}", "a{t}", "b{t}")
     r.run("bitop", "xor", "res3{t}", "a{t}", "b{t}")
@@ -521,14 +517,14 @@ def test_bitop_op_fuzzing(r: ValkeyTestClient, op) -> None:
     i = 0
     while i < 10:
         r.run("flushall")
-        vec = ""
-        veckeys = ""
+        vec = []
+        veckeys = []
         numvec = expr("[randomInt 10]+1")
         j = 0
         while j < numvec:
             str = randstring(0, 1000)
-            lappend("vec", str)
-            lappend("veckeys", "vector_$j{t}")
+            vec.append(str)
+            veckeys.append("vector_$j{t}")
             r.run("set", "vector_$j{t}", str)
             j += 1
         r.run("bitop", op, "target{t}", "*", veckeys)
@@ -592,10 +588,9 @@ def test_bitop_with_non_string_source_key(r: ValkeyTestClient) -> None:
         e = r.run("bitop", "xor", "dest{t}", "a{t}", "b{t}", "c{t}", "d{t}")
     except Exception as _catch_err:
         e = str(_catch_err)
-    assert e == "WRONGTYPE*"
+    assert fnmatch(str(e), "WRONGTYPE*")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitop_with_empty_string_after_non_empty_string_issue_529(r: ValkeyTestClient) -> None:
     """
     test {BITOP with empty string after non empty string (issue #529)} {
@@ -605,7 +600,11 @@ def test_bitop_with_empty_string_after_non_empty_string_issue_529(r: ValkeyTestC
     } {32}
     """
     r.run("flushdb")
-    # TODO: r set a{t} "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    r.run(
+        "set",
+        "a{t}",
+        "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+    )
     assert r.run("bitop", "or", "x{t}", "a{t}", "b{t}") == "32"
 
 
@@ -713,7 +712,6 @@ def test_bitpos_bit_1_with_empty_key_returns_1(r: ValkeyTestClient) -> None:
     assert r.run("bitpos", "str", 1, 0, -1) == -1
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitpos_bit_0_with_string_less_than_1_word_works(r: ValkeyTestClient) -> None:
     """
     test {BITPOS bit=0 with string less than 1 word works} {
@@ -722,12 +720,11 @@ def test_bitpos_bit_0_with_string_less_than_1_word_works(r: ValkeyTestClient) ->
         assert {[r bitpos str 0 0 -1 bit] == 12}
     }
     """
-    # TODO: r set str "\xff\xf0\x00"
+    r.run("set", "str", "\xff\xf0\x00")
     assert r.run("bitpos", "str", 0) == 12
     assert r.run("bitpos", "str", 0, 0, -1, "bit") == 12
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitpos_bit_1_with_string_less_than_1_word_works(r: ValkeyTestClient) -> None:
     """
     test {BITPOS bit=1 with string less than 1 word works} {
@@ -736,12 +733,11 @@ def test_bitpos_bit_1_with_string_less_than_1_word_works(r: ValkeyTestClient) ->
         assert {[r bitpos str 1 0 -1 bit] == 12}
     }
     """
-    # TODO: r set str "\x00\x0f\x00"
+    r.run("set", "str", "\x00\x0f\x00")
     assert r.run("bitpos", "str", 1) == 12
     assert r.run("bitpos", "str", 1, 0, -1, "bit") == 12
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitpos_bit_0_starting_at_unaligned_address(r: ValkeyTestClient) -> None:
     """
     test {BITPOS bit=0 starting at unaligned address} {
@@ -750,12 +746,11 @@ def test_bitpos_bit_0_starting_at_unaligned_address(r: ValkeyTestClient) -> None
         assert {[r bitpos str 0 1 -1 bit] == 12}
     }
     """
-    # TODO: r set str "\xff\xf0\x00"
+    r.run("set", "str", "\xff\xf0\x00")
     assert r.run("bitpos", "str", 0, 1) == 12
     assert r.run("bitpos", "str", 0, 1, -1, "bit") == 12
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitpos_bit_1_starting_at_unaligned_address(r: ValkeyTestClient) -> None:
     """
     test {BITPOS bit=1 starting at unaligned address} {
@@ -764,12 +759,11 @@ def test_bitpos_bit_1_starting_at_unaligned_address(r: ValkeyTestClient) -> None
         assert {[r bitpos str 1 1 -1 bit] == 12}
     }
     """
-    # TODO: r set str "\x00\x0f\xff"
+    r.run("set", "str", "\x00\x0f\xff")
     assert r.run("bitpos", "str", 1, 1) == 12
     assert r.run("bitpos", "str", 1, 1, -1, "bit") == 12
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitpos_bit_0_unaligned_full_word_reminder(r: ValkeyTestClient) -> None:
     """
     test {BITPOS bit=0 unaligned+full word+reminder} {
@@ -803,11 +797,11 @@ def test_bitpos_bit_0_unaligned_full_word_reminder(r: ValkeyTestClient) -> None:
     }
     """
     r.run("del", "str")
-    # TODO: r set str "\xff\xff\xff"
-    # TODO: r append str "\xff\xff\xff\xff\xff\xff\xff\xff"
-    # TODO: r append str "\xff\xff\xff\xff\xff\xff\xff\xff"
-    # TODO: r append str "\xff\xff\xff\xff\xff\xff\xff\xff"
-    # TODO: r append str "\x0f"
+    r.run("set", "str", "\xff\xff\xff")
+    r.run("append", "str", "\xff\xff\xff\xff\xff\xff\xff\xff")
+    r.run("append", "str", "\xff\xff\xff\xff\xff\xff\xff\xff")
+    r.run("append", "str", "\xff\xff\xff\xff\xff\xff\xff\xff")
+    r.run("append", "str", "\x0f")
     assert r.run("bitpos", "str", 0) == 216
     assert r.run("bitpos", "str", 0, 1) == 216
     assert r.run("bitpos", "str", 0, 2) == 216
@@ -828,7 +822,6 @@ def test_bitpos_bit_0_unaligned_full_word_reminder(r: ValkeyTestClient) -> None:
     assert r.run("bitpos", "str", 0, 65, -1, "bit") == 216
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitpos_bit_1_unaligned_full_word_reminder(r: ValkeyTestClient) -> None:
     """
     test {BITPOS bit=1 unaligned+full word+reminder} {
@@ -862,11 +855,11 @@ def test_bitpos_bit_1_unaligned_full_word_reminder(r: ValkeyTestClient) -> None:
     }
     """
     r.run("del", "str")
-    # TODO: r set str "\x00\x00\x00"
-    # TODO: r append str "\x00\x00\x00\x00\x00\x00\x00\x00"
-    # TODO: r append str "\x00\x00\x00\x00\x00\x00\x00\x00"
-    # TODO: r append str "\x00\x00\x00\x00\x00\x00\x00\x00"
-    # TODO: r append str "\xf0"
+    r.run("set", "str", "\x00\x00\x00")
+    r.run("append", "str", "\x00\x00\x00\x00\x00\x00\x00\x00")
+    r.run("append", "str", "\x00\x00\x00\x00\x00\x00\x00\x00")
+    r.run("append", "str", "\x00\x00\x00\x00\x00\x00\x00\x00")
+    r.run("append", "str", "\xf0")
     assert r.run("bitpos", "str", 1) == 216
     assert r.run("bitpos", "str", 1, 1) == 216
     assert r.run("bitpos", "str", 1, 2) == 216
@@ -899,15 +892,14 @@ def test_bitpos_bit_1_returns_1_if_string_is_all_0_bits(r: ValkeyTestClient) -> 
     }
     """
     r.run("set", "str", "")
-    for_(
-        "set j 0",
-        "$j < 20",
-        "incr j",
-        '            assert {[r bitpos str 1] == -1}\n            assert {[r bitpos str 1 0 -1 bit] == -1}\n            r append str "\\x00"\n        ',
-    )
+    j = 0
+    while j < 20:
+        assert r.run("bitpos", "str", 1) == -1
+        assert r.run("bitpos", "str", 1, 0, -1, "bit") == -1
+        r.run("append", "str", "\x00")
+        j += 1
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitpos_bit_0_works_with_intervals(r: ValkeyTestClient) -> None:
     """
     test {BITPOS bit=0 works with intervals} {
@@ -925,7 +917,7 @@ def test_bitpos_bit_0_works_with_intervals(r: ValkeyTestClient) -> None:
         assert {[r bitpos str 0 8 8 bit] == -1}
     }
     """
-    # TODO: r set str "\x00\xff\x00"
+    r.run("set", "str", "\x00\xff\x00")
     assert r.run("bitpos", "str", 0, 0, -1) == 0
     assert r.run("bitpos", "str", 0, 1, -1) == 16
     assert r.run("bitpos", "str", 0, 2, -1) == 16
@@ -938,7 +930,6 @@ def test_bitpos_bit_0_works_with_intervals(r: ValkeyTestClient) -> None:
     assert r.run("bitpos", "str", 0, 8, 8, "bit") == -1
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitpos_bit_1_works_with_intervals(r: ValkeyTestClient) -> None:
     """
     test {BITPOS bit=1 works with intervals} {
@@ -956,7 +947,7 @@ def test_bitpos_bit_1_works_with_intervals(r: ValkeyTestClient) -> None:
         assert {[r bitpos str 1 8 8 bit] == 8}
     }
     """
-    # TODO: r set str "\x00\xff\x00"
+    r.run("set", "str", "\x00\xff\x00")
     assert r.run("bitpos", "str", 1, 0, -1) == 8
     assert r.run("bitpos", "str", 1, 1, -1) == 8
     assert r.run("bitpos", "str", 1, 2, -1) == -1
@@ -969,7 +960,6 @@ def test_bitpos_bit_1_works_with_intervals(r: ValkeyTestClient) -> None:
     assert r.run("bitpos", "str", 1, 8, 8, "bit") == 8
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitpos_bit_0_changes_behavior_if_end_is_given(r: ValkeyTestClient) -> None:
     """
     test {BITPOS bit=0 changes behavior if end is given} {
@@ -980,7 +970,7 @@ def test_bitpos_bit_0_changes_behavior_if_end_is_given(r: ValkeyTestClient) -> N
         assert {[r bitpos str 0 0 -1 bit] == -1}
     }
     """
-    # TODO: r set str "\xff\xff\xff"
+    r.run("set", "str", "\xff\xff\xff")
     assert r.run("bitpos", "str", 0) == 24
     assert r.run("bitpos", "str", 0, 0) == 24
     assert r.run("bitpos", "str", 0, 0, -1) == -1
@@ -1095,7 +1085,6 @@ def test_bitpos_bit_1_fuzzy_testing_using_setbit(r: ValkeyTestClient) -> None:
         j += 1
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitpos_bit_0_fuzzy_testing_using_setbit(r: ValkeyTestClient) -> None:
     """
     test {BITPOS bit=0 fuzzy testing using SETBIT} {
@@ -1121,7 +1110,7 @@ def test_bitpos_bit_0_fuzzy_testing_using_setbit(r: ValkeyTestClient) -> None:
     """
     max = 524288
     first_zero_pos = max
-    # TODO: r set str string repeat "\xff" [expr $max/8]
+    r.run("set", "str", string("repeat", "\xff", expr(max, "/8")))
     j = 0
     while j < 1000:
         assert r.run("bitpos", "str", 0) == first_zero_pos
@@ -1295,20 +1284,12 @@ def expr(*args):
     raise NotImplementedError("expr")
 
 
-def for_(*args):
-    raise NotImplementedError("for_")
-
-
 def foreach(*args):
     raise NotImplementedError("foreach")
 
 
 def if_(*args):
     raise NotImplementedError("if_")
-
-
-def lappend(*args):
-    raise NotImplementedError("lappend")
 
 
 def list_(*args):

@@ -1,4 +1,5 @@
 # ruff: noqa: PLR2004, ANN001, ANN002, ANN201
+
 from fnmatch import fnmatch
 
 import pytest
@@ -420,7 +421,7 @@ def test_sort_regression_for_issue_19_sorting_floats(r: ValkeyTestClient) -> Non
     r.run("flushdb")
     floats = "1.1 5.10 3.10 7.44 2.1 5.75 6.12 0.25 1.15"
     foreach("x", floats, "            r lpush mylist $x\n        ")
-    assert lsort("-real", floats) == r.run("sort", "mylist")
+    assert sorted(floats) == r.run("sort", "mylist")
 
 
 def test_sort_returns_an_empty_array_if_the_list_is_empty(r: ValkeyTestClient) -> None:
@@ -534,7 +535,7 @@ def test_sort_will_complain_with_numerical_sorting_and_bad_doubles_1(r: ValkeyTe
         e = r.run("sort", "myset")
     except Exception as _catch_err:
         e = str(_catch_err)
-    assert e == "*ERR*double*"
+    assert fnmatch(str(e), "*ERR*double*")
 
 
 def test_sort_will_complain_with_numerical_sorting_and_bad_doubles_2(r: ValkeyTestClient) -> None:
@@ -556,7 +557,7 @@ def test_sort_will_complain_with_numerical_sorting_and_bad_doubles_2(r: ValkeyTe
         e = r.run("sort", "myset", "by", "score:*")
     except Exception as _catch_err:
         e = str(_catch_err)
-    assert e == "*ERR*double*"
+    assert fnmatch(str(e), "*ERR*double*")
 
 
 def test_sort_by_sub_sorts_lexicographically_if_score_is_the_same(r: ValkeyTestClient) -> None:
@@ -795,10 +796,6 @@ def config_set(*args):
 
 def foreach(*args):
     raise NotImplementedError("foreach")
-
-
-def lsort(*args):
-    raise NotImplementedError("lsort")
 
 
 def split(*args):

@@ -165,16 +165,21 @@ _SIMPLE_ESCAPES: dict[str, str] = {"a": "\\a", "b": "\\b", "f": "\\f", "n": "\\n
 
 
 def _translate_double_quoted(raw: str, defined_vars: set[str]) -> str | None:
-    """Translate a TCL double-quoted string value to a Python string or f-string literal."""
-    parts: list[str] = []
+    """Translate a TCL double-quoted string value to a Python string or f-string literal.
+
+    Each segment is (text, is_var_sub).  Literal segments are plain text; var-sub
+    segments are variable names that get wrapped in {} for f-strings.
+    """
+    segments: list[tuple[str, bool]] = []  # (text, is_var_substitution)
     has_sub = False
+    has_esc = False
     i = 0
     while i < len(raw):
         c = raw[i]
         if c == "$":
             i += 1
             if i >= len(raw) or raw[i] in (" ", "\n", "$"):
-                parts.append("$")
+                segments.append(("$", False))
                 continue
             if raw[i] == "{":
                 end = raw.find("}", i + 1)
@@ -192,7 +197,7 @@ def _translate_double_quoted(raw: str, defined_vars: set[str]) -> str | None:
                 return None
             if var_name not in defined_vars:
                 return None
-            parts.append("{" + _safe_var_name(var_name) + "}")
+            segments.append((_safe_var_name(var_name), True))
             has_sub = True
         elif c == "\\":
             i += 1
@@ -200,30 +205,45 @@ def _translate_double_quoted(raw: str, defined_vars: set[str]) -> str | None:
                 return None
             ec = raw[i]
             if ec in _SIMPLE_ESCAPES:
-                parts.append(_SIMPLE_ESCAPES[ec])
+                segments.append((_SIMPLE_ESCAPES[ec], False))
+                has_esc = True
                 i += 1
-            elif ec in "xuU":
-                return None  # binary/unicode escape — too complex
+            elif ec == "x":
+                hex_chars = raw[i + 1 : i + 3]
+                if len(hex_chars) == 2 and all(h in "0123456789abcdefABCDEF" for h in hex_chars):
+                    segments.append((f"\\x{hex_chars}", False))
+                    has_esc = True
+                    i += 3
+                else:
+                    return None
+            elif ec in "uU":
+                return None  # unicode escape — too complex
             elif ec == "\n":
-                parts.append(" ")
+                segments.append((" ", False))
+                has_esc = True
                 i += 1
             else:
-                parts.append(ec)
+                segments.append((ec, False))
+                has_esc = True
                 i += 1
-        elif c in "{}":
-            parts.append(c + c)  # escape braces in f-strings
-            i += 1
         elif c == "'":
-            parts.append("\\'")
-            i += 1
-        elif c == "\\":
-            parts.append("\\\\")
+            segments.append(("\\'", False))
             i += 1
         else:
-            parts.append(c)
+            segments.append((c, False))
             i += 1
-    content = "".join(parts)
-    return f"f'{content}'" if has_sub else repr(raw)
+    if has_sub:
+        # Build f-string: escape { and } in literal parts, wrap var names in {}
+        parts = []
+        for text, is_var in segments:
+            if is_var:
+                parts.append("{" + text + "}")
+            else:
+                parts.append(text.replace("{", "{{").replace("}", "}}"))
+        return "f'" + "".join(parts) + "'"
+    if has_esc:
+        return "'" + "".join(text for text, _ in segments) + "'"
+    return repr(raw)
 
 
 @ArgumentTranslator.register(TCLDoubleQuotedWord)
@@ -308,6 +328,17 @@ class LLengthExpressionTranslator(ExpressionTranslator):
             return None
         args = ArgumentTranslator.translate_all(arguments, defined_vars)
         return None if args is None else f"len({args[0]})"
+
+
+@ExpressionTranslator.register("lsort")
+class LSortExpressionTranslator(ExpressionTranslator):
+    def get_expression(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> str | None:
+        # Skip option flags (start with -), translate the final list argument
+        positional = [a for a in arguments if not (isinstance(a, TCLWord) and a.value.startswith("-"))]
+        if len(positional) != 1:
+            return None
+        args = ArgumentTranslator.translate_all(positional, defined_vars)
+        return None if args is None else f"sorted({args[0]})"
 
 
 @ExpressionTranslator.register("dict")

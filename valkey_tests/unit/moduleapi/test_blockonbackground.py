@@ -80,7 +80,7 @@ def test_blocked_clients_time_tracking_check_blocked_command_that_uses_redismodu
         "usec",
         "usec_per_call",
     )
-    regexp("p50=(.+\\..+)", latencystatline_debug, "->", "p50")
+    regexp("p50=(.+..+)", latencystatline_debug, "->", "p50")
     assert_("$usec >= 100000")
     assert_("$usec_per_call >= 100000")
     assert_("$p50 >= 100000")

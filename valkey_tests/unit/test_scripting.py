@@ -2915,7 +2915,6 @@ def test_lua_test_trim_string_as_expected(r: ValkeyTestClient) -> None:
         assert r.run("memory", "usage", "foo") <= expected_memory
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_eval_scripts_support_null_byte(r: ValkeyTestClient) -> None:
     """
     test {EVAL - Scripts support NULL byte} {
@@ -2924,7 +2923,7 @@ def test_eval_scripts_support_null_byte(r: ValkeyTestClient) -> None:
         # we don't have a test for that case.
     }
     """
-    # TODO: assert_equal r eval "return \"\x00\";" 0 "\x00"
+    assert r.run("eval", 'return "\x00";', 0) == "\x00"
 
 
 def test_eval_explicit_error_call_handling(r: ValkeyTestClient) -> None:

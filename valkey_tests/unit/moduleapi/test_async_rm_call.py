@@ -398,8 +398,8 @@ def test_pipeline_with_blocking_rm_call(r: ValkeyTestClient) -> None:
     r.run("flushall")
     rd = ValkeyTestClient.create_from(r)
     buf = ""
-    append("buf", "do_rm_call_async blpop l 0\\r\\n")
-    append("buf", "ping\\r\\n")
+    append("buf", "do_rm_call_async blpop l 0\r\n")
+    append("buf", "ping\r\n")
     rd.run("write", buf)
     rd.run("flush")
     wait_for_blocked_clients_count(1)

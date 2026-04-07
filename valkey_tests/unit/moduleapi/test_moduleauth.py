@@ -286,7 +286,7 @@ def test_test_blocking_module_auth(r: ValkeyTestClient) -> None:
     assert fnmatch(str(cmdstat("auth")), "*calls=6,*,rejected_calls=0,failed_calls=3")
     assert "OK" == r.run("AUTH", "foo", "nomatch")
     stats = cmdstat("auth")
-    regexp("usec_per_call=(\\[0-9]{1,})\\.*,", stats, "all", "usec_per_call")
+    regexp("usec_per_call=([0-9]{1,}).*,", stats, "all", "usec_per_call")
     assert_("$usec_per_call >= 500000")
     entry = r.run("ACL", "LOG")[0]
     assert entry["username"] == "foo"
@@ -351,7 +351,7 @@ def test_test_blocking_module_hello_auth(r: ValkeyTestClient) -> None:
         r.run("HELLO", 3, "AUTH", "foo", "nomatch")
     assert fnmatch(str(cmdstat("hello")), "*calls=8,*,rejected_calls=0,failed_calls=4")
     stats = cmdstat("hello")
-    regexp("usec_per_call=(\\[0-9]{1,})\\.*,", stats, "all", "usec_per_call")
+    regexp("usec_per_call=([0-9]{1,}).*,", stats, "all", "usec_per_call")
     assert_("$usec_per_call >= 500000")
     entry = r.run("ACL", "LOG")[1]
     assert entry["username"] == "foo"
@@ -403,7 +403,7 @@ def test_test_blocking_module_hello_auth_setname(r: ValkeyTestClient) -> None:
     assert r.run("client", "getname") == "client0"
     assert fnmatch(str(cmdstat("hello")), "*calls=4,*,rejected_calls=0,failed_calls=2")
     stats = cmdstat("hello")
-    regexp("usec_per_call=(\\[0-9]{1,})\\.*,", stats, "all", "usec_per_call")
+    regexp("usec_per_call=([0-9]{1,}).*,", stats, "all", "usec_per_call")
     assert_("$usec_per_call >= 500000")
 
 
@@ -480,7 +480,7 @@ def test_test_auth_after_registering_multiple_module_auth_callbacks(r: ValkeyTes
         r.run("AUTH", "foo", "block_deny")
     assert fnmatch(str(cmdstat("auth")), "*calls=2,*,rejected_calls=0,failed_calls=1")
     stats = cmdstat("auth")
-    regexp("usec_per_call=(\\[0-9]{1,})\\.*,", stats, "all", "usec_per_call")
+    regexp("usec_per_call=([0-9]{1,}).*,", stats, "all", "usec_per_call")
     assert_("$usec_per_call >= 500000")
     r.run("config", "resetstat")
     assert "OK" == r.run("AUTH", "foo", "allow_two")
@@ -493,7 +493,7 @@ def test_test_auth_after_registering_multiple_module_auth_callbacks(r: ValkeyTes
     assert fnmatch(str(cmdstat("auth")), "*calls=1,*,rejected_calls=0,failed_calls=1")
     assert "OK" == r.run("AUTH", "foo", "pwd")
     stats = cmdstat("auth")
-    regexp("usec_per_call=(\\[0-9]{1,})\\.*,", stats, "all", "usec_per_call")
+    regexp("usec_per_call=([0-9]{1,}).*,", stats, "all", "usec_per_call")
     assert_("$usec_per_call >= 1000000")
 
 
@@ -703,7 +703,7 @@ def test_test_rm_registerauthcallback_module_api_during_blocking_module_auth(r: 
     assert rd.run("read") == "OK"
     stats = cmdstat("auth")
     assert fnmatch(str(stats), "*calls=1,*,rejected_calls=0,failed_calls=0")
-    regexp("usec_per_call=(\\[0-9]{1,})\\.*,", stats, "all", "usec_per_call")
+    regexp("usec_per_call=([0-9]{1,}).*,", stats, "all", "usec_per_call")
     assert_("$usec_per_call >= 1000000")
 
 

@@ -100,7 +100,7 @@ def test_config_set_commands_work(r: ValkeyTestClient) -> None:
         "moduleconfigs.string",
         "\\x73\\x75\\x70\\x65\\x72\\x20\\x00\\x73\\x65\\x63\\x72\\x65\\x74\\x20\\x70\\x61\\x73\\x73\\x77\\x6f\\x72\\x64",
     )
-    assert r.run("config", "get", "moduleconfigs.string") == "moduleconfigs.string {super \\0secret password}"
+    assert r.run("config", "get", "moduleconfigs.string") == "moduleconfigs.string {super 0secret password}"
     r.run("config", "set", "moduleconfigs.enum", "two")
     assert r.run("config", "get", "moduleconfigs.enum") == "moduleconfigs.enum two"
     r.run("config", "set", "moduleconfigs.flags", "two")
@@ -384,7 +384,7 @@ def test_test_config_rewrite_with_dynamic_load(r: ValkeyTestClient) -> None:
     """
     # TODO: r module loadex testmodule CONFIG moduleconfigs.string \x73\x75\x70\x65\x72\x20\x00\x73\x65\x63\x72\x65\x74\x20\x70\x61\x73\x73\x77\x6f\x72\x64 ARGS
     assert_not_equal(lsearch(lmap("x", r.run("module", "list"), "dict get $x name"), "moduleconfigs"), -1)
-    assert r.run("config", "get", "moduleconfigs.string") == "moduleconfigs.string {super \\0secret password}"
+    assert r.run("config", "get", "moduleconfigs.string") == "moduleconfigs.string {super 0secret password}"
     r.run("config", "set", "moduleconfigs.mutable_bool", "yes")
     r.run("config", "set", "moduleconfigs.memory_numeric", 750)
     r.run("config", "set", "moduleconfigs.enum", "two")
@@ -393,7 +393,7 @@ def test_test_config_rewrite_with_dynamic_load(r: ValkeyTestClient) -> None:
     restart_server(0, "true", "false")
     assert r.run("config", "get", "moduleconfigs.mutable_bool") == "moduleconfigs.mutable_bool yes"
     assert r.run("config", "get", "moduleconfigs.memory_numeric") == "moduleconfigs.memory_numeric 750"
-    assert r.run("config", "get", "moduleconfigs.string") == "moduleconfigs.string {super \\0secret password}"
+    assert r.run("config", "get", "moduleconfigs.string") == "moduleconfigs.string {super 0secret password}"
     assert r.run("config", "get", "moduleconfigs.enum") == "moduleconfigs.enum two"
     assert r.run("config", "get", "moduleconfigs.flags") == "moduleconfigs.flags {two four}"
     assert r.run("config", "get", "moduleconfigs.numeric") == "moduleconfigs.numeric -1"

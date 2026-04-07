@@ -580,7 +580,7 @@ def test_slowlog_the_commands_in_script_are_recorded_normally_is_eval_is_eval(r:
             "function",
             "load",
             "replace",
-            "#!lua name=mylib \\n redis.register_function('myfunc', function(KEYS, ARGS) server.call('ping') end)",
+            "#!lua name=mylib \n redis.register_function('myfunc', function(KEYS, ARGS) server.call('ping') end)",
         )
     r.run("client", "setname", "test-client")
     r.run("config", "set", "slowlog-log-slower-than", 0)

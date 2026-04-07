@@ -1,5 +1,6 @@
 # ruff: noqa: PLR2004, F841, RUF043, ANN002, ANN201
 import time
+from fnmatch import fnmatch
 
 import pytest
 
@@ -270,7 +271,7 @@ def test_getex_syntax_errors(r: ValkeyTestClient) -> None:
         ex = r.run("getex", "foo", "non-existent-option")
     except Exception as _catch_err:
         ex = str(_catch_err)
-    assert ex == "*syntax*"
+    assert fnmatch(str(ex), "*syntax*")
 
 
 def test_getex_and_get_expired_key_or_not_exist(r: ValkeyTestClient) -> None:
@@ -303,7 +304,7 @@ def test_getex_no_arguments(r: ValkeyTestClient) -> None:
         ex = r.run("getex")
     except Exception as _catch_err:
         ex = str(_catch_err)
-    assert ex == "*wrong number of arguments for 'getex' command"
+    assert fnmatch(str(ex), "*wrong number of arguments for 'getex' command")
 
 
 def test_getdel_command(r: ValkeyTestClient) -> None:
@@ -435,7 +436,7 @@ def test_mset_base_case(r: ValkeyTestClient) -> None:
         r mget x{t} y{t} z{t}
     } list 10 {foo bar} "x x x x x x x\n\n\r\n"
     """
-    r.run("mset", "x{t}", 10, "y{t}", "foo bar", "z{t}", "x x x x x x x\\n\\n\\r\\n")
+    r.run("mset", "x{t}", 10, "y{t}", "foo bar", "z{t}", "x x x x x x x\n\n\r\n")
     r.run("mget", "x{t}", "y{t}", "z{t}")
 
 
@@ -771,7 +772,7 @@ def test_setrange_against_non_existing_key(r: ValkeyTestClient) -> None:
     assert 0 == r.run("exists", "mykey")
     r.run("del", "mykey")
     assert 4 == r.run("setrange", "mykey", 1, "foo")
-    assert "\\000foo" == r.run("get", "mykey")
+    assert "000foo" == r.run("get", "mykey")
 
 
 def test_setrange_against_string_encoded_key(r: ValkeyTestClient) -> None:
@@ -805,7 +806,7 @@ def test_setrange_against_string_encoded_key(r: ValkeyTestClient) -> None:
     assert "fbo" == r.run("get", "mykey")
     r.run("set", "mykey", "foo")
     assert 7 == r.run("setrange", "mykey", 4, "bar")
-    assert "foo\\000bar" == r.run("get", "mykey")
+    assert "foo000bar" == r.run("get", "mykey")
 
 
 def test_setrange_against_integer_encoded_key(r: ValkeyTestClient) -> None:
@@ -856,7 +857,7 @@ def test_setrange_against_integer_encoded_key(r: ValkeyTestClient) -> None:
     assert_encoding("int", "mykey")
     assert 6 == r.run("setrange", "mykey", 5, 2)
     assert_encoding("raw", "mykey")
-    assert "1234\\0002" == r.run("get", "mykey")
+    assert "12340002" == r.run("get", "mykey")
 
 
 def test_setrange_against_key_with_wrong_type(r: ValkeyTestClient) -> None:
@@ -1033,7 +1034,7 @@ def test_extended_set_can_detect_syntax_errors(r: ValkeyTestClient) -> None:
         e = r.run("set", "foo", "bar", "non-existing-option")
     except Exception as _catch_err:
         e = str(_catch_err)
-    assert e == "*syntax*"
+    assert fnmatch(str(e), "*syntax*")
 
 
 def test_extended_set_nx_option(r: ValkeyTestClient) -> None:
@@ -1181,7 +1182,7 @@ def test_extended_set_get_with_incorrect_type_should_result_in_wrong_type_error(
     except Exception as _catch_err:
         err1 = str(_catch_err)
     assert "waffle" == r.run("rpop", "foo")
-    assert err1 == "*WRONGTYPE*"
+    assert fnmatch(str(err1), "*WRONGTYPE*")
 
 
 def test_set_with_ifeq_conditional(r: ValkeyTestClient) -> None:
@@ -1550,8 +1551,8 @@ def test_append_modifies_the_encoding_from_int_to_raw(r: ValkeyTestClient) -> No
     r.run("set", "foo", 1)
     assert_encoding("int", "foo")
     r.run("append", "foo", 2)
-    res = ""
-    lappend("res", r.run("get", "foo"))
+    res = []
+    res.append(r.run("get", "foo"))
     assert_encoding("raw", "foo")
     r.run("set", "bar", 12)
     assert_encoding("int", "bar")
@@ -1733,10 +1734,6 @@ def format_(*args):
 
 def if_(*args):
     raise NotImplementedError("if_")
-
-
-def lappend(*args):
-    raise NotImplementedError("lappend")
 
 
 def random_int(*args):

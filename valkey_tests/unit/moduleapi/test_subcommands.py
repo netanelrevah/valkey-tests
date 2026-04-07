@@ -1,4 +1,5 @@
 # ruff: noqa: ANN002, ANN201
+
 from fnmatch import fnmatch
 
 import pytest
@@ -37,7 +38,7 @@ def test_module_subcommands_via_command(r: ValkeyTestClient) -> None:
     """
     command_reply = r.run("command", "info", "subcommands.bitarray")
     first_cmd = command_reply[0]
-    subcmds_in_command = lsort(first_cmd[9])
+    subcmds_in_command = sorted(first_cmd[9])
     assert (
         subcmds_in_command[0]
         == "subcommands.bitarray|get -2 module 1 1 1 {} {} {{flags {RO access} begin_search {type index spec {index 1}} find_keys {type range spec {lastkey 0 keystep 1 limit 0}}}} {}"
@@ -143,7 +144,3 @@ def dict_(*args):
 
 def lsearch(*args):
     raise NotImplementedError("lsearch")
-
-
-def lsort(*args):
-    raise NotImplementedError("lsort")

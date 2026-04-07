@@ -192,7 +192,7 @@ def test_restore_returns_an_error_of_the_key_already_exists(r: ValkeyTestClient)
         e = r.run("restore", "foo", 0, "...")
     except Exception as _catch_err:
         e = str(_catch_err)
-    assert e == "*BUSYKEY*"
+    assert fnmatch(str(e), "*BUSYKEY*")
 
 
 def test_restore_can_overwrite_an_existing_key_with_replace(r: ValkeyTestClient) -> None:
@@ -229,7 +229,7 @@ def test_restore_can_detect_a_syntax_error_for_unrecognized_options(r: ValkeyTes
         e = r.run("restore", "foo", 0, "...", "invalid-option")
     except Exception as _catch_err:
         e = str(_catch_err)
-    assert e == "*syntax*"
+    assert fnmatch(str(e), "*syntax*")
 
 
 def test_restore_should_not_store_key_that_are_already_expired_with_replace_will_propagate_it_as_del_or_unlink(
@@ -350,7 +350,6 @@ def test_restore_should_not_store_key_that_are_already_expired_with_replace_will
     close_replication_stream(repl)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_restore_key_with_future_rdb_version_strict_version_check(r: ValkeyTestClient) -> None:
     """
     test {RESTORE key with future RDB version, strict version check} {
@@ -360,11 +359,11 @@ def test_restore_key_with_future_rdb_version_strict_version_check(r: ValkeyTestC
         assert_error {ERR DUMP payload version or checksum are wrong} {r restore foo 0 $bar_dump replace}
     }
     """
-    # TODO: set bar_dump "\x00\x03\x62\x61\x72\xde\x00\x0fYUza\xd3\xec\xe0"
-    assert_error("ERR DUMP payload version or checksum are wrong", "r restore foo 0 $bar_dump replace")
+    bar_dump = "\x00\x03\x62\x61\x72\xde\x00\x0fYUza\xd3\xec\xe0"
+    with pytest.raises(Exception, match="ERR\\ DUMP\\ payload\\ version\\ or\\ checksum\\ are\\ wrong"):
+        r.run("restore", "foo", 0, bar_dump, "replace")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_restore_key_with_future_rdb_version_relaxed_version_check(r: ValkeyTestClient) -> None:
     """
     test {RESTORE key with future RDB version, relaxed version check} {
@@ -377,7 +376,7 @@ def test_restore_key_with_future_rdb_version_relaxed_version_check(r: ValkeyTest
     }
     """
     r.run("config", "set", "rdb-version-check", "relaxed")
-    # TODO: r restore foo 0 "\x00\x03\x62\x61\x72\xde\x00\x0fYUza\xd3\xec\xe0" replace
+    r.run("restore", "foo", 0, "\x00\x03\x62\x61\x72\xde\x00\x0fYUza\xd3\xec\xe0", "replace")
     r.run("config", "set", "rdb-version-check", "strict")
     assert "bar" == r.run("get", "foo")
 
@@ -933,10 +932,6 @@ def test_migrate_auth_correct_and_wrong_password_cases(r: ValkeyTestClient) -> N
 
 def assert_(*args):
     raise NotImplementedError("assert_")
-
-
-def assert_error(*args):
-    raise NotImplementedError("assert_error")
 
 
 def assert_range(*args):

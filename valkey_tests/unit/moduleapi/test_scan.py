@@ -16,7 +16,6 @@ r module load testmodule
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_scan_keyspace(r: ValkeyTestClient) -> None:
     """
     test {Module scan keyspace} {
@@ -32,11 +31,9 @@ def test_module_scan_keyspace(r: ValkeyTestClient) -> None:
     r.run("set", "y", 2)
     r.run("set", "z", 3)
     r.run("hset", "h", "f", "v")
-    # TODO: lsort r scan.scan_strings
-    assert False
+    assert sorted(r.run("scan.scan_strings")) == "{x 1} {y 2} {z 3}"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_scan_hash_listpack(r: ValkeyTestClient) -> None:
     """
     test {Module scan hash listpack} {
@@ -47,11 +44,9 @@ def test_module_scan_hash_listpack(r: ValkeyTestClient) -> None:
     """
     r.run("hmset", "hh", "f1", "v1", "f2", "v2")
     assert_encoding("listpack", "hh")
-    # TODO: lsort r scan.scan_key hh
-    assert False
+    assert sorted(r.run("scan.scan_key", "hh")) == "{f1 v1} {f2 v2}"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_scan_hash_listpack_with_int_value(r: ValkeyTestClient) -> None:
     """
     test {Module scan hash listpack with int value} {
@@ -62,11 +57,9 @@ def test_module_scan_hash_listpack_with_int_value(r: ValkeyTestClient) -> None:
     """
     r.run("hmset", "hh1", "f1", 1)
     assert_encoding("listpack", "hh1")
-    # TODO: lsort r scan.scan_key hh1
-    assert False
+    assert sorted(r.run("scan.scan_key", "hh1")) == "{f1 1}"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_scan_hash_dict(r: ValkeyTestClient) -> None:
     """
     test {Module scan hash dict} {
@@ -79,11 +72,9 @@ def test_module_scan_hash_dict(r: ValkeyTestClient) -> None:
     r.run("config", "set", "hash-max-ziplist-entries", 2)
     r.run("hmset", "hh3", "f1", "v1", "f2", "v2", "f3", "v3")
     assert_encoding("hashtable", "hh3")
-    # TODO: lsort r scan.scan_key hh3
-    assert False
+    assert sorted(r.run("scan.scan_key", "hh3")) == "{f1 v1} {f2 v2} {f3 v3}"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_scan_zset_listpack(r: ValkeyTestClient) -> None:
     """
     test {Module scan zset listpack} {
@@ -94,11 +85,9 @@ def test_module_scan_zset_listpack(r: ValkeyTestClient) -> None:
     """
     r.run("zadd", "zz", 1, "f1", 2, "f2")
     assert_encoding("listpack", "zz")
-    # TODO: lsort r scan.scan_key zz
-    assert False
+    assert sorted(r.run("scan.scan_key", "zz")) == "{f1 1} {f2 2}"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_scan_zset_skiplist(r: ValkeyTestClient) -> None:
     """
     test {Module scan zset skiplist} {
@@ -111,11 +100,9 @@ def test_module_scan_zset_skiplist(r: ValkeyTestClient) -> None:
     r.run("config", "set", "zset-max-ziplist-entries", 2)
     r.run("zadd", "zz1", 1, "f1", 2, "f2", 3, "f3")
     assert_encoding("skiplist", "zz1")
-    # TODO: lsort r scan.scan_key zz1
-    assert False
+    assert sorted(r.run("scan.scan_key", "zz1")) == "{f1 1} {f2 2} {f3 3}"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_scan_set_intset(r: ValkeyTestClient) -> None:
     """
     test {Module scan set intset} {
@@ -128,11 +115,9 @@ def test_module_scan_set_intset(r: ValkeyTestClient) -> None:
     r.run("del", "ss")
     r.run("sadd", "ss", 1, 2)
     assert_encoding("intset", "ss")
-    # TODO: lsort r scan.scan_key ss
-    assert False
+    assert sorted(r.run("scan.scan_key", "ss")) == "{1 {}} {2 {}}"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_scan_set_dict(r: ValkeyTestClient) -> None:
     """
     test {Module scan set dict} {
@@ -149,11 +134,9 @@ def test_module_scan_set_dict(r: ValkeyTestClient) -> None:
     r.run("sadd", "ssa", 1, 2)
     r.run("sadd", "ssa", 3)
     assert_encoding("hashtable", "ssa")
-    # TODO: lsort r scan.scan_key ssa
-    assert False
+    assert sorted(r.run("scan.scan_key", "ssa")) == "{1 {}} {2 {}} {3 {}}"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_scan_set_listpack(r: ValkeyTestClient) -> None:
     """
     test {Module scan set listpack} {
@@ -166,8 +149,7 @@ def test_module_scan_set_listpack(r: ValkeyTestClient) -> None:
     r.run("del", "ss1")
     r.run("sadd", "ss1", "a", "b", "c")
     assert_encoding("listpack", "ss1")
-    # TODO: lsort r scan.scan_key ss1
-    assert False
+    assert sorted(r.run("scan.scan_key", "ss1")) == "{a {}} {b {}} {c {}}"
 
 
 def test_unload_the_module_scan(r: ValkeyTestClient) -> None:

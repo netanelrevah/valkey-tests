@@ -1718,7 +1718,7 @@ def test_multi_with_config_error(r: ValkeyTestClient) -> None:
     assert res == "+OK"
     res = r.run("read")
     r.run("readraw", 0)
-    assert res == "*CONFIG SET failed*"
+    assert fnmatch(str(res), "*CONFIG SET failed*")
 
 
 def test_flushall_while_watching_several_keys_by_one_client(r: ValkeyTestClient) -> None:

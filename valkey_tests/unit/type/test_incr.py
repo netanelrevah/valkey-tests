@@ -1,4 +1,5 @@
 # ruff: noqa: F841, RUF043, ANN001, ANN002, ANN201
+from fnmatch import fnmatch
 
 import pytest
 
@@ -381,7 +382,7 @@ def test_incrbyfloat_does_not_allow_nan_or_infinity(r: ValkeyTestClient) -> None
         err = r.run("incrbyfloat", "foo", float("+inf"))
     except Exception as _catch_err:
         err = str(_catch_err)
-    assert err == "ERR *would produce*"
+    assert fnmatch(str(err), "ERR *would produce*")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -492,7 +493,7 @@ def test_cmd_operation_should_update_encoding_from_raw_to_int(r: ValkeyTestClien
         assert_equal $res $expected
     }
     """
-    res = ""
+    res = []
     expected = "1 12"
     if string("match", "*incr*", cmd):
         lappend("expected", 13)
@@ -500,10 +501,10 @@ def test_cmd_operation_should_update_encoding_from_raw_to_int(r: ValkeyTestClien
         lappend("expected", 11)
     r.run("set", "foo", 1)
     assert_encoding("int", "foo")
-    lappend("res", r.run("get", "foo"))
+    res.append(r.run("get", "foo"))
     r.run("append", "foo", 2)
     assert_encoding("raw", "foo")
-    lappend("res", r.run("get", "foo"))
+    res.append(r.run("get", "foo"))
     if_(
         "[string match {*by*} $cmd]",
         "                r $cmd foo 1\n            ",
@@ -511,7 +512,7 @@ def test_cmd_operation_should_update_encoding_from_raw_to_int(r: ValkeyTestClien
         "                r $cmd foo\n            ",
     )
     assert_encoding("int", "foo")
-    lappend("res", r.run("get", "foo"))
+    res.append(r.run("get", "foo"))
     assert res == expected
 
 
