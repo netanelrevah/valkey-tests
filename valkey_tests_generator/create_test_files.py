@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 from pytcl.commands import TCLBracesWord, TCLCommandForEach, TCLList, TCLScript
-from pytcl.words import TCLCommandWord, TCLVariableSubstitutionWord
+from pytcl.words import TCLCommandWord, TCLVariableSubstitutionWord, TCLWord
 
 import valkey_tests_generator.argument_translators as _arg_translators
 from valkey_tests_generator.argument_translators import _safe_var_name
@@ -26,13 +26,16 @@ _KNOWN_FIXTURE_VARS = frozenset({"rd", "rd1", "rd2", "rd3", "rr", "r2", "rd_trk"
 
 
 def _collect_fixture_refs(body: TCLScript) -> set[str]:
-    """Return known fixture variable names referenced directly in a TCL script body."""
+    """Return known fixture variable names referenced but NOT locally set in a TCL script body."""
     refs: set[str] = set()
+    locally_set: set[str] = set()
     for command in body.commands:
+        if command.name == "set" and command.args and isinstance(command.args[0], TCLWord):
+            locally_set.add(command.args[0].value)
         for arg in command.args:
             if isinstance(arg, TCLVariableSubstitutionWord) and arg.variable_name in _KNOWN_FIXTURE_VARS:
                 refs.add(arg.variable_name)
-    return refs
+    return refs - locally_set
 
 
 def _test_name_from(raw: str) -> str:

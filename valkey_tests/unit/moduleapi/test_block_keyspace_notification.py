@@ -52,10 +52,10 @@ def test_blocking_keyspace_notification_two(r: ValkeyTestClient) -> None:
     """
     wait_for_blocked_clients_count(0)
     r.run("b_keyspace.clear")
-    rd1 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
     rd1.run("hset", "b", "c", "d")
     time.sleep(500 / 1000)
-    rd2 = valkey_deferring_client()
+    rd2 = ValkeyTestClient.create_from(r)
     rd2.run("hset", "c", "d", "e")
     wait_for_blocked_clients_count(2)
     assert "" == r.run("b_keyspace.events")
@@ -94,7 +94,7 @@ def test_blocking_keyspace_notification_with_pipelining_hset_after_hget(r: Valke
     """
     wait_for_blocked_clients_count(0)
     r.run("b_keyspace.clear")
-    rd1 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
     rd1.run("hset", "key_10", "field_10", "value_10")
     wait_for_blocked_clients_count(0)
     assert "1" == rd1.run("read")
@@ -135,7 +135,7 @@ def test_blocking_keyspace_notification_with_pipelining_hget_after_hset(r: Valke
     """
     wait_for_blocked_clients_count(0)
     r.run("b_keyspace.clear")
-    rd1 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
     pause_process(srv(0, "pid"))
     rd1.run("hset", "key_2", "field_1", "value_1")
     rd1.run("hget", "key_2", "field_1")
@@ -211,7 +211,7 @@ def test_event_that_fires_twice(r: ValkeyTestClient) -> None:
     r.run("hset", "f", "g", "h")
     wait_for_blocked_clients_count(0)
     assert "OK" == r.run("b_keyspace.clear")
-    rd1 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
     rd1.run("RENAME", "f", "g")
     assert s(0, "blocked_clients") == 1
     assert "" == r.run("b_keyspace.events")
@@ -304,10 +304,6 @@ def s(*args):
 
 def srv(*args):
     raise NotImplementedError("srv")
-
-
-def valkey_deferring_client(*args):
-    raise NotImplementedError("valkey_deferring_client")
 
 
 def wait_for_blocked_clients_count(*args):

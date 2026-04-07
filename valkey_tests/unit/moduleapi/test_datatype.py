@@ -1,5 +1,4 @@
 # ruff: noqa: F841, RUF043, ANN002, ANN201
-
 from fnmatch import fnmatch
 
 import pytest
@@ -173,7 +172,7 @@ def test_datatype_slow_loading(r: ValkeyTestClient) -> None:
     """
     r.run("config", "set", "busy-reply-threshold", 5000)
     r.run("datatype.slow_loading", 1)
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     start = clock("clicks", "-milliseconds")
     rd.run("debug", "reload")
     wait_for_condition(
@@ -321,10 +320,6 @@ def populate(*args):
 
 def string(*args):
     raise NotImplementedError("string")
-
-
-def valkey_deferring_client(*args):
-    raise NotImplementedError("valkey_deferring_client")
 
 
 def wait_for_condition(*args):

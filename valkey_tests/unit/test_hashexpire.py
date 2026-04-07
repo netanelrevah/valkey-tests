@@ -773,7 +773,7 @@ r config set notify-keyspace-events KEA
 
 
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hgetex_command_generates_hexpire_keyspace_notification(r: ValkeyTestClient, command, rd) -> None:
+def test_hgetex_command_generates_hexpire_keyspace_notification(r: ValkeyTestClient, command) -> None:
     """
     test "HGETEX $command generates hexpire keyspace notification" {
         r FLUSHALL
@@ -799,7 +799,7 @@ def test_hgetex_command_generates_hexpire_keyspace_notification(r: ValkeyTestCli
 
 
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hgetex_command_with_multiple_fields_generates_single_notification(r: ValkeyTestClient, command, rd) -> None:
+def test_hgetex_command_with_multiple_fields_generates_single_notification(r: ValkeyTestClient, command) -> None:
     """
     test "HGETEX $command with multiple fields generates single notification" {
         r FLUSHALL
@@ -830,7 +830,7 @@ def test_hgetex_command_with_multiple_fields_generates_single_notification(r: Va
 
 
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hgetex_command_on_non_existent_field_generates_no_notification(r: ValkeyTestClient, command, rd) -> None:
+def test_hgetex_command_on_non_existent_field_generates_no_notification(r: ValkeyTestClient, command) -> None:
     """
     test "HGETEX $command on non-existent field generates no notification" {
         r FLUSHALL
@@ -859,7 +859,7 @@ def test_hgetex_command_on_non_existent_field_generates_no_notification(r: Valke
     rd.run("close")
 
 
-def test_hgetex_persist_generates_hpersist_keyspace_notification(r: ValkeyTestClient, rd) -> None:
+def test_hgetex_persist_generates_hpersist_keyspace_notification(r: ValkeyTestClient) -> None:
     """
     test {HGETEX PERSIST generates hpersist keyspace notification} {
         r FLUSHALL
@@ -891,7 +891,7 @@ def test_hgetex_persist_generates_hpersist_keyspace_notification(r: ValkeyTestCl
 
 
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hgetex_command_0_or_past_time_works_correctly_with_1_field(r: ValkeyTestClient, command, rd) -> None:
+def test_hgetex_command_0_or_past_time_works_correctly_with_1_field(r: ValkeyTestClient, command) -> None:
     """
     test "HGETEX $command 0/past time works correctly with 1 field" {
         r FLUSHALL
@@ -1095,7 +1095,7 @@ def test_hsetex_ex_mismatched_field_or_value_count(r: ValkeyTestClient) -> None:
 
 
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hsetex_command_0_or_past_time_works_correctly_with_2_fields(r: ValkeyTestClient, command, rd) -> None:
+def test_hsetex_command_0_or_past_time_works_correctly_with_2_fields(r: ValkeyTestClient, command) -> None:
     """
     test "HSETEX $command 0/past time works correctly with 2 fields" {
         r FLUSHALL
@@ -1831,7 +1831,7 @@ def test_hexpire_on_a_non_existent_field_should_not_create_field(r: ValkeyTestCl
     assert -2 == r.run("HTTL", "myhash", "FIELDS", 1, "f2")
 
 
-def test_hexpire_on_a_non_existent_field_should_not_issue_notifications(r: ValkeyTestClient, rd) -> None:
+def test_hexpire_on_a_non_existent_field_should_not_issue_notifications(r: ValkeyTestClient) -> None:
     """
     test {HEXPIRE on a non-existent field (should not issue notifications)} {
         r FLUSHALL
@@ -2006,7 +2006,7 @@ def test_hexpire_lt_condition_succeeds_when_field_has_no_ttl(r: ValkeyTestClient
 
 
 @pytest.mark.parametrize(["command"], [("HEXPIRE"), ("HPEXPIRE"), ("HEXPIREAT"), ("HPEXPIREAT")])
-def test_hsetex_command_0_or_past_time_works_correctly_with_1_field(r: ValkeyTestClient, command, rd) -> None:
+def test_hsetex_command_0_or_past_time_works_correctly_with_1_field(r: ValkeyTestClient, command) -> None:
     """
     test "HSETEX $command 0/past time works correctly with 1 field" {
         r FLUSHALL
@@ -3732,7 +3732,7 @@ def test_expired_fields_metric_increments_by_one_when_single_hash_field_expires(
 
 
 def test_expired_fields_metric_tracks_multiple_field_expirations_with_keyspace_notifications(
-    r: ValkeyTestClient, rd
+    r: ValkeyTestClient,
 ) -> None:
     """
     test {expired_fields metric tracks multiple field expirations with keyspace notifications} {
@@ -3803,7 +3803,7 @@ def test_expired_fields_metric_tracks_multiple_field_expirations_with_keyspace_n
 
 @pytest.mark.parametrize(["time_unit"], [("s,"), ("ms")])
 def test_key_ttl_expires_before_field_ttl_entire_hash_should_be_deleted_timeunit_time_unit(
-    r: ValkeyTestClient, time_unit, rd
+    r: ValkeyTestClient, time_unit
 ) -> None:
     """
     test "Key TTL expires before field TTL: entire hash should be deleted timeunit: $time_unit" {
@@ -3843,7 +3843,7 @@ def test_key_ttl_expires_before_field_ttl_entire_hash_should_be_deleted_timeunit
     r.run("FLUSHALL")
     r.run("DEBUG", "SET-ACTIVE-EXPIRE", 0)
     r.run("config", "set", "notify-keyspace-events", "KEA")
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     assert "1" == psubscribe(rd, "__keyevent@*")
     r.run("HSET", "myhash", "f1", "v1", "f2", "v2", "f3", "v3")
     assert 1 == get_keys("r")
@@ -3872,7 +3872,7 @@ def test_key_ttl_expires_before_field_ttl_entire_hash_should_be_deleted_timeunit
 
 @pytest.mark.parametrize(["time_unit"], [("s,"), ("ms")])
 def test_field_ttl_expires_before_key_ttl_only_the_specific_field_should_expire_time_unit(
-    r: ValkeyTestClient, time_unit, rd
+    r: ValkeyTestClient, time_unit
 ) -> None:
     """
     test "Field TTL expires before key TTL: only the specific field should expire: $time_unit" {
@@ -3912,7 +3912,7 @@ def test_field_ttl_expires_before_key_ttl_only_the_specific_field_should_expire_
     """
     r.run("FLUSHALL")
     r.run("DEBUG", "SET-ACTIVE-EXPIRE", 0)
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     assert "1" == psubscribe(rd, "__keyevent@*")
     r.run("HSET", "myhash", "f1", "v1", "f2", "v2", "f3", "v3")
     assert 1 == get_keys("r")
@@ -5159,7 +5159,7 @@ def test_hgetex_overwrite_existing_expiry_with_active_expiry(r: ValkeyTestClient
 
 
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hgetex_command_keyspace_notifications_for_active_expiry(r: ValkeyTestClient, command, rd) -> None:
+def test_hgetex_command_keyspace_notifications_for_active_expiry(r: ValkeyTestClient, command) -> None:
     """
     test "HGETEX $command keyspace notifications for active expiry" {
         r FLUSHALL
@@ -5195,7 +5195,7 @@ def test_hgetex_command_keyspace_notifications_for_active_expiry(r: ValkeyTestCl
     rd.run("close")
 
 
-def test_hgetex_keyspace_notification_when_key_deleted_with_active_expiry(r: ValkeyTestClient, rd) -> None:
+def test_hgetex_keyspace_notification_when_key_deleted_with_active_expiry(r: ValkeyTestClient) -> None:
     """
     test "HGETEX keyspace notification when key deleted with active expiry" {
         r FLUSHALL
@@ -5383,7 +5383,7 @@ def test_hsetex_overwrites_existing_field_expiry_with_new_shorter_expiry(r: Valk
 
 
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
-def test_hsetex_command_keyspace_notifications_fired_on_field_expiry(r: ValkeyTestClient, command, rd) -> None:
+def test_hsetex_command_keyspace_notifications_fired_on_field_expiry(r: ValkeyTestClient, command) -> None:
     """
     test "HSETEX $command - keyspace notifications fired on field expiry" {
         r FLUSHALL
@@ -5412,7 +5412,7 @@ def test_hsetex_command_keyspace_notifications_fired_on_field_expiry(r: ValkeyTe
     rd.run("close")
 
 
-def test_hsetex_keyspace_notifications_include_del_event_when_hash_key_removed(r: ValkeyTestClient, rd) -> None:
+def test_hsetex_keyspace_notifications_include_del_event_when_hash_key_removed(r: ValkeyTestClient) -> None:
     """
     test "HSETEX - keyspace notifications include del event when hash key removed" {
         r FLUSHALL
@@ -6350,9 +6350,9 @@ if {$cmd eq "HINCRBY"} {
 """
 
 
-@pytest.mark.parametrize(["cmd", "inc1", "inc2", "inc3"], [("HINCRBY", 2, 3, 4), ("HINCRBYFLOAT", 2.5, 3.5, 4.5)])
+@pytest.mark.parametrize(["cmd", "inc2", "inc3", "inc1"], [("HINCRBY", 3, 4, 2), ("HINCRBYFLOAT", 3.5, 4.5, 2.5)])
 def test_cmd_recreates_field_with_correct_value_after_active_expiry_deletion(
-    r: ValkeyTestClient, cmd, inc1, inc2, inc3
+    r: ValkeyTestClient, cmd, inc2, inc3, inc1
 ) -> None:
     """
     test "$cmd recreates field with correct value after active expiry deletion" {
@@ -6383,8 +6383,8 @@ def test_cmd_recreates_field_with_correct_value_after_active_expiry_deletion(
     assert inc1 == r.run("HGET", "myhash", "f1")
 
 
-@pytest.mark.parametrize(["cmd", "inc1", "inc2", "inc3"], [("HINCRBY", 2, 3, 4), ("HINCRBYFLOAT", 2.5, 3.5, 4.5)])
-def test_cmd_preserves_existing_ttl_when_incrementing_field_value(r: ValkeyTestClient, cmd, inc1, inc2, inc3) -> None:
+@pytest.mark.parametrize(["cmd", "inc2", "inc3", "inc1"], [("HINCRBY", 3, 4, 2), ("HINCRBYFLOAT", 3.5, 4.5, 2.5)])
+def test_cmd_preserves_existing_ttl_when_incrementing_field_value(r: ValkeyTestClient, cmd, inc2, inc3, inc1) -> None:
     """
     test "$cmd preserves existing TTL when incrementing field value" {
         r FLUSHALL
@@ -6414,9 +6414,9 @@ def test_cmd_preserves_existing_ttl_when_incrementing_field_value(r: ValkeyTestC
     assert_morethan(r.run("HTTL", "myhash", "FIELDS", 1, "f1"), 90000)
 
 
-@pytest.mark.parametrize(["cmd", "inc1", "inc2", "inc3"], [("HINCRBY", 2, 3, 4), ("HINCRBYFLOAT", 2.5, 3.5, 4.5)])
+@pytest.mark.parametrize(["cmd", "inc2", "inc3", "inc1"], [("HINCRBY", 3, 4, 2), ("HINCRBYFLOAT", 3.5, 4.5, 2.5)])
 def test_cmd_handles_mix_of_expired_and_existing_fields_during_increment_operations(
-    r: ValkeyTestClient, cmd, inc1, inc2, inc3
+    r: ValkeyTestClient, cmd, inc2, inc3, inc1
 ) -> None:
     """
     test "$cmd handles mix of expired and existing fields during increment operations" {
@@ -6453,9 +6453,9 @@ def test_cmd_handles_mix_of_expired_and_existing_fields_during_increment_operati
     assert f"{inc1} [expr {{{inc2}+2}}] {inc3}" == r.run("HMGET", "myhash", "f1", "f2", "f3")
 
 
-@pytest.mark.parametrize(["cmd", "inc1", "inc2", "inc3"], [("HINCRBY", 2, 3, 4), ("HINCRBYFLOAT", 2.5, 3.5, 4.5)])
+@pytest.mark.parametrize(["cmd", "inc2", "inc3", "inc1"], [("HINCRBY", 3, 4, 2), ("HINCRBYFLOAT", 3.5, 4.5, 2.5)])
 def test_cmd_maintains_ttl_values_when_incrementing_fields_with_existing_expiry(
-    r: ValkeyTestClient, cmd, inc1, inc2, inc3
+    r: ValkeyTestClient, cmd, inc2, inc3, inc1
 ) -> None:
     """
     test "$cmd maintains TTL values when incrementing fields with existing expiry" {
@@ -7686,10 +7686,6 @@ def string(*args):
 
 def subst(*args):
     raise NotImplementedError("subst")
-
-
-def valkey_deferring_client(*args):
-    raise NotImplementedError("valkey_deferring_client")
 
 
 def wait_for_active_expiry(*args):

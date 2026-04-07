@@ -93,7 +93,7 @@ def test_module_stream_add_unblocks_blocking_xread(r: ValkeyTestClient) -> None:
     }
     """
     r.run("del", "mystream")
-    rd1 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
     # TODO: $rd1 XREAD BLOCK 3000 STREAMS mystream
     wait_for_condition(
         50,
@@ -104,7 +104,7 @@ def test_module_stream_add_unblocks_blocking_xread(r: ValkeyTestClient) -> None:
     )
     id = r.run("stream.add", "mystream", "field", 1, "value", "a")
     assert f"{{mystream {{{{{id} {{field 1 value a}}}}}}}}" == rd1.run("read")
-    rd2 = valkey_deferring_client()
+    rd2 = ValkeyTestClient.create_from(r)
     # TODO: $rd2 XREAD BLOCK 3000 STREAMS mystream
     wait_for_condition(
         50,
@@ -348,10 +348,6 @@ run_solo {stream-large-memory} {
 
 def string(*args):
     raise NotImplementedError("string")
-
-
-def valkey_deferring_client(*args):
-    raise NotImplementedError("valkey_deferring_client")
 
 
 def wait_for_condition(*args):

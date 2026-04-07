@@ -1,5 +1,7 @@
 # ruff: noqa: PLR2004, F841, ANN002, ANN201
 
+from fnmatch import fnmatch
+
 import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
@@ -115,7 +117,6 @@ test {CONFIG SET bind-source-addr} {
 pytestmark = [pytest.mark.external_skip]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_default_bind_address_configuration_handling(r: ValkeyTestClient) -> None:
     """
     test {Default bind address configuration handling} {
@@ -164,8 +165,11 @@ def test_default_bind_address_configuration_handling(r: ValkeyTestClient) -> Non
     assert 0 == count_message_lines(srv(0, "config_file"), "bind")
     r.run("CONFIG", "SET", "bind", "")
     assert "" == r.run("CONFIG", "GET", "bind")[1]
-    catch("valkey_client", "err")
-    # TODO: assert_match {*connection refused*} err
+    try:
+        err = ValkeyTestClient.create_from(r)
+    except Exception as _catch_err:
+        err = str(_catch_err)
+    assert fnmatch(str(err), "*connection refused*")
     r.run("CONFIG", "REWRITE")
     assert 1 == count_message_lines(srv(0, "config_file"), "bind")
     restart_server(0, 0, 0, 0)
@@ -176,7 +180,7 @@ def test_default_bind_address_configuration_handling(r: ValkeyTestClient) -> Non
         "            assert_equal {bind {}} [valkeycli_exec 0 config get bind]\n        ",
     )
     catch("reconnect 0", "err")
-    # TODO: assert_match {*connection refused*} err
+    assert fnmatch(str(err), "*connection refused*")
     assert "OK" == valkeycli_exec(0, "config", "set", "bind", "*")
     reconnect(0)
     assert r.run("ping") == "PONG"
@@ -292,7 +296,7 @@ def test_prefetch_works_as_expected_when_killing_a_client_from_the_middle_of_pre
     """
     i = 0
     while i < 16:
-        set_("rd$i", valkey_deferring_client())
+        set_("rd$i", ValkeyTestClient.create_from(r))
         i += 1
     r.run("set", "a", 0)
     # TODO: $rd4 client id
@@ -356,7 +360,7 @@ def test_prefetch_works_as_expected_when_changing_the_batch_size_while_executing
     """
     i = 0
     while i < 16:
-        set_("rd$i", valkey_deferring_client())
+        set_("rd$i", ValkeyTestClient.create_from(r))
         i += 1
     # TODO: pause_process server_pid
     for_(
@@ -415,7 +419,7 @@ def test_no_prefetch_when_the_batch_size_is_set_to_0(r: ValkeyTestClient) -> Non
     prefetch_entries = get_info_property(info, "io_threaded_total_prefetch_entries")
     i = 0
     while i < 16:
-        set_("rd$i", valkey_deferring_client())
+        set_("rd$i", ValkeyTestClient.create_from(r))
         i += 1
     # TODO: pause_process server_pid
     for_(
@@ -519,10 +523,6 @@ def set_(*args):
 
 def srv(*args):
     raise NotImplementedError("srv")
-
-
-def valkey_deferring_client(*args):
-    raise NotImplementedError("valkey_deferring_client")
 
 
 def valkeycli_exec(*args):

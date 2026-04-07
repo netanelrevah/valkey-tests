@@ -527,8 +527,8 @@ def test_module_auth_during_blocking_module_auth(r: ValkeyTestClient) -> None:
     """
     r.run("config", "resetstat")
     r.run("acl", "setuser", "foo", ">pwd", "on", "~*", "&*", "+@all")
-    rd = valkey_deferring_client()
-    rd_two = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
+    rd_two = ValkeyTestClient.create_from(r)
     rd.run("AUTH", "foo", "block_allow")
     wait_for_blocked_clients_count(1)
     assert "OK" == r.run("AUTH", "foo", "allow")
@@ -595,7 +595,7 @@ def test_disabling_valkey_user_during_blocking_module_auth(r: ValkeyTestClient) 
     """
     r.run("config", "resetstat")
     r.run("acl", "setuser", "foo", ">pwd", "on", "~*", "&*", "+@all")
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("AUTH", "foo", "pwd")
     wait_for_blocked_clients_count(1)
     r.run("acl", "setuser", "foo", ">pwd", "off", "~*", "&*", "+@all")
@@ -629,7 +629,7 @@ def test_killing_a_client_in_the_middle_of_blocking_module_auth(r: ValkeyTestCli
     """
     r.run("config", "resetstat")
     r.run("acl", "setuser", "foo", ">pwd", "on", "~*", "&*", "+@all")
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("client", "id")
     cid = rd.run("read")
     rd.run("AUTH", "foo", "pwd")
@@ -693,7 +693,7 @@ def test_test_rm_registerauthcallback_module_api_during_blocking_module_auth(r: 
     """
     r.run("config", "resetstat")
     r.run("acl", "setuser", "foo", ">defaultpwd", "on", "~*", "&*", "+@all")
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("AUTH", "foo", "defaultpwd")
     wait_for_blocked_clients_count(1)
     assert "OK" == r.run("testmoduleone.rm_register_blocking_auth_cb")
@@ -753,7 +753,7 @@ def test_module_unload_during_blocking_module_auth(r: ValkeyTestClient) -> None:
     """
     r.run("config", "resetstat")
     # TODO: r module load miscmodule
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     r.run("acl", "setuser", "foo", ">pwd", "on", "~*", "&*", "+@all")
     rd.run("AUTH", "foo", "block_allow")
     wait_for_blocked_clients_count(1)
@@ -796,10 +796,6 @@ def cmdstat(*args):
 
 def regexp(*args):
     raise NotImplementedError("regexp")
-
-
-def valkey_deferring_client(*args):
-    raise NotImplementedError("valkey_deferring_client")
 
 
 def wait_for_blocked_clients_count(*args):

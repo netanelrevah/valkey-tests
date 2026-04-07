@@ -93,7 +93,7 @@ def test_module_rdbloadsave_test_with_pipelining(r: ValkeyTestClient) -> None:
     assert "OK" == r.run("test.rdbsave", "blabla.rdb")
     r.run("flushdb")
     assert r.run("dbsize") == 0
-    rd1 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
     rd1.run("test.rdbload", "blabla.rdb")
     wait_for_condition(
         50,
@@ -284,10 +284,6 @@ def populate(*args):
 
 def s(*args):
     raise NotImplementedError("s")
-
-
-def valkey_deferring_client(*args):
-    raise NotImplementedError("valkey_deferring_client")
 
 
 def wait_for_bgrewriteaof(*args):

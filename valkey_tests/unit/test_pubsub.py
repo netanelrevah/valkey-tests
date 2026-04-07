@@ -84,7 +84,7 @@ $rd1 close
 """
 
 
-def test_publish_or_subscribe_basics(r: ValkeyTestClient, rd1) -> None:
+def test_publish_or_subscribe_basics(r: ValkeyTestClient) -> None:
     """
     test "PUBLISH/SUBSCRIBE basics" {
         set rd1 [valkey_deferring_client]
@@ -111,7 +111,7 @@ def test_publish_or_subscribe_basics(r: ValkeyTestClient, rd1) -> None:
         $rd1 close
     }
     """
-    rd1 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
     assert "1 2" == subscribe(rd1, "chan1 chan2")
     assert 1 == r.run("publish", "chan1", "hello")
     assert 1 == r.run("publish", "chan2", "world")
@@ -144,8 +144,8 @@ def test_publish_or_subscribe_with_two_clients(r: ValkeyTestClient) -> None:
         $rd2 close
     }
     """
-    rd1 = valkey_deferring_client()
-    rd2 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
+    rd2 = ValkeyTestClient.create_from(r)
     assert "1" == subscribe(rd1, "chan1")
     assert "1" == subscribe(rd2, "chan1")
     assert 2 == r.run("publish", "chan1", "hello")
@@ -155,7 +155,7 @@ def test_publish_or_subscribe_with_two_clients(r: ValkeyTestClient) -> None:
     rd2.run("close")
 
 
-def test_publish_or_subscribe_after_unsubscribe_without_arguments(r: ValkeyTestClient, rd1) -> None:
+def test_publish_or_subscribe_after_unsubscribe_without_arguments(r: ValkeyTestClient) -> None:
     """
     test "PUBLISH/SUBSCRIBE after UNSUBSCRIBE without arguments" {
         set rd1 [valkey_deferring_client]
@@ -175,7 +175,7 @@ def test_publish_or_subscribe_after_unsubscribe_without_arguments(r: ValkeyTestC
         $rd1 close
     }
     """
-    rd1 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
     assert "1 2 3" == subscribe(rd1, "chan1 chan2 chan3")
     unsubscribe(rd1)
     wait_for_condition(
@@ -203,7 +203,7 @@ def test_subscribe_to_one_channel_more_than_once(r: ValkeyTestClient) -> None:
         $rd1 close
     }
     """
-    rd1 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
     assert "1 1 1" == subscribe(rd1, "chan1 chan1 chan1")
     assert 1 == r.run("publish", "chan1", "hello")
     assert "message chan1 hello" == rd1.run("read")
@@ -219,7 +219,7 @@ def test_unsubscribe_from_non_subscribed_channels(r: ValkeyTestClient) -> None:
         $rd1 close
     }
     """
-    rd1 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
     assert "0 0 0" == unsubscribe(rd1, "foo bar quux")
     rd1.run("close")
 
@@ -254,7 +254,7 @@ def test_publish_or_psubscribe_basics(r: ValkeyTestClient) -> None:
         $rd1 close
     }
     """
-    rd1 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
     assert "1 2" == psubscribe(rd1, "foo.* bar.*")
     assert 1 == r.run("publish", "foo.1", "hello")
     assert 1 == r.run("publish", "bar.1", "hello")
@@ -290,8 +290,8 @@ def test_publish_or_psubscribe_with_two_clients(r: ValkeyTestClient) -> None:
         $rd2 close
     }
     """
-    rd1 = valkey_deferring_client()
-    rd2 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
+    rd2 = ValkeyTestClient.create_from(r)
     assert "1" == psubscribe(rd1, "chan.*")
     assert "1" == psubscribe(rd2, "chan.*")
     assert 2 == r.run("publish", "chan.foo", "hello")
@@ -301,7 +301,7 @@ def test_publish_or_psubscribe_with_two_clients(r: ValkeyTestClient) -> None:
     rd2.run("close")
 
 
-def test_publish_or_psubscribe_after_punsubscribe_without_arguments(r: ValkeyTestClient, rd1) -> None:
+def test_publish_or_psubscribe_after_punsubscribe_without_arguments(r: ValkeyTestClient) -> None:
     """
     test "PUBLISH/PSUBSCRIBE after PUNSUBSCRIBE without arguments" {
         set rd1 [valkey_deferring_client]
@@ -321,7 +321,7 @@ def test_publish_or_psubscribe_after_punsubscribe_without_arguments(r: ValkeyTes
         $rd1 close
     }
     """
-    rd1 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
     assert "1 2 3" == psubscribe(rd1, "chan1.* chan2.* chan3.*")
     punsubscribe(rd1)
     wait_for_condition(
@@ -364,7 +364,7 @@ def test_pubsub_messages_with_client_reply_off(r: ValkeyTestClient) -> None:
         $rd close
     } {0} {resp3}
     """
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("hello", 3)
     rd.run("read")
     rd.run("client", "reply", "off")
@@ -391,7 +391,7 @@ def test_punsubscribe_from_non_subscribed_channels(r: ValkeyTestClient) -> None:
         $rd1 close
     }
     """
-    rd1 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
     assert "0 0 0" == punsubscribe(rd1, "foo.* bar.* quux.*")
     rd1.run("close")
 
@@ -405,7 +405,7 @@ def test_numsub_returns_numbers_not_strings_1561(r: ValkeyTestClient) -> None:
     assert r.run("pubsub", "numsub", "abc", "def") == "abc 0 def 0"
 
 
-def test_numpats_returns_the_number_of_unique_patterns(r: ValkeyTestClient, rd1, rd2) -> None:
+def test_numpats_returns_the_number_of_unique_patterns(r: ValkeyTestClient) -> None:
     """
     test "NUMPATs returns the number of unique patterns" {
         set rd1 [valkey_deferring_client]
@@ -427,8 +427,8 @@ def test_numpats_returns_the_number_of_unique_patterns(r: ValkeyTestClient, rd1,
         $rd2 close
     }
     """
-    rd1 = valkey_deferring_client()
-    rd2 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
+    rd2 = ValkeyTestClient.create_from(r)
     psubscribe(rd1, "foo*")
     psubscribe(rd2, "foo*")
     psubscribe(rd1, "bar*")
@@ -456,7 +456,7 @@ def test_mix_subscribe_and_psubscribe(r: ValkeyTestClient) -> None:
         $rd1 close
     }
     """
-    rd1 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
     assert "1" == subscribe(rd1, "foo.bar")
     assert "2" == psubscribe(rd1, "foo.*")
     assert 2 == r.run("publish", "foo.bar", "hello")
@@ -500,7 +500,7 @@ def test_keyspace_notifications_we_receive_keyspace_notifications(r: ValkeyTestC
     }
     """
     r.run("config", "set", "notify-keyspace-events", "KA")
-    rd1 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
     rd1.run("CLIENT", "REPLY", "OFF")
     assert "1" == psubscribe(rd1, "*")
     r.run("set", "foo", "bar")
@@ -522,7 +522,7 @@ def test_keyspace_notifications_we_receive_keyevent_notifications(r: ValkeyTestC
     }
     """
     r.run("config", "set", "notify-keyspace-events", "EA")
-    rd1 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
     rd1.run("CLIENT", "REPLY", "SKIP")
     assert "1" == psubscribe(rd1, "*")
     r.run("set", "foo", "bar")
@@ -546,7 +546,7 @@ def test_keyspace_notifications_we_can_receive_both_kind_of_events(r: ValkeyTest
     }
     """
     r.run("config", "set", "notify-keyspace-events", "KEA")
-    rd1 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
     rd1.run("CLIENT", "REPLY", "ON")
     assert "OK" == rd1.run("read")
     assert "1" == psubscribe(rd1, "*")
@@ -574,7 +574,7 @@ def test_keyspace_notifications_we_are_able_to_mask_events(r: ValkeyTestClient) 
     """
     r.run("config", "set", "notify-keyspace-events", "KEl")
     r.run("del", "mylist")
-    rd1 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
     assert "1" == psubscribe(rd1, "*")
     r.run("set", "foo", "bar")
     r.run("lpush", "mylist", "a")
@@ -601,7 +601,7 @@ def test_keyspace_notifications_general_events_test(r: ValkeyTestClient) -> None
     }
     """
     r.run("config", "set", "notify-keyspace-events", "KEg")
-    rd1 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
     assert "1" == psubscribe(rd1, "*")
     r.run("set", "foo", "bar")
     r.run("expire", "foo", 1)
@@ -635,7 +635,7 @@ def test_keyspace_notifications_list_events_test(r: ValkeyTestClient) -> None:
     """
     r.run("config", "set", "notify-keyspace-events", "KEl")
     r.run("del", "mylist")
-    rd1 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
     assert "1" == psubscribe(rd1, "*")
     r.run("lpush", "mylist", "a")
     r.run("rpush", "mylist", "a")
@@ -669,7 +669,7 @@ def test_keyspace_notifications_set_events_test(r: ValkeyTestClient) -> None:
     """
     r.run("config", "set", "notify-keyspace-events", "Ks")
     r.run("del", "myset")
-    rd1 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
     assert "1" == psubscribe(rd1, "*")
     r.run("sadd", "myset", "a", "b", "c", "d")
     r.run("srem", "myset", "x")
@@ -701,7 +701,7 @@ def test_keyspace_notifications_zset_events_test(r: ValkeyTestClient) -> None:
     """
     r.run("config", "set", "notify-keyspace-events", "Kz")
     r.run("del", "myzset")
-    rd1 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
     assert "1" == psubscribe(rd1, "*")
     r.run("zadd", "myzset", 1, "a", 2, "b")
     r.run("zrem", "myzset", "x")
@@ -730,7 +730,7 @@ def test_keyspace_notifications_hash_events_test(r: ValkeyTestClient) -> None:
     """
     r.run("config", "set", "notify-keyspace-events", "Kh")
     r.run("del", "myhash")
-    rd1 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
     assert "1" == psubscribe(rd1, "*")
     r.run("hmset", "myhash", "yes", 1, "no", 0)
     r.run("hincrby", "myhash", "yes", 10)
@@ -768,7 +768,7 @@ def test_keyspace_notifications_stream_events_test(r: ValkeyTestClient) -> None:
     """
     r.run("config", "set", "notify-keyspace-events", "Kt")
     r.run("del", "mystream")
-    rd1 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
     assert "1" == psubscribe(rd1, "*")
     # TODO: r xgroup create mystream mygroup  mkstream
     r.run("xgroup", "createconsumer", "mystream", "mygroup", "Bob")
@@ -807,7 +807,7 @@ def test_keyspace_notifications_expired_events_triggered_expire(r: ValkeyTestCli
     """
     r.run("config", "set", "notify-keyspace-events", "Ex")
     r.run("del", "foo")
-    rd1 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
     assert "1" == psubscribe(rd1, "*")
     r.run("psetex", "foo", 100, 1)
     wait_for_condition(
@@ -836,7 +836,7 @@ def test_keyspace_notifications_expired_events_background_expire(r: ValkeyTestCl
     """
     r.run("config", "set", "notify-keyspace-events", "Ex")
     r.run("del", "foo")
-    rd1 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
     assert "1" == psubscribe(rd1, "*")
     r.run("psetex", "foo", 100, 1)
     # TODO: assert_equal "pmessage * __keyevent@${db}__:expired foo" $rd1 read
@@ -859,7 +859,7 @@ def test_keyspace_notification_expired_event_expiration_time_is_already_expired(
     """
     r.run("config", "set", "notify-keyspace-events", "Ex")
     r.run("del", "foo")
-    rd1 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
     assert "1" == psubscribe(rd1, "*")
     r.run("set", "foo", 1)
     r.run("expire", "foo", -1)
@@ -887,7 +887,7 @@ def test_keyspace_notifications_evicted_events(r: ValkeyTestClient) -> None:
     r.run("config", "set", "notify-keyspace-events", "Ee")
     r.run("config", "set", "maxmemory-policy", "allkeys-lru")
     r.run("flushdb")
-    rd1 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
     assert "1" == psubscribe(rd1, "*")
     r.run("set", "foo", "bar")
     r.run("config", "set", "maxmemory", 1)
@@ -937,7 +937,7 @@ def test_keyspace_notifications_new_key_test(r: ValkeyTestClient) -> None:
     }
     """
     r.run("config", "set", "notify-keyspace-events", "En")
-    rd1 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
     assert "1" == psubscribe(rd1, "*")
     r.run("set", "foo", "bar")
     r.run("set", "foo", "baz")
@@ -1063,10 +1063,6 @@ def subscribe(*args):
 
 def unsubscribe(*args):
     raise NotImplementedError("unsubscribe")
-
-
-def valkey_deferring_client(*args):
-    raise NotImplementedError("valkey_deferring_client")
 
 
 def wait_for_condition(*args):

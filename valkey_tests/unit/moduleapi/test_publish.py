@@ -32,8 +32,8 @@ def test_publish_and_spublish_via_a_module(r: ValkeyTestClient) -> None:
         $rd2 close
     }
     """
-    rd1 = valkey_deferring_client()
-    rd2 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
+    rd2 = ValkeyTestClient.create_from(r)
     assert "1" == ssubscribe(rd1, "chan1")
     assert "1" == subscribe(rd2, "chan1")
     assert 1 == r.run("publish.shard", "chan1", "hello")
@@ -79,7 +79,3 @@ def ssubscribe(*args):
 
 def subscribe(*args):
     raise NotImplementedError("subscribe")
-
-
-def valkey_deferring_client(*args):
-    raise NotImplementedError("valkey_deferring_client")

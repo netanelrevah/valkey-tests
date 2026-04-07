@@ -164,7 +164,7 @@ def test_exec_fails_if_there_are_errors_while_queueing_commands_2(r: ValkeyTestC
         list [r exists foo1{t}] [r exists foo2{t}]
     } {0 0} {needs:config-maxmemory}
     """
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     r.run("del", "foo1{t}", "foo2{t}")
     r.run("multi")
     r.run("set", "foo1{t}", "bar1")
@@ -1086,7 +1086,7 @@ def test_discard_should_not_fail_during_oom(r: ValkeyTestClient) -> None:
         r ping
     } {PONG} {needs:config-maxmemory}
     """
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("config", "set", "maxmemory", 1)
     assert rd.run("read") == "OK"
     r.run("multi")
@@ -1130,8 +1130,8 @@ def test_multi_and_script_timeout(r: ValkeyTestClient) -> None:
         $rd1 close; $r2 close
     }
     """
-    rd1 = valkey_deferring_client()
-    r2 = valkey_client()
+    rd1 = ValkeyTestClient.create_from(r)
+    r2 = ValkeyTestClient.create_from(r)
     r.run("config", "set", "lua-time-limit", 10)
     r.run("set", "xx", 1)
     rd1.run("eval", "while true do end", 0)
@@ -1179,8 +1179,8 @@ def test_exec_and_script_timeout(r: ValkeyTestClient) -> None:
         $rd1 close; $r2 close
     }
     """
-    rd1 = valkey_deferring_client()
-    r2 = valkey_client()
+    rd1 = ValkeyTestClient.create_from(r)
+    r2 = ValkeyTestClient.create_from(r)
     r.run("config", "set", "lua-time-limit", 10)
     r.run("set", "xx", 1)
     catch(" $r2 multi; ", "e")
@@ -1228,8 +1228,8 @@ def test_multi_exec_body_and_script_timeout(r: ValkeyTestClient) -> None:
         $rd1 close; $r2 close
     }
     """
-    rd1 = valkey_deferring_client()
-    r2 = valkey_client()
+    rd1 = ValkeyTestClient.create_from(r)
+    r2 = ValkeyTestClient.create_from(r)
     r.run("config", "set", "lua-time-limit", 10)
     r.run("set", "xx", 1)
     catch(" $r2 multi; ", "e")
@@ -1276,8 +1276,8 @@ def test_just_exec_and_script_timeout(r: ValkeyTestClient) -> None:
         $rd1 close; $r2 close
     }
     """
-    rd1 = valkey_deferring_client()
-    r2 = valkey_client()
+    rd1 = ValkeyTestClient.create_from(r)
+    r2 = ValkeyTestClient.create_from(r)
     r.run("config", "set", "lua-time-limit", 10)
     r.run("set", "xx", 1)
     catch(" $r2 multi; ", "e")
@@ -1315,7 +1315,7 @@ def test_exec_with_write_commands_and_state_change(r: ValkeyTestClient) -> None:
         $r1 close
     } {0} {needs:repl}
     """
-    r1 = valkey_client()
+    r1 = ValkeyTestClient.create_from(r)
     r.run("set", "xx", 1)
     r.run("multi")
     r.run("incr", "xx")
@@ -1369,7 +1369,7 @@ def test_exec_with_read_commands_and_stale_replica_state_change(r: ValkeyTestCli
     } {0} {needs:repl cluster:skip}
     """
     r.run("config", "set", "replica-serve-stale-data", "no")
-    r1 = valkey_client()
+    r1 = ValkeyTestClient.create_from(r)
     r.run("set", "xx", 1)
     r.run("multi")
     r.run("get", "xx")
@@ -1419,7 +1419,7 @@ def test_exec_with_only_read_commands_should_not_be_rejected_when_oom(r: ValkeyT
         $r2 close
     } {0} {needs:config-maxmemory}
     """
-    r2 = valkey_client()
+    r2 = ValkeyTestClient.create_from(r)
     r.run("set", "x", "value")
     r.run("multi")
     r.run("get", "x")
@@ -1453,7 +1453,7 @@ def test_exec_with_at_least_one_use_memory_command_should_fail(r: ValkeyTestClie
         $r2 close
     } {0} {needs:config-maxmemory}
     """
-    r2 = valkey_client()
+    r2 = ValkeyTestClient.create_from(r)
     r.run("multi")
     r.run("set", "x", 1)
     r.run("get", "x")
@@ -1827,7 +1827,7 @@ def test_client_reply_off_or_skip_multi_command(r: ValkeyTestClient) -> None:
         $rd close
     }
     """
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("client", "reply", "off")
     rd.run("multi")
     rd.run("ping", "pong2")
@@ -1986,14 +1986,6 @@ def s(*args):
 
 def string(*args):
     raise NotImplementedError("string")
-
-
-def valkey_client(*args):
-    raise NotImplementedError("valkey_client")
-
-
-def valkey_deferring_client(*args):
-    raise NotImplementedError("valkey_deferring_client")
 
 
 def verify_log_message(*args):

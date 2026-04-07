@@ -350,7 +350,7 @@ def test_tracking_with_rm_call_sanity(r: ValkeyTestClient) -> None:
         $rd_trk close
     }
     """
-    rd_trk = valkey_client()
+    rd_trk = ValkeyTestClient.create_from(r)
     rd_trk.run("HELLO", 3)
     rd_trk.run("CLIENT", "TRACKING", "on")
     r.run("MSET", "key1{t}", 1, "key2{t}", 1)
@@ -378,7 +378,7 @@ def test_tracking_with_rm_call_with_script(r: ValkeyTestClient) -> None:
         $rd_trk close
     }
     """
-    rd_trk = valkey_client()
+    rd_trk = ValkeyTestClient.create_from(r)
     rd_trk.run("HELLO", 3)
     rd_trk.run("CLIENT", "TRACKING", "on")
     r.run("MSET", "key1{t}", 1, "key2{t}", 1)
@@ -1212,10 +1212,6 @@ def s(*args):
 
 def string(*args):
     raise NotImplementedError("string")
-
-
-def valkey_client(*args):
-    raise NotImplementedError("valkey_client")
 
 
 def verify_log_message(*args):

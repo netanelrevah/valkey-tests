@@ -73,7 +73,7 @@ def test_test_read_commands_are_not_blocked_by_client_pause(r: ValkeyTestClient)
     }
     """
     r.run("client", "PAUSE", 100000, "WRITE")
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("GET", "FOO")
     rd.run("PING")
     rd.run("INFO")
@@ -110,7 +110,7 @@ def test_test_old_pause_all_takes_precedence_over_new_pause_write_less_restricti
         assert_lessthan 200 $elapsed
     }
     """
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("SET", "FOO", "BAR")
     test_start_time = clock("milliseconds")
     r.run("client", "PAUSE", 200, "ALL")
@@ -139,7 +139,7 @@ def test_test_new_pause_time_is_smaller_than_old_one_then_old_time_preserved(r: 
     r.run("client", "PAUSE", 60000, "WRITE")
     r.run("client", "PAUSE", 10, "WRITE")
     time.sleep(100 / 1000)
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("SET", "FOO", "BAR")
     wait_for_blocked_clients_count(1, 100, 10)
     r.run("client", "unpause")
@@ -162,7 +162,7 @@ def test_test_write_commands_are_paused_by_ro(r: ValkeyTestClient) -> None:
     }
     """
     r.run("client", "PAUSE", 60000, "WRITE")
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("SET", "FOO", "BAR")
     wait_for_blocked_clients_count(1, 50, 100)
     r.run("client", "unpause")
@@ -196,10 +196,10 @@ def test_test_special_commands_are_paused_by_ro(r: ValkeyTestClient) -> None:
     """
     r.run("PFADD", "pause-hll", "test")
     r.run("client", "PAUSE", 100000, "WRITE")
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("PFCOUNT", "pause-hll")
     wait_for_blocked_clients_count(1, 50, 100)
-    rd2 = valkey_deferring_client()
+    rd2 = ValkeyTestClient.create_from(r)
     rd2.run("publish", "foo", "bar")
     wait_for_blocked_clients_count(2, 50, 100)
     r.run("client", "unpause")
@@ -226,7 +226,7 @@ def test_test_read_or_admin_multi_execs_are_not_blocked_by_pause_ro(r: ValkeyTes
     """
     r.run("SET", "FOO", "BAR")
     r.run("client", "PAUSE", 100000, "WRITE")
-    rr = valkey_client()
+    rr = ValkeyTestClient.create_from(r)
     assert rr.run("MULTI") == "OK"
     assert rr.run("PING") == "QUEUED"
     assert rr.run("GET", "FOO") == "QUEUED"
@@ -252,7 +252,7 @@ def test_test_write_multi_execs_are_blocked_by_pause_ro(r: ValkeyTestClient) -> 
         $rd close
     }
     """
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("MULTI")
     assert rd.run("read") == "OK"
     rd.run("SET", "FOO", "BAR")
@@ -287,8 +287,8 @@ def test_test_scripts_are_blocked_by_pause_ro(r: ValkeyTestClient) -> None:
     }
     """
     r.run("client", "PAUSE", 60000, "WRITE")
-    rd = valkey_deferring_client()
-    rd2 = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
+    rd2 = ValkeyTestClient.create_from(r)
     rd.run("EVAL", "return 1", 0)
     rd2.run("EVAL", "#!lua\n            return 1\n        ", 0)
     wait_for_blocked_clients_count(2, 50, 100)
@@ -354,7 +354,7 @@ def test_test_ro_scripts_are_not_blocked_by_pause_ro(r: ValkeyTestClient) -> Non
         "#!lua name=f1\n            server.register_function{\n                function_name='f1',\n                callback=function() return \"hello\" end,\n                flags={'no-writes'}\n            }\n        ",
     )
     r.run("client", "PAUSE", 6000000, "WRITE")
-    rr = valkey_client()
+    rr = ValkeyTestClient.create_from(r)
     assert (
         rr.run("EVAL", "#!lua flags=no-writes                return 'unique script'            ", 0) == "unique script"
     )
@@ -395,7 +395,7 @@ def test_test_read_only_scripts_in_multi_exec_are_not_blocked_by_pause_ro(r: Val
     """
     r.run("SET", "FOO", "BAR")
     r.run("client", "PAUSE", 100000, "WRITE")
-    rr = valkey_client()
+    rr = ValkeyTestClient.create_from(r)
     assert rr.run("MULTI") == "OK"
     assert rr.run("EVAL", "#!lua flags=no-writes                return 12            ", 0) == "QUEUED"
     assert rr.run("EVAL", "#!lua flags=no-writes                return 13            ", 0) == "QUEUED"
@@ -438,8 +438,8 @@ def test_test_write_scripts_in_multi_exec_are_blocked_by_pause_ro(r: ValkeyTestC
         $rd2 close
     }
     """
-    rd = valkey_deferring_client()
-    rd2 = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
+    rd2 = ValkeyTestClient.create_from(r)
     rd.run("MULTI")
     assert rd.run("read") == "OK"
     rd.run("EVAL", "#!lua\n                return 12\n            ", 0)
@@ -504,7 +504,7 @@ def test_test_multiple_clients_can_be_queued_up_and_unblocked(r: ValkeyTestClien
     }
     """
     r.run("client", "PAUSE", 60000, "WRITE")
-    clients = [valkey_deferring_client(), valkey_deferring_client(), valkey_deferring_client()]
+    clients = [ValkeyTestClient.create_from(r), ValkeyTestClient.create_from(r), ValkeyTestClient.create_from(r)]
     foreach("client", clients, "            $client SET FOO BAR\n        ")
     wait_for_blocked_clients_count(3, 50, 100)
     r.run("client", "unpause")
@@ -656,7 +656,7 @@ def test_test_that_client_pause_starts_at_the_end_of_a_transaction(r: ValkeyTest
     r.run("client", "PAUSE", 60000, "WRITE")
     r.run("SET", "FOO2{t}", "BAR")
     r.run("exec")
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("SET", "FOO3{t}", "BAR")
     wait_for_blocked_clients_count(1, 50, 100)
     assert fnmatch(str(r.run("GET", "FOO1{t}")), "BAR")
@@ -798,8 +798,8 @@ def test_client_unblock_is_not_allow_to_unblock_client_blocked_by_client_pause(r
         $rd2 close
     }
     """
-    rd1 = valkey_deferring_client()
-    rd2 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
+    rd2 = ValkeyTestClient.create_from(r)
     rd1.run("client", "id")
     rd2.run("client", "id")
     client_id1 = rd1.run("read")
@@ -888,14 +888,6 @@ def foreach(*args):
 
 def s(*args):
     raise NotImplementedError("s")
-
-
-def valkey_client(*args):
-    raise NotImplementedError("valkey_client")
-
-
-def valkey_deferring_client(*args):
-    raise NotImplementedError("valkey_deferring_client")
 
 
 def wait_for_blocked_clients_count(*args):

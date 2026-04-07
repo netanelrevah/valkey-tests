@@ -46,7 +46,7 @@ def test_modules_allocated_memory_can_be_reclaimed_in_the_background(r: ValkeyTe
     }
     """
     orig_mem = s("used_memory")
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     i = 0
     while i < 10000:
         rd.run("lazyfreelink.insert", "lazykey", i)
@@ -77,10 +77,6 @@ def assert_(*args):
 
 def s(*args):
     raise NotImplementedError("s")
-
-
-def valkey_deferring_client(*args):
-    raise NotImplementedError("valkey_deferring_client")
 
 
 def wait_for_condition(*args):

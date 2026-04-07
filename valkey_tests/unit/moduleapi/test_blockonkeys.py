@@ -37,8 +37,8 @@ def test_module_client_blocked_on_keys_circular_bpoppush(r: ValkeyTestClient) ->
         assert_equal {} [r fsl.getall dst]
     }
     """
-    rd1 = valkey_deferring_client()
-    rd2 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
+    rd2 = ValkeyTestClient.create_from(r)
     r.run("del", "src", "dst")
     rd1.run("fsl.bpoppush", "src", "dst", 0)
     wait_for_blocked_clients_count(1)
@@ -64,7 +64,7 @@ def test_module_client_blocked_on_keys_self_referential_bpoppush(r: ValkeyTestCl
         assert_equal {42} [r fsl.getall src]
     }
     """
-    rd1 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
     r.run("del", "src")
     rd1.run("fsl.bpoppush", "src", "src", 0)
     wait_for_blocked_clients_count(1)
@@ -99,7 +99,7 @@ def test_module_client_blocked_on_keys_bpoppush_unblocked_by_timer(r: ValkeyTest
         close_replication_stream $repl
     } {} {needs:repl}
     """
-    rd1 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
     r.run("del", "src", "dst")
     repl = attach_to_replication_stream()
     rd1.run("fsl.bpoppush", "src", "dst", 0)
@@ -139,7 +139,7 @@ def test_module_client_blocked_on_keys_no_metadata_timeout(r: ValkeyTestClient) 
     }
     """
     r.run("del", "k")
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("fsl.bpop", "k", 1)
     assert "Request timedout" == rd.run("read")
 
@@ -156,7 +156,7 @@ def test_module_client_blocked_on_keys_no_metadata_blocked(r: ValkeyTestClient) 
     }
     """
     r.run("del", "k")
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("fsl.bpop", "k", 0)
     wait_for_blocked_clients_count(1)
     r.run("fsl.push", "k", 34)
@@ -190,7 +190,7 @@ def test_module_client_blocked_on_keys_with_metadata_timeout(r: ValkeyTestClient
     }
     """
     r.run("del", "k")
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("client", "id")
     cid = rd.run("read")
     r.run("fsl.push", "k", 33)
@@ -215,7 +215,7 @@ def test_module_client_blocked_on_keys_with_metadata_blocked_case_1(r: ValkeyTes
     }
     """
     r.run("del", "k")
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("client", "id")
     cid = rd.run("read")
     r.run("fsl.push", "k", 33)
@@ -243,7 +243,7 @@ def test_module_client_blocked_on_keys_with_metadata_blocked_case_2(r: ValkeyTes
     """
     r.run("del", "k")
     r.run("fsl.push", "k", 32)
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("fsl.bpopgt", "k", 35, 0)
     wait_for_blocked_clients_count(1)
     r.run("fsl.push", "k", 33)
@@ -267,7 +267,7 @@ def test_module_client_blocked_on_keys_with_metadata_blocked_del(r: ValkeyTestCl
     """
     r.run("del", "k")
     r.run("fsl.push", "k", 32)
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("fsl.bpopgt", "k", 35, 0)
     wait_for_blocked_clients_count(1)
     r.run("del", "k")
@@ -288,7 +288,7 @@ def test_module_client_blocked_on_keys_with_metadata_blocked_flushall(r: ValkeyT
     """
     r.run("del", "k")
     r.run("fsl.push", "k", 32)
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("fsl.bpopgt", "k", 35, 0)
     wait_for_blocked_clients_count(1)
     r.run("flushall")
@@ -311,7 +311,7 @@ def test_module_client_blocked_on_keys_with_metadata_blocked_swapdb_no_key(r: Va
     r.run("select", 9)
     r.run("del", "k")
     r.run("fsl.push", "k", 32)
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("fsl.bpopgt", "k", 35, 0)
     wait_for_blocked_clients_count(1)
     r.run("swapdb", 0, 9)
@@ -342,7 +342,7 @@ def test_module_client_blocked_on_keys_with_metadata_blocked_swapdb_key_exists_c
     r.run("select", 0)
     r.run("lpush", "k", 38)
     r.run("select", 9)
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("fsl.bpopgt", "k", 35, 0)
     wait_for_blocked_clients_count(1)
     r.run("swapdb", 0, 9)
@@ -376,7 +376,7 @@ def test_module_client_blocked_on_keys_with_metadata_blocked_swapdb_key_exists_c
     r.run("select", 0)
     r.run("fsl.push", "k", 34)
     r.run("select", 9)
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("fsl.bpopgt", "k", 35, 0)
     wait_for_blocked_clients_count(1)
     r.run("swapdb", 0, 9)
@@ -410,7 +410,7 @@ def test_module_client_blocked_on_keys_with_metadata_blocked_swapdb_key_exists_c
     r.run("select", 0)
     r.run("fsl.push", "k", 38)
     r.run("select", 9)
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("fsl.bpopgt", "k", 35, 0)
     wait_for_blocked_clients_count(1)
     r.run("swapdb", 0, 9)
@@ -433,7 +433,7 @@ def test_module_client_blocked_on_keys_with_metadata_blocked_client_kill(r: Valk
     """
     r.run("del", "k")
     r.run("fsl.push", "k", 32)
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("client", "id")
     cid = rd.run("read")
     rd.run("fsl.bpopgt", "k", 35, 0)
@@ -457,7 +457,7 @@ def test_module_client_blocked_on_keys_with_metadata_blocked_client_unblock_time
     """
     r.run("del", "k")
     r.run("fsl.push", "k", 32)
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("client", "id")
     cid = rd.run("read")
     rd.run("fsl.bpopgt", "k", 35, 0)
@@ -482,7 +482,7 @@ def test_module_client_blocked_on_keys_with_metadata_blocked_client_unblock_erro
     """
     r.run("del", "k")
     r.run("fsl.push", "k", 32)
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("client", "id")
     cid = rd.run("read")
     rd.run("fsl.bpopgt", "k", 35, 0)
@@ -505,7 +505,7 @@ def test_module_client_blocked_on_keys_no_timeout_cb_client_unblock_timeout(r: V
     }
     """
     r.run("del", "k")
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("client", "id")
     cid = rd.run("read")
     rd.run("fsl.bpop", "k", 0, "NO_TO_CB")
@@ -528,7 +528,7 @@ def test_module_client_blocked_on_keys_no_timeout_cb_client_unblock_error(r: Val
     }
     """
     r.run("del", "k")
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("client", "id")
     cid = rd.run("read")
     rd.run("fsl.bpop", "k", 0, "NO_TO_CB")
@@ -554,7 +554,7 @@ def test_module_client_re_blocked_on_keys_after_woke_up_on_wrong_type(r: ValkeyT
     }
     """
     r.run("del", "k")
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("fsl.bpop", "k", 0)
     wait_for_blocked_clients_count(1)
     r.run("lpush", "k", 12)
@@ -579,7 +579,7 @@ def test_module_client_blocked_on_keys_woken_up_by_lpush(r: ValkeyTestClient) ->
     }
     """
     r.run("del", "k")
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("blockonkeys.popall", "k")
     wait_for_blocked_clients_count(1)
     r.run("lpush", "k", 42, "squirrel", "banana")
@@ -600,7 +600,7 @@ def test_module_client_unblocks_blpop(r: ValkeyTestClient) -> None:
     }
     """
     r.run("del", "k")
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("blpop", "k", 3)
     wait_for_blocked_clients_count(1)
     r.run("blockonkeys.lpush", "k", 42)
@@ -627,7 +627,7 @@ def test_module_unblocks_module_blocked_on_non_empty_list(r: ValkeyTestClient) -
     """
     r.run("del", "k")
     r.run("lpush", "k", "aa")
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("blockonkeys.blpopn", "k", 5)
     wait_for_blocked_clients_count(1)
     r.run("blockonkeys.lpush_unblock", "k", "bb", "cc")
@@ -658,7 +658,7 @@ def test_module_explicit_unblock_when_blocked_on_keys(r: ValkeyTestClient) -> No
     """
     r.run("del", "k")
     r.run("set", "somekey", "someval")
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("blockonkeys.blpopn_or_unblock", "k", 5, 0)
     wait_for_blocked_clients_count(1)
     r.run("lpush", "k", "dd")
@@ -739,10 +739,6 @@ def close_replication_stream(*args):
 
 def s(*args):
     raise NotImplementedError("s")
-
-
-def valkey_deferring_client(*args):
-    raise NotImplementedError("valkey_deferring_client")
 
 
 def wait_for_blocked_clients_count(*args):

@@ -461,7 +461,7 @@ def test_blocking_xreadgroup_will_not_reply_with_an_empty_array(r: ValkeyTestCli
     assert lindex(res, 0, 1, 0) == "666-0 {f v}"
     r.run("XADD", "mystream", 667, "f2", "v2")
     r.run("XDEL", "mystream", 667)
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("XREADGROUP", "GROUP", "mygroup", "Alice", "BLOCK", 10, "STREAMS", "mystream", ">")
     wait_for_blocked_clients_count(0)
     assert rd.run("read") == ""
@@ -486,7 +486,7 @@ def test_blocking_xreadgroup_key_deleted(r: ValkeyTestClient) -> None:
     r.run("DEL", "mystream")
     r.run("XADD", "mystream", 666, "f", "v")
     # TODO: r XGROUP CREATE mystream mygroup
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("XREADGROUP", "GROUP", "mygroup", "Alice", "BLOCK", 0, "STREAMS", "mystream", ">")
     wait_for_blocked_clients_count(1)
     r.run("DEL", "mystream")
@@ -512,7 +512,7 @@ def test_blocking_xreadgroup_key_type_changed_with_set(r: ValkeyTestClient) -> N
     r.run("DEL", "mystream")
     r.run("XADD", "mystream", 666, "f", "v")
     # TODO: r XGROUP CREATE mystream mygroup
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("XREADGROUP", "GROUP", "mygroup", "Alice", "BLOCK", 0, "STREAMS", "mystream", ">")
     wait_for_blocked_clients_count(1)
     r.run("SET", "mystream", "val1")
@@ -541,7 +541,7 @@ def test_blocking_xreadgroup_key_type_changed_with_transaction(r: ValkeyTestClie
     r.run("DEL", "mystream")
     r.run("XADD", "mystream", 666, "f", "v")
     # TODO: r XGROUP CREATE mystream mygroup
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("XREADGROUP", "GROUP", "mygroup", "Alice", "BLOCK", 0, "STREAMS", "mystream", ">")
     wait_for_blocked_clients_count(1)
     r.run("MULTI")
@@ -570,7 +570,7 @@ def test_blocking_xreadgroup_flushed_db(r: ValkeyTestClient) -> None:
     r.run("DEL", "mystream")
     r.run("XADD", "mystream", 666, "f", "v")
     # TODO: r XGROUP CREATE mystream mygroup
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("XREADGROUP", "GROUP", "mygroup", "Alice", "BLOCK", 0, "STREAMS", "mystream", ">")
     wait_for_blocked_clients_count(1)
     r.run("FLUSHALL")
@@ -604,7 +604,7 @@ def test_blocking_xreadgroup_swapped_db_key_doesn_t_exist(r: ValkeyTestClient) -
     r.run("DEL", "mystream")
     r.run("XADD", "mystream", 666, "f", "v")
     # TODO: r XGROUP CREATE mystream mygroup
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("SELECT", 9)
     rd.run("read")
     rd.run("XREADGROUP", "GROUP", "mygroup", "Alice", "BLOCK", 0, "STREAMS", "mystream", ">")
@@ -643,7 +643,7 @@ def test_blocking_xreadgroup_swapped_db_key_is_not_a_stream(r: ValkeyTestClient)
     r.run("DEL", "mystream")
     r.run("XADD", "mystream", 666, "f", "v")
     # TODO: r XGROUP CREATE mystream mygroup
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("SELECT", 9)
     rd.run("read")
     rd.run("XREADGROUP", "GROUP", "mygroup", "Alice", "BLOCK", 0, "STREAMS", "mystream", ">")
@@ -698,7 +698,7 @@ def test_blocking_xread_key_deleted(r: ValkeyTestClient) -> None:
     """
     r.run("DEL", "mystream")
     r.run("XADD", "mystream", 666, "f", "v")
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("XREAD", "BLOCK", 0, "STREAMS", "mystream", "$")
     wait_for_blocked_clients_count(1)
     r.run("DEL", "mystream")
@@ -727,7 +727,7 @@ def test_blocking_xread_key_type_changed_with_set(r: ValkeyTestClient) -> None:
     """
     r.run("DEL", "mystream")
     r.run("XADD", "mystream", 666, "f", "v")
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("XREAD", "BLOCK", 0, "STREAMS", "mystream", "$")
     wait_for_blocked_clients_count(1)
     r.run("SET", "mystream", "val1")
@@ -767,7 +767,7 @@ def test_blocking_xreadgroup_for_stream_that_ran_dry_issue_5299(r: ValkeyTestCli
         $rd close
     }
     """
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     r.run("DEL", "mystream")
     # TODO: r XGROUP CREATE mystream mygroup  MKSTREAM
     r.run("XADD", "mystream", 666, "key", "value")
@@ -837,7 +837,7 @@ def test_blocking_xreadgroup_will_ignore_block_if_id_is_not(r: ValkeyTestClient)
         $rd close
     }
     """
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     r.run("DEL", "mystream")
     # TODO: r XGROUP CREATE mystream mygroup  MKSTREAM
     r.run("XADD", "mystream", 666, "key", "value")
@@ -926,8 +926,8 @@ def test_blocking_xreadgroup_for_stream_key_that_has_clients_blocked_on_list(r: 
         $rd close
     }
     """
-    rd = valkey_deferring_client()
-    rd2 = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
+    rd2 = ValkeyTestClient.create_from(r)
     r.run("DEL", "mystream")
     rd2.run("BLPOP", "mystream", 0)
     wait_for_blocked_clients_count(1)
@@ -980,9 +980,9 @@ def test_blocking_xreadgroup_for_stream_key_that_has_clients_blocked_on_stream_a
     """
     r.run("DEL", "mystream")
     # TODO: r XGROUP CREATE mystream mygroup  MKSTREAM
-    rd1 = valkey_deferring_client()
-    rd2 = valkey_deferring_client()
-    rd3 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
+    rd2 = ValkeyTestClient.create_from(r)
+    rd3 = ValkeyTestClient.create_from(r)
     rd1.run("xreadgroup", "GROUP", "mygroup", "myuser", "COUNT", 10, "BLOCK", 10000, "STREAMS", "mystream", ">")
     rd2.run("xreadgroup", "GROUP", "mygroup", "myuser", "COUNT", 10, "BLOCK", 10000, "STREAMS", "mystream", ">")
     rd3.run("xreadgroup", "GROUP", "mygroup", "myuser", "COUNT", 10, "BLOCK", 10000, "STREAMS", "mystream", ">")
@@ -1029,8 +1029,8 @@ def test_blocking_xreadgroup_for_stream_key_that_has_clients_blocked_on_stream_r
     """
     r.run("DEL", "mystream")
     # TODO: r XGROUP CREATE mystream mygroup  MKSTREAM
-    rd1 = valkey_deferring_client()
-    rd2 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
+    rd2 = ValkeyTestClient.create_from(r)
     rd1.run("xreadgroup", "GROUP", "mygroup", "myuser", "BLOCK", 0, "STREAMS", "mystream", ">")
     wait_for_blocked_clients_count(1)
     start = clock("milliseconds")
@@ -1068,7 +1068,7 @@ def test_xgroup_destroy_should_unblock_xreadgroup_with_nogroup(r: ValkeyTestClie
     r.run("config", "resetstat")
     r.run("del", "mystream")
     # TODO: r XGROUP CREATE mystream mygroup  MKSTREAM
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("XREADGROUP", "GROUP", "mygroup", "Alice", "BLOCK", 0, "STREAMS", "mystream", ">")
     wait_for_blocked_clients_count(1)
     r.run("XGROUP", "DESTROY", "mystream", "mygroup")
@@ -1097,7 +1097,7 @@ def test_rename_can_unblock_xreadgroup_with_data(r: ValkeyTestClient) -> None:
     """
     r.run("del", "mystream{t}")
     # TODO: r XGROUP CREATE mystream{t} mygroup  MKSTREAM
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("XREADGROUP", "GROUP", "mygroup", "Alice", "BLOCK", 0, "STREAMS", "mystream{t}", ">")
     wait_for_blocked_clients_count(1)
     # TODO: r XGROUP CREATE mystream2{t} mygroup  MKSTREAM
@@ -1124,7 +1124,7 @@ def test_rename_can_unblock_xreadgroup_with_nogroup(r: ValkeyTestClient) -> None
     """
     r.run("del", "mystream{t}")
     # TODO: r XGROUP CREATE mystream{t} mygroup  MKSTREAM
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("XREADGROUP", "GROUP", "mygroup", "Alice", "BLOCK", 0, "STREAMS", "mystream{t}", ">")
     wait_for_blocked_clients_count(1)
     r.run("XADD", "mystream2{t}", 100, "f1", "v1")
@@ -2739,10 +2739,6 @@ def lindex(*args):
 
 def s(*args):
     raise NotImplementedError("s")
-
-
-def valkey_deferring_client(*args):
-    raise NotImplementedError("valkey_deferring_client")
 
 
 def wait_for_blocked_clients_count(*args):

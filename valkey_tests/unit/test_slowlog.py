@@ -295,7 +295,7 @@ def test_slowlog_rewritten_commands_are_logged_as_their_original_command(r: Valk
     r.run("slowlog", "reset")
     r.run("INCRBYFLOAT", "A", 1.0)
     assert "INCRBYFLOAT A 1.0" == r.run("slowlog", "get")[0][3]
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("blpop", "l", 0)
     wait_for_blocked_clients_count(1, 50, 100)
     r.run("multi")
@@ -523,7 +523,7 @@ def test_slowlog_blocking_command_is_reported_only_after_unblocked(r: ValkeyTest
     }
     """
     r.run("del", "mylist")
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     r.run("config", "set", "slowlog-log-slower-than", 0)
     r.run("config", "set", "slowlog-max-len", 110)
     r.run("slowlog", "reset")
@@ -626,10 +626,6 @@ def srv(*args):
 
 def string(*args):
     raise NotImplementedError("string")
-
-
-def valkey_deferring_client(*args):
-    raise NotImplementedError("valkey_deferring_client")
 
 
 def wait_for_blocked_clients_count(*args):

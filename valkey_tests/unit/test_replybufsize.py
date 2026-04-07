@@ -71,7 +71,7 @@ def test_verify_reply_buffer_limits(r: ValkeyTestClient) -> None:
     } {0} {needs:debug}
     """
     r.run("debug", "replybuffer", "peak-reset-time", 100)
-    variable("tc", valkey_client())
+    variable("tc", ValkeyTestClient.create_from(r))
     # TODO: $tc client setname test_client
     wait_for_condition(
         10,
@@ -99,10 +99,6 @@ def test_verify_reply_buffer_limits(r: ValkeyTestClient) -> None:
 
 def string(*args):
     raise NotImplementedError("string")
-
-
-def valkey_client(*args):
-    raise NotImplementedError("valkey_client")
 
 
 def variable(*args):

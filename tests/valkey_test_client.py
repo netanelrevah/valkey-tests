@@ -104,6 +104,17 @@ class ValkeyTestClient:
         except ValkeyError as e:
             return str(e)
 
+    @classmethod
+    def create_from(cls, other: "ValkeyTestClient") -> "ValkeyTestClient":
+        """Open a new connection to the same server as another client."""
+        peer = other._sock.getpeername()
+        new_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        new_sock.connect(peer)
+        new_sock.settimeout(5)
+        new_sock.sendall(_encode_command("select", 9))
+        _read_response(_SocketReader(new_sock))
+        return cls(new_sock)
+
     def send(self, *args) -> DeferredCommand:
         conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         peer = self._sock.getpeername()

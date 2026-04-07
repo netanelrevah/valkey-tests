@@ -64,7 +64,7 @@ def test_temp_rdb_will_be_deleted_if_we_use_bg_unlink_when_shutdown(r: ValkeyTes
     except Exception:
         pass
     try:
-        e = valkey_deferring_client()
+        e = ValkeyTestClient.create_from(r)
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*connection refused*")
@@ -314,10 +314,6 @@ def if_(*args):
 
 def s(*args):
     raise NotImplementedError("s")
-
-
-def valkey_deferring_client(*args):
-    raise NotImplementedError("valkey_deferring_client")
 
 
 def verify_log_message(*args):

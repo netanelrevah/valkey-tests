@@ -417,7 +417,7 @@ def test_reset_clears_monitor_state(r: ValkeyTestClient) -> None:
         assert_no_match {*flags=O*} [r client list]
     } {} {needs:reset}
     """
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("monitor")
     assert rd.run("read") == "OK"
     rd.run("reset")
@@ -942,10 +942,6 @@ def s(*args):
 
 def string(*args):
     raise NotImplementedError("string")
-
-
-def valkey_deferring_client(*args):
-    raise NotImplementedError("valkey_deferring_client")
 
 
 def wait_for_bgrewriteaof(*args):

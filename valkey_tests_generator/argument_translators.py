@@ -278,6 +278,13 @@ class RExpressionTranslator(ExpressionTranslator):
         return ArgumentTranslator.translate_r(arguments, defined_vars)
 
 
+@ExpressionTranslator.register("valkey_deferring_client")
+@ExpressionTranslator.register("valkey_client")
+class ValkeyClientExpressionTranslator(ExpressionTranslator):
+    def get_expression(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> str | None:
+        return "ValkeyTestClient.create_from(r)"
+
+
 @ExpressionTranslator.register("list")
 class ListExpressionTranslator(ExpressionTranslator):
     def get_expression(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> str | None:

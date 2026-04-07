@@ -130,7 +130,7 @@ def test_eviction_due_to_output_buffers_of_many_mget_clients_client_eviction_cli
     init_test(client_eviction)
     j = 0
     while j < 20:
-        rr = valkey_deferring_client()
+        rr = ValkeyTestClient.create_from(r)
         lappend("clients", rr)
         j += 1
     t = clock("seconds")
@@ -188,7 +188,7 @@ def test_eviction_due_to_input_buffer_of_a_dead_client_client_eviction_client_ev
     init_test(client_eviction)
     j = 0
     while j < 30:
-        rr = valkey_deferring_client()
+        rr = ValkeyTestClient.create_from(r)
         lappend("clients", rr)
         j += 1
     # TODO: foreach rr clients {
@@ -256,7 +256,7 @@ def test_eviction_due_to_output_buffers_of_pubsub_client_eviction_client_evictio
     init_test(client_eviction)
     j = 0
     while j < 20:
-        rr = valkey_client()
+        rr = ValkeyTestClient.create_from(r)
         lappend("clients", rr)
         j += 1
     # TODO: foreach rr clients {
@@ -737,7 +737,7 @@ def test_client_tracking_don_t_cause_eviction_feedback_loop(r: ValkeyTestClient)
     clients = ""
     j = 0
     while j < 10:
-        lappend("clients", valkey_deferring_client())
+        lappend("clients", ValkeyTestClient.create_from(r))
         j += 1
     foreach(
         "rd",
@@ -1037,14 +1037,6 @@ def s(*args):
 
 def string(*args):
     raise NotImplementedError("string")
-
-
-def valkey_client(*args):
-    raise NotImplementedError("valkey_client")
-
-
-def valkey_deferring_client(*args):
-    raise NotImplementedError("valkey_deferring_client")
 
 
 def verify_eviction_test(*args):

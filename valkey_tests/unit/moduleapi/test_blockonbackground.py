@@ -1,4 +1,5 @@
 # ruff: noqa: ANN002, ANN201
+
 from fnmatch import fnmatch
 
 import pytest
@@ -226,7 +227,7 @@ def test_client_unblock_works_only_for_modules_with_timeout_support(r: ValkeyTes
         assert_equal "foobar" [$rd read]
     }
     """
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("client", "id")
     id = rd.run("read")
     rd.run("block.block", 20000)
@@ -273,10 +274,6 @@ def latency_percentiles_usec(*args):
 
 def regexp(*args):
     raise NotImplementedError("regexp")
-
-
-def valkey_deferring_client(*args):
-    raise NotImplementedError("valkey_deferring_client")
 
 
 def wait_for_condition(*args):

@@ -572,7 +572,7 @@ def test_function_test_function_kill(r: ValkeyTestClient) -> None:
         $rd close
     }
     """
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     r.run("config", "set", "busy-reply-threshold", 10)
     r.run(
         "function",
@@ -616,7 +616,7 @@ def test_function_test_script_kill_not_working_on_function(r: ValkeyTestClient) 
         $rd close
     }
     """
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     r.run("config", "set", "busy-reply-threshold", 10)
     r.run(
         "function",
@@ -661,7 +661,7 @@ def test_function_test_function_kill_not_working_on_eval(r: ValkeyTestClient) ->
         $rd close
     }
     """
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     r.run("config", "set", "busy-reply-threshold", 10)
     rd.run("eval", "local a = 1 while true do a = a + 1 end", 0)
     time.sleep(200 / 1000)
@@ -2615,7 +2615,3 @@ def get_no_writes_function_code(*args):
 
 def s(*args):
     raise NotImplementedError("s")
-
-
-def valkey_deferring_client(*args):
-    raise NotImplementedError("valkey_deferring_client")

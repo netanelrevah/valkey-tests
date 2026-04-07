@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, ANN001, ANN002, ANN201
+# ruff: noqa: PLR2004, ANN002, ANN201
 
 import pytest
 
@@ -7,7 +7,7 @@ from tests.valkey_test_client import ValkeyTestClient
 pytestmark = [pytest.mark.pubsubshard_external_skip]
 
 
-def test_spublish_or_ssubscribe_basics(r: ValkeyTestClient, rd1) -> None:
+def test_spublish_or_ssubscribe_basics(r: ValkeyTestClient) -> None:
     """
     test "SPUBLISH/SSUBSCRIBE basics" {
         set rd1 [valkey_deferring_client]
@@ -35,7 +35,7 @@ def test_spublish_or_ssubscribe_basics(r: ValkeyTestClient, rd1) -> None:
         $rd1 close
     }
     """
-    rd1 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
     assert "1" == ssubscribe(rd1, "chan1")
     assert "2" == ssubscribe(rd1, "chan2")
     assert 1 == r.run("SPUBLISH", "chan1", "hello")
@@ -69,8 +69,8 @@ def test_spublish_or_ssubscribe_with_two_clients(r: ValkeyTestClient) -> None:
         $rd2 close
     }
     """
-    rd1 = valkey_deferring_client()
-    rd2 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
+    rd2 = ValkeyTestClient.create_from(r)
     assert "1" == ssubscribe(rd1, "chan1")
     assert "1" == ssubscribe(rd2, "chan1")
     assert 2 == r.run("SPUBLISH", "chan1", "hello")
@@ -80,7 +80,7 @@ def test_spublish_or_ssubscribe_with_two_clients(r: ValkeyTestClient) -> None:
     rd2.run("close")
 
 
-def test_spublish_or_ssubscribe_after_unsubscribe_without_arguments(r: ValkeyTestClient, rd1) -> None:
+def test_spublish_or_ssubscribe_after_unsubscribe_without_arguments(r: ValkeyTestClient) -> None:
     """
     test "SPUBLISH/SSUBSCRIBE after UNSUBSCRIBE without arguments" {
         set rd1 [valkey_deferring_client]
@@ -104,7 +104,7 @@ def test_spublish_or_ssubscribe_after_unsubscribe_without_arguments(r: ValkeyTes
         $rd1 close
     }
     """
-    rd1 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
     assert "1" == ssubscribe(rd1, "chan1")
     assert "2" == ssubscribe(rd1, "chan2")
     assert "3" == ssubscribe(rd1, "chan3")
@@ -134,7 +134,7 @@ def test_ssubscribe_to_one_channel_more_than_once(r: ValkeyTestClient) -> None:
         $rd1 close
     }
     """
-    rd1 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
     assert "1 1 1" == ssubscribe(rd1, "chan1 chan1 chan1")
     assert 1 == r.run("SPUBLISH", "chan1", "hello")
     assert "smessage chan1 hello" == rd1.run("read")
@@ -153,7 +153,7 @@ def test_sunsubscribe_from_non_subscribed_channels(r: ValkeyTestClient) -> None:
         $rd1 close
     }
     """
-    rd1 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
     assert "0" == sunsubscribe(rd1, "foo")
     assert "0" == sunsubscribe(rd1, "bar")
     assert "0" == sunsubscribe(rd1, "quux")
@@ -186,8 +186,8 @@ def test_spublish_or_ssubscribe_with_two_clients_1(r: ValkeyTestClient) -> None:
         $rd2 close
     }
     """
-    rd1 = valkey_deferring_client()
-    rd2 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
+    rd2 = ValkeyTestClient.create_from(r)
     assert "1" == ssubscribe(rd1, "chan1")
     assert "1" == ssubscribe(rd2, "chan1")
     assert 2 == r.run("SPUBLISH", "chan1", "hello")
@@ -216,8 +216,8 @@ def test_spublish_or_ssubscribe_with_publish_or_subscribe(r: ValkeyTestClient) -
         $rd2 close
     }
     """
-    rd1 = valkey_deferring_client()
-    rd2 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
+    rd2 = ValkeyTestClient.create_from(r)
     assert "1" == ssubscribe(rd1, "chan1")
     assert "1" == subscribe(rd2, "chan1")
     assert 1 == r.run("SPUBLISH", "chan1", "hello")
@@ -256,7 +256,7 @@ def test_pubsubshard_with_client_reply_off(r: ValkeyTestClient) -> None:
         $rd close
     }
     """
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("hello", 3)
     rd.run("read")
     rd.run("client", "reply", "off")
@@ -317,10 +317,6 @@ def subscribe(*args):
 
 def sunsubscribe(*args):
     raise NotImplementedError("sunsubscribe")
-
-
-def valkey_deferring_client(*args):
-    raise NotImplementedError("valkey_deferring_client")
 
 
 def wait_for_condition(*args):

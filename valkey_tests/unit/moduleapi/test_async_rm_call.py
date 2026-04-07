@@ -62,7 +62,7 @@ def test_blpop_on_threaded_async_rm_call(r: ValkeyTestClient) -> None:
         $rd close
     }
     """
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("do_rm_call_async_on_thread", "blpop", "l", 0)
     wait_for_blocked_clients_count(1)
     r.run("lpush", "l", "a")
@@ -86,7 +86,7 @@ def test_blpop_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd) -> None:
         $rd close
     }
     """
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     # TODO: $rd cmd blpop l 0
     wait_for_blocked_clients_count(1)
     r.run("lpush", "l", "a")
@@ -110,7 +110,7 @@ def test_brpop_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd) -> None:
         $rd close
     }
     """
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     # TODO: $rd cmd brpop l 0
     wait_for_blocked_clients_count(1)
     r.run("lpush", "l", "a")
@@ -135,7 +135,7 @@ def test_brpoplpush_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd) -> None
         r lpop l2
     } {a}
     """
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     # TODO: $rd cmd brpoplpush l1 l2 0
     wait_for_blocked_clients_count(1)
     r.run("lpush", "l1", "a")
@@ -161,7 +161,7 @@ def test_blmove_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd) -> None:
         r lpop l2
     } {a}
     """
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     # TODO: $rd cmd blmove l1 l2 LEFT LEFT 0
     wait_for_blocked_clients_count(1)
     r.run("lpush", "l1", "a")
@@ -186,7 +186,7 @@ def test_bzpopmin_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd) -> None:
         $rd close
     }
     """
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     # TODO: $rd cmd bzpopmin s 0
     wait_for_blocked_clients_count(1)
     r.run("zadd", "s", 10, "foo")
@@ -210,7 +210,7 @@ def test_bzpopmax_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd) -> None:
         $rd close
     }
     """
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     # TODO: $rd cmd bzpopmax s 0
     wait_for_blocked_clients_count(1)
     r.run("zadd", "s", 10, "foo")
@@ -232,7 +232,7 @@ def test_nested_async_rm_call(r: ValkeyTestClient) -> None:
         $rd close
     }
     """
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("do_rm_call_async", "do_rm_call_async", "do_rm_call_async", "do_rm_call_async", "blpop", "l", 0)
     wait_for_blocked_clients_count(1)
     r.run("lpush", "l", "a")
@@ -258,8 +258,8 @@ def test_test_multiple_async_rm_call_waiting_on_the_same_event(r: ValkeyTestClie
         $rd2 close
     }
     """
-    rd1 = valkey_deferring_client()
-    rd2 = valkey_deferring_client()
+    rd1 = ValkeyTestClient.create_from(r)
+    rd2 = ValkeyTestClient.create_from(r)
     rd1.run("do_rm_call_async", "do_rm_call_async", "do_rm_call_async", "do_rm_call_async", "blpop", "l", 0)
     rd2.run("do_rm_call_async", "do_rm_call_async", "do_rm_call_async", "do_rm_call_async", "blpop", "l", 0)
     wait_for_blocked_clients_count(2)
@@ -324,7 +324,7 @@ def test_async_rm_call_inside_async_rm_call_callback(r: ValkeyTestClient) -> Non
         $rd close
     }
     """
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("wait_and_do_rm_call", "blpop", "l", 0)
     wait_for_blocked_clients_count(1)
     start_server(
@@ -360,7 +360,7 @@ def test_become_replica_while_having_async_rm_call_running(r: ValkeyTestClient) 
     }
     """
     r.run("flushall")
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("do_rm_call_async", "blpop", "l", 0)
     wait_for_blocked_clients_count(1)
     r.run("replicaof", "localhost", 30000)
@@ -396,7 +396,7 @@ def test_pipeline_with_blocking_rm_call(r: ValkeyTestClient) -> None:
     }
     """
     r.run("flushall")
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     buf = ""
     append("buf", "do_rm_call_async blpop l 0\\r\\n")
     append("buf", "ping\\r\\n")
@@ -434,7 +434,7 @@ def test_blocking_rm_call_abort(r: ValkeyTestClient) -> None:
     }
     """
     r.run("flushall")
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("client", "id")
     client_id = rd.run("read")
     rd.run("do_rm_call_async", "blpop", "l", 0)
@@ -481,7 +481,7 @@ def test_test_basic_replication_stream_on_unblock_handler(r: ValkeyTestClient) -
     """
     r.run("flushall")
     repl = attach_to_replication_stream()
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("do_rm_call_async", "blpop", "l", 0)
     wait_for_blocked_clients_count(1)
     r.run("lpush", "l", "a")
@@ -522,7 +522,7 @@ def test_test_unblock_handler_are_executed_as_a_unit(r: ValkeyTestClient) -> Non
     """
     r.run("flushall")
     repl = attach_to_replication_stream()
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("blpop_and_set_multiple_keys", "l", "x", 1, "y", 2)
     wait_for_blocked_clients_count(1)
     r.run("lpush", "l", "a")
@@ -565,7 +565,7 @@ def test_test_no_propagation_of_blocking_command(r: ValkeyTestClient) -> None:
     """
     r.run("flushall")
     repl = attach_to_replication_stream()
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("do_rm_call_async_no_replicate", "blpop", "l", 0)
     wait_for_blocked_clients_count(1)
     r.run("lpush", "l", "a")
@@ -632,7 +632,7 @@ def test_test_unblock_handler_are_executed_as_a_unit_with_key_space_notification
     """
     r.run("flushall")
     repl = attach_to_replication_stream()
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("blpop_and_set_multiple_keys", "l", "string_foo", 1, "string_bar", 2)
     wait_for_blocked_clients_count(1)
     r.run("lpush", "l", "a")
@@ -725,7 +725,7 @@ def test_test_unblock_handler_are_executed_as_a_unit_with_lazy_expire(r: ValkeyT
     r.run("flushall")
     r.run("DEBUG", "SET-ACTIVE-EXPIRE", 0)
     repl = attach_to_replication_stream()
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("blpop_and_set_multiple_keys", "l", "string_foo", 1, "string_bar", 2)
     wait_for_blocked_clients_count(1)
     r.run("lpush", "l", "a")
@@ -776,7 +776,7 @@ def test_test_unblock_handler_on_module_blocked_on_keys(r: ValkeyTestClient) -> 
         $rd close
     }
     """
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     r.run("fsl.push", "l", 1)
     rd.run("do_rm_call_async", "FSL.BPOPGT", "l", 3, 0)
     wait_for_blocked_clients_count(1)
@@ -817,10 +817,6 @@ def close_replication_stream(*args):
 
 def start_server(*args):
     raise NotImplementedError("start_server")
-
-
-def valkey_deferring_client(*args):
-    raise NotImplementedError("valkey_deferring_client")
 
 
 def wait_for_blocked_clients_count(*args):

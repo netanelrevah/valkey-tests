@@ -1,5 +1,4 @@
 # ruff: noqa: F841, ANN002, ANN201
-
 from fnmatch import fnmatch
 
 import pytest
@@ -344,7 +343,7 @@ def test_tls_auto_authenticate_using_tls_auth_clients_user_cn(r: ValkeyTestClien
     """
     r.run("ACL", "SETUSER", "Client-only", "on", ">clientpass", "allcommands", "allkeys")
     r.run("CONFIG", "SET", "tls-auth-clients-user", "CN")
-    s = valkey_client()
+    s = ValkeyTestClient.create_from(r)
     assert "PONG" == s.run("PING")
     assert "Client-only" == s.run("ACL", "WHOAMI")
     s.run("close")
@@ -1312,10 +1311,6 @@ def try_(*args):
 
 def valkey(*args):
     raise NotImplementedError("valkey")
-
-
-def valkey_client(*args):
-    raise NotImplementedError("valkey_client")
 
 
 def wait_for_condition(*args):

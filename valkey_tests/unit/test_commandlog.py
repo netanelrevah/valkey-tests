@@ -1,5 +1,4 @@
 # ruff: noqa: PLR2004, ANN001, ANN002, ANN201
-
 from fnmatch import fnmatch
 
 import pytest
@@ -457,7 +456,7 @@ def test_commandlog_slow_rewritten_commands_are_logged_as_their_original_command
     r.run("commandlog", "reset", "slow")
     r.run("INCRBYFLOAT", "A", 1.0)
     assert "INCRBYFLOAT A 1.0" == r.run("commandlog", "get", -1, "slow")[0][3]
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("blpop", "l", 0)
     wait_for_blocked_clients_count(1, 50, 100)
     r.run("multi")
@@ -685,7 +684,7 @@ def test_commandlog_slow_blocking_command_is_reported_only_after_unblocked(r: Va
     }
     """
     r.run("del", "mylist")
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     r.run("config", "set", "commandlog-execution-slower-than", 0)
     r.run("config", "set", "commandlog-slow-execution-max-len", 110)
     r.run("commandlog", "reset", "slow")
@@ -843,10 +842,6 @@ def srv(*args):
 
 def string(*args):
     raise NotImplementedError("string")
-
-
-def valkey_deferring_client(*args):
-    raise NotImplementedError("valkey_deferring_client")
 
 
 def wait_for_blocked_clients_count(*args):

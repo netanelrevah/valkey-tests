@@ -83,7 +83,7 @@ def test_query_buffer_resized_correctly(r: ValkeyTestClient) -> None:
         $rd close
     }
     """
-    rd = valkey_deferring_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("client", "setname", "test_client")
     rd.run("read")
     assert client_query_buffer("test_client") == 0
@@ -150,7 +150,7 @@ def test_query_buffer_resized_correctly_when_not_idle(r: ValkeyTestClient) -> No
     } {0} {needs:debug}
     """
     r.run("debug", "pause-cron", 1)
-    rd = valkey_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("client", "setname", "test_client")
     rd.run("set", "x", string("repeat", "A", 400000))
     orig_test_client_qbuf = client_query_buffer("test_client")
@@ -194,7 +194,7 @@ def test_query_buffer_resized_correctly_with_fat_argv(r: ValkeyTestClient) -> No
         $rd close
     }
     """
-    rd = valkey_client()
+    rd = ValkeyTestClient.create_from(r)
     rd.run("client", "setname", "test_client")
     rd.run("write", "*3\\r\\n\\$3\\r\\nset\\r\\n\\$1\\r\\na\\r\\n\\$1000000\\r\\n")
     rd.run("flush")
@@ -235,14 +235,6 @@ def fail(*args):
 
 def string(*args):
     raise NotImplementedError("string")
-
-
-def valkey_client(*args):
-    raise NotImplementedError("valkey_client")
-
-
-def valkey_deferring_client(*args):
-    raise NotImplementedError("valkey_deferring_client")
 
 
 def wait_for_condition(*args):
