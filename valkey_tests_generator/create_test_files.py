@@ -47,6 +47,14 @@ def _collect_fixture_refs(body: TCLScript) -> set[str]:
                 for m in _VAR_REF_RE.finditer(arg.value):
                     if m.group(1) in _KNOWN_FIXTURE_VARS:
                         refs.add(m.group(1))
+            elif isinstance(arg, TCLBracesWord) and arg.value.strip():
+                try:
+                    sub = TCLScript.read(iter(arg.value))
+                    refs.update(_collect_fixture_refs(sub))
+                except Exception:
+                    refs.update(
+                        m.group(1) for m in _VAR_REF_RE.finditer(arg.value) if m.group(1) in _KNOWN_FIXTURE_VARS
+                    )
     return refs - locally_set
 
 

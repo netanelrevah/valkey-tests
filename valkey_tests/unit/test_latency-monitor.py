@@ -249,7 +249,7 @@ def test_latency_help_should_not_have_unexpected_options(r: ValkeyTestClient) ->
     }
     """
     try:
-        e = r.run("LATENCY", "help", "xxx")
+        r.run("LATENCY", "help", "xxx")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*wrong number of arguments for 'latency|help' command")

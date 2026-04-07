@@ -450,28 +450,17 @@ class CatchStatementTranslator(StatementTranslator):
         except ValueError:
             return None
         var_name = catch_command.var_name
-        body_commands = [c for c in catch_command.body.commands if c.name]
-        if not body_commands:
-            return None
-        body_lines: list[str] = []
-        for command in body_commands[:-1]:
-            statement = StatementTranslator.translate(command, defined_vars)
-            if statement is None:
-                return None
-            body_lines.extend(statement)
-        last_expr = ExpressionTranslator.translate(body_commands[-1], defined_vars)
-        if last_expr is None:
+        body_lines = TCLBodyTranslator().translate(catch_command.body, None, initial_vars=defined_vars)
+        if _has_todos(body_lines) or not body_lines:
             return None
         if var_name is not None:
             safe_var = _safe_var_name(var_name)
-            body_lines.append(f"{safe_var} = {last_expr}")
             return [
                 "try:",
                 *[f"    {line}" for line in body_lines],
                 "except Exception as _catch_err:",
                 f"    {safe_var} = str(_catch_err)",
             ]
-        body_lines.append(last_expr)
         return [
             "try:",
             *[f"    {line}" for line in body_lines],

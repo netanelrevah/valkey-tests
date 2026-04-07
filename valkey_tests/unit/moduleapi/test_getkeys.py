@@ -122,7 +122,7 @@ def test_rm_getcommandkeys_on_non_existing_command(r: ValkeyTestClient) -> None:
     } {*ENOENT*}
     """
     try:
-        e = r.run("getkeys.introspect", 0, "non-command", "key1", "key2")
+        r.run("getkeys.introspect", 0, "non-command", "key1", "key2")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*ENOENT*")
@@ -200,7 +200,7 @@ def test_rm_getcommandkeys_with_bad_arity(r: ValkeyTestClient) -> None:
     } {*EINVAL*}
     """
     try:
-        e = r.run("getkeys.introspect", 0, "set", "key")
+        r.run("getkeys.introspect", 0, "set", "key")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*EINVAL*")

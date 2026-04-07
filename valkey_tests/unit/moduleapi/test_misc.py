@@ -428,13 +428,13 @@ def test_test_module_get_or_set_client_name_by_id_api(r: ValkeyTestClient) -> No
     }
     """
     try:
-        e = r.run("test.getname")
+        r.run("test.getname")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert "-ERR No name" == e
     r.run("client", "setname", "nobody")
     try:
-        e = r.run("test.setname", "name with spaces")
+        r.run("test.setname", "name with spaces")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*Invalid argument*")
@@ -1015,7 +1015,10 @@ def test_rm_call_eval_failed_bgsave_prevents_writes(r: ValkeyTestClient) -> None
     r.run("set", "x", "x")
     r.run("bgsave")
     pid1 = get_child_pid(0)
-    catch("exec kill -9 $pid1")
+    try:
+        exec_("kill", -9, pid1)
+    except Exception:
+        pass
     wait_for_bgsave("r")
     assert r.run("get", "x") == "x"
     with pytest.raises(Exception, match="MISCONF\\ .*"):
@@ -1075,7 +1078,7 @@ def test_test_dry_run_ok_oom_or_acl(r: ValkeyTestClient) -> None:
     x = 5
     r.run("set", "x", x)
     try:
-        e = r.run("test.rm_call_flags", "DMC", "set", "x", 10)
+        r.run("test.rm_call_flags", "DMC", "set", "x", 10)
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*NULL reply returned*")
@@ -1098,7 +1101,7 @@ def test_test_dry_run_fail_oom(r: ValkeyTestClient) -> None:
     r.run("set", "x", x)
     r.run("config", "set", "maxmemory", 1)
     try:
-        e = r.run("test.rm_call_flags", "DM", "set", "x", 10)
+        r.run("test.rm_call_flags", "DM", "set", "x", 10)
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*OOM*")
@@ -1124,7 +1127,7 @@ def test_test_dry_run_fail_acl(r: ValkeyTestClient) -> None:
     r.run("set", "x", x)
     r.run("acl", "setuser", "default", "resetkeys")
     try:
-        e = r.run("test.rm_call_flags", "DC", "set", "x", 10)
+        r.run("test.rm_call_flags", "DC", "set", "x", 10)
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*NOPERM No permissions to access a key*")
@@ -1186,8 +1189,8 @@ def assert_(*args):
     raise NotImplementedError("assert_")
 
 
-def catch(*args):
-    raise NotImplementedError("catch")
+def exec_(*args):
+    raise NotImplementedError("exec_")
 
 
 def get_child_pid(*args):

@@ -1,4 +1,5 @@
 # ruff: noqa: F841, ANN002, ANN201
+
 from fnmatch import fnmatch
 
 import pytest
@@ -23,8 +24,11 @@ def test_tls_not_accepting_non_tls_connections_on_a_tls_port(r: ValkeyTestClient
     } {*I/O error*}
     """
     s = valkey(srv(0, "host"), srv(0, "port"))
-    catch("$s PING", "e")
-    set_("e")
+    try:
+        s.run("PING")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*I/O error*")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -61,26 +65,37 @@ def test_tls_verify_tls_auth_clients_behaves_as_expected(r: ValkeyTestClient) ->
     """
     s = valkey(srv(0, "host"), srv(0, "port"))
     # TODO: ::tls::import $s channel
-    catch("$s PING", "e")
-    # TODO: assert_match {*error*} e
+    try:
+        s.run("PING")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*error*")
     r.run("CONFIG", "SET", "tls-auth-clients", "no")
     s = valkey(srv(0, "host"), srv(0, "port"))
     # TODO: ::tls::import $s channel
-    catch("$s PING", "e")
-    # TODO: assert_match {PONG} e
+    try:
+        s.run("PING")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "PONG")
     r.run("CONFIG", "SET", "tls-auth-clients", "optional")
     s = valkey(srv(0, "host"), srv(0, "port"))
     # TODO: ::tls::import $s channel
-    catch("$s PING", "e")
-    # TODO: assert_match {PONG} e
+    try:
+        s.run("PING")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "PONG")
     r.run("CONFIG", "SET", "tls-auth-clients", "yes")
     s = valkey(srv(0, "host"), srv(0, "port"))
     # TODO: ::tls::import $s channel
-    catch("$s PING", "e")
-    # TODO: assert_match {*error*} e
+    try:
+        s.run("PING")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*error*")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.skipif("", reason="{$::tls}")
 def test_tls_verify_tls_protocols_behaves_as_expected(r: ValkeyTestClient) -> None:
     """
@@ -100,15 +115,20 @@ def test_tls_verify_tls_protocols_behaves_as_expected(r: ValkeyTestClient) -> No
     """
     r.run("CONFIG", "SET", "tls-protocols", "TLSv1.2")
     s = valkey(srv(0, "host"), srv(0, "port"), 0, 1, "-tls1.2 0")
-    catch("$s PING", "e")
-    # TODO: assert_match {*I/O error*} e
+    try:
+        s.run("PING")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*I/O error*")
     s = valkey(srv(0, "host"), srv(0, "port"), 0, 1, "-tls1.2 1")
-    catch("$s PING", "e")
-    # TODO: assert_match {PONG} e
+    try:
+        s.run("PING")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "PONG")
     r.run("CONFIG", "SET", "tls-protocols", "")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.skipif("", reason="{$::tls}")
 def test_tls_verify_tls_ciphers_behaves_as_expected(r: ValkeyTestClient) -> None:
     """
@@ -137,15 +157,24 @@ def test_tls_verify_tls_ciphers_behaves_as_expected(r: ValkeyTestClient) -> None
     r.run("CONFIG", "SET", "tls-protocols", "TLSv1.2")
     r.run("CONFIG", "SET", "tls-ciphers", "DEFAULT:-AES128-SHA256")
     s = valkey(srv(0, "host"), srv(0, "port"), 0, 1, '-cipher "-ALL:AES128-SHA256"')
-    catch("$s PING", "e")
-    # TODO: assert_match {*I/O error*} e
+    try:
+        s.run("PING")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*I/O error*")
     s = valkey(srv(0, "host"), srv(0, "port"), 0, 1, '-cipher "-ALL:AES256-SHA256"')
-    catch("$s PING", "e")
-    # TODO: assert_match {PONG} e
+    try:
+        s.run("PING")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "PONG")
     r.run("CONFIG", "SET", "tls-ciphers", "DEFAULT")
     s = valkey(srv(0, "host"), srv(0, "port"), 0, 1, '-cipher "-ALL:AES128-SHA256"')
-    catch("$s PING", "e")
-    # TODO: assert_match {PONG} e
+    try:
+        s.run("PING")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "PONG")
     r.run("CONFIG", "SET", "tls-protocols", "")
     r.run("CONFIG", "SET", "tls-ciphers", "DEFAULT")
 
@@ -179,13 +208,19 @@ def test_tls_verify_tls_prefer_server_ciphers_behaves_as_expected(r: ValkeyTestC
     r.run("CONFIG", "SET", "tls-protocols", "TLSv1.2")
     r.run("CONFIG", "SET", "tls-ciphers", "AES128-SHA256:AES256-SHA256")
     s = valkey(srv(0, "host"), srv(0, "port"), 0, 1, '-cipher "AES256-SHA256:AES128-SHA256"')
-    catch("$s PING", "e")
-    # TODO: assert_match {PONG} e
+    try:
+        s.run("PING")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "PONG")
     # TODO: assert_equal "AES256-SHA256" dict get [::tls::status [$s channel]] cipher
     r.run("CONFIG", "SET", "tls-prefer-server-ciphers", "yes")
     s = valkey(srv(0, "host"), srv(0, "port"), 0, 1, '-cipher "AES256-SHA256:AES128-SHA256"')
-    catch("$s PING", "e")
-    # TODO: assert_match {PONG} e
+    try:
+        s.run("PING")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "PONG")
     # TODO: assert_equal "AES128-SHA256" dict get [::tls::status [$s channel]] cipher
     r.run("CONFIG", "SET", "tls-protocols", "")
     r.run("CONFIG", "SET", "tls-ciphers", "DEFAULT")
@@ -309,7 +344,7 @@ def test_tls_working_with_an_encrypted_keyfile(r: ValkeyTestClient) -> None:
         "2>/dev/null",
     )
     try:
-        e = r.run("config", "set", "tls-key-file", keyfile_encrypted)
+        r.run("config", "set", "tls-key-file", keyfile_encrypted)
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*Unable to update TLS*")
@@ -1305,10 +1340,6 @@ def pwd(*args):
 
 def regexp(*args):
     raise NotImplementedError("regexp")
-
-
-def set_(*args):
-    raise NotImplementedError("set_")
 
 
 def srv(*args):

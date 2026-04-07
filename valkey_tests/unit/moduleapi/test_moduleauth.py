@@ -758,7 +758,7 @@ def test_module_unload_during_blocking_module_auth(r: ValkeyTestClient) -> None:
     rd.run("AUTH", "foo", "block_allow")
     wait_for_blocked_clients_count(1)
     try:
-        e = r.run("module", "unload", "testacl")
+        r.run("module", "unload", "testacl")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*the module has blocked clients*")

@@ -584,7 +584,7 @@ def test_bitop_with_non_string_source_key(r: ValkeyTestClient) -> None:
     r.run("set", "b{t}", 2)
     r.run("lpush", "c{t}", "foo")
     try:
-        e = r.run("bitop", "xor", "dest{t}", "a{t}", "b{t}", "c{t}", "d{t}")
+        r.run("bitop", "xor", "dest{t}", "a{t}", "b{t}", "c{t}", "d{t}")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "WRONGTYPE*")

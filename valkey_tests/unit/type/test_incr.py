@@ -95,7 +95,7 @@ def test_incr_fails_against_key_with_spaces_left(r: ValkeyTestClient) -> None:
     """
     r.run("set", "novar", "    11")
     try:
-        err = r.run("incr", "novar")
+        r.run("incr", "novar")
     except Exception as _catch_err:
         err = str(_catch_err)
     format_(err)
@@ -111,7 +111,7 @@ def test_incr_fails_against_key_with_spaces_right(r: ValkeyTestClient) -> None:
     """
     r.run("set", "novar", "11    ")
     try:
-        err = r.run("incr", "novar")
+        r.run("incr", "novar")
     except Exception as _catch_err:
         err = str(_catch_err)
     format_(err)
@@ -127,7 +127,7 @@ def test_incr_fails_against_key_with_spaces_both(r: ValkeyTestClient) -> None:
     """
     r.run("set", "novar", "    11    ")
     try:
-        err = r.run("incr", "novar")
+        r.run("incr", "novar")
     except Exception as _catch_err:
         err = str(_catch_err)
     format_(err)
@@ -143,7 +143,7 @@ def test_decrby_negation_overflow(r: ValkeyTestClient) -> None:
     """
     r.run("set", "x", 0)
     try:
-        err = r.run("decrby", "x", -9223372036854775808)
+        r.run("decrby", "x", -9223372036854775808)
     except Exception as _catch_err:
         err = str(_catch_err)
     format_(err)
@@ -160,7 +160,7 @@ def test_incr_fails_against_a_key_holding_a_list(r: ValkeyTestClient) -> None:
     """
     r.run("rpush", "mylist", 1)
     try:
-        err = r.run("incr", "mylist")
+        r.run("incr", "mylist")
     except Exception as _catch_err:
         err = str(_catch_err)
     r.run("rpop", "mylist")
@@ -278,7 +278,7 @@ def test_incrbyfloat_fails_against_key_with_spaces_left(r: ValkeyTestClient) -> 
     err = ""
     r.run("set", "novar", "    11")
     try:
-        err = r.run("incrbyfloat", "novar", 1.0)
+        r.run("incrbyfloat", "novar", 1.0)
     except Exception as _catch_err:
         err = str(_catch_err)
     format_(err)
@@ -296,7 +296,7 @@ def test_incrbyfloat_fails_against_key_with_spaces_right(r: ValkeyTestClient) ->
     err = ""
     r.run("set", "novar", "11    ")
     try:
-        err = r.run("incrbyfloat", "novar", 1.0)
+        r.run("incrbyfloat", "novar", 1.0)
     except Exception as _catch_err:
         err = str(_catch_err)
     format_(err)
@@ -314,7 +314,7 @@ def test_incrbyfloat_fails_against_key_with_spaces_both(r: ValkeyTestClient) -> 
     err = ""
     r.run("set", "novar", " 11 ")
     try:
-        err = r.run("incrbyfloat", "novar", 1.0)
+        r.run("incrbyfloat", "novar", 1.0)
     except Exception as _catch_err:
         err = str(_catch_err)
     format_(err)
@@ -335,7 +335,7 @@ def test_incrbyfloat_fails_against_a_key_holding_a_list(r: ValkeyTestClient) -> 
     err = ""
     r.run("rpush", "mylist", 1)
     try:
-        err = r.run("incrbyfloat", "mylist", 1.0)
+        r.run("incrbyfloat", "mylist", 1.0)
     except Exception as _catch_err:
         err = str(_catch_err)
     r.run("del", "mylist")
@@ -357,7 +357,7 @@ def test_incrbyfloat_does_not_allow_nan_or_infinity(r: ValkeyTestClient) -> None
     r.run("set", "foo", 0)
     err = ""
     try:
-        err = r.run("incrbyfloat", "foo", float("+inf"))
+        r.run("incrbyfloat", "foo", float("+inf"))
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "ERR *would produce*")
@@ -386,7 +386,7 @@ def test_string_to_double_with_null_terminator(r: ValkeyTestClient) -> None:
     r.run("set", "foo", 1)
     r.run("setrange", "foo", 2, 2)
     try:
-        err = r.run("incrbyfloat", "foo", 1)
+        r.run("incrbyfloat", "foo", 1)
     except Exception as _catch_err:
         err = str(_catch_err)
     format_(err)

@@ -569,7 +569,7 @@ def test_hgetex_cmd_missing_ttl_value(r: ValkeyTestClient, cmd) -> None:
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "v1")
     try:
-        e = r.run("HGETEX", "myhash", cmd, "FIELDS", 1, "f1")
+        r.run("HGETEX", "myhash", cmd, "FIELDS", 1, "f1")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "ERR *")
@@ -588,7 +588,7 @@ def test_hgetex_cmd_negative_ttl(r: ValkeyTestClient, cmd) -> None:
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "v1")
     try:
-        e = r.run("HGETEX", "myhash", cmd, -10, "FIELDS", 1, "f1")
+        r.run("HGETEX", "myhash", cmd, -10, "FIELDS", 1, "f1")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert e == "ERR invalid expire time in 'hgetex' command"
@@ -607,7 +607,7 @@ def test_hgetex_cmd_non_integer_ttl(r: ValkeyTestClient, cmd) -> None:
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "v1")
     try:
-        e = r.run("HGETEX", "myhash", cmd, "abc", "FIELDS", 1, "f1")
+        r.run("HGETEX", "myhash", cmd, "abc", "FIELDS", 1, "f1")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert e == "ERR value is not an integer or out of range"
@@ -626,7 +626,7 @@ def test_hgetex_cmd_missing_fields_keyword(r: ValkeyTestClient, cmd) -> None:
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "v1")
     try:
-        e = r.run("HGETEX", "myhash", cmd, get_short_expire_value(cmd), 1, "f1")
+        r.run("HGETEX", "myhash", cmd, get_short_expire_value(cmd), 1, "f1")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "ERR *")
@@ -645,7 +645,7 @@ def test_hgetex_cmd_wrong_numfields_count_too_few_fields(r: ValkeyTestClient, cm
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "v1", "f2", "v2")
     try:
-        e = r.run("HGETEX", "myhash", cmd, get_short_expire_value(cmd), "FIELDS", 2, "f1")
+        r.run("HGETEX", "myhash", cmd, get_short_expire_value(cmd), "FIELDS", 2, "f1")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "ERR *")
@@ -664,7 +664,7 @@ def test_hgetex_cmd_wrong_numfields_count_too_many_fields(r: ValkeyTestClient, c
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "v1")
     try:
-        e = r.run("HGETEX", "myhash", cmd, get_short_expire_value(cmd), "FIELDS", 1, "f1", "f2")
+        r.run("HGETEX", "myhash", cmd, get_short_expire_value(cmd), "FIELDS", 1, "f1", "f2")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "ERR *")
@@ -683,7 +683,7 @@ def test_hgetex_cmd_key_is_wrong_type_string_instead_of_hash(r: ValkeyTestClient
     r.run("FLUSHALL")
     r.run("SET", "mystring", "v1")
     try:
-        e = r.run("HGETEX", "mystring", cmd, get_short_expire_value(cmd), "FIELDS", 1, "f1")
+        r.run("HGETEX", "mystring", cmd, get_short_expire_value(cmd), "FIELDS", 1, "f1")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert e == "WRONGTYPE Operation against a key holding the wrong kind of value"
@@ -700,7 +700,7 @@ def test_hgetex_cmd_with_fields_0(r: ValkeyTestClient, cmd) -> None:
     """
     r.run("FLUSHALL")
     try:
-        e = r.run("HGETEX", "myhash", cmd, get_short_expire_value(cmd), "FIELDS", 0)
+        r.run("HGETEX", "myhash", cmd, get_short_expire_value(cmd), "FIELDS", 0)
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "ERR *")
@@ -717,7 +717,7 @@ def test_hgetex_cmd_with_negative_numfields(r: ValkeyTestClient, cmd) -> None:
     """
     r.run("FLUSHALL")
     try:
-        e = r.run("HGETEX", "myhash", cmd, get_short_expire_value(cmd), "FIELDS", -10)
+        r.run("HGETEX", "myhash", cmd, get_short_expire_value(cmd), "FIELDS", -10)
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "ERR *")
@@ -734,7 +734,7 @@ def test_hgetex_cmd_with_missing_key(r: ValkeyTestClient, cmd) -> None:
     """
     r.run("FLUSHALL")
     try:
-        e = r.run("HGETEX", cmd, get_short_expire_value(cmd), "FIELDS", 1, "f1")
+        r.run("HGETEX", cmd, get_short_expire_value(cmd), "FIELDS", 1, "f1")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "ERR *")
@@ -990,7 +990,7 @@ def test_hsetex_ex_fields_0_returns_error(r: ValkeyTestClient) -> None:
     """
     r.run("FLUSHALL")
     try:
-        e = r.run("HSETEX", "myhash", "EX", 10, "FIELDS", 0)
+        r.run("HSETEX", "myhash", "EX", 10, "FIELDS", 0)
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "ERR *")
@@ -1006,7 +1006,7 @@ def test_hsetex_ex_test_negative_ttl(r: ValkeyTestClient) -> None:
     """
     ttl = -10
     try:
-        e = r.run("HSETEX", "myhash", "EX", ttl, "FIELDS", 1, "field1", "val1")
+        r.run("HSETEX", "myhash", "EX", ttl, "FIELDS", 1, "field1", "val1")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert e == "ERR invalid expire time in 'hsetex' command"
@@ -1022,7 +1022,7 @@ def test_hsetex_ex_test_non_numeric_ttl(r: ValkeyTestClient) -> None:
     """
     ttl = "abc"
     try:
-        e = r.run("HSETEX", "myhash", "EX", ttl, "FIELDS", 1, "field1", "val1")
+        r.run("HSETEX", "myhash", "EX", ttl, "FIELDS", 1, "field1", "val1")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert e == "ERR value is not an integer or out of range"
@@ -1074,7 +1074,7 @@ def test_hsetex_ex_test_missing_ttl(r: ValkeyTestClient) -> None:
     } {ERR *}
     """
     try:
-        e = r.run("HSETEX", "myhash", "EX", "FIELDS", 1, "field1", "val1")
+        r.run("HSETEX", "myhash", "EX", "FIELDS", 1, "field1", "val1")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "ERR *")
@@ -1088,7 +1088,7 @@ def test_hsetex_ex_mismatched_field_or_value_count(r: ValkeyTestClient) -> None:
     } {ERR *}
     """
     try:
-        e = r.run("HSETEX", "myhash", "EX", 10, "FIELDS", 2, "field1", "val1")
+        r.run("HSETEX", "myhash", "EX", 10, "FIELDS", 2, "field1", "val1")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "ERR *")
@@ -1151,7 +1151,7 @@ def test_hsetex_px_test_negative_ttl(r: ValkeyTestClient) -> None:
     """
     ttl = -50
     try:
-        e = r.run("HSETEX", "myhash", "PX", ttl, "FIELDS", 1, "field1", "val1")
+        r.run("HSETEX", "myhash", "PX", ttl, "FIELDS", 1, "field1", "val1")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert e == "ERR invalid expire time in 'hsetex' command"
@@ -1167,7 +1167,7 @@ def test_hsetex_px_test_non_numeric_ttl(r: ValkeyTestClient) -> None:
     """
     ttl = "xyz"
     try:
-        e = r.run("HSETEX", "myhash", "PX", ttl, "FIELDS", 1, "field1", "val1")
+        r.run("HSETEX", "myhash", "PX", ttl, "FIELDS", 1, "field1", "val1")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert e == "ERR value is not an integer or out of range"
@@ -1241,7 +1241,7 @@ def test_hsetex_px_test_missing_ttl(r: ValkeyTestClient) -> None:
     } {ERR *}
     """
     try:
-        e = r.run("HSETEX", "myhash", "PX", "FIELDS", 1, "field1", "val1")
+        r.run("HSETEX", "myhash", "PX", "FIELDS", 1, "field1", "val1")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "ERR *")
@@ -1436,7 +1436,7 @@ def test_hsetex_ex_fnx_and_fxx_conflict_error(r: ValkeyTestClient) -> None:
     } {ERR *}
     """
     try:
-        e = r.run("HSETEX", "myhash", "EX", 10, "FNX", "FXX", "FIELDS", 1, "x", "y")
+        r.run("HSETEX", "myhash", "EX", 10, "FNX", "FXX", "FIELDS", 1, "x", "y")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "ERR *")
@@ -1655,7 +1655,7 @@ def test_hexpire_negative_ttl_returns_error(r: ValkeyTestClient) -> None:
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "field1", "val")
     try:
-        e = r.run("HEXPIRE", "myhash", -5, "FIELDS", 1, "field1")
+        r.run("HEXPIRE", "myhash", -5, "FIELDS", 1, "field1")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert e == "ERR invalid expire time in 'hexpire' command"
@@ -1673,7 +1673,7 @@ def test_hexpire_wrong_type_key_returns_error(r: ValkeyTestClient) -> None:
     r.run("FLUSHALL")
     r.run("SET", "myhash", "notahash")
     try:
-        e = r.run("HEXPIRE", "myhash", 10, "FIELDS", 1, "field1")
+        r.run("HEXPIRE", "myhash", 10, "FIELDS", 1, "field1")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert e == "WRONGTYPE Operation against a key holding the wrong kind of value"
@@ -1870,7 +1870,7 @@ def test_hexpire_conflicting_conditions_error(r: ValkeyTestClient) -> None:
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "field1", "val")
     try:
-        e = r.run("HEXPIRE", "myhash", 10, "NX", "XX", "FIELDS", 1, "field1")
+        r.run("HEXPIRE", "myhash", 10, "NX", "XX", "FIELDS", 1, "field1")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert e == "ERR NX and XX, GT or LT options at the same time are not compatible"
@@ -1888,7 +1888,7 @@ def test_hexpire_missing_fields_error(r: ValkeyTestClient) -> None:
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "field1", "val")
     try:
-        e = r.run("HEXPIRE", "myhash", 10)
+        r.run("HEXPIRE", "myhash", 10)
     except Exception as _catch_err:
         e = str(_catch_err)
     assert e == "ERR wrong number of arguments for 'hexpire' command"
@@ -1906,7 +1906,7 @@ def test_hexpire_no_fields_after_fields_keyword(r: ValkeyTestClient) -> None:
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "field1", "val")
     try:
-        e = r.run("HEXPIRE", "myhash", 10, "FIELDS", 0)
+        r.run("HEXPIRE", "myhash", 10, "FIELDS", 0)
     except Exception as _catch_err:
         e = str(_catch_err)
     assert e == "ERR wrong number of arguments for 'hexpire' command"
@@ -1924,7 +1924,7 @@ def test_hexpire_non_integer_ttl_error(r: ValkeyTestClient) -> None:
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "field1", "val")
     try:
-        e = r.run("HEXPIRE", "myhash", "abc", "FIELDS", 1, "field1")
+        r.run("HEXPIRE", "myhash", "abc", "FIELDS", 1, "field1")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert e == "ERR value is not an integer or out of range"
@@ -2306,7 +2306,7 @@ def test_hexpireat_conflicting_options_error(r: ValkeyTestClient) -> None:
     r.run("HSET", "myhash", "field1", "val")
     ts = expr("[clock seconds] + 5")
     try:
-        e = r.run("HEXPIREAT", "myhash", ts, "NX", "XX", "FIELDS", 1, "field1")
+        r.run("HEXPIREAT", "myhash", ts, "NX", "XX", "FIELDS", 1, "field1")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert e == "ERR NX and XX, GT or LT options at the same time are not compatible"
@@ -2326,7 +2326,7 @@ def test_hexpireat_missing_fields_keyword(r: ValkeyTestClient) -> None:
     r.run("HSET", "myhash", "field1", "val")
     ts = expr("[clock seconds] + 5")
     try:
-        e = r.run("HEXPIREAT", "myhash", ts)
+        r.run("HEXPIREAT", "myhash", ts)
     except Exception as _catch_err:
         e = str(_catch_err)
     assert e == "ERR wrong number of arguments for 'hexpireat' command"
@@ -2346,7 +2346,7 @@ def test_hexpireat_no_fields_after_fields(r: ValkeyTestClient) -> None:
     r.run("HSET", "myhash", "field1", "val")
     ts = expr("[clock seconds] + 5")
     try:
-        e = r.run("HEXPIREAT", "myhash", ts, "FIELDS", 0)
+        r.run("HEXPIREAT", "myhash", ts, "FIELDS", 0)
     except Exception as _catch_err:
         e = str(_catch_err)
     assert e == "ERR wrong number of arguments for 'hexpireat' command"
@@ -2364,7 +2364,7 @@ def test_hexpireat_non_integer_timestamp(r: ValkeyTestClient) -> None:
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "field1", "val")
     try:
-        e = r.run("HEXPIREAT", "myhash", "tomorrow", "FIELDS", 1, "field1")
+        r.run("HEXPIREAT", "myhash", "tomorrow", "FIELDS", 1, "field1")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert e == "ERR value is not an integer or out of range"
@@ -2479,7 +2479,7 @@ def test_hexpiretime_no_fields_keyword(r: ValkeyTestClient) -> None:
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "a")
     try:
-        e = r.run("HEXPIRETIME", "myhash")
+        r.run("HEXPIRETIME", "myhash")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert e == "ERR wrong number of arguments for 'hexpiretime' command"
@@ -2497,7 +2497,7 @@ def test_hexpiretime_fields_0(r: ValkeyTestClient) -> None:
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "a")
     try:
-        e = r.run("HEXPIRETIME", "myhash", "FIELDS", 0)
+        r.run("HEXPIRETIME", "myhash", "FIELDS", 0)
     except Exception as _catch_err:
         e = str(_catch_err)
     assert e == "ERR wrong number of arguments for 'hexpiretime' command"
@@ -2515,7 +2515,7 @@ def test_hexpiretime_wrong_fields_count(r: ValkeyTestClient) -> None:
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "a")
     try:
-        e = r.run("HEXPIRETIME", "myhash", "FIELDS", 1)
+        r.run("HEXPIRETIME", "myhash", "FIELDS", 1)
     except Exception as _catch_err:
         e = str(_catch_err)
     assert e == "ERR wrong number of arguments for 'hexpiretime' command"
@@ -2533,7 +2533,7 @@ def test_hexpiretime_wrong_type_key(r: ValkeyTestClient) -> None:
     r.run("FLUSHALL")
     r.run("SET", "myhash", "not a hash")
     try:
-        e = r.run("HEXPIRETIME", "myhash", "FIELDS", 1, "f1")
+        r.run("HEXPIRETIME", "myhash", "FIELDS", 1, "f1")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert e == "WRONGTYPE Operation against a key holding the wrong kind of value"
@@ -2675,12 +2675,12 @@ def test_hpexpireat_invalid_inputs(r: ValkeyTestClient) -> None:
     r.run("FLUSHALL")
     r.run("HSET", "myhash", "f1", "a")
     try:
-        e = r.run("HPEXPIREAT", "myhash", "abc", "FIELDS", 1, "f1")
+        r.run("HPEXPIREAT", "myhash", "abc", "FIELDS", 1, "f1")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*not an integer*")
     try:
-        e2 = r.run("HPEXPIREAT", "myhash", 12345, "NX", "XX", "FIELDS", 1, "f1")
+        r.run("HPEXPIREAT", "myhash", 12345, "NX", "XX", "FIELDS", 1, "f1")
     except Exception as _catch_err:
         e2 = str(_catch_err)
     assert fnmatch(str(e2), "ERR NX and XX, GT or LT options at the same time are not compatible")
@@ -4041,17 +4041,17 @@ def test_verify_error_when_hash_expire_commands_num_fields_is_not_provided(r: Va
     """
     r.run("FLUSHALL")
     try:
-        e = r.run("hsetex", "myhash", "KEEPTTL", "KEEPTTL", "KEEPTTL", "FIELDS")
+        r.run("hsetex", "myhash", "KEEPTTL", "KEEPTTL", "KEEPTTL", "FIELDS")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch("ERR numfields should be greater than 0 and match the provided number of fields", str(e))
     try:
-        e = r.run("hexpire", "myhash", 10, "NX", "NX", "FIELDS")
+        r.run("hexpire", "myhash", 10, "NX", "NX", "FIELDS")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch("ERR numfields should be greater than 0 and match the provided number of fields", str(e))
     try:
-        e = r.run("hgetex", "myhash", "PERSIST", "PERSIST", "FIELDS")
+        r.run("hgetex", "myhash", "PERSIST", "PERSIST", "FIELDS")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch("ERR numfields should be greater than 0 and match the provided number of fields", str(e))
@@ -6344,9 +6344,9 @@ if {$cmd eq "HINCRBY"} {
 """
 
 
-@pytest.mark.parametrize(["cmd", "inc2", "inc3", "inc1"], [("HINCRBY", 3, 4, 2), ("HINCRBYFLOAT", 3.5, 4.5, 2.5)])
+@pytest.mark.parametrize(["cmd", "inc3", "inc2", "inc1"], [("HINCRBY", 4, 3, 2), ("HINCRBYFLOAT", 4.5, 3.5, 2.5)])
 def test_cmd_recreates_field_with_correct_value_after_active_expiry_deletion(
-    r: ValkeyTestClient, cmd, inc2, inc3, inc1
+    r: ValkeyTestClient, cmd, inc3, inc2, inc1
 ) -> None:
     """
     test "$cmd recreates field with correct value after active expiry deletion" {
@@ -6377,8 +6377,8 @@ def test_cmd_recreates_field_with_correct_value_after_active_expiry_deletion(
     assert inc1 == r.run("HGET", "myhash", "f1")
 
 
-@pytest.mark.parametrize(["cmd", "inc2", "inc3", "inc1"], [("HINCRBY", 3, 4, 2), ("HINCRBYFLOAT", 3.5, 4.5, 2.5)])
-def test_cmd_preserves_existing_ttl_when_incrementing_field_value(r: ValkeyTestClient, cmd, inc2, inc3, inc1) -> None:
+@pytest.mark.parametrize(["cmd", "inc3", "inc2", "inc1"], [("HINCRBY", 4, 3, 2), ("HINCRBYFLOAT", 4.5, 3.5, 2.5)])
+def test_cmd_preserves_existing_ttl_when_incrementing_field_value(r: ValkeyTestClient, cmd, inc3, inc2, inc1) -> None:
     """
     test "$cmd preserves existing TTL when incrementing field value" {
         r FLUSHALL
@@ -6408,9 +6408,9 @@ def test_cmd_preserves_existing_ttl_when_incrementing_field_value(r: ValkeyTestC
     assert_morethan(r.run("HTTL", "myhash", "FIELDS", 1, "f1"), 90000)
 
 
-@pytest.mark.parametrize(["cmd", "inc2", "inc3", "inc1"], [("HINCRBY", 3, 4, 2), ("HINCRBYFLOAT", 3.5, 4.5, 2.5)])
+@pytest.mark.parametrize(["cmd", "inc3", "inc2", "inc1"], [("HINCRBY", 4, 3, 2), ("HINCRBYFLOAT", 4.5, 3.5, 2.5)])
 def test_cmd_handles_mix_of_expired_and_existing_fields_during_increment_operations(
-    r: ValkeyTestClient, cmd, inc2, inc3, inc1
+    r: ValkeyTestClient, cmd, inc3, inc2, inc1
 ) -> None:
     """
     test "$cmd handles mix of expired and existing fields during increment operations" {
@@ -6447,9 +6447,9 @@ def test_cmd_handles_mix_of_expired_and_existing_fields_during_increment_operati
     assert f"{inc1} [expr {{{inc2}+2}}] {inc3}" == r.run("HMGET", "myhash", "f1", "f2", "f3")
 
 
-@pytest.mark.parametrize(["cmd", "inc2", "inc3", "inc1"], [("HINCRBY", 3, 4, 2), ("HINCRBYFLOAT", 3.5, 4.5, 2.5)])
+@pytest.mark.parametrize(["cmd", "inc3", "inc2", "inc1"], [("HINCRBY", 4, 3, 2), ("HINCRBYFLOAT", 4.5, 3.5, 2.5)])
 def test_cmd_maintains_ttl_values_when_incrementing_fields_with_existing_expiry(
-    r: ValkeyTestClient, cmd, inc2, inc3, inc1
+    r: ValkeyTestClient, cmd, inc3, inc2, inc1
 ) -> None:
     """
     test "$cmd maintains TTL values when incrementing fields with existing expiry" {

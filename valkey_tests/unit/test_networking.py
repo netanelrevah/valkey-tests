@@ -1,5 +1,4 @@
 # ruff: noqa: PLR2004, F841, ANN002, ANN201
-
 from fnmatch import fnmatch
 
 import pytest
@@ -166,7 +165,7 @@ def test_default_bind_address_configuration_handling(r: ValkeyTestClient) -> Non
     r.run("CONFIG", "SET", "bind", "")
     assert "" == r.run("CONFIG", "GET", "bind")[1]
     try:
-        err = ValkeyTestClient.create_from(r)
+        valkey_client()
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*connection refused*")
@@ -179,7 +178,10 @@ def test_default_bind_address_configuration_handling(r: ValkeyTestClient) -> Non
         "else",
         "            assert_equal {bind {}} [valkeycli_exec 0 config get bind]\n        ",
     )
-    catch("reconnect 0", "err")
+    try:
+        reconnect(0)
+    except Exception as _catch_err:
+        err = str(_catch_err)
     assert fnmatch(str(err), "*connection refused*")
     assert "OK" == valkeycli_exec(0, "config", "set", "bind", "*")
     reconnect(0)
@@ -523,6 +525,10 @@ def set_(*args):
 
 def srv(*args):
     raise NotImplementedError("srv")
+
+
+def valkey_client(*args):
+    raise NotImplementedError("valkey_client")
 
 
 def valkeycli_exec(*args):

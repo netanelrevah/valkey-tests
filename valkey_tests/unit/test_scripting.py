@@ -2100,7 +2100,7 @@ def test_shebang_support_for_lua_engine(r: ValkeyTestClient) -> None:
     }
     """
     try:
-        e = r.run("eval", "#!not-lua\n                return 1\n            ", 0)
+        r.run("eval", "#!not-lua\n                return 1\n            ", 0)
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*Could not find scripting engine*")
@@ -2119,7 +2119,7 @@ def test_unknown_shebang_option(r: ValkeyTestClient) -> None:
     }
     """
     try:
-        e = r.run("eval", "#!lua badger=data\n                return 1\n            ", 0)
+        r.run("eval", "#!lua badger=data\n                return 1\n            ", 0)
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*Unknown lua shebang option*")
@@ -2137,7 +2137,7 @@ def test_unknown_shebang_flag(r: ValkeyTestClient) -> None:
     }
     """
     try:
-        e = r.run("eval", "#!lua flags=allow-oom,what?\n                return 1\n            ", 0)
+        r.run("eval", "#!lua flags=allow-oom,what?\n                return 1\n            ", 0)
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*Unexpected flag in script shebang*")

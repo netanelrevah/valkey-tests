@@ -332,7 +332,7 @@ def test_commandlog_slow_certain_commands_are_omitted_that_contain_sensitive_inf
     r.run("config", "set", "commandlog-execution-slower-than", 0)
     r.run("commandlog", "reset", "slow")
     try:
-        _ = r.run("acl", "setuser", "slowlog test user", "+get", "+set")
+        r.run("acl", "setuser", "slowlog test user", "+get", "+set")
     except Exception as _catch_err:
         _ = str(_catch_err)
     r.run("config", "set", "primaryuser", "")

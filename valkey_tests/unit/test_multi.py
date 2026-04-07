@@ -138,7 +138,7 @@ def test_exec_fails_if_there_are_errors_while_queueing_commands_1(r: ValkeyTestC
         pass
     r.run("set", "foo2{t}", "bar2")
     try:
-        e = r.run("exec")
+        r.run("exec")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "EXECABORT*")
@@ -178,7 +178,7 @@ def test_exec_fails_if_there_are_errors_while_queueing_commands_2(r: ValkeyTestC
     assert rd.run("read") == "OK"
     r.run("set", "foo2{t}", "bar2")
     try:
-        e = r.run("exec")
+        r.run("exec")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "EXECABORT*")
@@ -208,7 +208,7 @@ def test_if_exec_aborts_the_client_multi_state_is_cleared(r: ValkeyTestClient) -
         pass
     r.run("set", "foo2{t}", "bar2")
     try:
-        e = r.run("exec")
+        r.run("exec")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "EXECABORT*")
@@ -1061,7 +1061,7 @@ def test_multi_or_exec_with_replicaof(r: ValkeyTestClient) -> None:
     r.run("set", "foo3", "bar")
     r.run("exec")
     try:
-        e = r.run("set", "foo4", "bar")
+        r.run("set", "foo4", "bar")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "READONLY*")
@@ -1091,7 +1091,7 @@ def test_discard_should_not_fail_during_oom(r: ValkeyTestClient) -> None:
     assert rd.run("read") == "OK"
     r.run("multi")
     try:
-        e = r.run("set", "x", 1)
+        r.run("set", "x", 1)
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "OOM*")
@@ -1102,7 +1102,6 @@ def test_discard_should_not_fail_during_oom(r: ValkeyTestClient) -> None:
     assert r.run("ping") == "PONG"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_multi_and_script_timeout(r: ValkeyTestClient) -> None:
     """
     test {MULTI and script timeout} {
@@ -1136,13 +1135,25 @@ def test_multi_and_script_timeout(r: ValkeyTestClient) -> None:
     r.run("set", "xx", 1)
     rd1.run("eval", "while true do end", 0)
     time.sleep(200 / 1000)
-    catch(" $r2 multi; ", "e")
-    catch(" $r2 incr xx; ", "e")
+    try:
+        r2.run("multi")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    try:
+        r2.run("incr", "xx")
+    except Exception as _catch_err:
+        e = str(_catch_err)
     r.run("script", "kill")
     time.sleep(200 / 1000)
-    catch(" $r2 incr xx; ", "e")
-    catch(" $r2 exec; ", "e")
-    # TODO: assert_match {EXECABORT*previous errors*} e
+    try:
+        r2.run("incr", "xx")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    try:
+        r2.run("exec")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "EXECABORT*previous errors*")
     xx = r.run("get", "xx")
     assert (xx == 1) or (xx == 3)
     pong = r2.run("ping", "asdf")
@@ -1151,7 +1162,6 @@ def test_multi_and_script_timeout(r: ValkeyTestClient) -> None:
     r2.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_exec_and_script_timeout(r: ValkeyTestClient) -> None:
     """
     test {EXEC and script timeout} {
@@ -1183,13 +1193,25 @@ def test_exec_and_script_timeout(r: ValkeyTestClient) -> None:
     r2 = ValkeyTestClient.create_from(r)
     r.run("config", "set", "lua-time-limit", 10)
     r.run("set", "xx", 1)
-    catch(" $r2 multi; ", "e")
-    catch(" $r2 incr xx; ", "e")
+    try:
+        r2.run("multi")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    try:
+        r2.run("incr", "xx")
+    except Exception as _catch_err:
+        e = str(_catch_err)
     rd1.run("eval", "while true do end", 0)
     time.sleep(200 / 1000)
-    catch(" $r2 incr xx; ", "e")
-    catch(" $r2 exec; ", "e")
-    # TODO: assert_match {EXECABORT*BUSY*} e
+    try:
+        r2.run("incr", "xx")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    try:
+        r2.run("exec")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "EXECABORT*BUSY*")
     r.run("script", "kill")
     time.sleep(200 / 1000)
     xx = r.run("get", "xx")
@@ -1200,7 +1222,6 @@ def test_exec_and_script_timeout(r: ValkeyTestClient) -> None:
     r2.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_multi_exec_body_and_script_timeout(r: ValkeyTestClient) -> None:
     """
     test {MULTI-EXEC body and script timeout} {
@@ -1232,15 +1253,27 @@ def test_multi_exec_body_and_script_timeout(r: ValkeyTestClient) -> None:
     r2 = ValkeyTestClient.create_from(r)
     r.run("config", "set", "lua-time-limit", 10)
     r.run("set", "xx", 1)
-    catch(" $r2 multi; ", "e")
-    catch(" $r2 incr xx; ", "e")
+    try:
+        r2.run("multi")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    try:
+        r2.run("incr", "xx")
+    except Exception as _catch_err:
+        e = str(_catch_err)
     rd1.run("eval", "while true do end", 0)
     time.sleep(200 / 1000)
-    catch(" $r2 incr xx; ", "e")
+    try:
+        r2.run("incr", "xx")
+    except Exception as _catch_err:
+        e = str(_catch_err)
     r.run("script", "kill")
     time.sleep(200 / 1000)
-    catch(" $r2 exec; ", "e")
-    # TODO: assert_match {EXECABORT*previous errors*} e
+    try:
+        r2.run("exec")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "EXECABORT*previous errors*")
     xx = r.run("get", "xx")
     assert (xx == 1) or (xx == 3)
     pong = r2.run("ping", "asdf")
@@ -1249,7 +1282,6 @@ def test_multi_exec_body_and_script_timeout(r: ValkeyTestClient) -> None:
     r2.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_just_exec_and_script_timeout(r: ValkeyTestClient) -> None:
     """
     test {just EXEC and script timeout} {
@@ -1280,12 +1312,21 @@ def test_just_exec_and_script_timeout(r: ValkeyTestClient) -> None:
     r2 = ValkeyTestClient.create_from(r)
     r.run("config", "set", "lua-time-limit", 10)
     r.run("set", "xx", 1)
-    catch(" $r2 multi; ", "e")
-    catch(" $r2 incr xx; ", "e")
+    try:
+        r2.run("multi")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    try:
+        r2.run("incr", "xx")
+    except Exception as _catch_err:
+        e = str(_catch_err)
     rd1.run("eval", "while true do end", 0)
     time.sleep(200 / 1000)
-    catch(" $r2 exec; ", "e")
-    # TODO: assert_match {EXECABORT*BUSY*} e
+    try:
+        r2.run("exec")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "EXECABORT*BUSY*")
     r.run("script", "kill")
     time.sleep(200 / 1000)
     xx = r.run("get", "xx")
@@ -1320,7 +1361,7 @@ def test_exec_with_write_commands_and_state_change(r: ValkeyTestClient) -> None:
     r.run("incr", "xx")
     r1.run("config", "set", "min-replicas-to-write", 2)
     try:
-        e = r.run("exec")
+        r.run("exec")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*EXECABORT*NOREPLICAS*")
@@ -1372,7 +1413,7 @@ def test_exec_with_read_commands_and_stale_replica_state_change(r: ValkeyTestCli
     r.run("get", "xx")
     r1.run("replicaof", "localhost_", 0)
     try:
-        e = r.run("exec")
+        r.run("exec")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*EXECABORT*MASTERDOWN*")
@@ -1381,7 +1422,7 @@ def test_exec_with_read_commands_and_stale_replica_state_change(r: ValkeyTestCli
     r.run("ping")
     r1.run("replicaof", "localhost_", 0)
     try:
-        e = r.run("exec")
+        r.run("exec")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*EXECABORT*MASTERDOWN*")
@@ -1452,7 +1493,7 @@ def test_exec_with_at_least_one_use_memory_command_should_fail(r: ValkeyTestClie
     r.run("get", "x")
     r2.run("config", "set", "maxmemory", 1)
     try:
-        e = r.run("exec")
+        r.run("exec")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "EXECABORT*OOM*")
@@ -1938,10 +1979,6 @@ def attach_to_replication_stream(*args):
 
 def break_(*args):
     raise NotImplementedError("break_")
-
-
-def catch(*args):
-    raise NotImplementedError("catch")
 
 
 def close_replication_stream(*args):

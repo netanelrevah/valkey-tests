@@ -1,5 +1,4 @@
 # ruff: noqa: PLR2004, F841, RUF043, ANN001, ANN002, ANN201
-
 from fnmatch import fnmatch
 
 import pytest
@@ -1238,11 +1237,11 @@ def test_hincrby_fails_against_hash_value_with_spaces_left(r: ValkeyTestClient) 
     r.run("hset", "smallhash", "str", " 11")
     r.run("hset", "bighash", "str", " 11")
     try:
-        smallerr = r.run("hincrby", "smallhash", "str", 1)
+        r.run("hincrby", "smallhash", "str", 1)
     except Exception as _catch_err:
         smallerr = str(_catch_err)
     try:
-        bigerr = r.run("hincrby", "bighash", "str", 1)
+        r.run("hincrby", "bighash", "str", 1)
     except Exception as _catch_err:
         bigerr = str(_catch_err)
     rv = []
@@ -1265,11 +1264,11 @@ def test_hincrby_fails_against_hash_value_with_spaces_right(r: ValkeyTestClient)
     r.run("hset", "smallhash", "str", "11 ")
     r.run("hset", "bighash", "str", "11 ")
     try:
-        smallerr = r.run("hincrby", "smallhash", "str", 1)
+        r.run("hincrby", "smallhash", "str", 1)
     except Exception as _catch_err:
         smallerr = str(_catch_err)
     try:
-        bigerr = r.run("hincrby", "bighash", "str", 1)
+        r.run("hincrby", "bighash", "str", 1)
     except Exception as _catch_err:
         bigerr = str(_catch_err)
     rv = []
@@ -1291,7 +1290,7 @@ def test_hincrby_can_detect_overflows(r: ValkeyTestClient) -> None:
     r.run("hset", "hash", "n", -9223372036854775484)
     assert r.run("hincrby", "hash", "n", -1) == -9223372036854775485
     try:
-        e = r.run("hincrby", "hash", "n", -10000)
+        r.run("hincrby", "hash", "n", -10000)
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*overflow*")
@@ -1412,11 +1411,11 @@ def test_hincrbyfloat_fails_against_hash_value_with_spaces_left(r: ValkeyTestCli
     r.run("hset", "smallhash", "str", " 11")
     r.run("hset", "bighash", "str", " 11")
     try:
-        smallerr = r.run("hincrbyfloat", "smallhash", "str", 1)
+        r.run("hincrbyfloat", "smallhash", "str", 1)
     except Exception as _catch_err:
         smallerr = str(_catch_err)
     try:
-        bigerr = r.run("hincrbyfloat", "bighash", "str", 1)
+        r.run("hincrbyfloat", "bighash", "str", 1)
     except Exception as _catch_err:
         bigerr = str(_catch_err)
     rv = []
@@ -1439,11 +1438,11 @@ def test_hincrbyfloat_fails_against_hash_value_with_spaces_right(r: ValkeyTestCl
     r.run("hset", "smallhash", "str", "11 ")
     r.run("hset", "bighash", "str", "11 ")
     try:
-        smallerr = r.run("hincrbyfloat", "smallhash", "str", 1)
+        r.run("hincrbyfloat", "smallhash", "str", 1)
     except Exception as _catch_err:
         smallerr = str(_catch_err)
     try:
-        bigerr = r.run("hincrbyfloat", "bighash", "str", 1)
+        r.run("hincrbyfloat", "bighash", "str", 1)
     except Exception as _catch_err:
         bigerr = str(_catch_err)
     rv = []
@@ -1464,7 +1463,7 @@ def test_hincrbyfloat_fails_against_hash_value_that_contains_a_null_terminator_i
     """
     r.run("hset", "h", "f", "1\x002")
     try:
-        err = r.run("hincrbyfloat", "h", "f", 1)
+        r.run("hincrbyfloat", "h", "f", 1)
     except Exception as _catch_err:
         err = str(_catch_err)
     rv = []
@@ -1662,7 +1661,10 @@ def test_hash_fuzzing_1_size_fields(r: ValkeyTestClient, size) -> None:
     """
     times = 0
     while times < 10:
-        catch("unset hash")
+        try:
+            unset("hash")
+        except Exception:
+            pass
         array("set", "hash", "")
         r.run("del", "hash")
         j = 0
@@ -1719,7 +1721,10 @@ def test_hash_fuzzing_2_size_fields(r: ValkeyTestClient, size) -> None:
     """
     times = 0
     while times < 10:
-        catch("unset hash")
+        try:
+            unset("hash")
+        except Exception:
+            pass
         array("set", "hash", "")
         r.run("del", "hash")
         j = 0
@@ -1904,10 +1909,6 @@ def assert_encoding(*args):
 
 def assert_lessthan(*args):
     raise NotImplementedError("assert_lessthan")
-
-
-def catch(*args):
-    raise NotImplementedError("catch")
 
 
 def chi_square_value(*args):

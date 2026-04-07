@@ -16,7 +16,7 @@ def test_auth_fails_if_there_is_no_password_configured_server_side(r: ValkeyTest
     } {ERR *any password*}
     """
     try:
-        err = r.run("auth", "foo")
+        r.run("auth", "foo")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "ERR *any password*")
@@ -30,7 +30,7 @@ def test_arity_check_for_auth_command(r: ValkeyTestClient) -> None:
     } {*syntax error*}
     """
     try:
-        err = r.run("auth", "a", "b", "c")
+        r.run("auth", "a", "b", "c")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*syntax error*")
@@ -47,7 +47,7 @@ def test_auth_fails_when_a_wrong_password_is_given(r: ValkeyTestClient) -> None:
     } {WRONGPASS*}
     """
     try:
-        err = r.run("auth", "wrong!")
+        r.run("auth", "wrong!")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "WRONGPASS*")
@@ -61,7 +61,7 @@ def test_arbitrary_command_gives_an_error_when_auth_is_required(r: ValkeyTestCli
     } {NOAUTH*}
     """
     try:
-        err = r.run("set", "foo", "bar")
+        r.run("set", "foo", "bar")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "NOAUTH*")

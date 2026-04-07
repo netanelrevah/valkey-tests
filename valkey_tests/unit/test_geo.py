@@ -313,7 +313,7 @@ def test_geoadd_update_with_xx_nx_option_will_return_syntax_error(r: ValkeyTestC
     } {ERR *syntax*}
     """
     try:
-        err = r.run("geoadd", "nyc", "xx", "nx", -73.9454966, 40.747533, "lic market")
+        r.run("geoadd", "nyc", "xx", "nx", -73.9454966, 40.747533, "lic market")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "ERR *syntax*")
@@ -329,7 +329,7 @@ def test_geoadd_update_with_invalid_option(r: ValkeyTestClient) -> None:
     } {ERR *syntax*}
     """
     try:
-        err = r.run("geoadd", "nyc", "ch", "xx", "foo", -73.9454966, 40.747533, "lic market")
+        r.run("geoadd", "nyc", "ch", "xx", "foo", -73.9454966, 40.747533, "lic market")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "ERR *syntax*")
@@ -346,7 +346,7 @@ def test_geoadd_invalid_coordinates(r: ValkeyTestClient) -> None:
     } {*valid*}
     """
     try:
-        err = r.run("geoadd", "nyc", -73.9454966, 40.747533, "lic market", "foo", "bar", "luck market")
+        r.run("geoadd", "nyc", -73.9454966, 40.747533, "lic market", "foo", "bar", "luck market")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*valid*")
@@ -440,7 +440,7 @@ def test_geosearch_fromlonlat_and_frommember_cannot_exist_at_the_same_time(r: Va
     } {ERR *syntax*}
     """
     try:
-        e = r.run(
+        r.run(
             "geosearch", "nyc", "fromlonlat", -73.9798091, 40.7598464, "frommember", "xxx", "bybox", 6, 6, "km", "asc"
         )
     except Exception as _catch_err:
@@ -456,7 +456,7 @@ def test_geosearch_fromlonlat_and_frommember_one_must_exist(r: ValkeyTestClient)
     } {ERR *exactly one of FROMMEMBER or FROMLONLAT*}
     """
     try:
-        e = r.run("geosearch", "nyc", "bybox", 3, 3, "km", "asc", "desc", "withhash", "withdist", "withcoord")
+        r.run("geosearch", "nyc", "bybox", 3, 3, "km", "asc", "desc", "withhash", "withdist", "withcoord")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "ERR *exactly one of FROMMEMBER or FROMLONLAT*")
@@ -470,7 +470,7 @@ def test_geosearch_byradius_and_bybox_cannot_exist_at_the_same_time(r: ValkeyTes
     } {ERR *syntax*}
     """
     try:
-        e = r.run(
+        r.run(
             "geosearch", "nyc", "fromlonlat", -73.9798091, 40.7598464, "byradius", 3, "km", "bybox", 3, 3, "km", "asc"
         )
     except Exception as _catch_err:
@@ -486,7 +486,7 @@ def test_geosearch_byradius_and_bybox_one_must_exist(r: ValkeyTestClient) -> Non
     } {ERR *exactly one of BYRADIUS, BYBOX and BYPOLYGON*}
     """
     try:
-        e = r.run(
+        r.run(
             "geosearch",
             "nyc",
             "fromlonlat",
@@ -511,7 +511,7 @@ def test_geosearch_with_storedist_option(r: ValkeyTestClient) -> None:
     } {ERR *syntax*}
     """
     try:
-        e = r.run("geosearch", "nyc", "fromlonlat", -73.9798091, 40.7598464, "bybox", 6, 6, "km", "asc", "storedist")
+        r.run("geosearch", "nyc", "fromlonlat", -73.9798091, 40.7598464, "bybox", 6, 6, "km", "asc", "storedist")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "ERR *syntax*")
@@ -611,7 +611,7 @@ def test_georadius_with_any_but_no_count(r: ValkeyTestClient) -> None:
     } {ERR *ANY*requires*COUNT*}
     """
     try:
-        e = r.run("georadius", "nyc", -73.9798091, 40.7598464, 10, "km", "ANY", "ASC")
+        r.run("georadius", "nyc", -73.9798091, 40.7598464, 10, "km", "ANY", "ASC")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "ERR *ANY*requires*COUNT*")
@@ -625,7 +625,7 @@ def test_georadius_with_count_but_missing_integer_argument(r: ValkeyTestClient) 
     } {ERR *syntax*}
     """
     try:
-        e = r.run("georadius", "nyc", -73.9798091, 40.7598464, 10, "km", "COUNT")
+        r.run("georadius", "nyc", -73.9798091, 40.7598464, 10, "km", "COUNT")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "ERR *syntax*")
@@ -1020,7 +1020,7 @@ def test_georadius_store_option_syntax_error(r: ValkeyTestClient) -> None:
     r.run("del", "points{t}")
     r.run("geoadd", "points{t}", 13.361389, 38.115556, "Palermo", 15.087269, 37.502669, "Catania")
     try:
-        e = r.run("georadius", "points{t}", 13.361389, 38.115556, 50, "km", "store")
+        r.run("georadius", "points{t}", 13.361389, 38.115556, 50, "km", "store")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*ERR*syntax*")
@@ -1034,7 +1034,7 @@ def test_geosearchstore_store_option_syntax_error(r: ValkeyTestClient) -> None:
     } {*ERR*syntax*}
     """
     try:
-        e = r.run(
+        r.run(
             "geosearchstore",
             "abc{t}",
             "points{t}",
@@ -1069,17 +1069,17 @@ def test_georange_store_option_incompatible_options(r: ValkeyTestClient) -> None
     r.run("del", "points{t}")
     r.run("geoadd", "points{t}", 13.361389, 38.115556, "Palermo", 15.087269, 37.502669, "Catania")
     try:
-        e = r.run("georadius", "points{t}", 13.361389, 38.115556, 50, "km", "store", "points2{t}", "withdist")
+        r.run("georadius", "points{t}", 13.361389, 38.115556, 50, "km", "store", "points2{t}", "withdist")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*ERR*")
     try:
-        e = r.run("georadius", "points{t}", 13.361389, 38.115556, 50, "km", "store", "points2{t}", "withhash")
+        r.run("georadius", "points{t}", 13.361389, 38.115556, 50, "km", "store", "points2{t}", "withhash")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*ERR*")
     try:
-        e = r.run("georadius", "points{t}", 13.361389, 38.115556, 50, "km", "store", "points2{t}", "withcoords")
+        r.run("georadius", "points{t}", 13.361389, 38.115556, 50, "km", "store", "points2{t}", "withcoords")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*ERR*")
@@ -1338,7 +1338,7 @@ def test_geosearch_bypolygon_standard_operations(r: ValkeyTestClient) -> None:
         "The Reg Bartley Oval, Waratah Street, Rushcutters Bay, Sydney, Council of the City of Sydney, New South Wales, 2011, Australia",
     )
     try:
-        e = r.run(
+        r.run(
             "GEOSEARCH",
             "points",
             "BYPOLYGON",
@@ -1352,7 +1352,7 @@ def test_geosearch_bypolygon_standard_operations(r: ValkeyTestClient) -> None:
         e = str(_catch_err)
     assert fnmatch(str(e), "*ERR GEOSEARCH BYPOLYGON must have at least 3 vertices*")
     try:
-        e = r.run(
+        r.run(
             "GEOSEARCH",
             "points",
             "BYPOLYGON",
@@ -1366,7 +1366,7 @@ def test_geosearch_bypolygon_standard_operations(r: ValkeyTestClient) -> None:
         e = str(_catch_err)
     assert fnmatch(str(e), "*ERR GEOSEARCH BYPOLYGON must have at least 3 vertices*")
     try:
-        e = r.run(
+        r.run(
             "GEOSEARCH",
             "points",
             "BYPOLYGON",
@@ -1386,7 +1386,7 @@ def test_geosearch_bypolygon_standard_operations(r: ValkeyTestClient) -> None:
         e = str(_catch_err)
     assert fnmatch(str(e), "*ERR syntax error*")
     try:
-        e = r.run(
+        r.run(
             "GEOSEARCH",
             "points",
             "BYBOX",
@@ -1406,7 +1406,7 @@ def test_geosearch_bypolygon_standard_operations(r: ValkeyTestClient) -> None:
         e = str(_catch_err)
     assert fnmatch(str(e), "*ERR syntax error*")
     try:
-        e = r.run(
+        r.run(
             "GEOSEARCH",
             "points",
             "BYRADIUS",
@@ -1425,7 +1425,7 @@ def test_geosearch_bypolygon_standard_operations(r: ValkeyTestClient) -> None:
         e = str(_catch_err)
     assert fnmatch(str(e), "*ERR syntax error*")
     try:
-        e = r.run(
+        r.run(
             "GEOSEARCH",
             "points",
             "BYPOLYGON",
@@ -1444,7 +1444,7 @@ def test_geosearch_bypolygon_standard_operations(r: ValkeyTestClient) -> None:
         e = str(_catch_err)
     assert fnmatch(str(e), "*ERR syntax error*")
     try:
-        e = r.run(
+        r.run(
             "GEOSEARCH",
             "points",
             "BYPOLYGON",

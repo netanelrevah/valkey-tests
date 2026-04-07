@@ -202,7 +202,7 @@ def test_non_existing_command(r: ValkeyTestClient) -> None:
     } {1}
     """
     try:
-        err = r.run("foobaredcommand")
+        r.run("foobaredcommand")
     except Exception as _catch_err:
         err = str(_catch_err)
     string("match", "ERR*", err)
@@ -300,7 +300,7 @@ def test_rename_against_non_existing_source_key(r: ValkeyTestClient) -> None:
     } {ERR*}
     """
     try:
-        err = r.run("rename", "nokey{t}", "foobar{t}")
+        r.run("rename", "nokey{t}", "foobar{t}")
     except Exception as _catch_err:
         err = str(_catch_err)
     format_(err)
@@ -338,7 +338,7 @@ def test_rename_where_source_and_dest_key_are_the_same_non_existing(r: ValkeyTes
     """
     r.run("del", "mykey")
     try:
-        err = r.run("rename", "mykey", "mykey")
+        r.run("rename", "mykey", "mykey")
     except Exception as _catch_err:
         err = str(_catch_err)
     format_(err)
@@ -459,7 +459,7 @@ def test_copy_for_string_does_not_replace_an_existing_key_without_replace_option
     """
     r.run("set", "mykey2{t}", "hello")
     try:
-        e = r.run("copy", "mykey2{t}", "mynewkey{t}", "DB", 10)
+        r.run("copy", "mykey2{t}", "mynewkey{t}", "DB", 10)
     except Exception as _catch_err:
         e = str(_catch_err)
     assert e == "0"
@@ -525,7 +525,7 @@ def test_copy_for_string_does_not_copy_data_to_no_integer_db(r: ValkeyTestClient
     """
     r.run("set", "mykey{t}", "foobar")
     try:
-        e = r.run("copy", "mykey{t}", "mynewkey{t}", "DB", "notanumber")
+        r.run("copy", "mykey{t}", "mynewkey{t}", "DB", "notanumber")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert e == "ERR value is not an integer or out of range"
@@ -896,7 +896,7 @@ def test_move_against_non_integer_db_1428(r: ValkeyTestClient) -> None:
     """
     r.run("set", "mykey", "hello")
     try:
-        e = r.run("move", "mykey", "notanumber")
+        r.run("move", "mykey", "notanumber")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert e == "ERR value is not an integer or out of range"

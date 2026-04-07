@@ -99,7 +99,7 @@ set clients {}
 
 @pytest.mark.parametrize(["client_eviction"], [("false"), ("true")])
 def test_eviction_due_to_output_buffers_of_many_mget_clients_client_eviction_client_eviction(
-    r: ValkeyTestClient, client_eviction
+    r: ValkeyTestClient, client_eviction, rr
 ) -> None:
     """
     test "eviction due to output buffers of many MGET clients, client eviction: $client_eviction" {
@@ -156,7 +156,7 @@ set clients {}
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["client_eviction"], [("false"), ("true")])
 def test_eviction_due_to_input_buffer_of_a_dead_client_client_eviction_client_eviction(
-    r: ValkeyTestClient, client_eviction
+    r: ValkeyTestClient, client_eviction, rr
 ) -> None:
     """
     test "eviction due to input buffer of a dead client, client eviction: $client_eviction" {
@@ -223,7 +223,7 @@ set clients {}
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["client_eviction"], [("false"), ("true")])
 def test_eviction_due_to_output_buffers_of_pubsub_client_eviction_client_eviction(
-    r: ValkeyTestClient, client_eviction
+    r: ValkeyTestClient, client_eviction, rr
 ) -> None:
     """
     test "eviction due to output buffers of pubsub, client eviction: $client_eviction" {
@@ -666,7 +666,7 @@ def test_don_t_rehash_if_used_memory_exceeds_maxmemory_after_rehash(r: ValkeyTes
 pytestmark = [pytest.mark.maxmemory_external_skip_io_threads_skip]
 
 
-def test_client_tracking_don_t_cause_eviction_feedback_loop(r: ValkeyTestClient) -> None:
+def test_client_tracking_don_t_cause_eviction_feedback_loop(r: ValkeyTestClient, rd) -> None:
     """
     test {client tracking don't cause eviction feedback loop} {
         r config set latency-tracking no

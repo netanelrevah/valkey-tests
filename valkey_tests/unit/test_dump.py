@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841, ANN002, ANN201
+# ruff: noqa: PLR2004, F841, ANN001, ANN002, ANN201
 import time
 from fnmatch import fnmatch
 
@@ -118,7 +118,7 @@ def test_restore_with_absttl_in_the_past(r: ValkeyTestClient) -> None:
     r.run("debug", "set-active-expire", 0)
     r.run("restore", "foo", expr(now, -3000), encoded, "absttl", "REPLACE")
     try:
-        e = r.run("debug", "object", "foo")
+        r.run("debug", "object", "foo")
     except Exception as _catch_err:
         e = str(_catch_err)
     r.run("debug", "set-active-expire", 1)
@@ -189,7 +189,7 @@ def test_restore_returns_an_error_of_the_key_already_exists(r: ValkeyTestClient)
     r.run("set", "foo", "bar")
     e = ""
     try:
-        e = r.run("restore", "foo", 0, "...")
+        r.run("restore", "foo", 0, "...")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*BUSYKEY*")
@@ -226,7 +226,7 @@ def test_restore_can_detect_a_syntax_error_for_unrecognized_options(r: ValkeyTes
     } {*syntax*}
     """
     try:
-        e = r.run("restore", "foo", 0, "...", "invalid-option")
+        r.run("restore", "foo", 0, "...", "invalid-option")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*syntax*")
@@ -390,7 +390,7 @@ def test_dump_of_non_existing_key_returns_nil(r: ValkeyTestClient) -> None:
     r.run("dump", "nonexisting_key")
 
 
-def test_migrate_is_caching_connections(r: ValkeyTestClient) -> None:
+def test_migrate_is_caching_connections(r: ValkeyTestClient, db) -> None:
     """
     test {MIGRATE is caching connections} {
         # Note, we run this as first test so that the connection cache
@@ -486,7 +486,7 @@ def test_migrate_is_able_to_copy_a_key_between_two_instances(r: ValkeyTestClient
     )
 
 
-def test_migrate_will_not_overwrite_existing_keys_unless_replace_is_used(r: ValkeyTestClient) -> None:
+def test_migrate_will_not_overwrite_existing_keys_unless_replace_is_used(r: ValkeyTestClient, db) -> None:
     """
     test {MIGRATE will not overwrite existing keys, unless REPLACE is used} {
         set first [srv 0 client]
@@ -649,7 +649,7 @@ def test_migrate_can_correctly_transfer_hashes(r: ValkeyTestClient) -> None:
     )
 
 
-def test_migrate_timeout_actually_works(r: ValkeyTestClient) -> None:
+def test_migrate_timeout_actually_works(r: ValkeyTestClient, db) -> None:
     """
     test {MIGRATE timeout actually works} {
         set first [srv 0 client]
@@ -714,15 +714,18 @@ def test_migrate_can_migrate_multiple_keys_at_once(r: ValkeyTestClient) -> None:
     )
 
 
-def test_migrate_with_multiple_keys_must_have_empty_key_arg(r: ValkeyTestClient) -> None:
+def test_migrate_with_multiple_keys_must_have_empty_key_arg(r: ValkeyTestClient, db) -> None:
     """
     test {MIGRATE with multiple keys must have empty key arg} {
         catch {r MIGRATE 127.0.0.1 6379 NotEmpty $db 5000 keys a b c} e
         set e
     } {*empty string*} {external:skip}
     """
-    catch("r MIGRATE 127.0.0.1 6379 NotEmpty $db 5000 keys a b c", "e")
-    set_("e")
+    try:
+        r.run("MIGRATE", "127.0.0.1", 6379, "NotEmpty", db, 5000, "keys", "a", "b", "c")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*empty string*")
 
 
 def test_migrate_with_multiple_keys_migrate_just_existing_ones(r: ValkeyTestClient) -> None:
@@ -824,7 +827,7 @@ def test_migrate_with_multiple_keys_stress_command_rewriting(r: ValkeyTestClient
     )
 
 
-def test_migrate_with_multiple_keys_delete_just_ack_keys(r: ValkeyTestClient) -> None:
+def test_migrate_with_multiple_keys_delete_just_ack_keys(r: ValkeyTestClient, db) -> None:
     """
     test {MIGRATE with multiple keys: delete just ack keys} {
         set first [srv 0 client]
@@ -889,7 +892,7 @@ def test_migrate_with_multiple_keys_delete_just_ack_keys(r: ValkeyTestClient) ->
     )
 
 
-def test_migrate_auth_correct_and_wrong_password_cases(r: ValkeyTestClient) -> None:
+def test_migrate_auth_correct_and_wrong_password_cases(r: ValkeyTestClient, db) -> None:
     """
     test {MIGRATE AUTH: correct and wrong password cases} {
         set first [srv 0 client]
@@ -944,10 +947,6 @@ def attach_to_replication_stream(*args):
     raise NotImplementedError("attach_to_replication_stream")
 
 
-def catch(*args):
-    raise NotImplementedError("catch")
-
-
 def clock(*args):
     raise NotImplementedError("clock")
 
@@ -958,10 +957,6 @@ def close_replication_stream(*args):
 
 def expr(*args):
     raise NotImplementedError("expr")
-
-
-def set_(*args):
-    raise NotImplementedError("set_")
 
 
 def srv(*args):
