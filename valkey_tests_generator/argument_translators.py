@@ -161,13 +161,81 @@ class BracesArgumentTranslator(ArgumentTranslator):
         return repr(argument.value)
 
 
+_SIMPLE_ESCAPES: dict[str, str] = {"a": "\\a", "b": "\\b", "f": "\\f", "n": "\\n", "r": "\\r", "t": "\\t", "v": "\\v"}
+
+
+def _translate_double_quoted(raw: str, defined_vars: set[str]) -> str | None:
+    """Translate a TCL double-quoted string value to a Python string or f-string literal."""
+    parts: list[str] = []
+    has_sub = False
+    i = 0
+    while i < len(raw):
+        c = raw[i]
+        if c == "$":
+            i += 1
+            if i >= len(raw) or raw[i] in (" ", "\n", "$"):
+                parts.append("$")
+                continue
+            if raw[i] == "{":
+                end = raw.find("}", i + 1)
+                if end == -1:
+                    return None
+                var_name = raw[i + 1 : end]
+                i = end + 1
+            else:
+                j = i
+                while j < len(raw) and (raw[j].isalnum() or raw[j] in ":_"):
+                    j += 1
+                var_name = raw[i:j]
+                i = j
+            if not var_name or "::" in var_name:
+                return None
+            if var_name not in defined_vars:
+                return None
+            parts.append("{" + _safe_var_name(var_name) + "}")
+            has_sub = True
+        elif c == "\\":
+            i += 1
+            if i >= len(raw):
+                return None
+            ec = raw[i]
+            if ec in _SIMPLE_ESCAPES:
+                parts.append(_SIMPLE_ESCAPES[ec])
+                i += 1
+            elif ec in "xuU":
+                return None  # binary/unicode escape — too complex
+            elif ec == "\n":
+                parts.append(" ")
+                i += 1
+            else:
+                parts.append(ec)
+                i += 1
+        elif c in "{}":
+            parts.append(c + c)  # escape braces in f-strings
+            i += 1
+        elif c == "'":
+            parts.append("\\'")
+            i += 1
+        elif c == "\\":
+            parts.append("\\\\")
+            i += 1
+        else:
+            parts.append(c)
+            i += 1
+    content = "".join(parts)
+    return f"f'{content}'" if has_sub else repr(raw)
+
+
 @ArgumentTranslator.register(TCLDoubleQuotedWord)
 class DoubleQuotedArgumentTranslator(ArgumentTranslator):
     def get_translation(self, argument: TCLCommandArguments, defined_vars: set[str]) -> str | None:
         assert isinstance(argument, TCLDoubleQuotedWord)
-        if "$" in argument.value or "\\" in argument.value:
-            return None
-        return repr(argument.value)
+        if "\\" in argument.value:
+            # Binary/escape sequences handled by _translate_double_quoted
+            return _translate_double_quoted(argument.value, defined_vars)
+        if "$" not in argument.value:
+            return repr(argument.value)
+        return _translate_double_quoted(argument.value, defined_vars)
 
 
 @ArgumentTranslator.register(TCLWord)
@@ -208,6 +276,13 @@ class SetExpressionTranslator(ExpressionTranslator):
 class RExpressionTranslator(ExpressionTranslator):
     def get_expression(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> str | None:
         return ArgumentTranslator.translate_r(arguments, defined_vars)
+
+
+@ExpressionTranslator.register("list")
+class ListExpressionTranslator(ExpressionTranslator):
+    def get_expression(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> str | None:
+        parts = ArgumentTranslator.translate_all(arguments, defined_vars)
+        return None if parts is None else f"[{', '.join(parts)}]"
 
 
 @ExpressionTranslator.register("lindex")

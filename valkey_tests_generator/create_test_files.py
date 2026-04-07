@@ -22,7 +22,7 @@ from valkey_tests_generator.statement_translators import TCLBodyTranslator, _ext
 
 _TEST_NAME_TRANSLATE_TABLE = str.maketrans({"/": "_or_", **{c: "_" for c in "{}\",#: -()<>=$'.,*&@!?|+~^%"}})
 
-_KNOWN_FIXTURE_VARS = frozenset({"rd"})
+_KNOWN_FIXTURE_VARS = frozenset({"rd", "rd1", "rd2", "rd3", "rr", "r2", "rd_trk", "plain_client"})
 
 
 def _collect_fixture_refs(body: TCLScript) -> set[str]:

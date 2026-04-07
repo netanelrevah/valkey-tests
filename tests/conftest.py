@@ -80,10 +80,49 @@ def r(valkey_server):
         sock.close()
 
 
-@pytest.fixture()
-def rd(valkey_server):
+def _client_fixture(valkey_server):
     sock = _create_client_socket(valkey_server["host"], valkey_server["port"])
     try:
         yield ValkeyTestClient(sock)
     finally:
         sock.close()
+
+
+@pytest.fixture()
+def rd(valkey_server):
+    yield from _client_fixture(valkey_server)
+
+
+@pytest.fixture()
+def rd1(valkey_server):
+    yield from _client_fixture(valkey_server)
+
+
+@pytest.fixture()
+def rd2(valkey_server):
+    yield from _client_fixture(valkey_server)
+
+
+@pytest.fixture()
+def rd3(valkey_server):
+    yield from _client_fixture(valkey_server)
+
+
+@pytest.fixture()
+def rr(valkey_server):
+    yield from _client_fixture(valkey_server)
+
+
+@pytest.fixture()
+def r2(valkey_server):
+    yield from _client_fixture(valkey_server)
+
+
+@pytest.fixture()
+def rd_trk(valkey_server):
+    yield from _client_fixture(valkey_server)
+
+
+@pytest.fixture()
+def plain_client(valkey_server):
+    yield from _client_fixture(valkey_server)
