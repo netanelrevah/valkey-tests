@@ -1529,7 +1529,6 @@ def test_setrange_with_huge_offset(r: ValkeyTestClient) -> None:
     )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_append_modifies_the_encoding_from_int_to_raw(r: ValkeyTestClient) -> None:
     """
     test {APPEND modifies the encoding from int to raw} {
@@ -1556,8 +1555,7 @@ def test_append_modifies_the_encoding_from_int_to_raw(r: ValkeyTestClient) -> No
     assert_encoding("raw", "foo")
     r.run("set", "bar", 12)
     assert_encoding("int", "bar")
-    # TODO: lappend res r get bar
-    assert False
+    res.append(r.run("get", "bar"))
 
 
 def test_delifeq_non_existing_key(r: ValkeyTestClient) -> None:

@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 from pytcl.commands import TCLBracesWord, TCLCommandForEach, TCLList, TCLScript
-from pytcl.words import TCLCommandWord, TCLVariableSubstitutionWord, TCLWord
+from pytcl.words import TCLCommandWord, TCLDoubleQuotedWord, TCLVariableSubstitutionWord, TCLWord
 
 import valkey_tests_generator.argument_translators as _arg_translators
 from valkey_tests_generator.argument_translators import _safe_var_name
@@ -22,7 +22,10 @@ from valkey_tests_generator.statement_translators import TCLBodyTranslator, _ext
 
 _TEST_NAME_TRANSLATE_TABLE = str.maketrans({"/": "_or_", **{c: "_" for c in "{}\",#: -()<>=$'.,*&@!?|+~^%"}})
 
-_KNOWN_FIXTURE_VARS = frozenset({"rd", "rd1", "rd2", "rd3", "rr", "r2", "rd_trk", "plain_client"})
+_KNOWN_FIXTURE_VARS = frozenset({"rd", "rd1", "rd2", "rd3", "rr", "r2", "rd_trk", "plain_client", "db"})
+
+
+_VAR_REF_RE = re.compile(r"\$\{?([A-Za-z0-9_]+)\}?")
 
 
 def _collect_fixture_refs(body: TCLScript) -> set[str]:
@@ -32,9 +35,18 @@ def _collect_fixture_refs(body: TCLScript) -> set[str]:
     for command in body.commands:
         if command.name == "set" and command.args and isinstance(command.args[0], TCLWord):
             locally_set.add(command.args[0].value)
+        # $var used as a command name: "$rd close"
+        if command.name.startswith("$"):
+            var_name = command.name[1:]
+            if var_name in _KNOWN_FIXTURE_VARS:
+                refs.add(var_name)
         for arg in command.args:
             if isinstance(arg, TCLVariableSubstitutionWord) and arg.variable_name in _KNOWN_FIXTURE_VARS:
                 refs.add(arg.variable_name)
+            elif isinstance(arg, TCLDoubleQuotedWord):
+                for m in _VAR_REF_RE.finditer(arg.value):
+                    if m.group(1) in _KNOWN_FIXTURE_VARS:
+                        refs.add(m.group(1))
     return refs - locally_set
 
 

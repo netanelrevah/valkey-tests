@@ -24,8 +24,7 @@ def test_xgroup_create_creation_and_duplicate_group_name_detection(r: ValkeyTest
     r.run("XADD", "mystream", "*", "foo", "bar")
     # TODO: r XGROUP CREATE mystream mygroup
     catch("r XGROUP CREATE mystream mygroup $", "err")
-    # TODO: set err
-    assert False
+    set_("err")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -70,7 +69,6 @@ def test_xgroup_create_with_entriesread_parameter(r: ValkeyTestClient) -> None:
     )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_xgroup_create_automatic_stream_creation_fails_without_mkstream(r: ValkeyTestClient) -> None:
     """
     test {XGROUP CREATE: automatic stream creation fails without MKSTREAM} {
@@ -81,8 +79,7 @@ def test_xgroup_create_automatic_stream_creation_fails_without_mkstream(r: Valke
     """
     r.run("DEL", "mystream")
     catch("r XGROUP CREATE mystream mygroup $", "err")
-    # TODO: set err
-    assert False
+    set_("err")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -98,7 +95,6 @@ def test_xgroup_create_automatic_stream_creation_works_with_mkstream(r: ValkeyTe
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_xreadgroup_will_return_only_new_elements(r: ValkeyTestClient) -> None:
     """
     test {XREADGROUP will return only new elements} {
@@ -118,8 +114,7 @@ def test_xreadgroup_will_return_only_new_elements(r: ValkeyTestClient) -> None:
     r.run("XADD", "mystream", "*", "b", 2)
     reply = r.run("XREADGROUP", "GROUP", "mygroup", "consumer-1", "STREAMS", "mystream", ">")
     assert len(lindex(reply, 0, 1)) == 2
-    # TODO: lindex reply 0 1 0 1
-    assert False
+    lindex(reply, 0, 1, 0, 1)
 
 
 def test_xreadgroup_can_read_the_history_of_the_elements_we_own(r: ValkeyTestClient) -> None:
@@ -611,8 +606,7 @@ def test_blocking_xreadgroup_swapped_db_key_doesn_t_exist(r: ValkeyTestClient) -
     wait_for_blocked_clients_count(1)
     r.run("SWAPDB", 4, 9)
     assert_error("*NOGROUP*", "$rd read")
-    # TODO: $rd close
-    assert False
+    rd.run("close")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -650,8 +644,7 @@ def test_blocking_xreadgroup_swapped_db_key_is_not_a_stream(r: ValkeyTestClient)
     wait_for_blocked_clients_count(1)
     r.run("SWAPDB", 4, 9)
     assert_error("*WRONGTYPE*", "$rd read")
-    # TODO: $rd close
-    assert False
+    rd.run("close")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -2747,6 +2740,10 @@ def lindex(*args):
 
 def s(*args):
     raise NotImplementedError("s")
+
+
+def set_(*args):
+    raise NotImplementedError("set_")
 
 
 def wait_for_blocked_clients_count(*args):

@@ -8,7 +8,6 @@ from tests.valkey_test_client import ValkeyTestClient
 pytestmark = [pytest.mark.incr]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_incr_against_non_existing_key(r: ValkeyTestClient) -> None:
     """
     test {INCR against non existing key} {
@@ -19,8 +18,7 @@ def test_incr_against_non_existing_key(r: ValkeyTestClient) -> None:
     """
     res = ""
     append("res", r.run("incr", "novar"))
-    # TODO: append res r get novar
-    assert False
+    append("res", r.run("get", "novar"))
 
 
 def test_incr_against_key_created_by_incr_itself(r: ValkeyTestClient) -> None:
@@ -87,7 +85,6 @@ def test_incrby_over_32bit_value_with_over_32bit_increment(r: ValkeyTestClient) 
     assert r.run("incrby", "novar", 17179869184) == "34359738368"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_incr_fails_against_key_with_spaces_left(r: ValkeyTestClient) -> None:
     """
     test {INCR fails against key with spaces (left)} {
@@ -101,11 +98,9 @@ def test_incr_fails_against_key_with_spaces_left(r: ValkeyTestClient) -> None:
         err = r.run("incr", "novar")
     except Exception as _catch_err:
         err = str(_catch_err)
-    # TODO: format err
-    assert False
+    format_(err)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_incr_fails_against_key_with_spaces_right(r: ValkeyTestClient) -> None:
     """
     test {INCR fails against key with spaces (right)} {
@@ -119,11 +114,9 @@ def test_incr_fails_against_key_with_spaces_right(r: ValkeyTestClient) -> None:
         err = r.run("incr", "novar")
     except Exception as _catch_err:
         err = str(_catch_err)
-    # TODO: format err
-    assert False
+    format_(err)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_incr_fails_against_key_with_spaces_both(r: ValkeyTestClient) -> None:
     """
     test {INCR fails against key with spaces (both)} {
@@ -137,11 +130,9 @@ def test_incr_fails_against_key_with_spaces_both(r: ValkeyTestClient) -> None:
         err = r.run("incr", "novar")
     except Exception as _catch_err:
         err = str(_catch_err)
-    # TODO: format err
-    assert False
+    format_(err)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_decrby_negation_overflow(r: ValkeyTestClient) -> None:
     """
     test {DECRBY negation overflow} {
@@ -155,11 +146,9 @@ def test_decrby_negation_overflow(r: ValkeyTestClient) -> None:
         err = r.run("decrby", "x", -9223372036854775808)
     except Exception as _catch_err:
         err = str(_catch_err)
-    # TODO: format err
-    assert False
+    format_(err)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_incr_fails_against_a_key_holding_a_list(r: ValkeyTestClient) -> None:
     """
     test {INCR fails against a key holding a list} {
@@ -175,8 +164,7 @@ def test_incr_fails_against_a_key_holding_a_list(r: ValkeyTestClient) -> None:
     except Exception as _catch_err:
         err = str(_catch_err)
     r.run("rpop", "mylist")
-    # TODO: format err
-    assert False
+    format_(err)
 
 
 def test_decrby_over_32bit_value_with_over_32bit_increment_negative_res(r: ValkeyTestClient) -> None:
@@ -245,7 +233,6 @@ def test_incrbyfloat_against_non_existing_key(r: ValkeyTestClient) -> None:
     ] == "1 1 1.25 1.25"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_incrbyfloat_against_key_originally_set_with_set(r: ValkeyTestClient) -> None:
     """
     test {INCRBYFLOAT against key originally set with SET} {
@@ -254,8 +241,7 @@ def test_incrbyfloat_against_key_originally_set_with_set(r: ValkeyTestClient) ->
     } {3}
     """
     r.run("set", "novar", 1.5)
-    # TODO: roundFloat r incrbyfloat novar 1.5
-    assert False
+    round_float(r.run("incrbyfloat", "novar", 1.5))
 
 
 def test_incrbyfloat_over_32bit_value(r: ValkeyTestClient) -> None:
@@ -280,7 +266,6 @@ def test_incrbyfloat_over_32bit_value_with_over_32bit_increment(r: ValkeyTestCli
     assert r.run("incrbyfloat", "novar", 17179869184) == "34359738368"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_incrbyfloat_fails_against_key_with_spaces_left(r: ValkeyTestClient) -> None:
     """
     test {INCRBYFLOAT fails against key with spaces (left)} {
@@ -296,11 +281,9 @@ def test_incrbyfloat_fails_against_key_with_spaces_left(r: ValkeyTestClient) -> 
         err = r.run("incrbyfloat", "novar", 1.0)
     except Exception as _catch_err:
         err = str(_catch_err)
-    # TODO: format err
-    assert False
+    format_(err)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_incrbyfloat_fails_against_key_with_spaces_right(r: ValkeyTestClient) -> None:
     """
     test {INCRBYFLOAT fails against key with spaces (right)} {
@@ -316,11 +299,9 @@ def test_incrbyfloat_fails_against_key_with_spaces_right(r: ValkeyTestClient) ->
         err = r.run("incrbyfloat", "novar", 1.0)
     except Exception as _catch_err:
         err = str(_catch_err)
-    # TODO: format err
-    assert False
+    format_(err)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_incrbyfloat_fails_against_key_with_spaces_both(r: ValkeyTestClient) -> None:
     """
     test {INCRBYFLOAT fails against key with spaces (both)} {
@@ -336,11 +317,9 @@ def test_incrbyfloat_fails_against_key_with_spaces_both(r: ValkeyTestClient) -> 
         err = r.run("incrbyfloat", "novar", 1.0)
     except Exception as _catch_err:
         err = str(_catch_err)
-    # TODO: format err
-    assert False
+    format_(err)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_incrbyfloat_fails_against_a_key_holding_a_list(r: ValkeyTestClient) -> None:
     """
     test {INCRBYFLOAT fails against a key holding a list} {
@@ -360,8 +339,7 @@ def test_incrbyfloat_fails_against_a_key_holding_a_list(r: ValkeyTestClient) -> 
     except Exception as _catch_err:
         err = str(_catch_err)
     r.run("del", "mylist")
-    # TODO: format err
-    assert False
+    format_(err)
 
 
 def test_incrbyfloat_does_not_allow_nan_or_infinity(r: ValkeyTestClient) -> None:
@@ -385,7 +363,6 @@ def test_incrbyfloat_does_not_allow_nan_or_infinity(r: ValkeyTestClient) -> None
     assert fnmatch(str(err), "ERR *would produce*")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_incrbyfloat_decrement(r: ValkeyTestClient) -> None:
     """
     test {INCRBYFLOAT decrement} {
@@ -394,11 +371,9 @@ def test_incrbyfloat_decrement(r: ValkeyTestClient) -> None:
     } {-0.1}
     """
     r.run("set", "foo", 1)
-    # TODO: roundFloat r incrbyfloat foo -1.1
-    assert False
+    round_float(r.run("incrbyfloat", "foo", -1.1))
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_string_to_double_with_null_terminator(r: ValkeyTestClient) -> None:
     """
     test {string to double with null terminator} {
@@ -414,8 +389,7 @@ def test_string_to_double_with_null_terminator(r: ValkeyTestClient) -> None:
         err = r.run("incrbyfloat", "foo", 1)
     except Exception as _catch_err:
         err = str(_catch_err)
-    # TODO: format err
-    assert False
+    format_(err)
 
 
 def test_no_negative_zero(r: ValkeyTestClient) -> None:
@@ -533,6 +507,10 @@ def assert_refcount(*args):
 
 def expr(*args):
     raise NotImplementedError("expr")
+
+
+def format_(*args):
+    raise NotImplementedError("format_")
 
 
 def if_(*args):

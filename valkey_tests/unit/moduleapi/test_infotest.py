@@ -1,4 +1,5 @@
-# ruff: noqa: PLR2004, F841, ANN002, ANN201
+# ruff: noqa: PLR2004, ANN002, ANN201
+
 from fnmatch import fnmatch
 
 import pytest
@@ -103,7 +104,6 @@ def test_module_info_all_infotest(r: ValkeyTestClient) -> None:
     assert string("match", "*used_memory*", info)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_info_everything(r: ValkeyTestClient) -> None:
     """
     test {module info everything} {
@@ -123,8 +123,7 @@ def test_module_info_everything(r: ValkeyTestClient) -> None:
     assert string("match", "*Italian*", info)
     assert string("match", "*used_memory*", info)
     assert_(' ![string match "*Klingon*" $info] ')
-    # TODO: field info infotest_dos
-    assert False
+    field(info, "infotest_dos")
 
 
 def test_module_info_modules(r: ValkeyTestClient) -> None:
@@ -143,7 +142,6 @@ def test_module_info_modules(r: ValkeyTestClient) -> None:
     assert_(' ![string match "*used_memory*" $info] ')
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_info_one_module(r: ValkeyTestClient) -> None:
     """
     test {module info one module} {
@@ -157,11 +155,9 @@ def test_module_info_one_module(r: ValkeyTestClient) -> None:
     info = r.run("info", "INFOtest")
     assert string("match", "*Spanish*", info)
     assert_(' ![string match "*used_memory*" $info] ')
-    # TODO: field info infotest_global
-    assert False
+    field(info, "infotest_global")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_info_one_section(r: ValkeyTestClient) -> None:
     """
     test {module info one section} {
@@ -176,8 +172,7 @@ def test_module_info_one_section(r: ValkeyTestClient) -> None:
     assert_(' ![string match "*used_memory*" $info] ')
     assert_(' ![string match "*Italian*" $info] ')
     assert_(' ![string match "*infotest_global*" $info] ')
-    # TODO: field info infotest_uno
-    assert False
+    field(info, "infotest_uno")
 
 
 def test_module_info_dict(r: ValkeyTestClient) -> None:
@@ -234,7 +229,6 @@ def test_module_info_multiply_sections_with_all_keyword_and_modules(r: ValkeyTes
     assert string("match", "*infotest_global*", info)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_info_multiply_sections_with_everything_keyword(r: ValkeyTestClient) -> None:
     """
     test {module info multiply sections with everything keyword} {
@@ -254,8 +248,7 @@ def test_module_info_multiply_sections_with_everything_keyword(r: ValkeyTestClie
     assert string("match", "*Italian*", info)
     assert_(' ![string match "*used_cpu_user_children*used_cpu_user_children*" $info] ')
     assert_(' ![string match "*Italian*Italian*" $info] ')
-    # TODO: field info infotest_dos
-    assert False
+    field(info, "infotest_dos")
 
 
 def test_unload_the_module_infotest(r: ValkeyTestClient) -> None:

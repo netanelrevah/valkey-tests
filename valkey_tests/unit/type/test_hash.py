@@ -1081,7 +1081,6 @@ def test_hdel_hash_becomes_empty_before_deleting_all_specified_fields(r: ValkeyT
     assert 0 == r.run("exists", "myhash")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hexists(r: ValkeyTestClient) -> None:
     """
     test {HEXISTS} {
@@ -1100,8 +1099,7 @@ def test_hexists(r: ValkeyTestClient) -> None:
     rv.append(r.run("hexists", "smallhash", "nokey"))
     k = array("names", "bighash", "*")[0]
     rv.append(r.run("hexists", "bighash", k))
-    # TODO: lappend rv r hexists bighash nokey
-    assert False
+    rv.append(r.run("hexists", "bighash", "nokey"))
 
 
 def test_is_a_ziplist_encoded_hash_promoted_on_big_payload(r: ValkeyTestClient) -> None:
@@ -1145,7 +1143,6 @@ def test_hincrby_hincrbyfloat_against_non_integer_increment_value(r: ValkeyTestC
         r.run("hincrbyfloat", "incrhash", "field", "v")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hincrby_against_non_existing_hash_key(r: ValkeyTestClient) -> None:
     """
     test {HINCRBY against non existing hash key} {
@@ -1164,11 +1161,9 @@ def test_hincrby_against_non_existing_hash_key(r: ValkeyTestClient) -> None:
     rv.append(r.run("hincrby", "smallhash", "tmp", 2))
     rv.append(r.run("hget", "smallhash", "tmp"))
     rv.append(r.run("hincrby", "bighash", "tmp", 2))
-    # TODO: lappend rv r hget bighash tmp
-    assert False
+    rv.append(r.run("hget", "bighash", "tmp"))
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hincrby_against_hash_key_created_by_hincrby_itself(r: ValkeyTestClient) -> None:
     """
     test {HINCRBY against hash key created by hincrby itself} {
@@ -1183,8 +1178,7 @@ def test_hincrby_against_hash_key_created_by_hincrby_itself(r: ValkeyTestClient)
     rv.append(r.run("hincrby", "smallhash", "tmp", 3))
     rv.append(r.run("hget", "smallhash", "tmp"))
     rv.append(r.run("hincrby", "bighash", "tmp", 3))
-    # TODO: lappend rv r hget bighash tmp
-    assert False
+    rv.append(r.run("hget", "bighash", "tmp"))
 
 
 def test_hincrby_against_hash_key_originally_set_with_hset(r: ValkeyTestClient) -> None:
@@ -1229,7 +1223,6 @@ def test_hincrby_over_32bit_value_with_over_32bit_increment(r: ValkeyTestClient)
     ] == "34359738368 34359738368"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hincrby_fails_against_hash_value_with_spaces_left(r: ValkeyTestClient) -> None:
     """
     test {HINCRBY fails against hash value with spaces (left)} {
@@ -1254,11 +1247,9 @@ def test_hincrby_fails_against_hash_value_with_spaces_left(r: ValkeyTestClient) 
         bigerr = str(_catch_err)
     rv = []
     rv.append(string("match", "ERR *not an integer*", smallerr))
-    # TODO: lappend rv string match "ERR *not an integer*" $bigerr
-    assert False
+    rv.append(string("match", "ERR *not an integer*", bigerr))
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hincrby_fails_against_hash_value_with_spaces_right(r: ValkeyTestClient) -> None:
     """
     test {HINCRBY fails against hash value with spaces (right)} {
@@ -1283,8 +1274,7 @@ def test_hincrby_fails_against_hash_value_with_spaces_right(r: ValkeyTestClient)
         bigerr = str(_catch_err)
     rv = []
     rv.append(string("match", "ERR *not an integer*", smallerr))
-    # TODO: lappend rv string match "ERR *not an integer*" $bigerr
-    assert False
+    rv.append(string("match", "ERR *not an integer*", bigerr))
 
 
 def test_hincrby_can_detect_overflows(r: ValkeyTestClient) -> None:
@@ -1318,7 +1308,6 @@ def test_hincrbyfloat_against_non_existing_database_key(r: ValkeyTestClient) -> 
     assert [r.run("hincrbyfloat", "htest", "foo", 2.5)] == "2.5"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hincrbyfloat_against_non_existing_hash_key(r: ValkeyTestClient) -> None:
     """
     test {HINCRBYFLOAT against non existing hash key} {
@@ -1337,11 +1326,9 @@ def test_hincrbyfloat_against_non_existing_hash_key(r: ValkeyTestClient) -> None
     rv.append(round_float(r.run("hincrbyfloat", "smallhash", "tmp", 2.5)))
     rv.append(round_float(r.run("hget", "smallhash", "tmp")))
     rv.append(round_float(r.run("hincrbyfloat", "bighash", "tmp", 2.5)))
-    # TODO: lappend rv roundFloat [r hget bighash tmp]
-    assert False
+    rv.append(round_float(r.run("hget", "bighash", "tmp")))
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hincrbyfloat_against_hash_key_created_by_hincrby_itself(r: ValkeyTestClient) -> None:
     """
     test {HINCRBYFLOAT against hash key created by hincrby itself} {
@@ -1356,8 +1343,7 @@ def test_hincrbyfloat_against_hash_key_created_by_hincrby_itself(r: ValkeyTestCl
     rv.append(round_float(r.run("hincrbyfloat", "smallhash", "tmp", 3.5)))
     rv.append(round_float(r.run("hget", "smallhash", "tmp")))
     rv.append(round_float(r.run("hincrbyfloat", "bighash", "tmp", 3.5)))
-    # TODO: lappend rv roundFloat [r hget bighash tmp]
-    assert False
+    rv.append(round_float(r.run("hget", "bighash", "tmp")))
 
 
 def test_hincrbyfloat_against_hash_key_originally_set_with_hset(r: ValkeyTestClient) -> None:
@@ -1411,7 +1397,6 @@ def test_hincrbyfloat_over_32bit_value_with_over_32bit_increment(r: ValkeyTestCl
     ] == "34359738368 34359738368"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hincrbyfloat_fails_against_hash_value_with_spaces_left(r: ValkeyTestClient) -> None:
     """
     test {HINCRBYFLOAT fails against hash value with spaces (left)} {
@@ -1436,11 +1421,9 @@ def test_hincrbyfloat_fails_against_hash_value_with_spaces_left(r: ValkeyTestCli
         bigerr = str(_catch_err)
     rv = []
     rv.append(string("match", "ERR *not*float*", smallerr))
-    # TODO: lappend rv string match "ERR *not*float*" $bigerr
-    assert False
+    rv.append(string("match", "ERR *not*float*", bigerr))
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hincrbyfloat_fails_against_hash_value_with_spaces_right(r: ValkeyTestClient) -> None:
     """
     test {HINCRBYFLOAT fails against hash value with spaces (right)} {
@@ -1465,11 +1448,9 @@ def test_hincrbyfloat_fails_against_hash_value_with_spaces_right(r: ValkeyTestCl
         bigerr = str(_catch_err)
     rv = []
     rv.append(string("match", "ERR *not*float*", smallerr))
-    # TODO: lappend rv string match "ERR *not*float*" $bigerr
-    assert False
+    rv.append(string("match", "ERR *not*float*", bigerr))
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hincrbyfloat_fails_against_hash_value_that_contains_a_null_terminator_in_the_middle(
     r: ValkeyTestClient,
 ) -> None:
@@ -1487,8 +1468,7 @@ def test_hincrbyfloat_fails_against_hash_value_that_contains_a_null_terminator_i
     except Exception as _catch_err:
         err = str(_catch_err)
     rv = []
-    # TODO: lappend rv string match "ERR *not*float*" $err
-    assert False
+    rv.append(string("match", "ERR *not*float*", err))
 
 
 def test_hstrlen_against_the_small_hash(r: ValkeyTestClient) -> None:

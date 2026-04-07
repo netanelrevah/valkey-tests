@@ -714,7 +714,6 @@ def test_migrate_can_migrate_multiple_keys_at_once(r: ValkeyTestClient) -> None:
     )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_migrate_with_multiple_keys_must_have_empty_key_arg(r: ValkeyTestClient) -> None:
     """
     test {MIGRATE with multiple keys must have empty key arg} {
@@ -723,8 +722,7 @@ def test_migrate_with_multiple_keys_must_have_empty_key_arg(r: ValkeyTestClient)
     } {*empty string*} {external:skip}
     """
     catch("r MIGRATE 127.0.0.1 6379 NotEmpty $db 5000 keys a b c", "e")
-    # TODO: set e
-    assert False
+    set_("e")
 
 
 def test_migrate_with_multiple_keys_migrate_just_existing_ones(r: ValkeyTestClient) -> None:
@@ -960,6 +958,10 @@ def close_replication_stream(*args):
 
 def expr(*args):
     raise NotImplementedError("expr")
+
+
+def set_(*args):
+    raise NotImplementedError("set_")
 
 
 def srv(*args):

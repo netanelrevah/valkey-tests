@@ -1296,7 +1296,6 @@ def test_just_exec_and_script_timeout(r: ValkeyTestClient) -> None:
     r2.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_exec_with_write_commands_and_state_change(r: ValkeyTestClient) -> None:
     """
     test {exec with write commands and state change} {
@@ -1328,11 +1327,9 @@ def test_exec_with_write_commands_and_state_change(r: ValkeyTestClient) -> None:
     xx = r.run("get", "xx")
     assert xx == 1
     r1.run("config", "set", "min-replicas-to-write", 0)
-    # TODO: $r1 close
-    assert False
+    r1.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_exec_with_read_commands_and_stale_replica_state_change(r: ValkeyTestClient) -> None:
     """
     test {exec with read commands and stale replica state change} {
@@ -1393,11 +1390,9 @@ def test_exec_with_read_commands_and_stale_replica_state_change(r: ValkeyTestCli
     r.run("get", "xx")
     xx = r.run("exec")
     assert xx == 1
-    # TODO: $r1 close
-    assert False
+    r1.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_exec_with_only_read_commands_should_not_be_rejected_when_oom(r: ValkeyTestClient) -> None:
     """
     test {EXEC with only read commands should not be rejected when OOM} {
@@ -1427,11 +1422,9 @@ def test_exec_with_only_read_commands_should_not_be_rejected_when_oom(r: ValkeyT
     r2.run("config", "set", "maxmemory", 1)
     assert r.run("exec") == "value PONG"
     r2.run("config", "set", "maxmemory", 0)
-    # TODO: $r2 close
-    assert False
+    r2.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_exec_with_at_least_one_use_memory_command_should_fail(r: ValkeyTestClient) -> None:
     """
     test {EXEC with at least one use-memory command should fail} {
@@ -1464,8 +1457,7 @@ def test_exec_with_at_least_one_use_memory_command_should_fail(r: ValkeyTestClie
         e = str(_catch_err)
     assert fnmatch(str(e), "EXECABORT*OOM*")
     r2.run("config", "set", "maxmemory", 0)
-    # TODO: $r2 close
-    assert False
+    r2.run("close")
 
 
 @pytest.mark.xfail(reason="not implemented")

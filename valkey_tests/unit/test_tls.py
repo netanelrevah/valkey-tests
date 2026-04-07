@@ -1,5 +1,4 @@
 # ruff: noqa: F841, ANN002, ANN201
-
 from fnmatch import fnmatch
 
 import pytest
@@ -14,7 +13,6 @@ package require tls
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.skipif("", reason="{$::tls}")
 def test_tls_not_accepting_non_tls_connections_on_a_tls_port(r: ValkeyTestClient) -> None:
     """
@@ -26,8 +24,7 @@ def test_tls_not_accepting_non_tls_connections_on_a_tls_port(r: ValkeyTestClient
     """
     s = valkey(srv(0, "host"), srv(0, "port"))
     catch("$s PING", "e")
-    # TODO: set e
-    assert False
+    set_("e")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1308,6 +1305,10 @@ def pwd(*args):
 
 def regexp(*args):
     raise NotImplementedError("regexp")
+
+
+def set_(*args):
+    raise NotImplementedError("set_")
 
 
 def srv(*args):

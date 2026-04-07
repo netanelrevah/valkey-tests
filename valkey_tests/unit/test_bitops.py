@@ -1,4 +1,5 @@
 # ruff: noqa: PLR2004, N806, RUF043, ANN001, ANN002, ANN201
+
 from fnmatch import fnmatch
 
 import pytest
@@ -351,7 +352,6 @@ def test_bitcount_against_non_integer_value(r: ValkeyTestClient) -> None:
         r.run("bitcount", "s", "a", "b")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitcount_regression_test_for_github_issue_582(r: ValkeyTestClient) -> None:
     """
     test {BITCOUNT regression test for github issue #582} {
@@ -367,13 +367,12 @@ def test_bitcount_regression_test_for_github_issue_582(r: ValkeyTestClient) -> N
     """
     r.run("del", "foo")
     r.run("setbit", "foo", 0, 1)
-    # TODO: if {[catch {r bitcount foo 0 4294967296} e]} {
-    #       assert_match {*ERR*out of range*} $e
-    #       set _ 1
-    #   } else {
-    #       set e
-    #   }
-    assert False
+    if_(
+        "[catch {r bitcount foo 0 4294967296} e]",
+        "            assert_match {*ERR*out of range*} $e\n            set _ 1\n        ",
+        "else",
+        "            set e\n        ",
+    )
 
 
 def test_bitcount_misaligned_prefix(r: ValkeyTestClient) -> None:
@@ -1270,6 +1269,10 @@ run_solo {bitops-large-memory} {
 
 def assert_(*args):
     raise NotImplementedError("assert_")
+
+
+def catch(*args):
+    raise NotImplementedError("catch")
 
 
 def count_bits(*args):

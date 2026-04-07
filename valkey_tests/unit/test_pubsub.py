@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841, ANN001, ANN002, ANN201
+# ruff: noqa: PLR2004, ANN001, ANN002, ANN201
 
 import pytest
 
@@ -329,7 +329,6 @@ def test_publish_or_psubscribe_after_punsubscribe_without_arguments(r: ValkeyTes
     rd1.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_pubsub_messages_with_client_reply_off(r: ValkeyTestClient) -> None:
     """
     test "PubSub messages with CLIENT REPLY OFF" {
@@ -369,8 +368,7 @@ def test_pubsub_messages_with_client_reply_off(r: ValkeyTestClient) -> None:
     rd.run("client", "reply", "off")
     assert "1" == unsubscribe(rd, "channel")
     assert "0" == punsubscribe(rd, "ch*")
-    # TODO: $rd close
-    assert False
+    rd.run("close")
 
 
 def test_punsubscribe_from_non_subscribed_channels(r: ValkeyTestClient) -> None:
@@ -457,7 +455,6 @@ def test_mix_subscribe_and_psubscribe(r: ValkeyTestClient) -> None:
     rd1.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_punsubscribe_and_unsubscribe_should_always_reply(r: ValkeyTestClient) -> None:
     """
     test "PUNSUBSCRIBE and UNSUBSCRIBE should always reply" {
@@ -474,12 +471,10 @@ def test_punsubscribe_and_unsubscribe_should_always_reply(r: ValkeyTestClient) -
     r.run("unsubscribe")
     reply1 = r.run("punsubscribe")
     reply2 = r.run("unsubscribe")
-    # TODO: concat reply1 reply2
-    assert False
+    concat(reply1, reply2)
 
 
-@pytest.mark.xfail(reason="not implemented")
-def test_keyspace_notifications_we_receive_keyspace_notifications(r: ValkeyTestClient) -> None:
+def test_keyspace_notifications_we_receive_keyspace_notifications(r: ValkeyTestClient, db) -> None:
     """
     test "Keyspace notifications: we receive keyspace notifications" {
         r config set notify-keyspace-events KA
@@ -496,12 +491,11 @@ def test_keyspace_notifications_we_receive_keyspace_notifications(r: ValkeyTestC
     rd1.run("CLIENT", "REPLY", "OFF")
     assert "1" == psubscribe(rd1, "*")
     r.run("set", "foo", "bar")
-    # TODO: assert_equal "pmessage * __keyspace@${db}__:foo set" $rd1 read
+    assert f"pmessage * __keyspace@{db}__:foo set" == rd1.run("read")
     rd1.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
-def test_keyspace_notifications_we_receive_keyevent_notifications(r: ValkeyTestClient) -> None:
+def test_keyspace_notifications_we_receive_keyevent_notifications(r: ValkeyTestClient, db) -> None:
     """
     test "Keyspace notifications: we receive keyevent notifications" {
         r config set notify-keyspace-events EA
@@ -518,12 +512,11 @@ def test_keyspace_notifications_we_receive_keyevent_notifications(r: ValkeyTestC
     rd1.run("CLIENT", "REPLY", "SKIP")
     assert "1" == psubscribe(rd1, "*")
     r.run("set", "foo", "bar")
-    # TODO: assert_equal "pmessage * __keyevent@${db}__:set foo" $rd1 read
+    assert f"pmessage * __keyevent@{db}__:set foo" == rd1.run("read")
     rd1.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
-def test_keyspace_notifications_we_can_receive_both_kind_of_events(r: ValkeyTestClient) -> None:
+def test_keyspace_notifications_we_can_receive_both_kind_of_events(r: ValkeyTestClient, db) -> None:
     """
     test "Keyspace notifications: we can receive both kind of events" {
         r config set notify-keyspace-events KEA
@@ -543,13 +536,12 @@ def test_keyspace_notifications_we_can_receive_both_kind_of_events(r: ValkeyTest
     assert "OK" == rd1.run("read")
     assert "1" == psubscribe(rd1, "*")
     r.run("set", "foo", "bar")
-    # TODO: assert_equal "pmessage * __keyspace@${db}__:foo set" $rd1 read
-    # TODO: assert_equal "pmessage * __keyevent@${db}__:set foo" $rd1 read
+    assert f"pmessage * __keyspace@{db}__:foo set" == rd1.run("read")
+    assert f"pmessage * __keyevent@{db}__:set foo" == rd1.run("read")
     rd1.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
-def test_keyspace_notifications_we_are_able_to_mask_events(r: ValkeyTestClient) -> None:
+def test_keyspace_notifications_we_are_able_to_mask_events(r: ValkeyTestClient, db) -> None:
     """
     test "Keyspace notifications: we are able to mask events" {
         r config set notify-keyspace-events KEl
@@ -570,13 +562,12 @@ def test_keyspace_notifications_we_are_able_to_mask_events(r: ValkeyTestClient) 
     assert "1" == psubscribe(rd1, "*")
     r.run("set", "foo", "bar")
     r.run("lpush", "mylist", "a")
-    # TODO: assert_equal "pmessage * __keyspace@${db}__:mylist lpush" $rd1 read
-    # TODO: assert_equal "pmessage * __keyevent@${db}__:lpush mylist" $rd1 read
+    assert f"pmessage * __keyspace@{db}__:mylist lpush" == rd1.run("read")
+    assert f"pmessage * __keyevent@{db}__:lpush mylist" == rd1.run("read")
     rd1.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
-def test_keyspace_notifications_general_events_test(r: ValkeyTestClient) -> None:
+def test_keyspace_notifications_general_events_test(r: ValkeyTestClient, db) -> None:
     """
     test "Keyspace notifications: general events test" {
         r config set notify-keyspace-events KEg
@@ -598,15 +589,14 @@ def test_keyspace_notifications_general_events_test(r: ValkeyTestClient) -> None
     r.run("set", "foo", "bar")
     r.run("expire", "foo", 1)
     r.run("del", "foo")
-    # TODO: assert_equal "pmessage * __keyspace@${db}__:foo expire" $rd1 read
-    # TODO: assert_equal "pmessage * __keyevent@${db}__:expire foo" $rd1 read
-    # TODO: assert_equal "pmessage * __keyspace@${db}__:foo del" $rd1 read
-    # TODO: assert_equal "pmessage * __keyevent@${db}__:del foo" $rd1 read
+    assert f"pmessage * __keyspace@{db}__:foo expire" == rd1.run("read")
+    assert f"pmessage * __keyevent@{db}__:expire foo" == rd1.run("read")
+    assert f"pmessage * __keyspace@{db}__:foo del" == rd1.run("read")
+    assert f"pmessage * __keyevent@{db}__:del foo" == rd1.run("read")
     rd1.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
-def test_keyspace_notifications_list_events_test(r: ValkeyTestClient) -> None:
+def test_keyspace_notifications_list_events_test(r: ValkeyTestClient, db) -> None:
     """
     test "Keyspace notifications: list events test" {
         r config set notify-keyspace-events KEl
@@ -632,17 +622,16 @@ def test_keyspace_notifications_list_events_test(r: ValkeyTestClient) -> None:
     r.run("lpush", "mylist", "a")
     r.run("rpush", "mylist", "a")
     r.run("rpop", "mylist")
-    # TODO: assert_equal "pmessage * __keyspace@${db}__:mylist lpush" $rd1 read
-    # TODO: assert_equal "pmessage * __keyevent@${db}__:lpush mylist" $rd1 read
-    # TODO: assert_equal "pmessage * __keyspace@${db}__:mylist rpush" $rd1 read
-    # TODO: assert_equal "pmessage * __keyevent@${db}__:rpush mylist" $rd1 read
-    # TODO: assert_equal "pmessage * __keyspace@${db}__:mylist rpop" $rd1 read
-    # TODO: assert_equal "pmessage * __keyevent@${db}__:rpop mylist" $rd1 read
+    assert f"pmessage * __keyspace@{db}__:mylist lpush" == rd1.run("read")
+    assert f"pmessage * __keyevent@{db}__:lpush mylist" == rd1.run("read")
+    assert f"pmessage * __keyspace@{db}__:mylist rpush" == rd1.run("read")
+    assert f"pmessage * __keyevent@{db}__:rpush mylist" == rd1.run("read")
+    assert f"pmessage * __keyspace@{db}__:mylist rpop" == rd1.run("read")
+    assert f"pmessage * __keyevent@{db}__:rpop mylist" == rd1.run("read")
     rd1.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
-def test_keyspace_notifications_set_events_test(r: ValkeyTestClient) -> None:
+def test_keyspace_notifications_set_events_test(r: ValkeyTestClient, db) -> None:
     """
     test "Keyspace notifications: set events test" {
         r config set notify-keyspace-events Ks
@@ -667,14 +656,13 @@ def test_keyspace_notifications_set_events_test(r: ValkeyTestClient) -> None:
     r.run("srem", "myset", "x")
     r.run("sadd", "myset", "x", "y", "z")
     r.run("srem", "myset", "x")
-    # TODO: assert_equal "pmessage * __keyspace@${db}__:myset sadd" $rd1 read
-    # TODO: assert_equal "pmessage * __keyspace@${db}__:myset sadd" $rd1 read
-    # TODO: assert_equal "pmessage * __keyspace@${db}__:myset srem" $rd1 read
+    assert f"pmessage * __keyspace@{db}__:myset sadd" == rd1.run("read")
+    assert f"pmessage * __keyspace@{db}__:myset sadd" == rd1.run("read")
+    assert f"pmessage * __keyspace@{db}__:myset srem" == rd1.run("read")
     rd1.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
-def test_keyspace_notifications_zset_events_test(r: ValkeyTestClient) -> None:
+def test_keyspace_notifications_zset_events_test(r: ValkeyTestClient, db) -> None:
     """
     test "Keyspace notifications: zset events test" {
         r config set notify-keyspace-events Kz
@@ -699,14 +687,13 @@ def test_keyspace_notifications_zset_events_test(r: ValkeyTestClient) -> None:
     r.run("zrem", "myzset", "x")
     r.run("zadd", "myzset", 3, "x", 4, "y", 5, "z")
     r.run("zrem", "myzset", "x")
-    # TODO: assert_equal "pmessage * __keyspace@${db}__:myzset zadd" $rd1 read
-    # TODO: assert_equal "pmessage * __keyspace@${db}__:myzset zadd" $rd1 read
-    # TODO: assert_equal "pmessage * __keyspace@${db}__:myzset zrem" $rd1 read
+    assert f"pmessage * __keyspace@{db}__:myzset zadd" == rd1.run("read")
+    assert f"pmessage * __keyspace@{db}__:myzset zadd" == rd1.run("read")
+    assert f"pmessage * __keyspace@{db}__:myzset zrem" == rd1.run("read")
     rd1.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
-def test_keyspace_notifications_hash_events_test(r: ValkeyTestClient) -> None:
+def test_keyspace_notifications_hash_events_test(r: ValkeyTestClient, db) -> None:
     """
     test "Keyspace notifications: hash events test" {
         r config set notify-keyspace-events Kh
@@ -726,13 +713,13 @@ def test_keyspace_notifications_hash_events_test(r: ValkeyTestClient) -> None:
     assert "1" == psubscribe(rd1, "*")
     r.run("hmset", "myhash", "yes", 1, "no", 0)
     r.run("hincrby", "myhash", "yes", 10)
-    # TODO: assert_equal "pmessage * __keyspace@${db}__:myhash hset" $rd1 read
-    # TODO: assert_equal "pmessage * __keyspace@${db}__:myhash hincrby" $rd1 read
+    assert f"pmessage * __keyspace@{db}__:myhash hset" == rd1.run("read")
+    assert f"pmessage * __keyspace@{db}__:myhash hincrby" == rd1.run("read")
     rd1.run("close")
 
 
 @pytest.mark.xfail(reason="not implemented")
-def test_keyspace_notifications_stream_events_test(r: ValkeyTestClient) -> None:
+def test_keyspace_notifications_stream_events_test(r: ValkeyTestClient, db) -> None:
     """
     test "Keyspace notifications: stream events test" {
         r config set notify-keyspace-events Kt
@@ -770,17 +757,16 @@ def test_keyspace_notifications_stream_events_test(r: ValkeyTestClient) -> None:
     r.run("xgroup", "delconsumer", "mystream", "mygroup", "Lee")
     r.run("xautoclaim", "mystream", "mygroup", "Bob", 0, id)
     r.run("xgroup", "delconsumer", "mystream", "mygroup", "Bob")
-    # TODO: assert_equal "pmessage * __keyspace@${db}__:mystream xgroup-create" $rd1 read
-    # TODO: assert_equal "pmessage * __keyspace@${db}__:mystream xgroup-createconsumer" $rd1 read
-    # TODO: assert_equal "pmessage * __keyspace@${db}__:mystream xadd" $rd1 read
-    # TODO: assert_equal "pmessage * __keyspace@${db}__:mystream xgroup-createconsumer" $rd1 read
-    # TODO: assert_equal "pmessage * __keyspace@${db}__:mystream xgroup-createconsumer" $rd1 read
-    # TODO: assert_equal "pmessage * __keyspace@${db}__:mystream xgroup-delconsumer" $rd1 read
+    assert f"pmessage * __keyspace@{db}__:mystream xgroup-create" == rd1.run("read")
+    assert f"pmessage * __keyspace@{db}__:mystream xgroup-createconsumer" == rd1.run("read")
+    assert f"pmessage * __keyspace@{db}__:mystream xadd" == rd1.run("read")
+    assert f"pmessage * __keyspace@{db}__:mystream xgroup-createconsumer" == rd1.run("read")
+    assert f"pmessage * __keyspace@{db}__:mystream xgroup-createconsumer" == rd1.run("read")
+    assert f"pmessage * __keyspace@{db}__:mystream xgroup-delconsumer" == rd1.run("read")
     rd1.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
-def test_keyspace_notifications_expired_events_triggered_expire(r: ValkeyTestClient) -> None:
+def test_keyspace_notifications_expired_events_triggered_expire(r: ValkeyTestClient, db) -> None:
     """
     test "Keyspace notifications: expired events (triggered expire)" {
         r config set notify-keyspace-events Ex
@@ -803,12 +789,11 @@ def test_keyspace_notifications_expired_events_triggered_expire(r: ValkeyTestCli
     assert "1" == psubscribe(rd1, "*")
     r.run("psetex", "foo", 100, 1)
     wait_for_condition(50, 100, lambda: r.run("exists", "foo") == 0, lambda: fail("Key does not expire?!"))
-    # TODO: assert_equal "pmessage * __keyevent@${db}__:expired foo" $rd1 read
+    assert f"pmessage * __keyevent@{db}__:expired foo" == rd1.run("read")
     rd1.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
-def test_keyspace_notifications_expired_events_background_expire(r: ValkeyTestClient) -> None:
+def test_keyspace_notifications_expired_events_background_expire(r: ValkeyTestClient, db) -> None:
     """
     test "Keyspace notifications: expired events (background expire)" {
         r config set notify-keyspace-events Ex
@@ -825,12 +810,11 @@ def test_keyspace_notifications_expired_events_background_expire(r: ValkeyTestCl
     rd1 = ValkeyTestClient.create_from(r)
     assert "1" == psubscribe(rd1, "*")
     r.run("psetex", "foo", 100, 1)
-    # TODO: assert_equal "pmessage * __keyevent@${db}__:expired foo" $rd1 read
+    assert f"pmessage * __keyevent@{db}__:expired foo" == rd1.run("read")
     rd1.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
-def test_keyspace_notification_expired_event_expiration_time_is_already_expired(r: ValkeyTestClient) -> None:
+def test_keyspace_notification_expired_event_expiration_time_is_already_expired(r: ValkeyTestClient, db) -> None:
     """
     test "Keyspace notification: expired event (Expiration time is already expired)" {
         r config set notify-keyspace-events Ex
@@ -849,12 +833,11 @@ def test_keyspace_notification_expired_event_expiration_time_is_already_expired(
     assert "1" == psubscribe(rd1, "*")
     r.run("set", "foo", 1)
     r.run("expire", "foo", -1)
-    # TODO: assert_equal "pmessage * __keyevent@${db}__:expired foo" $rd1 read
+    assert f"pmessage * __keyevent@{db}__:expired foo" == rd1.run("read")
     rd1.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
-def test_keyspace_notifications_evicted_events(r: ValkeyTestClient) -> None:
+def test_keyspace_notifications_evicted_events(r: ValkeyTestClient, db) -> None:
     """
     test "Keyspace notifications: evicted events" {
         r config set notify-keyspace-events Ee
@@ -877,7 +860,7 @@ def test_keyspace_notifications_evicted_events(r: ValkeyTestClient) -> None:
     assert "1" == psubscribe(rd1, "*")
     r.run("set", "foo", "bar")
     r.run("config", "set", "maxmemory", 1)
-    # TODO: assert_equal "pmessage * __keyevent@${db}__:evicted foo" $rd1 read
+    assert f"pmessage * __keyevent@{db}__:evicted foo" == rd1.run("read")
     r.run("config", "set", "maxmemory", 0)
     rd1.run("close")
     assert r.run("config", "set", "maxmemory-policy", "noeviction") == "OK"
@@ -906,8 +889,7 @@ def test_keyspace_notifications_test_config_get_or_set_of_event_flags(r: ValkeyT
     assert "AE" == r.run("config", "get", "notify-keyspace-events")[1]
 
 
-@pytest.mark.xfail(reason="not implemented")
-def test_keyspace_notifications_new_key_test(r: ValkeyTestClient) -> None:
+def test_keyspace_notifications_new_key_test(r: ValkeyTestClient, db) -> None:
     """
     test "Keyspace notifications: new key test" {
         r config set notify-keyspace-events En
@@ -928,8 +910,8 @@ def test_keyspace_notifications_new_key_test(r: ValkeyTestClient) -> None:
     r.run("set", "foo", "bar")
     r.run("set", "foo", "baz")
     r.run("set", "bar", "bar")
-    # TODO: assert_equal "pmessage * __keyevent@${db}__:new foo" $rd1 read
-    # TODO: assert_equal "pmessage * __keyevent@${db}__:new bar" $rd1 read
+    assert f"pmessage * __keyevent@{db}__:new foo" == rd1.run("read")
+    assert f"pmessage * __keyevent@{db}__:new bar" == rd1.run("read")
     rd1.run("close")
 
 
@@ -1029,6 +1011,10 @@ def test_unsubscribe_inside_multi_and_publish_to_self(r: ValkeyTestClient) -> No
 
 
 # --- stubs for unimplemented TCL helpers ---
+
+
+def concat(*args):
+    raise NotImplementedError("concat")
 
 
 def fail(*args):

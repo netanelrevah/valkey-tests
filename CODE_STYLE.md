@@ -30,6 +30,13 @@
   FooTranslatorType = type["FooTranslator"]
   ```
 
+## Indentation and Structure
+- Maximum indentation depth: 3–4 levels. Deeply nested pyramids must be extracted.
+- Extract complex branches into named classmethods or functions — not module-level helpers if the logic belongs to one class.
+- Prefer classmethods over staticmethods for class-internal helpers (use `@classmethod` with `cls`).
+- A `translate`/`generate`/`process` method should read as a pipeline: each step is a call, not an inline block.
+- Use early `continue` in loops to avoid nesting, same as early `return` in functions.
+
 ## Class Design
 - **Registry/decorator pattern** for pluggable dispatch: implement `register` as a classmethod that returns a decorator, then apply it to each concrete subclass:
   ```python

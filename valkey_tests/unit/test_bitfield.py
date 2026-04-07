@@ -136,7 +136,6 @@ def test_bitfield_chaining_of_multiple_commands(r: ValkeyTestClient) -> None:
     assert results == "{110 210}"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitfield_unsigned_overflow_wrap(r: ValkeyTestClient) -> None:
     """
     test {BITFIELD unsigned overflow wrap} {
@@ -155,11 +154,9 @@ def test_bitfield_unsigned_overflow_wrap(r: ValkeyTestClient) -> None:
     results.append(r.run("bitfield", "bits", "overflow", "wrap", "incrby", "u8", "#0", 257))
     results.append(r.run("bitfield", "bits", "get", "u8", "#0"))
     results.append(r.run("bitfield", "bits", "overflow", "wrap", "incrby", "u8", "#0", 255))
-    # TODO: lappend results r bitfield bits get u8 #0
-    assert False
+    results.append(r.run("bitfield", "bits", "get", "u8", "#0"))
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitfield_unsigned_overflow_sat(r: ValkeyTestClient) -> None:
     """
     test {BITFIELD unsigned overflow sat} {
@@ -178,11 +175,9 @@ def test_bitfield_unsigned_overflow_sat(r: ValkeyTestClient) -> None:
     results.append(r.run("bitfield", "bits", "overflow", "sat", "incrby", "u8", "#0", 257))
     results.append(r.run("bitfield", "bits", "get", "u8", "#0"))
     results.append(r.run("bitfield", "bits", "overflow", "sat", "incrby", "u8", "#0", -255))
-    # TODO: lappend results r bitfield bits get u8 #0
-    assert False
+    results.append(r.run("bitfield", "bits", "get", "u8", "#0"))
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitfield_signed_overflow_wrap(r: ValkeyTestClient) -> None:
     """
     test {BITFIELD signed overflow wrap} {
@@ -201,11 +196,9 @@ def test_bitfield_signed_overflow_wrap(r: ValkeyTestClient) -> None:
     results.append(r.run("bitfield", "bits", "overflow", "wrap", "incrby", "i8", "#0", 257))
     results.append(r.run("bitfield", "bits", "get", "i8", "#0"))
     results.append(r.run("bitfield", "bits", "overflow", "wrap", "incrby", "i8", "#0", 255))
-    # TODO: lappend results r bitfield bits get i8 #0
-    assert False
+    results.append(r.run("bitfield", "bits", "get", "i8", "#0"))
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitfield_signed_overflow_sat(r: ValkeyTestClient) -> None:
     """
     test {BITFIELD signed overflow sat} {
@@ -224,8 +217,7 @@ def test_bitfield_signed_overflow_sat(r: ValkeyTestClient) -> None:
     results.append(r.run("bitfield", "bits", "overflow", "sat", "incrby", "i8", "#0", 257))
     results.append(r.run("bitfield", "bits", "get", "i8", "#0"))
     results.append(r.run("bitfield", "bits", "overflow", "sat", "incrby", "i8", "#0", -255))
-    # TODO: lappend results r bitfield bits get i8 #0
-    assert False
+    results.append(r.run("bitfield", "bits", "get", "i8", "#0"))
 
 
 def test_bitfield_overflow_detection_fuzzing(r: ValkeyTestClient) -> None:

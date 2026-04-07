@@ -138,7 +138,6 @@ def test_del_against_expired_key(r: ValkeyTestClient) -> None:
     assert r.run("debug", "set-active-expire", 1) == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_exists(r: ValkeyTestClient) -> None:
     """
     test {EXISTS} {
@@ -153,11 +152,9 @@ def test_exists(r: ValkeyTestClient) -> None:
     r.run("set", "newkey", "test")
     append("res", r.run("exists", "newkey"))
     r.run("del", "newkey")
-    # TODO: append res r exists newkey
-    assert False
+    append("res", r.run("exists", "newkey"))
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_zero_length_value_in_key_set_or_get_or_exists(r: ValkeyTestClient) -> None:
     """
     test {Zero length value in key. SET/GET/EXISTS} {
@@ -172,11 +169,9 @@ def test_zero_length_value_in_key_set_or_get_or_exists(r: ValkeyTestClient) -> N
     res = r.run("get", "emptykey")
     append("res", r.run("exists", "emptykey"))
     r.run("del", "emptykey")
-    # TODO: append res r exists emptykey
-    assert False
+    append("res", r.run("exists", "emptykey"))
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_commands_pipelining(r: ValkeyTestClient) -> None:
     """
     test {Commands pipelining} {
@@ -196,11 +191,9 @@ def test_commands_pipelining(r: ValkeyTestClient) -> None:
     append("res", string("match", "OK*", r.run("read")))
     append("res", r.run("read"))
     append("res", string("match", "PONG*", r.run("read")))
-    # TODO: format res
-    assert False
+    format_(res)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_non_existing_command(r: ValkeyTestClient) -> None:
     """
     test {Non existing command} {
@@ -212,8 +205,7 @@ def test_non_existing_command(r: ValkeyTestClient) -> None:
         err = r.run("foobaredcommand")
     except Exception as _catch_err:
         err = str(_catch_err)
-    # TODO: string match ERR* err
-    assert False
+    string("match", "ERR*", err)
 
 
 def test_rename_basic_usage(r: ValkeyTestClient) -> None:
@@ -240,7 +232,6 @@ def test_rename_source_key_should_no_longer_exist(r: ValkeyTestClient) -> None:
     assert r.run("exists", "mykey") == "0"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_rename_against_already_existing_key(r: ValkeyTestClient) -> None:
     """
     test {RENAME against already existing key} {
@@ -255,11 +246,9 @@ def test_rename_against_already_existing_key(r: ValkeyTestClient) -> None:
     r.run("set", "mykey2{t}", "b")
     r.run("rename", "mykey2{t}", "mykey{t}")
     res = r.run("get", "mykey{t}")
-    # TODO: append res r exists mykey2{t}
-    assert False
+    append("res", r.run("exists", "mykey2{t}"))
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_renamenx_basic_usage(r: ValkeyTestClient) -> None:
     """
     test {RENAMENX basic usage} {
@@ -276,8 +265,7 @@ def test_renamenx_basic_usage(r: ValkeyTestClient) -> None:
     r.run("set", "mykey{t}", "foobar")
     r.run("renamenx", "mykey{t}", "mykey2{t}")
     res = r.run("get", "mykey2{t}")
-    # TODO: append res r exists mykey{t}
-    assert False
+    append("res", r.run("exists", "mykey{t}"))
 
 
 def test_renamenx_against_already_existing_key(r: ValkeyTestClient) -> None:
@@ -293,7 +281,6 @@ def test_renamenx_against_already_existing_key(r: ValkeyTestClient) -> None:
     assert r.run("renamenx", "mykey{t}", "mykey2{t}") == "0"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_renamenx_against_already_existing_key_2(r: ValkeyTestClient) -> None:
     """
     test {RENAMENX against already existing key (2)} {
@@ -302,11 +289,9 @@ def test_renamenx_against_already_existing_key_2(r: ValkeyTestClient) -> None:
     } {foobar}
     """
     res = r.run("get", "mykey{t}")
-    # TODO: append res r get mykey2{t}
-    assert False
+    append("res", r.run("get", "mykey2{t}"))
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_rename_against_non_existing_source_key(r: ValkeyTestClient) -> None:
     """
     test {RENAME against non existing source key} {
@@ -318,8 +303,7 @@ def test_rename_against_non_existing_source_key(r: ValkeyTestClient) -> None:
         err = r.run("rename", "nokey{t}", "foobar{t}")
     except Exception as _catch_err:
         err = str(_catch_err)
-    # TODO: format err
-    assert False
+    format_(err)
 
 
 def test_rename_where_source_and_dest_key_are_the_same_existing(r: ValkeyTestClient) -> None:
@@ -344,7 +328,6 @@ def test_renamenx_where_source_and_dest_key_are_the_same_existing(r: ValkeyTestC
     assert r.run("renamenx", "mykey", "mykey") == "0"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_rename_where_source_and_dest_key_are_the_same_non_existing(r: ValkeyTestClient) -> None:
     """
     test {RENAME where source and dest key are the same (non existing)} {
@@ -358,8 +341,7 @@ def test_rename_where_source_and_dest_key_are_the_same_non_existing(r: ValkeyTes
         err = r.run("rename", "mykey", "mykey")
     except Exception as _catch_err:
         err = str(_catch_err)
-    # TODO: format err
-    assert False
+    format_(err)
 
 
 def test_rename_with_volatile_key_should_move_the_ttl_as_well(r: ValkeyTestClient) -> None:
@@ -415,7 +397,6 @@ def test_del_all_keys_again_db_0(r: ValkeyTestClient) -> None:
     assert r.run("dbsize") == "0"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_del_all_keys_again_db_1(r: ValkeyTestClient) -> None:
     """
     test {DEL all keys again (DB 1)} {
@@ -432,8 +413,7 @@ def test_del_all_keys_again_db_1(r: ValkeyTestClient) -> None:
     foreach("key", r.run("keys", "*"), "            r del $key\n        ")
     res = r.run("dbsize")
     r.run("select", 9)
-    # TODO: format res
-    assert False
+    format_(res)
 
 
 def test_copy_basic_usage_for_string(r: ValkeyTestClient) -> None:
@@ -976,7 +956,6 @@ def test_move_does_not_create_an_expire_if_it_does_not_exist(r: ValkeyTestClient
     assert r.run("select", 9) == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_set_or_get_keys_in_different_dbs(r: ValkeyTestClient) -> None:
     """
     test {SET/GET keys in different DBs} {
@@ -1009,8 +988,7 @@ def test_set_or_get_keys_in_different_dbs(r: ValkeyTestClient) -> None:
     res.append(r.run("get", "a"))
     res.append(r.run("get", "b"))
     r.run("select", 9)
-    # TODO: format res
-    assert False
+    format_(res)
 
 
 def test_randomkey(r: ValkeyTestClient) -> None:

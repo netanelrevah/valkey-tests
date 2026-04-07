@@ -126,3 +126,8 @@ def rd_trk(valkey_server):
 @pytest.fixture()
 def plain_client(valkey_server):
     yield from _client_fixture(valkey_server)
+
+
+@pytest.fixture()
+def db() -> int:
+    return 9

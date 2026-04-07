@@ -112,7 +112,6 @@ def test_query_buffer_resized_correctly(r: ValkeyTestClient) -> None:
     rd.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_query_buffer_resized_correctly_when_not_idle(r: ValkeyTestClient) -> None:
     """
     test "query buffer resized correctly when not idle" {
@@ -160,8 +159,7 @@ def test_query_buffer_resized_correctly_when_not_idle(r: ValkeyTestClient) -> No
         "            # Write something smaller, so query buf peak can shrink\n            $rd set x [string repeat A 100]\n            set new_test_client_qbuf [client_query_buffer test_client]\n            if {$new_test_client_qbuf < $orig_test_client_qbuf && $new_test_client_qbuf > 0} { break } \n            if {[expr [clock milliseconds] - $t] > 1000} { break }\n            after 10\n        ",
     )
     assert (client_query_buffer("test_client") > 0) and (client_query_buffer("test_client") < orig_test_client_qbuf)
-    # TODO: $rd close
-    assert False
+    rd.run("close")
 
 
 def test_query_buffer_resized_correctly_with_fat_argv(r: ValkeyTestClient) -> None:

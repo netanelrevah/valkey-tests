@@ -9,7 +9,6 @@ from tests.valkey_test_client import ValkeyTestClient
 pytestmark = [pytest.mark.other]
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.skipif("", reason="{$::force_failure}")
 def test_failing_test(r: ValkeyTestClient) -> None:
     """
@@ -17,8 +16,7 @@ def test_failing_test(r: ValkeyTestClient) -> None:
         format err
     } {ok}
     """
-    # TODO: format err
-    assert False
+    format_("err")
 
 
 def test_coverage_help_commands(r: ValkeyTestClient) -> None:
@@ -285,7 +283,6 @@ def test_append_basics(r: ValkeyTestClient) -> None:
     ] == "3 bar 6 bar100"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_append_basics_integer_encoded_values(r: ValkeyTestClient) -> None:
     """
     test {APPEND basics, integer encoded values} {
@@ -306,8 +303,7 @@ def test_append_basics_integer_encoded_values(r: ValkeyTestClient) -> None:
     res.append(r.run("get", "foo"))
     r.run("set", "foo", 1)
     r.run("append", "foo", 2)
-    # TODO: lappend res r get foo
-    assert False
+    res.append(r.run("get", "foo"))
 
 
 def test_append_fuzzing(r: ValkeyTestClient) -> None:
@@ -339,7 +335,6 @@ def test_append_fuzzing(r: ValkeyTestClient) -> None:
     _ = err
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_flushdb(r: ValkeyTestClient) -> None:
     """
     test {FLUSHDB} {
@@ -358,18 +353,12 @@ def test_flushdb(r: ValkeyTestClient) -> None:
     } {0 0}
     """
     aux = []
-    # TODO: if {$::singledb} {
-    #       r flushdb
-    #       lappend aux 0 [r dbsize]
-    #   } else {
-    #       r select 9
-    #       r flushdb
-    #       lappend aux [r dbsize]
-    #       r select 10
-    #       r flushdb
-    #       lappend aux [r dbsize]
-    #   }
-    assert False
+    if_(
+        "$::singledb",
+        "            r flushdb\n            lappend aux 0 [r dbsize]\n        ",
+        "else",
+        "            r select 9\n            r flushdb\n            lappend aux [r dbsize]\n            r select 10\n            r flushdb\n            lappend aux [r dbsize]\n        ",
+    )
 
 
 def test_perform_a_final_save_to_leave_a_clean_db_on_disk(r: ValkeyTestClient) -> None:
@@ -906,6 +895,10 @@ def fail(*args):
 
 def foreach(*args):
     raise NotImplementedError("foreach")
+
+
+def format_(*args):
+    raise NotImplementedError("format_")
 
 
 def get_child_pid(*args):
