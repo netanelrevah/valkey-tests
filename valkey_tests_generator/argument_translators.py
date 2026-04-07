@@ -119,6 +119,8 @@ class ExpressionTranslator:
 class VariableSubstitutionArgumentTranslator(ArgumentTranslator):
     def get_translation(self, argument: TCLCommandArguments, defined_vars: set[str]) -> str | None:
         assert isinstance(argument, TCLVariableSubstitutionWord)
+        if argument.variable_name == "":
+            return "'$'"  # standalone $ — stream "last entry" ID
         if "::" in argument.variable_name or argument.variable_name not in defined_vars:
             return None
         return _safe_var_name(argument.variable_name)

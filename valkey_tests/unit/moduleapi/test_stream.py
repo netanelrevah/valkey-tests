@@ -61,7 +61,6 @@ def test_module_stream_add_and_delete(r: ValkeyTestClient) -> None:
         r.run("stream.delete", "mystream", "123-456")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_stream_add_unblocks_blocking_xread(r: ValkeyTestClient) -> None:
     """
     test {Module stream add unblocks blocking xread} {
@@ -94,12 +93,12 @@ def test_module_stream_add_unblocks_blocking_xread(r: ValkeyTestClient) -> None:
     """
     r.run("del", "mystream")
     rd1 = ValkeyTestClient.create_from(r)
-    # TODO: $rd1 XREAD BLOCK 3000 STREAMS mystream
+    rd1.run("XREAD", "BLOCK", 3000, "STREAMS", "mystream", "$")
     wait_for_condition(50, 100, lambda: s(0, "blocked_clients") == "1", lambda: fail("Client is not blocked"))
     id = r.run("stream.add", "mystream", "field", 1, "value", "a")
     assert f"{{mystream {{{{{id} {{field 1 value a}}}}}}}}" == rd1.run("read")
     rd2 = ValkeyTestClient.create_from(r)
-    # TODO: $rd2 XREAD BLOCK 3000 STREAMS mystream
+    rd2.run("XREAD", "BLOCK", 3000, "STREAMS", "mystream", "$")
     wait_for_condition(50, 100, lambda: s(0, "blocked_clients") == "1", lambda: fail("Client is not blocked"))
     id = r.run("stream.add", "mystream", "field", 2, "value", "b")
     assert f"{{mystream {{{{{id} {{field 2 value b}}}}}}}}" == rd2.run("read")

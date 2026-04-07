@@ -6344,9 +6344,9 @@ if {$cmd eq "HINCRBY"} {
 """
 
 
-@pytest.mark.parametrize(["cmd", "inc3", "inc2", "inc1"], [("HINCRBY", 4, 3, 2), ("HINCRBYFLOAT", 4.5, 3.5, 2.5)])
+@pytest.mark.parametrize(["cmd", "inc1", "inc3", "inc2"], [("HINCRBY", 2, 4, 3), ("HINCRBYFLOAT", 2.5, 4.5, 3.5)])
 def test_cmd_recreates_field_with_correct_value_after_active_expiry_deletion(
-    r: ValkeyTestClient, cmd, inc3, inc2, inc1
+    r: ValkeyTestClient, cmd, inc1, inc3, inc2
 ) -> None:
     """
     test "$cmd recreates field with correct value after active expiry deletion" {
@@ -6377,8 +6377,8 @@ def test_cmd_recreates_field_with_correct_value_after_active_expiry_deletion(
     assert inc1 == r.run("HGET", "myhash", "f1")
 
 
-@pytest.mark.parametrize(["cmd", "inc3", "inc2", "inc1"], [("HINCRBY", 4, 3, 2), ("HINCRBYFLOAT", 4.5, 3.5, 2.5)])
-def test_cmd_preserves_existing_ttl_when_incrementing_field_value(r: ValkeyTestClient, cmd, inc3, inc2, inc1) -> None:
+@pytest.mark.parametrize(["cmd", "inc1", "inc3", "inc2"], [("HINCRBY", 2, 4, 3), ("HINCRBYFLOAT", 2.5, 4.5, 3.5)])
+def test_cmd_preserves_existing_ttl_when_incrementing_field_value(r: ValkeyTestClient, cmd, inc1, inc3, inc2) -> None:
     """
     test "$cmd preserves existing TTL when incrementing field value" {
         r FLUSHALL
@@ -6408,9 +6408,9 @@ def test_cmd_preserves_existing_ttl_when_incrementing_field_value(r: ValkeyTestC
     assert_morethan(r.run("HTTL", "myhash", "FIELDS", 1, "f1"), 90000)
 
 
-@pytest.mark.parametrize(["cmd", "inc3", "inc2", "inc1"], [("HINCRBY", 4, 3, 2), ("HINCRBYFLOAT", 4.5, 3.5, 2.5)])
+@pytest.mark.parametrize(["cmd", "inc1", "inc3", "inc2"], [("HINCRBY", 2, 4, 3), ("HINCRBYFLOAT", 2.5, 4.5, 3.5)])
 def test_cmd_handles_mix_of_expired_and_existing_fields_during_increment_operations(
-    r: ValkeyTestClient, cmd, inc3, inc2, inc1
+    r: ValkeyTestClient, cmd, inc1, inc3, inc2
 ) -> None:
     """
     test "$cmd handles mix of expired and existing fields during increment operations" {
@@ -6447,9 +6447,9 @@ def test_cmd_handles_mix_of_expired_and_existing_fields_during_increment_operati
     assert f"{inc1} [expr {{{inc2}+2}}] {inc3}" == r.run("HMGET", "myhash", "f1", "f2", "f3")
 
 
-@pytest.mark.parametrize(["cmd", "inc3", "inc2", "inc1"], [("HINCRBY", 4, 3, 2), ("HINCRBYFLOAT", 4.5, 3.5, 2.5)])
+@pytest.mark.parametrize(["cmd", "inc1", "inc3", "inc2"], [("HINCRBY", 2, 4, 3), ("HINCRBYFLOAT", 2.5, 4.5, 3.5)])
 def test_cmd_maintains_ttl_values_when_incrementing_fields_with_existing_expiry(
-    r: ValkeyTestClient, cmd, inc3, inc2, inc1
+    r: ValkeyTestClient, cmd, inc1, inc3, inc2
 ) -> None:
     """
     test "$cmd maintains TTL values when incrementing fields with existing expiry" {

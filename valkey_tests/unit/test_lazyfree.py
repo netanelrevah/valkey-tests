@@ -150,7 +150,6 @@ def test_lazy_free_a_stream_with_all_types_of_metadata(r: ValkeyTestClient) -> N
     assert s("lazyfreed_objects") == 1
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_lazy_free_a_stream_with_deleted_cgroup(r: ValkeyTestClient) -> None:
     """
     test "lazy free a stream with deleted cgroup" {
@@ -171,7 +170,7 @@ def test_lazy_free_a_stream_with_deleted_cgroup(r: ValkeyTestClient) -> None:
     """
     r.run("config", "resetstat")
     r.run("xadd", "s", "*", "a", "b")
-    # TODO: r xgroup create s bla
+    r.run("xgroup", "create", "s", "bla", "$")
     r.run("xgroup", "destroy", "s", "bla")
     r.run("unlink", "s")
     wait_for_condition(50, 100, lambda: s("lazyfree_pending_objects") == 0, lambda: fail("lazyfree isn't done"))

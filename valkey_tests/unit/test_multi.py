@@ -1501,7 +1501,6 @@ def test_exec_with_at_least_one_use_memory_command_should_fail(r: ValkeyTestClie
     r2.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_blocking_commands_ignores_the_timeout(r: ValkeyTestClient) -> None:
     """
     test {Blocking commands ignores the timeout} {
@@ -1521,7 +1520,7 @@ def test_blocking_commands_ignores_the_timeout(r: ValkeyTestClient) -> None:
         list $m $res
     } {OK {{} {} {} {} {} {} {} {}}}
     """
-    # TODO: r xgroup create s{t} g  MKSTREAM
+    r.run("xgroup", "create", "s{t}", "g", "$", "MKSTREAM")
     m = r.run("multi")
     r.run("blpop", "empty_list{t}", 0)
     r.run("brpop", "empty_list{t}", 0)
@@ -1529,7 +1528,7 @@ def test_blocking_commands_ignores_the_timeout(r: ValkeyTestClient) -> None:
     r.run("blmove", "empty_list1{t}", "empty_list2{t}", "LEFT", "LEFT", 0)
     r.run("bzpopmin", "empty_zset{t}", 0)
     r.run("bzpopmax", "empty_zset{t}", 0)
-    # TODO: r xread BLOCK 0 STREAMS s{t}
+    r.run("xread", "BLOCK", 0, "STREAMS", "s{t}", "$")
     r.run("xreadgroup", "group", "g", "c", "BLOCK", 0, "STREAMS", "s{t}", ">")
     res = r.run("exec")
     assert [m, res] == "OK {{} {} {} {} {} {} {} {}}"

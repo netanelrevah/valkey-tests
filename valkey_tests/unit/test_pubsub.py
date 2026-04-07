@@ -718,7 +718,6 @@ def test_keyspace_notifications_hash_events_test(r: ValkeyTestClient, db) -> Non
     rd1.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_keyspace_notifications_stream_events_test(r: ValkeyTestClient, db) -> None:
     """
     test "Keyspace notifications: stream events test" {
@@ -749,7 +748,7 @@ def test_keyspace_notifications_stream_events_test(r: ValkeyTestClient, db) -> N
     r.run("del", "mystream")
     rd1 = ValkeyTestClient.create_from(r)
     assert "1" == psubscribe(rd1, "*")
-    # TODO: r xgroup create mystream mygroup  mkstream
+    r.run("xgroup", "create", "mystream", "mygroup", "$", "mkstream")
     r.run("xgroup", "createconsumer", "mystream", "mygroup", "Bob")
     id = r.run("xadd", "mystream", 1, "field1", "A")
     r.run("xreadgroup", "group", "mygroup", "Alice", "STREAMS", "mystream", ">")
