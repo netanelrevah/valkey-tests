@@ -262,85 +262,127 @@ class TCLBodyTranslator:
     def translate(self, body: TCLScript, expected: str | None, initial_vars: set[str] | None = None) -> list[str]:
         commands = [c for c in body.commands if c.name]
         if not commands:
-            if expected is not None:
-                return [f"assert False  # expected: {expected!r}"]
-            return []
+            return [f"assert False  # expected: {expected!r}"] if expected is not None else []
 
-        lines: list[str] = []
         defined_vars: set[str] = set(initial_vars) if initial_vars else set()
-        list_vars: set[str] = _collect_list_vars(body)
+        list_vars = _collect_list_vars(body)
+        lines: list[str] = []
 
         for i, command in enumerate(commands):
             is_last = i == len(commands) - 1
+            result = self._translate_command(command, defined_vars, list_vars, is_last, expected)
+            lines.extend(result if result is not None else self._make_todo(command, is_last, expected))
 
-            if is_last and expected:
-                expr = ExpressionTranslator.translate(command, defined_vars)
-                if expr is not None:
-                    if any(c in expected for c in "*?["):
-                        lines.append(f"assert fnmatch(str({expr}), {expected!r})")
-                    else:
-                        lines.append(f"assert {expr} == {expected!r}")
-                    continue
-            else:
-                # Intercept `set var {}` for vars used with lappend → emit `var = []`
-                if (
-                    command.name == "set"
-                    and len(command.args) == 2
-                    and isinstance(command.args[0], TCLWord)
-                    and command.args[0].value in list_vars
-                    and isinstance(command.args[1], TCLBracesWord)
-                    and command.args[1].value == ""
-                ):
-                    var = _safe_var_name(command.args[0].value)
-                    lines.append(f"{var} = []")
-                    defined_vars.add(command.args[0].value)
-                    continue
-                statement = StatementTranslator.translate(command, defined_vars)
-                if statement is not None:
-                    lines.extend(statement)
-                    if command.name == "set" and isinstance(command.args[0], TCLWord):
-                        defined_vars.add(command.args[0].value)
-                    elif command.name == "catch" and len(command.args) > 1 and isinstance(command.args[1], TCLWord):
-                        defined_vars.add(command.args[1].value)
-                    elif command.name == "if":
-                        try:
-                            if_cmd = TCLCommandIf.build(command.args, {})
-                            _, if_body = if_cmd.if_part
-                            defined_vars.update(_collect_set_vars(if_body))
-                            for _, elif_body in if_cmd.elseif_parts:
-                                defined_vars.update(_collect_set_vars(elif_body))
-                            if if_cmd.else_part is not None:
-                                defined_vars.update(_collect_set_vars(if_cmd.else_part))
-                        except Exception:
-                            pass
-                    continue
-                # Generic fallback: unknown command with translatable args → stub call
-                if command.name.isidentifier():
-                    args = ArgumentTranslator.translate_all(command.args, defined_vars)
-                    if args is not None:
-                        safe_name = _safe_stub_name(command.name)
-                        collected_stubs.add(safe_name)
-                        lines.append(f"{safe_name}({', '.join(args)})")
-                        continue
-                # Variable-as-command: $var subcmd args → var.run(subcmd, args)
-                if command.name.startswith("$"):
-                    var_name = command.name[1:]
-                    if var_name.isidentifier() and var_name in defined_vars and command.args:
-                        subcmd_arg = command.args[0]
-                        if isinstance(subcmd_arg, TCLWord):
-                            rest = ArgumentTranslator.translate_all(command.args[1:], defined_vars)
-                            if rest is not None:
-                                safe_var = _safe_var_name(var_name)
-                                lines.append(f"{safe_var}.run({', '.join([repr(subcmd_arg.value), *rest])})")
-                                continue
+        return lines
 
-            formatted = command.formatted()
-            first_line, *rest_lines = formatted.splitlines()
-            lines.append(f"# TODO: {first_line}")
-            lines.extend(f"#   {rest}" for rest in rest_lines)
-            if is_last and expected:
-                lines.append("assert False")
+    def _translate_command(
+        self,
+        command: TCLCommandWord,
+        defined_vars: set[str],
+        list_vars: set[str],
+        is_last: bool,
+        expected: str | None,
+    ) -> list[str] | None:
+        if is_last and expected:
+            result = self._try_expression_assert(command, defined_vars, expected)
+            if result is not None:
+                return result
 
+        for attempt in [
+            lambda: self._try_list_init(command, defined_vars, list_vars),
+            lambda: self._try_statement(command, defined_vars),
+            lambda: self._try_stub_call(command, defined_vars),
+            lambda: self._try_var_command(command, defined_vars),
+        ]:
+            result = attempt()
+            if result is not None:
+                return result
+
+        return None
+
+    @classmethod
+    def _try_expression_assert(cls, command: TCLCommandWord, defined_vars: set[str], expected: str) -> list[str] | None:
+        expr = ExpressionTranslator.translate(command, defined_vars)
+        if expr is None:
+            return None
+        if any(c in expected for c in "*?["):
+            return [f"assert fnmatch(str({expr}), {expected!r})"]
+        return [f"assert {expr} == {expected!r}"]
+
+    @classmethod
+    def _try_list_init(cls, command: TCLCommandWord, defined_vars: set[str], list_vars: set[str]) -> list[str] | None:
+        if (
+            command.name != "set"
+            or len(command.args) != 2
+            or not isinstance(command.args[0], TCLWord)
+            or command.args[0].value not in list_vars
+            or not isinstance(command.args[1], TCLBracesWord)
+            or command.args[1].value != ""
+        ):
+            return None
+        var = _safe_var_name(command.args[0].value)
+        defined_vars.add(command.args[0].value)
+        return [f"{var} = []"]
+
+    @classmethod
+    def _try_statement(cls, command: TCLCommandWord, defined_vars: set[str]) -> list[str] | None:
+        result = StatementTranslator.translate(command, defined_vars)
+        if result is None:
+            return None
+        cls._update_scope_after_statement(command, defined_vars)
+        return result
+
+    @classmethod
+    def _update_scope_after_statement(cls, command: TCLCommandWord, defined_vars: set[str]) -> None:
+        if command.name == "set" and isinstance(command.args[0], TCLWord):
+            defined_vars.add(command.args[0].value)
+        elif command.name == "catch" and len(command.args) > 1 and isinstance(command.args[1], TCLWord):
+            defined_vars.add(command.args[1].value)
+        elif command.name == "if":
+            try:
+                if_cmd = TCLCommandIf.build(command.args, {})
+                _, if_body = if_cmd.if_part
+                defined_vars.update(_collect_set_vars(if_body))
+                for _, elif_body in if_cmd.elseif_parts:
+                    defined_vars.update(_collect_set_vars(elif_body))
+                if if_cmd.else_part is not None:
+                    defined_vars.update(_collect_set_vars(if_cmd.else_part))
+            except Exception:
+                pass
+
+    @classmethod
+    def _try_stub_call(cls, command: TCLCommandWord, defined_vars: set[str]) -> list[str] | None:
+        if not command.name.isidentifier():
+            return None
+        args = ArgumentTranslator.translate_all(command.args, defined_vars)
+        if args is None:
+            return None
+        safe_name = _safe_stub_name(command.name)
+        collected_stubs.add(safe_name)
+        return [f"{safe_name}({', '.join(args)})"]
+
+    @classmethod
+    def _try_var_command(cls, command: TCLCommandWord, defined_vars: set[str]) -> list[str] | None:
+        if not command.name.startswith("$"):
+            return None
+        var_name = command.name[1:]
+        if not var_name.isidentifier() or var_name not in defined_vars or not command.args:
+            return None
+        subcmd_arg = command.args[0]
+        if not isinstance(subcmd_arg, TCLWord):
+            return None
+        rest = ArgumentTranslator.translate_all(command.args[1:], defined_vars)
+        if rest is None:
+            return None
+        return [f"{_safe_var_name(var_name)}.run({', '.join([repr(subcmd_arg.value), *rest])})"]
+
+    @classmethod
+    def _make_todo(cls, command: TCLCommandWord, is_last: bool, expected: str | None) -> list[str]:
+        formatted = command.formatted()
+        first_line, *rest_lines = formatted.splitlines()
+        lines = [f"# TODO: {first_line}", *[f"#   {rest}" for rest in rest_lines]]
+        if is_last and expected:
+            lines.append("assert False")
         return lines
 
 
