@@ -621,13 +621,7 @@ def test_don_t_rehash_if_server_has_child_process(r: ValkeyTestClient) -> None:
     assert table_size == main_hash_table_size()
     assert_no_match("*Hash table 1 stats*", r.run("debug", "htstats", 9))
     r.run("bgsave")
-    wait_for_condition(
-        10,
-        100,
-        "            [s rdb_bgsave_in_progress] eq 1\n        ",
-        "else",
-        '            fail "bgsave did not start in time"\n        ',
-    )
+    wait_for_condition(10, 100, lambda: s("rdb_bgsave_in_progress") == 1, lambda: fail("bgsave did not start in time"))
     r.run("mset", "k1", "v1", "k2", "v2")
     assert table_size == main_hash_table_size()
     assert_no_match("*Hash table 1 stats*", r.run("debug", "htstats", 9))
@@ -636,9 +630,8 @@ def test_don_t_rehash_if_server_has_child_process(r: ValkeyTestClient) -> None:
     wait_for_condition(
         50,
         100,
-        "            [main_hash_table_size] > $table_size\n        ",
-        "else",
-        '            fail "hash table did not rehash after child process killed"\n        ',
+        lambda: main_hash_table_size() > table_size,
+        lambda: fail("hash table did not rehash after child process killed"),
     )
 
 
@@ -804,9 +797,8 @@ def test_server_can_resize_empty_dict(r: ValkeyTestClient) -> None:
     wait_for_condition(
         100,
         50,
-        "            [dict get [r memory stats] db.$dbnum overhead.hashtable.main] < 400\n        ",
-        "else",
-        '            fail "dict did not resize in time"\n        ',
+        lambda: r.run("memory", "stats")["db.$dbnum"]["overhead.hashtable.main"] < 400,
+        lambda: fail("dict did not resize in time"),
     )
 
 
@@ -906,6 +898,10 @@ def exec_(*args):
 
 def expr(*args):
     raise NotImplementedError("expr")
+
+
+def fail(*args):
+    raise NotImplementedError("fail")
 
 
 def foreach(*args):

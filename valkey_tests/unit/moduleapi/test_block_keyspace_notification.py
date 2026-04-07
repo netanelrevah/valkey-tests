@@ -179,9 +179,8 @@ def test_blocking_keyspace_notif_during_multi(r: ValkeyTestClient) -> None:
     wait_for_condition(
         1000,
         50,
-        '            [string match "{event hset key *} {event hset key *}" [set latest [r b_keyspace.events]]]\n        ',
-        "else",
-        '            fail "Keyspace event not propagated within 5 seconds"\n        ',
+        lambda: string("match", "{event hset key *} {event hset key *}", r.run("b_keyspace.events")),
+        lambda: fail("Keyspace event not propagated within 5 seconds"),
     )
 
 
@@ -216,11 +215,7 @@ def test_event_that_fires_twice(r: ValkeyTestClient) -> None:
     assert s(0, "blocked_clients") == 1
     assert "" == r.run("b_keyspace.events")
     wait_for_condition(
-        1000,
-        50,
-        '            [string match "{event rename_* key *} {event rename_* key *}" [set latest [r b_keyspace.events]]]\n        ',
-        "else",
-        '            fail "Rename event not propagated within 5 seconds: latest value ${latest}"\n        ',
+        1000, 50, lambda: string("match", "{event rename_* key *} {event rename_* key *}", r.run("b_keyspace.events"))
     )
 
 
@@ -256,17 +251,15 @@ def test_server_created_keyspace_notification(r: ValkeyTestClient) -> None:
     wait_for_condition(
         1000,
         50,
-        '            [r b_keyspace.events] eq "{event hset key h} {event expire key h}"\n        ',
-        "else",
-        '            fail "Expire event not propagated within 5 seconds"\n        ',
+        lambda: r.run("b_keyspace.events") == "{event hset key h} {event expire key h}",
+        lambda: fail("Expire event not propagated within 5 seconds"),
     )
     assert "OK" == r.run("b_keyspace.clear")
     wait_for_condition(
         1000,
         50,
-        '            [r b_keyspace.events] eq "{event expired key h}"\n        ',
-        "else",
-        '            fail "Expired event not propagated within 5 seconds"\n        ',
+        lambda: r.run("b_keyspace.events") == "{event expired key h}",
+        lambda: fail("Expired event not propagated within 5 seconds"),
     )
 
 
@@ -290,6 +283,10 @@ def expr(*args):
     raise NotImplementedError("expr")
 
 
+def fail(*args):
+    raise NotImplementedError("fail")
+
+
 def pause_process(*args):
     raise NotImplementedError("pause_process")
 
@@ -304,6 +301,10 @@ def s(*args):
 
 def srv(*args):
     raise NotImplementedError("srv")
+
+
+def string(*args):
+    raise NotImplementedError("string")
 
 
 def wait_for_blocked_clients_count(*args):

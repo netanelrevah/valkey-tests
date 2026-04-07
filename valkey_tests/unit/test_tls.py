@@ -1,4 +1,5 @@
 # ruff: noqa: F841, ANN002, ANN201
+
 from fnmatch import fnmatch
 
 import pytest
@@ -1064,13 +1065,7 @@ def test_tls_info_tls_clears_expiration_countdown_when_tls_disabled(r: ValkeyTes
         "$::tls_module",
         "                # Force TLS module to refresh cert info after re-enable.\n                set cert [lindex [$plain_client config get tls-cert-file] 1]\n                set key [lindex [$plain_client config get tls-key-file] 1]\n                set cafile [lindex [$plain_client config get tls-ca-cert-file] 1]\n                $plain_client config set tls-cert-file $cert\n                $plain_client config set tls-key-file $key\n                $plain_client config set tls-ca-cert-file $cafile\n            ",
     )
-    wait_for_condition(
-        50,
-        100,
-        "                [catch {set tls_client [valkey $host $tls_port 0 1]} err] == 0\n            ",
-        "else",
-        '                fail "Timed out waiting for TLS listener to restart ($err)"\n            ',
-    )
+    wait_for_condition(50, 100, lambda: catch("set tls_client [valkey $host $tls_port 0 1]", "err") == 0)
     # TODO: set info_enabled $tls_client info tls
     if_(
         "![regexp {tls_server_cert_expires_in_seconds:(-?[0-9]+)} $info_enabled -> expire_enabled]",
@@ -1084,9 +1079,23 @@ def test_tls_info_tls_clears_expiration_countdown_when_tls_disabled(r: ValkeyTes
     wait_for_condition(
         50,
         100,
-        "                [regexp {tls_server_cert_serial:none} [$plain_client info tls]] &&\n                [regexp {tls_client_cert_serial:none} [$plain_client info tls]] &&\n                [regexp {tls_ca_cert_serial:none} [$plain_client info tls]] &&\n                [regexp {tls_server_cert_expires_in_seconds:0} [$plain_client info tls]] &&\n                [regexp {tls_client_cert_expires_in_seconds:0} [$plain_client info tls]] &&\n                [regexp {tls_ca_cert_expires_in_seconds:0} [$plain_client info tls]]\n            ",
-        "else",
-        '                fail "Timed out waiting for TLS to disable"\n            ',
+        lambda: (
+            (
+                (
+                    (
+                        (
+                            regexp("tls_server_cert_serial:none", plain_client.run("info", "tls"))
+                            and regexp("tls_client_cert_serial:none", plain_client.run("info", "tls"))
+                        )
+                        and regexp("tls_ca_cert_serial:none", plain_client.run("info", "tls"))
+                    )
+                    and regexp("tls_server_cert_expires_in_seconds:0", plain_client.run("info", "tls"))
+                )
+                and regexp("tls_client_cert_expires_in_seconds:0", plain_client.run("info", "tls"))
+            )
+            and regexp("tls_ca_cert_expires_in_seconds:0", plain_client.run("info", "tls"))
+        ),
+        lambda: fail("Timed out waiting for TLS to disable"),
     )
     info_disabled = plain_client.run("info", "tls")
     foreach(
@@ -1196,9 +1205,23 @@ def test_tls_info_tls_shows_expiration_countdown_when_tls_re_enabled(r: ValkeyTe
     wait_for_condition(
         50,
         100,
-        "                [regexp {tls_server_cert_serial:none} [$plain_client info tls]] &&\n                [regexp {tls_client_cert_serial:none} [$plain_client info tls]] &&\n                [regexp {tls_ca_cert_serial:none} [$plain_client info tls]] &&\n                [regexp {tls_server_cert_expires_in_seconds:0} [$plain_client info tls]] &&\n                [regexp {tls_client_cert_expires_in_seconds:0} [$plain_client info tls]] &&\n                [regexp {tls_ca_cert_expires_in_seconds:0} [$plain_client info tls]]\n            ",
-        "else",
-        '                fail "Timed out waiting for TLS to disable"\n            ',
+        lambda: (
+            (
+                (
+                    (
+                        (
+                            regexp("tls_server_cert_serial:none", plain_client.run("info", "tls"))
+                            and regexp("tls_client_cert_serial:none", plain_client.run("info", "tls"))
+                        )
+                        and regexp("tls_ca_cert_serial:none", plain_client.run("info", "tls"))
+                    )
+                    and regexp("tls_server_cert_expires_in_seconds:0", plain_client.run("info", "tls"))
+                )
+                and regexp("tls_client_cert_expires_in_seconds:0", plain_client.run("info", "tls"))
+            )
+            and regexp("tls_ca_cert_expires_in_seconds:0", plain_client.run("info", "tls"))
+        ),
+        lambda: fail("Timed out waiting for TLS to disable"),
     )
     plain_client.run("CONFIG", "SET", "tls-port", tls_port)
     plain_client.run("CONFIG", "SET", "tls-replication", "yes")
@@ -1207,13 +1230,7 @@ def test_tls_info_tls_shows_expiration_countdown_when_tls_re_enabled(r: ValkeyTe
         "$::tls_module",
         "                # Force TLS module to refresh cert info after re-enable.\n                set cert [lindex [$plain_client config get tls-cert-file] 1]\n                set key [lindex [$plain_client config get tls-key-file] 1]\n                set cafile [lindex [$plain_client config get tls-ca-cert-file] 1]\n                $plain_client config set tls-cert-file $cert\n                $plain_client config set tls-key-file $key\n                $plain_client config set tls-ca-cert-file $cafile\n            ",
     )
-    wait_for_condition(
-        50,
-        100,
-        "                [catch {set tls_client [valkey $host $tls_port 0 1]} err] == 0\n            ",
-        "else",
-        '                fail "Timed out waiting for TLS listener to restart ($err)"\n            ',
-    )
+    wait_for_condition(50, 100, lambda: catch("set tls_client [valkey $host $tls_port 0 1]", "err") == 0)
     # TODO: set info_reenabled $tls_client info tls
     foreach(
         "field",
@@ -1287,6 +1304,10 @@ def if_(*args):
 
 def pwd(*args):
     raise NotImplementedError("pwd")
+
+
+def regexp(*args):
+    raise NotImplementedError("regexp")
 
 
 def srv(*args):

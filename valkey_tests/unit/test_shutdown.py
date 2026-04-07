@@ -47,13 +47,7 @@ def test_temp_rdb_will_be_deleted_if_we_use_bg_unlink_when_shutdown(r: ValkeyTes
         i += 1
     r.run("config", "set", "rdb-key-save-delay", 10000000)
     r.run("bgsave")
-    wait_for_condition(
-        1000,
-        10,
-        "            [s rdb_bgsave_in_progress] eq 1\n        ",
-        "else",
-        '            fail "bgsave did not start in time"\n        ',
-    )
+    wait_for_condition(1000, 10, lambda: s("rdb_bgsave_in_progress") == 1, lambda: fail("bgsave did not start in time"))
     time.sleep(100 / 1000)
     dir = r.run("config", "get", "dir")[1]
     child_pid = get_child_pid(0)
@@ -136,13 +130,7 @@ def test_temp_rdb_will_be_deleted_in_signal_handle(r: ValkeyTestClient) -> None:
     pid = s("process_id")
     temp_rdb = file("join", r.run("config", "get", "dir")[1], "temp-${pid}.rdb")
     exec_("kill", "-SIGINT", pid)
-    wait_for_condition(
-        50,
-        10,
-        "            [file exists $temp_rdb]\n        ",
-        "else",
-        '            fail "Can\'t trigger rdb save on shutdown"\n        ',
-    )
+    wait_for_condition(50, 10, lambda: file("exists", temp_rdb), lambda: fail("Can't trigger rdb save on shutdown"))
     exec_("kill", "-SIGINT", pid)
     wait_for_condition(
         50,
@@ -273,11 +261,7 @@ def test_shutdown_sigterm_will_abort_if_there_s_an_initial_aofrw_default(r: Valk
         i += 1
     r.run("config", "set", "appendonly", "yes")
     wait_for_condition(
-        1000,
-        10,
-        "            [s aof_rewrite_in_progress] eq 1\n        ",
-        "else",
-        '            fail "aof rewrite did not start in time"\n        ',
+        1000, 10, lambda: s("aof_rewrite_in_progress") == 1, lambda: fail("aof rewrite did not start in time")
     )
     pid = s("process_id")
     exec_("kill", "-SIGTERM", pid)
@@ -298,6 +282,10 @@ def catch(*args):
 
 def exec_(*args):
     raise NotImplementedError("exec_")
+
+
+def fail(*args):
+    raise NotImplementedError("fail")
 
 
 def file(*args):

@@ -569,11 +569,7 @@ def test_test_eviction_is_skipped_during_client_pause(r: ValkeyTestClient) -> No
     assert fnmatch(str(s(0, "evicted_keys")), str(evicted_keys))
     r.run("client", "unpause")
     wait_for_condition(
-        1000,
-        10,
-        "            [expr $evicted_keys + 1] eq [s 0 evicted_keys]\n        ",
-        "else",
-        '            fail "Key is not evicted"\n        ',
+        1000, 10, lambda: expr(evicted_keys, "+", 1) == s(0, "evicted_keys"), lambda: fail("Key is not evicted")
     )
     r.run("config", "set", "maxmemory", 0)
     r.run("config", "set", "maxmemory-policy", "noeviction")
@@ -617,9 +613,8 @@ def test_test_both_active_and_passive_expires_are_skipped_during_client_pause(r:
     wait_for_condition(
         10,
         100,
-        "            [r get foo{t}] == {} && [r get bar{t}] == {}\n        ",
-        "else",
-        '            fail "Keys were never logically expired"\n        ',
+        lambda: (r.run("get", "foo{t}") == "") and (r.run("get", "bar{t}") == ""),
+        lambda: fail("Keys were never logically expired"),
     )
     assert fnmatch(str(s(0, "expired_keys")), str(expired_keys))
     r.run("client", "unpause")
@@ -758,9 +753,8 @@ def test_test_the_randomkey_command_will_not_cause_the_server_to_get_into_an_inf
     wait_for_condition(
         50,
         100,
-        '            [r randomkey] == "key"\n        ',
-        "else",
-        '            fail "execute randomkey failed, caused by the infinite loop"\n        ',
+        lambda: r.run("randomkey") == "key",
+        lambda: fail("execute randomkey failed, caused by the infinite loop"),
     )
     r.run("client", "unpause")
     assert r.run("randomkey") == ""
@@ -880,6 +874,10 @@ def clock(*args):
 
 def expr(*args):
     raise NotImplementedError("expr")
+
+
+def fail(*args):
+    raise NotImplementedError("fail")
 
 
 def foreach(*args):

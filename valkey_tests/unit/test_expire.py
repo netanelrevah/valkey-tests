@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841, ANN002, ANN201
+# ruff: noqa: PLR2004, ANN002, ANN201
 import time
 from fnmatch import fnmatch
 
@@ -440,13 +440,7 @@ def test_server_should_actively_expire_keys_incrementally(r: ValkeyTestClient) -
     r.run("psetex", "key2", 500, "a")
     r.run("psetex", "key3", 500, "a")
     assert 3 == r.run("dbsize")
-    wait_for_condition(
-        20,
-        100,
-        "            [r dbsize] eq 0\n        ",
-        "else",
-        '            fail "Keys did not actively expire."\n        ',
-    )
+    wait_for_condition(20, 100, lambda: r.run("dbsize") == 0, lambda: fail("Keys did not actively expire."))
 
 
 def test_server_should_lazy_expire_keys(r: ValkeyTestClient) -> None:
@@ -1464,13 +1458,7 @@ def test_server_should_not_propagate_the_read_command_on_lazy_expire(r: ValkeyTe
     r.run("flushall")
     r.run("set", "foo", "bar", "PX", 1)
     repl = attach_to_replication_stream()
-    wait_for_condition(
-        50,
-        100,
-        "            [r get foo] eq {}\n        ",
-        "else",
-        '            fail "Replication not started."\n        ',
-    )
+    wait_for_condition(50, 100, lambda: r.run("get", "foo") == "", lambda: fail("Replication not started."))
     r.run("set", "x", 1)
     assert_replication_stream(repl, "            {select *}\n            {unlink foo}\n            {set x 1}\n        ")
     close_replication_stream(repl)
@@ -1611,13 +1599,7 @@ def test_import_mode_should_forbid_active_expiration(r: ValkeyTestClient) -> Non
     assert r.run("dbsize") == "2"
     assert r.run("client", "import-source", "off") == "OK"
     r.run("config", "set", "import-mode", "no")
-    wait_for_condition(
-        40,
-        100,
-        "            [r dbsize] eq 0\n        ",
-        "else",
-        '            fail "Keys did not actively expire."\n        ',
-    )
+    wait_for_condition(40, 100, lambda: r.run("dbsize") == 0, lambda: fail("Keys did not actively expire."))
 
 
 def test_import_mode_should_forbid_lazy_expiration(r: ValkeyTestClient) -> None:
@@ -1711,13 +1693,7 @@ def test_client_can_visit_expired_key_in_import_source_state(r: ValkeyTestClient
     assert r.run("keys", "*") == "foo1"
     assert r.run("client", "import-source", "off") == "OK"
     r.run("config", "set", "import-mode", "no")
-    wait_for_condition(
-        40,
-        100,
-        "            [r dbsize] eq 0\n        ",
-        "else",
-        '            fail "Keys did not actively expire."\n        ',
-    )
+    wait_for_condition(40, 100, lambda: r.run("dbsize") == 0, lambda: fail("Keys did not actively expire."))
 
 
 def test_negative_ttl_will_not_cause_server_to_crash_when_import_mode_is_on(r: ValkeyTestClient) -> None:
@@ -1746,9 +1722,7 @@ def test_negative_ttl_will_not_cause_server_to_crash_when_import_mode_is_on(r: V
     r.run("expireat", "foo1", -10000)
     assert r.run("dbsize") == 2
     r.run("config", "set", "import-mode", "no")
-    wait_for_condition(
-        30, 100, "            [r dbsize] == 0\n        ", "else", '            fail "key wasn\'t expired"\n        '
-    )
+    wait_for_condition(30, 100, lambda: r.run("dbsize") == 0, lambda: fail("key wasn't expired"))
 
 
 def test_replicakeyswithexpire_memory_leak_verification_and_cleanup(r: ValkeyTestClient) -> None:
@@ -1883,19 +1857,9 @@ def test_active_expiration_triggers_hashtable_shrink(r: ValkeyTestClient) -> Non
     table_size_before_expire = main_hash_table_size()
     assert total_keys == r.run("dbsize")
     r.run("debug", "SET-ACTIVE-EXPIRE", 1)
+    wait_for_condition(100, 50, lambda: r.run("dbsize") == persistent_keys, lambda: fail("Keys not expired"))
     wait_for_condition(
-        100,
-        50,
-        "            [r dbsize] eq $persistent_keys\n        ",
-        "else",
-        '            fail "Keys not expired"\n        ',
-    )
-    wait_for_condition(
-        100,
-        50,
-        "            [main_hash_table_size] < $table_size_before_expire\n        ",
-        "else",
-        '            puts [r debug htstats 9]\n            fail "Table didn\'t shrink"\n        ',
+        100, 50, lambda: main_hash_table_size() < table_size_before_expire, lambda: fail("Table didn't shrink")
     )
     assert r.run("ping") == "PONG"
 
@@ -2011,6 +1975,10 @@ def continue_(*args):
 
 def expr(*args):
     raise NotImplementedError("expr")
+
+
+def fail(*args):
+    raise NotImplementedError("fail")
 
 
 def if_(*args):

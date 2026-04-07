@@ -1654,13 +1654,7 @@ def test_multi_with_bgrewriteaof(r: ValkeyTestClient) -> None:
     r.run("BGREWRITEAOF")
     res = r.run("exec")
     assert fnmatch(str(res[1]), "*rewriting scheduled*")
-    wait_for_condition(
-        50,
-        100,
-        "            [s total_forks] > $forks\n        ",
-        "else",
-        '            fail "aofrw didn\'t start"\n        ',
-    )
+    wait_for_condition(50, 100, lambda: s("total_forks") > forks, lambda: fail("aofrw didn't start"))
     wait_for_bgrewriteaof("r")
 
 
@@ -1689,13 +1683,7 @@ def test_multi_with_config_set_appendonly(r: ValkeyTestClient) -> None:
     r.run("config", "set", "appendonly", "yes")
     r.run("exec")
     verify_log_message(0, "*AOF background was scheduled*", lines)
-    wait_for_condition(
-        50,
-        100,
-        "            [s total_forks] > $forks\n        ",
-        "else",
-        '            fail "aofrw didn\'t start"\n        ',
-    )
+    wait_for_condition(50, 100, lambda: s("total_forks") > forks, lambda: fail("aofrw didn't start"))
     wait_for_bgrewriteaof("r")
 
 
@@ -1970,6 +1958,10 @@ def close_replication_stream(*args):
 
 def count_log_lines(*args):
     raise NotImplementedError("count_log_lines")
+
+
+def fail(*args):
+    raise NotImplementedError("fail")
 
 
 def get_last_incr_aof_path(*args):

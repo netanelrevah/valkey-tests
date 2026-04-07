@@ -815,13 +815,7 @@ def test_propagation_with_eviction(r: ValkeyTestClient) -> None:
     r.run("set", "asdf3", 3)
     r.run("config", "set", "maxmemory-policy", "allkeys-lru")
     r.run("config", "set", "maxmemory", 1)
-    wait_for_condition(
-        5000,
-        10,
-        "            [r dbsize] eq 0\n        ",
-        "else",
-        '            fail "Not all keys have been evicted"\n        ',
-    )
+    wait_for_condition(5000, 10, lambda: r.run("dbsize") == 0, lambda: fail("Not all keys have been evicted"))
     r.run("config", "set", "maxmemory", 0)
     r.run("config", "set", "maxmemory-policy", "noeviction")
     r.run("set", "asdf4", 4)
@@ -877,13 +871,7 @@ def test_propagation_with_eviction_in_multi(r: ValkeyTestClient) -> None:
     r.run("config", "set", "maxmemory", 1)
     r.run("incr", "x")
     assert r.run("exec") == "1 OK 2"
-    wait_for_condition(
-        5000,
-        10,
-        "            [r dbsize] eq 0\n        ",
-        "else",
-        '            fail "Not all keys have been evicted"\n        ',
-    )
+    wait_for_condition(5000, 10, lambda: r.run("dbsize") == 0, lambda: fail("Not all keys have been evicted"))
     assert_replication_stream(
         repl,
         "            {multi}\n            {select *}\n            {incr x}\n            {incr x}\n            {exec}\n            {unlink x}\n        ",
@@ -997,6 +985,10 @@ def close_replication_stream(*args):
 
 def expr(*args):
     raise NotImplementedError("expr")
+
+
+def fail(*args):
+    raise NotImplementedError("fail")
 
 
 def foreach(*args):

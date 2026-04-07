@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841, ANN002, ANN201
+# ruff: noqa: PLR2004, ANN002, ANN201
 
 import pytest
 
@@ -62,9 +62,11 @@ def test_modules_allocated_memory_can_be_reclaimed_in_the_background(r: ValkeyTe
     wait_for_condition(
         50,
         100,
-        "            [s used_memory] < $peak_mem &&\n            [s used_memory] < $orig_mem*2 &&\n            [string match {*lazyfreed_objects:1*} [r info Memory]]\n        ",
-        "else",
-        '            fail "Module memory is not reclaimed by UNLINK"\n        ',
+        lambda: (
+            ((s("used_memory") < peak_mem) and (s("used_memory") < (orig_mem * 2)))
+            and string("match", "*lazyfreed_objects:1*", r.run("info", "Memory"))
+        ),
+        lambda: fail("Module memory is not reclaimed by UNLINK"),
     )
 
 
@@ -75,8 +77,16 @@ def assert_(*args):
     raise NotImplementedError("assert_")
 
 
+def fail(*args):
+    raise NotImplementedError("fail")
+
+
 def s(*args):
     raise NotImplementedError("s")
+
+
+def string(*args):
+    raise NotImplementedError("string")
 
 
 def wait_for_condition(*args):

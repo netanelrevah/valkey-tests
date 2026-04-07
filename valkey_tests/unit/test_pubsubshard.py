@@ -110,11 +110,7 @@ def test_spublish_or_ssubscribe_after_unsubscribe_without_arguments(r: ValkeyTes
     assert "3" == ssubscribe(rd1, "chan3")
     sunsubscribe(rd1)
     wait_for_condition(
-        50,
-        100,
-        "            [r spublish chan1 hello] eq 0\n        ",
-        "else",
-        '            fail "unsubscribe did not take effect"\n        ',
+        50, 100, lambda: r.run("spublish", "chan1", "hello") == 0, lambda: fail("unsubscribe did not take effect")
     )
     assert 0 == r.run("SPUBLISH", "chan1", "hello")
     assert 0 == r.run("SPUBLISH", "chan2", "hello")
@@ -305,6 +301,10 @@ start_server {tags {"pubsubshard external:skip"}} {
 
 
 # --- stubs for unimplemented TCL helpers ---
+
+
+def fail(*args):
+    raise NotImplementedError("fail")
 
 
 def ssubscribe(*args):

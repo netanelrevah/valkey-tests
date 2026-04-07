@@ -93,9 +93,8 @@ def test_query_buffer_resized_correctly(r: ValkeyTestClient) -> None:
     wait_for_condition(
         1000,
         10,
-        "            [client_query_buffer test_client] > 0\n        ",
-        "else",
-        '            fail "client should start using a private query buffer"\n        ',
+        lambda: client_query_buffer("test_client") > 0,
+        lambda: fail("client should start using a private query buffer"),
     )
     rd.run("write", "a\\r\\n\\$1\\r\\nb\\r\\n")
     rd.run("flush")
@@ -107,9 +106,8 @@ def test_query_buffer_resized_correctly(r: ValkeyTestClient) -> None:
     wait_for_condition(
         1000,
         10,
-        "            [client_idle_sec test_client] >= 3 && [client_query_buffer test_client] < $orig_test_client_qbuf\n        ",
-        "else",
-        '            fail "query buffer was not resized"\n        ',
+        lambda: (client_idle_sec("test_client") >= 3) and (client_query_buffer("test_client") < orig_test_client_qbuf),
+        lambda: fail("query buffer was not resized"),
     )
     rd.run("close")
 
@@ -207,14 +205,17 @@ def test_query_buffer_resized_correctly_with_fat_argv(r: ValkeyTestClient) -> No
     wait_for_condition(
         1000,
         10,
-        "            [client_idle_sec test_client] >= 3 && [client_query_buffer test_client] < 1000000\n        ",
-        "else",
-        '            fail "query buffer should be resized when client idle time bigger than 2s"\n        ',
+        lambda: (client_idle_sec("test_client") >= 3) and (client_query_buffer("test_client") < 1000000),
+        lambda: fail("query buffer should be resized when client idle time bigger than 2s"),
     )
     rd.run("close")
 
 
 # --- stubs for unimplemented TCL helpers ---
+
+
+def client_idle_sec(*args):
+    raise NotImplementedError("client_idle_sec")
 
 
 def client_query_buffer(*args):

@@ -179,11 +179,7 @@ def test_publish_or_subscribe_after_unsubscribe_without_arguments(r: ValkeyTestC
     assert "1 2 3" == subscribe(rd1, "chan1 chan2 chan3")
     unsubscribe(rd1)
     wait_for_condition(
-        50,
-        100,
-        "            [r publish chan1 hello] eq 0\n        ",
-        "else",
-        '            fail "unsubscribe did not take effect"\n        ',
+        50, 100, lambda: r.run("publish", "chan1", "hello") == 0, lambda: fail("unsubscribe did not take effect")
     )
     assert 0 == r.run("publish", "chan1", "hello")
     assert 0 == r.run("publish", "chan2", "hello")
@@ -325,11 +321,7 @@ def test_publish_or_psubscribe_after_punsubscribe_without_arguments(r: ValkeyTes
     assert "1 2 3" == psubscribe(rd1, "chan1.* chan2.* chan3.*")
     punsubscribe(rd1)
     wait_for_condition(
-        50,
-        100,
-        "            [r publish chan1.hi hello] eq 0\n        ",
-        "else",
-        '            fail "unsubscribe did not take effect"\n        ',
+        50, 100, lambda: r.run("publish", "chan1.hi", "hello") == 0, lambda: fail("unsubscribe did not take effect")
     )
     assert 0 == r.run("publish", "chan1.hi", "hello")
     assert 0 == r.run("publish", "chan2.hi", "hello")
@@ -810,13 +802,7 @@ def test_keyspace_notifications_expired_events_triggered_expire(r: ValkeyTestCli
     rd1 = ValkeyTestClient.create_from(r)
     assert "1" == psubscribe(rd1, "*")
     r.run("psetex", "foo", 100, 1)
-    wait_for_condition(
-        50,
-        100,
-        "            [r exists foo] == 0\n        ",
-        "else",
-        '            fail "Key does not expire?!"\n        ',
-    )
+    wait_for_condition(50, 100, lambda: r.run("exists", "foo") == 0, lambda: fail("Key does not expire?!"))
     # TODO: assert_equal "pmessage * __keyevent@${db}__:expired foo" $rd1 read
     rd1.run("close")
 
@@ -1043,6 +1029,10 @@ def test_unsubscribe_inside_multi_and_publish_to_self(r: ValkeyTestClient) -> No
 
 
 # --- stubs for unimplemented TCL helpers ---
+
+
+def fail(*args):
+    raise NotImplementedError("fail")
 
 
 def if_(*args):

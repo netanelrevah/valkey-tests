@@ -96,11 +96,7 @@ def test_module_rdbloadsave_test_with_pipelining(r: ValkeyTestClient) -> None:
     rd1 = ValkeyTestClient.create_from(r)
     rd1.run("test.rdbload", "blabla.rdb")
     wait_for_condition(
-        50,
-        100,
-        "            [s loading] eq 1\n        ",
-        "else",
-        '            fail "Redis did not start loading or loaded RDB too fast"\n        ',
+        50, 100, lambda: s("loading") == 1, lambda: fail("Redis did not start loading or loaded RDB too fast")
     )
     rd1.run("get", "x")
     rd1.run("dbsize")
@@ -161,9 +157,8 @@ def test_module_rdbloadsave_with_aof(r: ValkeyTestClient) -> None:
     wait_for_condition(
         50,
         100,
-        "            [string match {*Killing*AOF*child*} [exec tail -20 < [srv 0 stdout]]]\n        ",
-        "else",
-        "            fail \"Can't find 'Killing AOF child' in recent log lines\"\n        ",
+        lambda: string("match", "*Killing*AOF*child*", exec_("tail", -20, "<", srv(0, "stdout"))),
+        lambda: fail("Can't find 'Killing AOF child' in recent log lines"),
     )
     assert 1 == s("aof_enabled")
     assert "v1" == r.run("get", "k")
@@ -211,9 +206,8 @@ def test_module_rdbloadsave_with_bgsave(r: ValkeyTestClient) -> None:
     wait_for_condition(
         10,
         1000,
-        "            [string match {*Background*saving*terminated*} [exec tail -20 < [srv 0 stdout]]]\n        ",
-        "else",
-        "            fail \"Can't find 'Background saving terminated' in recent log lines\"\n        ",
+        lambda: string("match", "*Background*saving*terminated*", exec_("tail", -20, "<", srv(0, "stdout"))),
+        lambda: fail("Can't find 'Background saving terminated' in recent log lines"),
     )
     assert "v1" == r.run("get", "k")
     r.run("flushall")
@@ -254,11 +248,7 @@ def test_module_rdbloadsave_calls_rdbsave_in_a_module_fork(r: ValkeyTestClient) 
     assert "OK" == r.run("test.rdbsave_fork", "rdbfork.rdb")
     assert s("module_fork_in_progress") == 1
     wait_for_condition(
-        10,
-        1000,
-        '            [status r module_fork_in_progress] == "0"\n        ',
-        "else",
-        '            fail "Module fork didn\'t finish"\n        ',
+        10, 1000, lambda: status("r", "module_fork_in_progress") == "0", lambda: fail("Module fork didn't finish")
     )
     r.run("set", "k", "v2")
     assert "OK" == r.run("test.rdbload", "rdbfork.rdb")
@@ -278,12 +268,32 @@ def test_unload_the_module_rdbloadsave(r: ValkeyTestClient) -> None:
 # --- stubs for unimplemented TCL helpers ---
 
 
+def exec_(*args):
+    raise NotImplementedError("exec_")
+
+
+def fail(*args):
+    raise NotImplementedError("fail")
+
+
 def populate(*args):
     raise NotImplementedError("populate")
 
 
 def s(*args):
     raise NotImplementedError("s")
+
+
+def srv(*args):
+    raise NotImplementedError("srv")
+
+
+def status(*args):
+    raise NotImplementedError("status")
+
+
+def string(*args):
+    raise NotImplementedError("string")
 
 
 def wait_for_bgrewriteaof(*args):

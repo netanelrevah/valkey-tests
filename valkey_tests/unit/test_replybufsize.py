@@ -1,4 +1,4 @@
-# ruff: noqa: ANN002, ANN201
+# ruff: noqa: PLR2004, ANN002, ANN201
 
 import pytest
 
@@ -76,9 +76,7 @@ def test_verify_reply_buffer_limits(r: ValkeyTestClient) -> None:
     wait_for_condition(
         10,
         100,
-        "            [get_reply_buffer_size test_client] >= 1024 && [get_reply_buffer_size test_client] < 2046\n        ",
-        "else",
-        '            set rbs [get_reply_buffer_size test_client]\n            fail "reply buffer of idle client is $rbs after 1 seconds"\n        ',
+        lambda: (get_reply_buffer_size("test_client") >= 1024) and (get_reply_buffer_size("test_client") < 2046),
     )
     r.run("set", "bigval", string("repeat", "x", 32768))
     r.run("debug", "replybuffer", "peak-reset-time", "never")
@@ -95,6 +93,14 @@ def test_verify_reply_buffer_limits(r: ValkeyTestClient) -> None:
 
 
 # --- stubs for unimplemented TCL helpers ---
+
+
+def fail(*args):
+    raise NotImplementedError("fail")
+
+
+def get_reply_buffer_size(*args):
+    raise NotImplementedError("get_reply_buffer_size")
 
 
 def string(*args):

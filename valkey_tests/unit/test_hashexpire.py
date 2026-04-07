@@ -2844,11 +2844,7 @@ def test_hrandfield_case_1_negative_count(r: ValkeyTestClient) -> None:
         "HSETEX", "myhash", "PX", 1, "fields", 5, "f1", "v1", "f2", "v2", "f3", "v3", "f4", "v4", "f5", "v5"
     )
     wait_for_condition(
-        100,
-        100,
-        "            [r HGETALL myhash] eq {}\n        ",
-        "else",
-        '            fail "Hash is showing expired elements"\n        ',
+        100, 100, lambda: r.run("HGETALL", "myhash") == "", lambda: fail("Hash is showing expired elements")
     )
     assert fnmatch(str(r.run("hrandfield", "myhash", 1)), "")
     assert "1" == r.run("HSET", "myhash", "f5", "v5")
@@ -2890,11 +2886,7 @@ def test_hrandfield_case_2_the_number_of_requested_elements_is_greater_than_the_
         "HSETEX", "myhash", "PX", 1, "fields", 5, "f1", "v1", "f2", "v2", "f3", "v3", "f4", "v4", "f5", "v5"
     )
     wait_for_condition(
-        100,
-        100,
-        "            [r HGETALL myhash] eq {}\n        ",
-        "else",
-        '            fail "Hash is showing expired elements"\n        ',
+        100, 100, lambda: r.run("HGETALL", "myhash") == "", lambda: fail("Hash is showing expired elements")
     )
     assert fnmatch(str(r.run("hrandfield", "myhash", 10)), "")
     assert "3" == r.run("HSET", "myhash", "f5", "v5", "f6", "v6", "f7", "v7")
@@ -2941,11 +2933,7 @@ def test_hrandfield_case_3_the_number_of_elements_inside_the_hash_is_not_greater
         "HSETEX", "myhash", "PX", 1, "fields", 5, "f1", "v1", "f2", "v2", "f3", "v3", "f4", "v4", "f5", "v5"
     )
     wait_for_condition(
-        100,
-        100,
-        "            [r HGETALL myhash] eq {}\n        ",
-        "else",
-        '            fail "Hash is showing expired elements"\n        ',
+        100, 100, lambda: r.run("HGETALL", "myhash") == "", lambda: fail("Hash is showing expired elements")
     )
     assert fnmatch(str(r.run("hrandfield", "myhash", 4)), "")
     assert "4" == r.run("HSET", "myhash", "f5", "v5", "f6", "v6", "f7", "v7", "f8", "v8")
@@ -3014,11 +3002,7 @@ def test_hrandfield_case_4_the_number_of_elements_inside_the_hash_is_greater_tha
         "v8",
     )
     wait_for_condition(
-        100,
-        100,
-        "            [r HGETALL myhash] eq {}\n        ",
-        "else",
-        '            fail "Hash is showing expired elements"\n        ',
+        100, 100, lambda: r.run("HGETALL", "myhash") == "", lambda: fail("Hash is showing expired elements")
     )
     assert fnmatch(str(r.run("hrandfield", "myhash", 2)), "")
     assert "3" == r.run("HSET", "myhash", "f8", "v8", "f9", "v9", "f10", "v10")
@@ -3051,11 +3035,7 @@ def test_hrandfield_returns_null_response_when_all_fields_are_expired(r: ValkeyT
     r.run("DEBUG", "SET-ACTIVE-EXPIRE", 0)
     assert "1" == r.run("HSETEX", "myhash", "PX", 1, "fields", 2, "f1", "v1", "f2", "v2")
     wait_for_condition(
-        100,
-        100,
-        "            [r HGETALL myhash] eq {}\n        ",
-        "else",
-        '            fail "Hash is showing expired elements"\n        ',
+        100, 100, lambda: r.run("HGETALL", "myhash") == "", lambda: fail("Hash is showing expired elements")
     )
     assert "" == r.run("hrandfield", "myhash2")
     assert r.run("DEBUG", "SET-ACTIVE-EXPIRE", 1) == "OK"
@@ -3432,9 +3412,8 @@ def test_hset_overwrite_expired_field_without_ttl_clears_expiration(r: ValkeyTes
     wait_for_condition(
         100,
         100,
-        '            [r HTTL myhash FIELDS 1 field1] eq "-2"\n        ',
-        "else",
-        '            fail "hash value was not expired after timeout"\n        ',
+        lambda: r.run("HTTL", "myhash", "FIELDS", 1, "field1") == "-2",
+        lambda: fail("hash value was not expired after timeout"),
     )
     assert 1 == r.run("HLEN", "myhash")
     r.run("HSET", "myhash", "field1", "newval")
@@ -3496,9 +3475,8 @@ def test_hincrby_on_expired_field(r: ValkeyTestClient) -> None:
     wait_for_condition(
         100,
         100,
-        '            [r HTTL myhash FIELDS 1 field1] eq "-2"\n        ',
-        "else",
-        '            fail "hash value was not expired after timeout"\n        ',
+        lambda: r.run("HTTL", "myhash", "FIELDS", 1, "field1") == "-2",
+        lambda: fail("hash value was not expired after timeout"),
     )
     assert 1 == r.run("HLEN", "myhash")
     r.run("HINCRBY", "myhash", "field1", 1)
@@ -3566,9 +3544,8 @@ def test_hincrbyfloat_on_expired_field(r: ValkeyTestClient) -> None:
     wait_for_condition(
         100,
         100,
-        '            [r HTTL myhash FIELDS 1 field1] eq "-2"\n        ',
-        "else",
-        '            fail "hash value was not expired after timeout"\n        ',
+        lambda: r.run("HTTL", "myhash", "FIELDS", 1, "field1") == "-2",
+        lambda: fail("hash value was not expired after timeout"),
     )
     assert 1 == r.run("HLEN", "myhash")
     r.run("HINCRBYFLOAT", "myhash", "field1", 1)
@@ -3855,13 +3832,7 @@ def test_key_ttl_expires_before_field_ttl_entire_hash_should_be_deleted_timeunit
     else:
         r.run("HPEXPIRE", "myhash", 10000, "FIELDS", 1, "f1")
         r.run("PEXPIRE", "myhash", 1000)
-    wait_for_condition(
-        100,
-        100,
-        '                [r EXISTS myhash] eq "0"\n            ',
-        "else",
-        '                fail "myhash still exists"\n            ',
-    )
+    wait_for_condition(100, 100, lambda: r.run("EXISTS", "myhash") == "0", lambda: fail("myhash still exists"))
     assert 0 == r.run("HLEN", "myhash")
     assert 0 == get_keys("r")
     assert_keyevent_patterns(rd, "myhash", "hset", "hexpire", "expire")
@@ -3924,13 +3895,7 @@ def test_field_ttl_expires_before_key_ttl_only_the_specific_field_should_expire_
     else:
         r.run("HPEXPIRE", "myhash", 1000, "FIELDS", 1, "f1")
         r.run("PEXPIRE", "myhash", 10000)
-    wait_for_condition(
-        100,
-        100,
-        '                [r HGET myhash f1] eq ""\n            ',
-        "else",
-        '                fail "f1 not expired"\n            ',
-    )
+    wait_for_condition(100, 100, lambda: r.run("HGET", "myhash", "f1") == "", lambda: fail("f1 not expired"))
     assert 1 == get_keys("r")
     assert 1 == r.run("EXISTS", "myhash")
     assert "{} v2 v3" == r.run("HMGET", "myhash", "f1", "f2", "f3")
@@ -3990,13 +3955,7 @@ def test_key_and_field_ttl_expire_simultaneously_entire_hash_should_be_deleted_t
         expire = expr("[clock milliseconds] + 1000")
         r.run("HPEXPIREAT", "myhash", expire, "FIELDS", 1, "f1")
         r.run("PEXPIREAT", "myhash", expire)
-    wait_for_condition(
-        100,
-        100,
-        "                [r EXISTS myhash] eq 0\n            ",
-        "else",
-        '                fail "myhash still exist"\n            ',
-    )
+    wait_for_condition(100, 100, lambda: r.run("EXISTS", "myhash") == 0, lambda: fail("myhash still exist"))
     assert "{} {} {}" == r.run("HMGET", "myhash", "f1", "f2", "f3")
     assert 0 == get_keys("r")
     assert 0 == r.run("HLEN", "myhash")
@@ -6097,9 +6056,20 @@ def test_command_active_expiry_processes_multiple_hash_keys_with_different_field
     wait_for_condition(
         100,
         100,
-        "                [r HLEN hash1] eq 2 && [r HLEN hash2] eq 1 &&\n                [r HLEN hash3] eq 0 && [r HLEN hash4] eq 2 && [r HLEN hash5] eq 3 &&\n                [expr {[info_field [r info stats] expired_fields] - $initial_expired}] eq 7\n            ",
-        "else",
-        '                fail "Fields should expire across multiple keys"\n            ',
+        lambda: (
+            (
+                (
+                    (
+                        ((r.run("HLEN", "hash1") == 2) and (r.run("HLEN", "hash2") == 1))
+                        and (r.run("HLEN", "hash3") == 0)
+                    )
+                    and (r.run("HLEN", "hash4") == 2)
+                )
+                and (r.run("HLEN", "hash5") == 3)
+            )
+            and (expr("[info_field [r info stats] expired_fields] - $initial_expired") == 7)
+        ),
+        lambda: fail("Fields should expire across multiple keys"),
     )
     assert "{} v2_1 v3_1" == r.run("HMGET", "hash1", "f1", "f2", "f3")
     assert "{} {} v3_2" == r.run("HMGET", "hash2", "f1", "f2", "f3")
@@ -6170,9 +6140,11 @@ def test_command_handles_mixed_short_and_long_expiry_times_across_multiple_keys(
     wait_for_condition(
         100,
         100,
-        "                [r HLEN key1] eq 2 && [r HLEN key3] eq 1 &&\n                [r HLEN key4] eq 0 && [expr {[info_field [r info stats] expired_fields] - $initial_expired}] eq 6\n            ",
-        "else",
-        '                fail "Short expiry fields should expire"\n            ',
+        lambda: (
+            (((r.run("HLEN", "key1") == 2) and (r.run("HLEN", "key3") == 1)) and (r.run("HLEN", "key4") == 0))
+            and (expr("[info_field [r info stats] expired_fields] - $initial_expired") == 6)
+        ),
+        lambda: fail("Short expiry fields should expire"),
     )
     assert "{} v2 v3" == r.run("HMGET", "key1", "f1", "f2", "f3")
     assert "v1 v2 v3" == r.run("HMGET", "key2", "f1", "f2", "f3")
@@ -6232,9 +6204,20 @@ def test_command_deletes_entire_keys_when_all_fields_expire_while_preserving_par
     wait_for_condition(
         100,
         100,
-        "                [r EXISTS delkey1] eq 0 && [r EXISTS delkey2] eq 0 &&\n                [r EXISTS delkey3] eq 0 && [r EXISTS delkey4] eq 0 &&\n                [r HLEN keepkey] eq 1 &&\n                [info_field [r info stats] expired_fields] eq [expr {$initial_expired + 5}]\n            ",
-        "else",
-        '                fail "Keys should be deleted when last field expires"\n            ',
+        lambda: (
+            (
+                (
+                    (
+                        ((r.run("EXISTS", "delkey1") == 0) and (r.run("EXISTS", "delkey2") == 0))
+                        and (r.run("EXISTS", "delkey3") == 0)
+                    )
+                    and (r.run("EXISTS", "delkey4") == 0)
+                )
+                and (r.run("HLEN", "keepkey") == 1)
+            )
+            and (info_field(r.run("info", "stats"), "expired_fields") == expr("$initial_expired + 5"))
+        ),
+        lambda: fail("Keys should be deleted when last field expires"),
     )
     assert "{} v2" == r.run("HMGET", "keepkey", "f1", "f2")
 
@@ -6321,9 +6304,20 @@ def test_command_active_expiry_reclaims_memory_efficiently_across_multiple_large
     wait_for_condition(
         100,
         100,
-        "                [r HLEN myhash1] eq 5 && [r HLEN myhash2] eq 5 && \n                [r HLEN myhash3] eq 5 && [r HLEN myhash4] eq 5 &&\n                [r HLEN myhash5] eq 5 &&\n                [info_field [r info stats] expired_fields] eq [expr {$initial_expired + 25}]\n            ",
-        "else",
-        '                fail "25 fields should expire across 5 keys"\n            ',
+        lambda: (
+            (
+                (
+                    (
+                        ((r.run("HLEN", "myhash1") == 5) and (r.run("HLEN", "myhash2") == 5))
+                        and (r.run("HLEN", "myhash3") == 5)
+                    )
+                    and (r.run("HLEN", "myhash4") == 5)
+                )
+                and (r.run("HLEN", "myhash5") == 5)
+            )
+            and (info_field(r.run("info", "stats"), "expired_fields") == expr("$initial_expired + 25"))
+        ),
+        lambda: fail("25 fields should expire across 5 keys"),
     )
     total_mem_after = 0
     i = 1
@@ -6350,9 +6344,9 @@ if {$cmd eq "HINCRBY"} {
 """
 
 
-@pytest.mark.parametrize(["cmd", "inc2", "inc3", "inc1"], [("HINCRBY", 3, 4, 2), ("HINCRBYFLOAT", 3.5, 4.5, 2.5)])
+@pytest.mark.parametrize(["cmd", "inc3", "inc2", "inc1"], [("HINCRBY", 4, 3, 2), ("HINCRBYFLOAT", 4.5, 3.5, 2.5)])
 def test_cmd_recreates_field_with_correct_value_after_active_expiry_deletion(
-    r: ValkeyTestClient, cmd, inc2, inc3, inc1
+    r: ValkeyTestClient, cmd, inc3, inc2, inc1
 ) -> None:
     """
     test "$cmd recreates field with correct value after active expiry deletion" {
@@ -6383,8 +6377,8 @@ def test_cmd_recreates_field_with_correct_value_after_active_expiry_deletion(
     assert inc1 == r.run("HGET", "myhash", "f1")
 
 
-@pytest.mark.parametrize(["cmd", "inc2", "inc3", "inc1"], [("HINCRBY", 3, 4, 2), ("HINCRBYFLOAT", 3.5, 4.5, 2.5)])
-def test_cmd_preserves_existing_ttl_when_incrementing_field_value(r: ValkeyTestClient, cmd, inc2, inc3, inc1) -> None:
+@pytest.mark.parametrize(["cmd", "inc3", "inc2", "inc1"], [("HINCRBY", 4, 3, 2), ("HINCRBYFLOAT", 4.5, 3.5, 2.5)])
+def test_cmd_preserves_existing_ttl_when_incrementing_field_value(r: ValkeyTestClient, cmd, inc3, inc2, inc1) -> None:
     """
     test "$cmd preserves existing TTL when incrementing field value" {
         r FLUSHALL
@@ -6414,9 +6408,9 @@ def test_cmd_preserves_existing_ttl_when_incrementing_field_value(r: ValkeyTestC
     assert_morethan(r.run("HTTL", "myhash", "FIELDS", 1, "f1"), 90000)
 
 
-@pytest.mark.parametrize(["cmd", "inc2", "inc3", "inc1"], [("HINCRBY", 3, 4, 2), ("HINCRBYFLOAT", 3.5, 4.5, 2.5)])
+@pytest.mark.parametrize(["cmd", "inc3", "inc2", "inc1"], [("HINCRBY", 4, 3, 2), ("HINCRBYFLOAT", 4.5, 3.5, 2.5)])
 def test_cmd_handles_mix_of_expired_and_existing_fields_during_increment_operations(
-    r: ValkeyTestClient, cmd, inc2, inc3, inc1
+    r: ValkeyTestClient, cmd, inc3, inc2, inc1
 ) -> None:
     """
     test "$cmd handles mix of expired and existing fields during increment operations" {
@@ -6453,9 +6447,9 @@ def test_cmd_handles_mix_of_expired_and_existing_fields_during_increment_operati
     assert f"{inc1} [expr {{{inc2}+2}}] {inc3}" == r.run("HMGET", "myhash", "f1", "f2", "f3")
 
 
-@pytest.mark.parametrize(["cmd", "inc2", "inc3", "inc1"], [("HINCRBY", 3, 4, 2), ("HINCRBYFLOAT", 3.5, 4.5, 2.5)])
+@pytest.mark.parametrize(["cmd", "inc3", "inc2", "inc1"], [("HINCRBY", 4, 3, 2), ("HINCRBYFLOAT", 4.5, 3.5, 2.5)])
 def test_cmd_maintains_ttl_values_when_incrementing_fields_with_existing_expiry(
-    r: ValkeyTestClient, cmd, inc2, inc3, inc1
+    r: ValkeyTestClient, cmd, inc3, inc2, inc1
 ) -> None:
     """
     test "$cmd maintains TTL values when incrementing fields with existing expiry" {
@@ -7556,9 +7550,7 @@ def test_zero_is_a_valid_ttl_in_hfe(r: ValkeyTestClient) -> None:
     assert r.run("hlen", "myhash") == 3
     assert r.run("OBJECT", "ENCODING", "myhash") == "hashtable"
     r.run("config", "set", "import-mode", "no")
-    wait_for_condition(
-        30, 100, "           [r hlen myhash] == 1\n       ", "else", '           fail "field wasn\'t expired"\n       '
-    )
+    wait_for_condition(30, 100, lambda: r.run("hlen", "myhash") == 1, lambda: fail("field wasn't expired"))
 
 
 # --- stubs for unimplemented TCL helpers ---
@@ -7602,6 +7594,10 @@ def dict_(*args):
 
 def expr(*args):
     raise NotImplementedError("expr")
+
+
+def fail(*args):
+    raise NotImplementedError("fail")
 
 
 def get_calls(*args):

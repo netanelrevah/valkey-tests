@@ -178,21 +178,14 @@ def test_datatype_slow_loading(r: ValkeyTestClient) -> None:
     wait_for_condition(
         50,
         100,
-        "            [r datatype.is_in_slow_loading] eq 1\n        ",
-        "else",
-        '            fail "Failed waiting for slow loading to start"\n        ',
+        lambda: r.run("datatype.is_in_slow_loading") == 1,
+        lambda: fail("Failed waiting for slow loading to start"),
     )
     with pytest.raises(Exception, match=".*LOADING.*"):
         r.run("ping")
     assert_lessthan(expr(clock("clicks", "-milliseconds"), "-$start"), 2000)
     r.run("datatype.slow_loading", 0)
-    wait_for_condition(
-        50,
-        100,
-        "            [s loading] eq {0}\n        ",
-        "else",
-        '            fail "Failed waiting for loading to end"\n        ',
-    )
+    wait_for_condition(50, 100, lambda: s("loading") == "0", lambda: fail("Failed waiting for loading to end"))
     rd.run("read")
     rd.run("close")
 
@@ -314,8 +307,16 @@ def expr(*args):
     raise NotImplementedError("expr")
 
 
+def fail(*args):
+    raise NotImplementedError("fail")
+
+
 def populate(*args):
     raise NotImplementedError("populate")
+
+
+def s(*args):
+    raise NotImplementedError("s")
 
 
 def string(*args):

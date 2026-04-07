@@ -1,5 +1,4 @@
 # ruff: noqa: ANN002, ANN201
-
 from fnmatch import fnmatch
 
 import pytest
@@ -231,23 +230,11 @@ def test_client_unblock_works_only_for_modules_with_timeout_support(r: ValkeyTes
     rd.run("client", "id")
     id = rd.run("read")
     rd.run("block.block", 20000)
-    wait_for_condition(
-        50,
-        100,
-        "            [r block.is_blocked] == 1\n        ",
-        "else",
-        '            fail "Module did not block"\n        ',
-    )
+    wait_for_condition(50, 100, lambda: r.run("block.is_blocked") == 1, lambda: fail("Module did not block"))
     assert 1 == r.run("client", "unblock", id)
     assert fnmatch(str(rd.run("read")), "*Timed out*")
     rd.run("block.block", 0)
-    wait_for_condition(
-        50,
-        100,
-        "            [r block.is_blocked] == 1\n        ",
-        "else",
-        '            fail "Module did not block"\n        ',
-    )
+    wait_for_condition(50, 100, lambda: r.run("block.is_blocked") == 1, lambda: fail("Module did not block"))
     assert 0 == r.run("client", "unblock", id)
     assert "OK" == r.run("block.release", "foobar")
     assert "foobar" == rd.run("read")
@@ -262,6 +249,10 @@ def assert_(*args):
 
 def cmdrstat(*args):
     raise NotImplementedError("cmdrstat")
+
+
+def fail(*args):
+    raise NotImplementedError("fail")
 
 
 def if_(*args):

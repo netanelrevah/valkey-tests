@@ -1,4 +1,5 @@
 # ruff: noqa: PLR2004, ANN002, ANN201
+
 from fnmatch import fnmatch
 
 import pytest
@@ -199,9 +200,7 @@ def test_latency_of_expire_events_are_correctly_collected(r: ValkeyTestClient) -
     #        end
     #   } 1 mybigkey count
     r.run("pexpire", "mybigkey", 50)
-    wait_for_condition(
-        5, 100, "            [r dbsize] == 0\n        ", "else", '            fail "key wasn\'t expired"\n        '
-    )
+    wait_for_condition(5, 100, lambda: r.run("dbsize") == 0, lambda: fail("key wasn't expired"))
     assert fnmatch(str(r.run("latency", "latest")), "*expire-cycle*")
     test(
         "LATENCY GRAPH can output the expire event graph",
@@ -276,6 +275,10 @@ start_cluster 1 1 {tags {"latency-monitor cluster external:skip needs:latency"} 
 
 def dict_(*args):
     raise NotImplementedError("dict_")
+
+
+def fail(*args):
+    raise NotImplementedError("fail")
 
 
 def if_(*args):

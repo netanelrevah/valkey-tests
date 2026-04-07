@@ -1,4 +1,4 @@
-# ruff: noqa: ANN002, ANN201
+# ruff: noqa: PLR2004, ANN002, ANN201
 
 import pytest
 
@@ -31,13 +31,7 @@ def test_module_fork(r: ValkeyTestClient) -> None:
     } {3}
     """
     r.run("fork.create", 3, 100000)
-    wait_for_condition(
-        20,
-        100,
-        "            [r fork.exitcode] != -1\n        ",
-        "else",
-        '            fail "fork didn\'t terminate"\n        ',
-    )
+    wait_for_condition(20, 100, lambda: r.run("fork.exitcode") != -1, lambda: fail("fork didn't terminate"))
     assert r.run("fork.exitcode") == "3"
 
 
@@ -65,11 +59,7 @@ def test_module_fork_kill(r: ValkeyTestClient) -> None:
     """
     r.run("fork.create", 3, 100000000)
     wait_for_condition(
-        20,
-        100,
-        '            [count_log_message 0 "fork child started"] == 2\n        ',
-        "else",
-        '            fail "fork didn\'t start"\n        ',
+        20, 100, lambda: count_log_message(0, "fork child started") == 2, lambda: fail("fork didn't start")
     )
     with pytest.raises(Exception, match="Fork\\ failed"):
         r.run("fork.create", 0, 1)
@@ -93,6 +83,10 @@ def test_unload_the_module_fork(r: ValkeyTestClient) -> None:
 
 def count_log_message(*args):
     raise NotImplementedError("count_log_message")
+
+
+def fail(*args):
+    raise NotImplementedError("fail")
 
 
 def wait_for_condition(*args):

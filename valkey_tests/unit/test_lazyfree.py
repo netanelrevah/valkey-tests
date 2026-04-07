@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841, ANN002, ANN201
+# ruff: noqa: PLR2004, ANN002, ANN201
 
 import pytest
 
@@ -46,9 +46,8 @@ def test_unlink_can_reclaim_memory_in_background(r: ValkeyTestClient) -> None:
     wait_for_condition(
         50,
         100,
-        "            [s used_memory] < $peak_mem &&\n            [s used_memory] < $orig_mem*2\n        ",
-        "else",
-        '            fail "Memory is not reclaimed by UNLINK"\n        ',
+        lambda: (s("used_memory") < peak_mem) and (s("used_memory") < (orig_mem * 2)),
+        lambda: fail("Memory is not reclaimed by UNLINK"),
     )
 
 
@@ -91,9 +90,8 @@ def test_flushdb_async_can_reclaim_memory_in_background(r: ValkeyTestClient) -> 
     wait_for_condition(
         50,
         100,
-        "            [s used_memory] < $peak_mem &&\n            [s used_memory] < $orig_mem*2\n        ",
-        "else",
-        '            fail "Memory is not reclaimed by FLUSHDB ASYNC"\n        ',
+        lambda: (s("used_memory") < peak_mem) and (s("used_memory") < (orig_mem * 2)),
+        lambda: fail("Memory is not reclaimed by FLUSHDB ASYNC"),
     )
 
 
@@ -131,13 +129,7 @@ def test_lazy_free_a_stream_with_all_types_of_metadata(r: ValkeyTestClient) -> N
         assert_equal [s lazyfreed_objects] 1
     } {} {needs:config-resetstat}
     """
-    wait_for_condition(
-        50,
-        100,
-        "            [s lazyfree_pending_objects] == 0\n        ",
-        "else",
-        '            fail "lazyfree isn\'t done"\n        ',
-    )
+    wait_for_condition(50, 100, lambda: s("lazyfree_pending_objects") == 0, lambda: fail("lazyfree isn't done"))
     r.run("config", "resetstat")
     r.run("config", "set", "stream-node-max-entries", 5)
     j = 0
@@ -154,13 +146,7 @@ def test_lazy_free_a_stream_with_all_types_of_metadata(r: ValkeyTestClient) -> N
     r.run("xdel", "stream", records[0][1][1][0])
     r.run("xack", "stream", "mygroup", records[0][1][0][0])
     r.run("unlink", "stream")
-    wait_for_condition(
-        50,
-        100,
-        "            [s lazyfree_pending_objects] == 0\n        ",
-        "else",
-        '            fail "lazyfree isn\'t done"\n        ',
-    )
+    wait_for_condition(50, 100, lambda: s("lazyfree_pending_objects") == 0, lambda: fail("lazyfree isn't done"))
     assert s("lazyfreed_objects") == 1
 
 
@@ -188,13 +174,7 @@ def test_lazy_free_a_stream_with_deleted_cgroup(r: ValkeyTestClient) -> None:
     # TODO: r xgroup create s bla
     r.run("xgroup", "destroy", "s", "bla")
     r.run("unlink", "s")
-    wait_for_condition(
-        50,
-        100,
-        "            [s lazyfree_pending_objects] == 0\n        ",
-        "else",
-        '            fail "lazyfree isn\'t done"\n        ',
-    )
+    wait_for_condition(50, 100, lambda: s("lazyfree_pending_objects") == 0, lambda: fail("lazyfree isn't done"))
     assert s("lazyfreed_objects") == 0
 
 
@@ -203,6 +183,10 @@ def test_lazy_free_a_stream_with_deleted_cgroup(r: ValkeyTestClient) -> None:
 
 def assert_(*args):
     raise NotImplementedError("assert_")
+
+
+def fail(*args):
+    raise NotImplementedError("fail")
 
 
 def if_(*args):

@@ -144,13 +144,7 @@ def test_module_can_be_unloaded_when_timer_was_finished(r: ValkeyTestClient) -> 
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*the module holds timer that is not fired*")
-    wait_for_condition(
-        10,
-        500,
-        "            [r get timer-incr-key] == 1\n        ",
-        "else",
-        '            fail "Timer not fired"\n        ',
-    )
+    wait_for_condition(10, 500, lambda: r.run("get", "timer-incr-key") == 1, lambda: fail("Timer not fired"))
     assert "OK" == r.run("module", "unload", "timer")
 
 
@@ -190,6 +184,10 @@ def test_module_can_be_unloaded_when_timer_was_stopped(r: ValkeyTestClient) -> N
 
 
 # --- stubs for unimplemented TCL helpers ---
+
+
+def fail(*args):
+    raise NotImplementedError("fail")
 
 
 def wait_for_condition(*args):

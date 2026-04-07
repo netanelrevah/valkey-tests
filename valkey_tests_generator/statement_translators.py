@@ -169,6 +169,41 @@ class PutsStatementTranslator(StatementTranslator):
         return []
 
 
+@StatementTranslator.register("wait_for_condition")
+class WaitForConditionStatementTranslator(StatementTranslator):
+    def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
+        if len(arguments) < 3:
+            return None
+        retries = ArgumentTranslator.translate(arguments[0], defined_vars)
+        delay = ArgumentTranslator.translate(arguments[1], defined_vars)
+        if retries is None or delay is None:
+            return None
+        condition_arg = arguments[2]
+        if not isinstance(condition_arg, TCLBracesWord):
+            return None
+        try:
+            condition_expr = TCLExpression.build([condition_arg], {})
+        except Exception:
+            return None
+        cond_str = _translate_tcl_expression(condition_expr, defined_vars)
+        if cond_str is None:
+            return None
+        # Translate else body as a lambda: wait_for_condition(n, ms, lambda: cond, lambda: else_body)
+        else_lambda: str | None = None
+        if len(arguments) >= 5 and isinstance(arguments[4], TCLBracesWord):
+            try:
+                else_script = TCLScript.read(iter(arguments[4].value))
+                else_lines = TCLBodyTranslator().translate(else_script, None, initial_vars=defined_vars)
+                if len(else_lines) == 1 and not else_lines[0].startswith("#"):
+                    else_lambda = f"lambda: {else_lines[0]}"
+            except Exception:
+                pass
+        collected_stubs.add("wait_for_condition")
+        if else_lambda is not None:
+            return [f"wait_for_condition({retries}, {delay}, lambda: {cond_str}, {else_lambda})"]
+        return [f"wait_for_condition({retries}, {delay}, lambda: {cond_str})"]
+
+
 def _collect_set_vars(script: TCLScript) -> set[str]:
     """Return names of all top-level set-command variables in a script."""
     result: set[str] = set()
