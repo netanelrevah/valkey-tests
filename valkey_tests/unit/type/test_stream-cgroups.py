@@ -22,8 +22,9 @@ def test_xgroup_create_creation_and_duplicate_group_name_detection(r: ValkeyTest
     r.run("DEL", "mystream")
     r.run("XADD", "mystream", "*", "foo", "bar")
     r.run("XGROUP", "CREATE", "mystream", "mygroup", "$")
+    err = None
     try:
-        r.run("XGROUP", "CREATE", "mystream", "mygroup", "$")
+        err = r.run("XGROUP", "CREATE", "mystream", "mygroup", "$")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "BUSYGROUP*")
@@ -80,8 +81,9 @@ def test_xgroup_create_automatic_stream_creation_fails_without_mkstream(r: Valke
     } {ERR*}
     """
     r.run("DEL", "mystream")
+    err = None
     try:
-        r.run("XGROUP", "CREATE", "mystream", "mygroup", "$")
+        err = r.run("XGROUP", "CREATE", "mystream", "mygroup", "$")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "ERR*")

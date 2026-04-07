@@ -139,8 +139,9 @@ def test_module_can_be_unloaded_when_timer_was_finished(r: ValkeyTestClient) -> 
     r.run("set", "timer-incr-key", 0)
     r.run("test.createtimer", 500, "timer-incr-key")
     assert 0 == r.run("get", "timer-incr-key")
+    err = None
     try:
-        r.run("module", "unload", "timer")
+        err = r.run("module", "unload", "timer")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*the module holds timer that is not fired*")
@@ -173,8 +174,9 @@ def test_module_can_be_unloaded_when_timer_was_stopped(r: ValkeyTestClient) -> N
     # TODO: r module load testmodule
     r.run("set", "timer-incr-key", 0)
     id = r.run("test.createtimer", 5000, "timer-incr-key")
+    err = None
     try:
-        r.run("module", "unload", "timer")
+        err = r.run("module", "unload", "timer")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*the module holds timer that is not fired*")

@@ -531,8 +531,9 @@ def test_sort_will_complain_with_numerical_sorting_and_bad_doubles_1(r: ValkeyTe
     r.run("del", "myset")
     r.run("sadd", "myset", 1, 2, 3, 4, "not-a-double")
     e = ""
+    e = None
     try:
-        r.run("sort", "myset")
+        e = r.run("sort", "myset")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*ERR*double*")
@@ -553,8 +554,9 @@ def test_sort_will_complain_with_numerical_sorting_and_bad_doubles_2(r: ValkeyTe
     r.run("sadd", "myset", 1, 2, 3, 4)
     r.run("mset", "score:1", 10, "score:2", 20, "score:3", 30, "score:4", "not-a-double")
     e = ""
+    e = None
     try:
-        r.run("sort", "myset", "by", "score:*")
+        e = r.run("sort", "myset", "by", "score:*")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*ERR*double*")
@@ -680,8 +682,9 @@ def test_sort_ro_cannot_run_with_store_arg(r: ValkeyTestClient) -> None:
         set e
     } {ERR syntax error}
     """
+    e = None
     try:
-        r.run("sort_ro", "foolist", "STORE", "bar")
+        e = r.run("sort_ro", "foolist", "STORE", "bar")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert e == "ERR syntax error"

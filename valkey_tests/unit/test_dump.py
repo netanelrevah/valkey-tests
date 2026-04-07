@@ -117,8 +117,9 @@ def test_restore_with_absttl_in_the_past(r: ValkeyTestClient) -> None:
     now = clock("milliseconds")
     r.run("debug", "set-active-expire", 0)
     r.run("restore", "foo", expr(now, -3000), encoded, "absttl", "REPLACE")
+    e = None
     try:
-        r.run("debug", "object", "foo")
+        e = r.run("debug", "object", "foo")
     except Exception as _catch_err:
         e = str(_catch_err)
     r.run("debug", "set-active-expire", 1)
@@ -188,8 +189,9 @@ def test_restore_returns_an_error_of_the_key_already_exists(r: ValkeyTestClient)
     """
     r.run("set", "foo", "bar")
     e = ""
+    e = None
     try:
-        r.run("restore", "foo", 0, "...")
+        e = r.run("restore", "foo", 0, "...")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*BUSYKEY*")
@@ -225,8 +227,9 @@ def test_restore_can_detect_a_syntax_error_for_unrecognized_options(r: ValkeyTes
         set e
     } {*syntax*}
     """
+    e = None
     try:
-        r.run("restore", "foo", 0, "...", "invalid-option")
+        e = r.run("restore", "foo", 0, "...", "invalid-option")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*syntax*")
@@ -721,8 +724,9 @@ def test_migrate_with_multiple_keys_must_have_empty_key_arg(r: ValkeyTestClient,
         set e
     } {*empty string*} {external:skip}
     """
+    e = None
     try:
-        r.run("MIGRATE", "127.0.0.1", 6379, "NotEmpty", db, 5000, "keys", "a", "b", "c")
+        e = r.run("MIGRATE", "127.0.0.1", 6379, "NotEmpty", db, 5000, "keys", "a", "b", "c")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*empty string*")

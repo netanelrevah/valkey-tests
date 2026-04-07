@@ -391,8 +391,9 @@ def test_bitfield_ro_fails_when_write_option_is_used(r: ValkeyTestClient) -> Non
         assert_match {*ERR BITFIELD_RO only supports the GET subcommand*} $err
     }
     """
+    err = None
     try:
-        r.run("bitfield_ro", "bits", "set", "u8", 0, 100, "get", "u8", 0)
+        err = r.run("bitfield_ro", "bits", "set", "u8", 0, 100, "get", "u8", 0)
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*ERR BITFIELD_RO only supports the GET subcommand*")

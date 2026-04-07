@@ -201,8 +201,9 @@ def test_non_existing_command(r: ValkeyTestClient) -> None:
         string match ERR* $err
     } {1}
     """
+    err = None
     try:
-        r.run("foobaredcommand")
+        err = r.run("foobaredcommand")
     except Exception as _catch_err:
         err = str(_catch_err)
     string("match", "ERR*", err)
@@ -299,8 +300,9 @@ def test_rename_against_non_existing_source_key(r: ValkeyTestClient) -> None:
         format $err
     } {ERR*}
     """
+    err = None
     try:
-        r.run("rename", "nokey{t}", "foobar{t}")
+        err = r.run("rename", "nokey{t}", "foobar{t}")
     except Exception as _catch_err:
         err = str(_catch_err)
     format_(err)
@@ -337,8 +339,9 @@ def test_rename_where_source_and_dest_key_are_the_same_non_existing(r: ValkeyTes
     } {ERR*}
     """
     r.run("del", "mykey")
+    err = None
     try:
-        r.run("rename", "mykey", "mykey")
+        err = r.run("rename", "mykey", "mykey")
     except Exception as _catch_err:
         err = str(_catch_err)
     format_(err)
@@ -458,8 +461,9 @@ def test_copy_for_string_does_not_replace_an_existing_key_without_replace_option
     } {0} {singledb:skip}
     """
     r.run("set", "mykey2{t}", "hello")
+    e = None
     try:
-        r.run("copy", "mykey2{t}", "mynewkey{t}", "DB", 10)
+        e = r.run("copy", "mykey2{t}", "mynewkey{t}", "DB", 10)
     except Exception as _catch_err:
         e = str(_catch_err)
     assert e == "0"
@@ -524,8 +528,9 @@ def test_copy_for_string_does_not_copy_data_to_no_integer_db(r: ValkeyTestClient
     } {ERR value is not an integer or out of range}
     """
     r.run("set", "mykey{t}", "foobar")
+    e = None
     try:
-        r.run("copy", "mykey{t}", "mynewkey{t}", "DB", "notanumber")
+        e = r.run("copy", "mykey{t}", "mynewkey{t}", "DB", "notanumber")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert e == "ERR value is not an integer or out of range"
@@ -895,8 +900,9 @@ def test_move_against_non_integer_db_1428(r: ValkeyTestClient) -> None:
     } {ERR value is not an integer or out of range} {singledb:skip}
     """
     r.run("set", "mykey", "hello")
+    e = None
     try:
-        r.run("move", "mykey", "notanumber")
+        e = r.run("move", "mykey", "notanumber")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert e == "ERR value is not an integer or out of range"

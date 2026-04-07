@@ -153,8 +153,9 @@ def test_select_an_out_of_range_db(r: ValkeyTestClient) -> None:
         set _ $err
     } {*index is out of range*} {cluster:skip}
     """
+    err = None
     try:
-        r.run("select", 1000000)
+        err = r.run("select", 1000000)
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*index is out of range*")
@@ -429,8 +430,9 @@ def test_reset_clears_and_discards_multi_state(r: ValkeyTestClient) -> None:
     r.run("multi")
     r.run("set", "key-a", "a")
     r.run("reset")
+    err = None
     try:
-        r.run("exec")
+        err = r.run("exec")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*EXEC without MULTI*")

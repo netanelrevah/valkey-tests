@@ -1,4 +1,5 @@
 # ruff: noqa: PLR2004, F841, RUF043, ANN001, ANN002, ANN201
+
 from fnmatch import fnmatch
 
 import pytest
@@ -30,7 +31,9 @@ def test_hset_or_hlen_small_hash_creation(r: ValkeyTestClient) -> None:
     while i < 8:
         key = "__avoid_collisions__[randstring"
         val = "__avoid_collisions__[randstring"
-        if_("[info exists smallhash($key)]", "                incr i -1\n                continue\n            ")
+        if info("exists", "smallhash($key)"):
+            incr("i", -1)
+            continue_()
         r.run("hset", "smallhash", key, val)
         set_("smallhash($key)", val)
         i += 1
@@ -409,7 +412,9 @@ def test_hset_or_hlen_big_hash_creation(r: ValkeyTestClient) -> None:
     while i < 1024:
         key = "__avoid_collisions__[randstring"
         val = "__avoid_collisions__[randstring"
-        if_("[info exists bighash($key)]", "                incr i -1\n                continue\n            ")
+        if info("exists", "bighash($key)"):
+            incr("i", -1)
+            continue_()
         r.run("hset", "bighash", key, val)
         set_("bighash($key)", val)
         i += 1
@@ -1236,12 +1241,14 @@ def test_hincrby_fails_against_hash_value_with_spaces_left(r: ValkeyTestClient) 
     """
     r.run("hset", "smallhash", "str", " 11")
     r.run("hset", "bighash", "str", " 11")
+    smallerr = None
     try:
-        r.run("hincrby", "smallhash", "str", 1)
+        smallerr = r.run("hincrby", "smallhash", "str", 1)
     except Exception as _catch_err:
         smallerr = str(_catch_err)
+    bigerr = None
     try:
-        r.run("hincrby", "bighash", "str", 1)
+        bigerr = r.run("hincrby", "bighash", "str", 1)
     except Exception as _catch_err:
         bigerr = str(_catch_err)
     rv = []
@@ -1263,12 +1270,14 @@ def test_hincrby_fails_against_hash_value_with_spaces_right(r: ValkeyTestClient)
     """
     r.run("hset", "smallhash", "str", "11 ")
     r.run("hset", "bighash", "str", "11 ")
+    smallerr = None
     try:
-        r.run("hincrby", "smallhash", "str", 1)
+        smallerr = r.run("hincrby", "smallhash", "str", 1)
     except Exception as _catch_err:
         smallerr = str(_catch_err)
+    bigerr = None
     try:
-        r.run("hincrby", "bighash", "str", 1)
+        bigerr = r.run("hincrby", "bighash", "str", 1)
     except Exception as _catch_err:
         bigerr = str(_catch_err)
     rv = []
@@ -1289,8 +1298,9 @@ def test_hincrby_can_detect_overflows(r: ValkeyTestClient) -> None:
     e = ""
     r.run("hset", "hash", "n", -9223372036854775484)
     assert r.run("hincrby", "hash", "n", -1) == -9223372036854775485
+    e = None
     try:
-        r.run("hincrby", "hash", "n", -10000)
+        e = r.run("hincrby", "hash", "n", -10000)
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*overflow*")
@@ -1410,12 +1420,14 @@ def test_hincrbyfloat_fails_against_hash_value_with_spaces_left(r: ValkeyTestCli
     """
     r.run("hset", "smallhash", "str", " 11")
     r.run("hset", "bighash", "str", " 11")
+    smallerr = None
     try:
-        r.run("hincrbyfloat", "smallhash", "str", 1)
+        smallerr = r.run("hincrbyfloat", "smallhash", "str", 1)
     except Exception as _catch_err:
         smallerr = str(_catch_err)
+    bigerr = None
     try:
-        r.run("hincrbyfloat", "bighash", "str", 1)
+        bigerr = r.run("hincrbyfloat", "bighash", "str", 1)
     except Exception as _catch_err:
         bigerr = str(_catch_err)
     rv = []
@@ -1437,12 +1449,14 @@ def test_hincrbyfloat_fails_against_hash_value_with_spaces_right(r: ValkeyTestCl
     """
     r.run("hset", "smallhash", "str", "11 ")
     r.run("hset", "bighash", "str", "11 ")
+    smallerr = None
     try:
-        r.run("hincrbyfloat", "smallhash", "str", 1)
+        smallerr = r.run("hincrbyfloat", "smallhash", "str", 1)
     except Exception as _catch_err:
         smallerr = str(_catch_err)
+    bigerr = None
     try:
-        r.run("hincrbyfloat", "bighash", "str", 1)
+        bigerr = r.run("hincrbyfloat", "bighash", "str", 1)
     except Exception as _catch_err:
         bigerr = str(_catch_err)
     rv = []
@@ -1462,8 +1476,9 @@ def test_hincrbyfloat_fails_against_hash_value_that_contains_a_null_terminator_i
     } {1}
     """
     r.run("hset", "h", "f", "1\x002")
+    err = None
     try:
-        r.run("hincrbyfloat", "h", "f", 1)
+        err = r.run("hincrbyfloat", "h", "f", 1)
     except Exception as _catch_err:
         err = str(_catch_err)
     rv = []
@@ -1911,12 +1926,20 @@ def assert_lessthan(*args):
     raise NotImplementedError("assert_lessthan")
 
 
+def break_(*args):
+    raise NotImplementedError("break_")
+
+
 def chi_square_value(*args):
     raise NotImplementedError("chi_square_value")
 
 
 def config_set(*args):
     raise NotImplementedError("config_set")
+
+
+def continue_(*args):
+    raise NotImplementedError("continue_")
 
 
 def create_hash(*args):
@@ -1937,6 +1960,14 @@ def get_keys(*args):
 
 def if_(*args):
     raise NotImplementedError("if_")
+
+
+def incr(*args):
+    raise NotImplementedError("incr")
+
+
+def info(*args):
+    raise NotImplementedError("info")
 
 
 def lsort(*args):

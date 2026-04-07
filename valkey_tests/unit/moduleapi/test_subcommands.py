@@ -68,14 +68,16 @@ def test_module_pure_container_command_fails_on_arity_error(r: ValkeyTestClient)
         assert_match {*wrong number of arguments for 'subcommands.bitarray|get' command} $e
     }
     """
+    e = None
     try:
-        r.run("subcommands.bitarray")
+        e = r.run("subcommands.bitarray")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*wrong number of arguments for 'subcommands.bitarray' command")
     assert r.run("subcommands.bitarray", "get", "k1") == "OK"
+    e = None
     try:
-        r.run("subcommands.bitarray", "get", "k1", 8, 90)
+        e = r.run("subcommands.bitarray", "get", "k1", 8, 90)
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*wrong number of arguments for 'subcommands.bitarray|get' command")

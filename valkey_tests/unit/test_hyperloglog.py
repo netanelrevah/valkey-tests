@@ -59,8 +59,9 @@ def test_hyperloglog_self_test_passes(r: ValkeyTestClient) -> None:
         set e
     } {OK} {needs:pfdebug}
     """
+    e = None
     try:
-        r.run("pfselftest")
+        e = r.run("pfselftest")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert e == "OK"
@@ -278,8 +279,9 @@ def test_corrupted_sparse_hyperloglogs_are_detected_additional_at_tail(r: Valkey
     r.run("pfadd", "hll", "a", "b", "c")
     r.run("append", "hll", "hello")
     e = ""
+    e = None
     try:
-        r.run("pfcount", "hll")
+        e = r.run("pfcount", "hll")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*INVALIDOBJ*")
@@ -300,8 +302,9 @@ def test_corrupted_sparse_hyperloglogs_are_detected_broken_magic(r: ValkeyTestCl
     r.run("pfadd", "hll", "a", "b", "c")
     r.run("setrange", "hll", 0, "0123")
     e = ""
+    e = None
     try:
-        r.run("pfcount", "hll")
+        e = r.run("pfcount", "hll")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*WRONGTYPE*")
@@ -322,8 +325,9 @@ def test_corrupted_sparse_hyperloglogs_are_detected_invalid_encoding(r: ValkeyTe
     r.run("pfadd", "hll", "a", "b", "c")
     r.run("setrange", "hll", 4, "x")
     e = ""
+    e = None
     try:
-        r.run("pfcount", "hll")
+        e = r.run("pfcount", "hll")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*WRONGTYPE*")
@@ -344,8 +348,9 @@ def test_corrupted_dense_hyperloglogs_are_detected_wrong_length(r: ValkeyTestCli
     r.run("pfadd", "hll", "a", "b", "c")
     r.run("setrange", "hll", 4, "\x00")
     e = ""
+    e = None
     try:
-        r.run("pfcount", "hll")
+        e = r.run("pfcount", "hll")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*WRONGTYPE*")
@@ -421,23 +426,27 @@ def test_pfadd_pfcount_pfmerge_type_checking_works(r: ValkeyTestClient) -> None:
     }
     """
     r.run("set", "foo{t}", "bar")
+    e = None
     try:
-        r.run("pfadd", "foo{t}", 1)
+        e = r.run("pfadd", "foo{t}", 1)
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*WRONGTYPE*")
+    e = None
     try:
-        r.run("pfcount", "foo{t}")
+        e = r.run("pfcount", "foo{t}")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*WRONGTYPE*")
+    e = None
     try:
-        r.run("pfmerge", "bar{t}", "foo{t}")
+        e = r.run("pfmerge", "bar{t}", "foo{t}")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*WRONGTYPE*")
+    e = None
     try:
-        r.run("pfmerge", "foo{t}", "bar{t}")
+        e = r.run("pfmerge", "foo{t}", "bar{t}")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*WRONGTYPE*")

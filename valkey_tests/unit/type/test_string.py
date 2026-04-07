@@ -267,8 +267,9 @@ def test_getex_syntax_errors(r: ValkeyTestClient) -> None:
     } {*syntax*}
     """
     ex = ""
+    ex = None
     try:
-        r.run("getex", "foo", "non-existent-option")
+        ex = r.run("getex", "foo", "non-existent-option")
     except Exception as _catch_err:
         ex = str(_catch_err)
     assert fnmatch(str(ex), "*syntax*")
@@ -300,8 +301,9 @@ def test_getex_no_arguments(r: ValkeyTestClient) -> None:
     } {*wrong number of arguments for 'getex' command}
     """
     ex = ""
+    ex = None
     try:
-        r.run("getex")
+        ex = r.run("getex")
     except Exception as _catch_err:
         ex = str(_catch_err)
     assert fnmatch(str(ex), "*wrong number of arguments for 'getex' command")
@@ -1030,8 +1032,9 @@ def test_extended_set_can_detect_syntax_errors(r: ValkeyTestClient) -> None:
     } {*syntax*}
     """
     e = ""
+    e = None
     try:
-        r.run("set", "foo", "bar", "non-existing-option")
+        e = r.run("set", "foo", "bar", "non-existing-option")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*syntax*")
@@ -1177,8 +1180,9 @@ def test_extended_set_get_with_incorrect_type_should_result_in_wrong_type_error(
     """
     r.run("del", "foo")
     r.run("rpush", "foo", "waffle")
+    err1 = None
     try:
-        r.run("set", "foo", "bar", "GET")
+        err1 = r.run("set", "foo", "bar", "GET")
     except Exception as _catch_err:
         err1 = str(_catch_err)
     assert "waffle" == r.run("rpop", "foo")

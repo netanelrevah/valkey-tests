@@ -34,8 +34,9 @@ def test_check_if_maxclients_works_refusing_connections(r: ValkeyTestClient) -> 
     } expected_code
     """
     c = 0
+    e = None
     try:
-        while_(
+        e = while_(
             "$c < 50",
             "                incr c\n                set rd [valkey_deferring_client]\n                $rd ping\n                $rd read\n                after 100\n            ",
         )

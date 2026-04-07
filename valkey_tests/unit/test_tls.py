@@ -24,8 +24,9 @@ def test_tls_not_accepting_non_tls_connections_on_a_tls_port(r: ValkeyTestClient
     } {*I/O error*}
     """
     s = valkey(srv(0, "host"), srv(0, "port"))
+    e = None
     try:
-        s.run("PING")
+        e = s.run("PING")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*I/O error*")
@@ -65,32 +66,36 @@ def test_tls_verify_tls_auth_clients_behaves_as_expected(r: ValkeyTestClient) ->
     """
     s = valkey(srv(0, "host"), srv(0, "port"))
     # TODO: ::tls::import $s channel
+    e = None
     try:
-        s.run("PING")
+        e = s.run("PING")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*error*")
     r.run("CONFIG", "SET", "tls-auth-clients", "no")
     s = valkey(srv(0, "host"), srv(0, "port"))
     # TODO: ::tls::import $s channel
+    e = None
     try:
-        s.run("PING")
+        e = s.run("PING")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "PONG")
     r.run("CONFIG", "SET", "tls-auth-clients", "optional")
     s = valkey(srv(0, "host"), srv(0, "port"))
     # TODO: ::tls::import $s channel
+    e = None
     try:
-        s.run("PING")
+        e = s.run("PING")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "PONG")
     r.run("CONFIG", "SET", "tls-auth-clients", "yes")
     s = valkey(srv(0, "host"), srv(0, "port"))
     # TODO: ::tls::import $s channel
+    e = None
     try:
-        s.run("PING")
+        e = s.run("PING")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*error*")
@@ -115,14 +120,16 @@ def test_tls_verify_tls_protocols_behaves_as_expected(r: ValkeyTestClient) -> No
     """
     r.run("CONFIG", "SET", "tls-protocols", "TLSv1.2")
     s = valkey(srv(0, "host"), srv(0, "port"), 0, 1, "-tls1.2 0")
+    e = None
     try:
-        s.run("PING")
+        e = s.run("PING")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*I/O error*")
     s = valkey(srv(0, "host"), srv(0, "port"), 0, 1, "-tls1.2 1")
+    e = None
     try:
-        s.run("PING")
+        e = s.run("PING")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "PONG")
@@ -157,21 +164,24 @@ def test_tls_verify_tls_ciphers_behaves_as_expected(r: ValkeyTestClient) -> None
     r.run("CONFIG", "SET", "tls-protocols", "TLSv1.2")
     r.run("CONFIG", "SET", "tls-ciphers", "DEFAULT:-AES128-SHA256")
     s = valkey(srv(0, "host"), srv(0, "port"), 0, 1, '-cipher "-ALL:AES128-SHA256"')
+    e = None
     try:
-        s.run("PING")
+        e = s.run("PING")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*I/O error*")
     s = valkey(srv(0, "host"), srv(0, "port"), 0, 1, '-cipher "-ALL:AES256-SHA256"')
+    e = None
     try:
-        s.run("PING")
+        e = s.run("PING")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "PONG")
     r.run("CONFIG", "SET", "tls-ciphers", "DEFAULT")
     s = valkey(srv(0, "host"), srv(0, "port"), 0, 1, '-cipher "-ALL:AES128-SHA256"')
+    e = None
     try:
-        s.run("PING")
+        e = s.run("PING")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "PONG")
@@ -208,16 +218,18 @@ def test_tls_verify_tls_prefer_server_ciphers_behaves_as_expected(r: ValkeyTestC
     r.run("CONFIG", "SET", "tls-protocols", "TLSv1.2")
     r.run("CONFIG", "SET", "tls-ciphers", "AES128-SHA256:AES256-SHA256")
     s = valkey(srv(0, "host"), srv(0, "port"), 0, 1, '-cipher "AES256-SHA256:AES128-SHA256"')
+    e = None
     try:
-        s.run("PING")
+        e = s.run("PING")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "PONG")
     # TODO: assert_equal "AES256-SHA256" dict get [::tls::status [$s channel]] cipher
     r.run("CONFIG", "SET", "tls-prefer-server-ciphers", "yes")
     s = valkey(srv(0, "host"), srv(0, "port"), 0, 1, '-cipher "AES256-SHA256:AES128-SHA256"')
+    e = None
     try:
-        s.run("PING")
+        e = s.run("PING")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "PONG")
@@ -343,8 +355,9 @@ def test_tls_working_with_an_encrypted_keyfile(r: ValkeyTestClient) -> None:
         "pass:1234",
         "2>/dev/null",
     )
+    e = None
     try:
-        r.run("config", "set", "tls-key-file", keyfile_encrypted)
+        e = r.run("config", "set", "tls-key-file", keyfile_encrypted)
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*Unable to update TLS*")

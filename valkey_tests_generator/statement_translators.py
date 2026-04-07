@@ -453,19 +453,24 @@ class CatchStatementTranslator(StatementTranslator):
         body_lines = TCLBodyTranslator().translate(catch_command.body, None, initial_vars=defined_vars)
         if _has_todos(body_lines) or not body_lines:
             return None
-        if var_name is not None:
-            safe_var = _safe_var_name(var_name)
-            return [
-                "try:",
-                *[f"    {line}" for line in body_lines],
-                "except Exception as _catch_err:",
-                f"    {safe_var} = str(_catch_err)",
-            ]
+        if var_name is None:
+            return ["try:", *[f"    {line}" for line in body_lines], "except Exception:", "    pass"]
+        safe_var = _safe_var_name(var_name)
+        *preceding, last = body_lines
+        # Assign last body result to var in try branch (mirrors TCL catch semantics:
+        # var receives the body result on success, error message on exception).
+        # Only wrap as assignment when last line is an expression, not a statement keyword.
+        _stmt_prefixes = ("assert ", "if ", "for ", "while ", "try:", "with ", "return ", "pass")
+        if not any(last.startswith(p) for p in _stmt_prefixes):
+            try_body = [*preceding, f"{safe_var} = {last}"]
+        else:
+            try_body = body_lines
         return [
+            f"{safe_var} = None",
             "try:",
-            *[f"    {line}" for line in body_lines],
-            "except Exception:",
-            "    pass",
+            *[f"    {line}" for line in try_body],
+            "except Exception as _catch_err:",
+            f"    {safe_var} = str(_catch_err)",
         ]
 
 

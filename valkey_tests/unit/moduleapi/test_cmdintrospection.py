@@ -1,4 +1,4 @@
-# ruff: noqa: ANN002, ANN201
+# ruff: noqa: PLR2004, ANN002, ANN201
 
 import pytest
 
@@ -45,7 +45,8 @@ def test_module_command_introspection_via_command_info(r: ValkeyTestClient) -> N
             "$i == 2",
             '                # Remove the "module" flag\n                set mylist [lindex $module_reply $i]\n                set idx [lsearch $mylist "module"]\n                set mylist [lreplace $mylist $idx $idx]\n                lset module_reply $i $mylist\n            ',
         )
-        if_("$i == 6", "                # Skip ACL categories\n                continue\n            ")
+        if i == 6:
+            continue_()
         assert redis_reply[i] == module_reply[i]
         i += 1
 
@@ -85,6 +86,10 @@ def test_unload_the_module_cmdintrospection(r: ValkeyTestClient) -> None:
 
 
 # --- stubs for unimplemented TCL helpers ---
+
+
+def continue_(*args):
+    raise NotImplementedError("continue_")
 
 
 def dict_(*args):

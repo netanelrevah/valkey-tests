@@ -57,8 +57,9 @@ def test_temp_rdb_will_be_deleted_if_we_use_bg_unlink_when_shutdown(r: ValkeyTes
         r.run("shutdown", "nosave")
     except Exception:
         pass
+    e = None
     try:
-        rd = ValkeyTestClient.create_from(r)
+        e = rd = ValkeyTestClient.create_from(r)
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*connection refused*")

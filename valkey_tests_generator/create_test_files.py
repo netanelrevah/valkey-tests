@@ -12,7 +12,9 @@ from typing import IO, TYPE_CHECKING, TextIO
 if TYPE_CHECKING:
     from pathlib import Path
 
+from pytcl.builtins import register_builtins
 from pytcl.commands import TCLBracesWord, TCLCommandForEach, TCLList, TCLScript
+from pytcl.errors import TCLSubstituteError
 from pytcl.words import TCLCommandWord, TCLDoubleQuotedWord, TCLVariableSubstitutionWord, TCLWord
 
 import valkey_tests_generator.argument_translators as _arg_translators
@@ -197,11 +199,16 @@ class TCLTestFileGenerator:
     def _process_start_server(self, command: TCLCommandWord) -> None:
         tags: list[str] = []
 
-        options = TCLList.build(command.args[0], namespace={}).words
+        ns: dict = {}
+        register_builtins(ns)
+        try:
+            options = TCLList.build(command.args[0], namespace=ns).words
+        except TCLSubstituteError:
+            options = []
         for option, value in zip(options[::2], options[1::2]):
             match option:
                 case "tags":
-                    for word in TCLList.words_iterator(iter(value), {}):
+                    for word in TCLList.words_iterator(iter(value), ns):
                         tag = re.sub(r"[^a-zA-Z0-9]+", "_", word).strip("_")
                         if tag:
                             tags.append(tag)

@@ -164,8 +164,9 @@ def test_default_bind_address_configuration_handling(r: ValkeyTestClient) -> Non
     assert 0 == count_message_lines(srv(0, "config_file"), "bind")
     r.run("CONFIG", "SET", "bind", "")
     assert "" == r.run("CONFIG", "GET", "bind")[1]
+    err = None
     try:
-        valkey_client()
+        err = valkey_client()
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*connection refused*")
@@ -178,8 +179,9 @@ def test_default_bind_address_configuration_handling(r: ValkeyTestClient) -> Non
         "else",
         "            assert_equal {bind {}} [valkeycli_exec 0 config get bind]\n        ",
     )
+    err = None
     try:
-        reconnect(0)
+        err = reconnect(0)
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*connection refused*")

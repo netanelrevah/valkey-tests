@@ -427,14 +427,16 @@ def test_test_module_get_or_set_client_name_by_id_api(r: ValkeyTestClient) -> No
         assert_equal somebody [r client getname]
     }
     """
+    e = None
     try:
-        r.run("test.getname")
+        e = r.run("test.getname")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert "-ERR No name" == e
     r.run("client", "setname", "nobody")
+    e = None
     try:
-        r.run("test.setname", "name with spaces")
+        e = r.run("test.setname", "name with spaces")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*Invalid argument*")
@@ -1077,8 +1079,9 @@ def test_test_dry_run_ok_oom_or_acl(r: ValkeyTestClient) -> None:
     """
     x = 5
     r.run("set", "x", x)
+    e = None
     try:
-        r.run("test.rm_call_flags", "DMC", "set", "x", 10)
+        e = r.run("test.rm_call_flags", "DMC", "set", "x", 10)
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*NULL reply returned*")
@@ -1100,8 +1103,9 @@ def test_test_dry_run_fail_oom(r: ValkeyTestClient) -> None:
     x = 5
     r.run("set", "x", x)
     r.run("config", "set", "maxmemory", 1)
+    e = None
     try:
-        r.run("test.rm_call_flags", "DM", "set", "x", 10)
+        e = r.run("test.rm_call_flags", "DM", "set", "x", 10)
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*OOM*")
@@ -1126,8 +1130,9 @@ def test_test_dry_run_fail_acl(r: ValkeyTestClient) -> None:
     x = 5
     r.run("set", "x", x)
     r.run("acl", "setuser", "default", "resetkeys")
+    e = None
     try:
-        r.run("test.rm_call_flags", "DC", "set", "x", 10)
+        e = r.run("test.rm_call_flags", "DC", "set", "x", 10)
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*NOPERM No permissions to access a key*")

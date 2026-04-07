@@ -67,8 +67,9 @@ def test_datatype_handle_truncated_rm_loaddatatypefromstringencver(r: ValkeyTest
     r.run("datatype.set", "dtkey", -1111, "MyString")
     encoded = r.run("datatype.dump", "dtkey")
     truncated = string("range", encoded, 0, "end-1")
+    e = None
     try:
-        r.run("datatype.restore", "dtkeycopy", truncated, 4)
+        e = r.run("datatype.restore", "dtkeycopy", truncated, 4)
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*Invalid*")
@@ -104,8 +105,9 @@ def test_datatype_moduletypereplacevalue_fails_on_non_module_keys(r: ValkeyTestC
     """
     r.run("datatype.set", "key-a", 1, "AAA")
     r.run("set", "key-b", "RedisString")
+    e = None
     try:
-        r.run("datatype.swap", "key-a", "key-b")
+        e = r.run("datatype.swap", "key-a", "key-b")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*ERR*")
@@ -128,8 +130,9 @@ def test_datatype_copy_command_works_for_modules(r: ValkeyTestClient) -> None:
     } {1234 AAA/sourcekey/targetkey}
     """
     r.run("datatype.set", "answer-to-universe", 42, "AAA")
+    e = None
     try:
-        r.run("copy", "answer-to-universe", "answer2")
+        e = r.run("copy", "answer-to-universe", "answer2")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*module key failed to copy*")

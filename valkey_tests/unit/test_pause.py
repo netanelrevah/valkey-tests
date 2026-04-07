@@ -521,8 +521,9 @@ def test_test_clients_with_syntax_errors_will_get_responses_immediately(r: Valke
     }
     """
     r.run("client", "PAUSE", 100000, "WRITE")
+    err = None
     try:
-        r.run("set", "FOO")
+        err = r.run("set", "FOO")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "ERR wrong number of arguments for 'set' command")
