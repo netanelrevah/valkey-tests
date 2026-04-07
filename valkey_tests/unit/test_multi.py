@@ -1710,7 +1710,6 @@ def test_multi_with_config_set_appendonly(r: ValkeyTestClient) -> None:
     wait_for_bgrewriteaof("r")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_multi_with_config_error(r: ValkeyTestClient) -> None:
     """
     test "MULTI with config error" {
@@ -1742,8 +1741,7 @@ def test_multi_with_config_error(r: ValkeyTestClient) -> None:
     assert res == "+OK"
     res = r.run("read")
     r.run("readraw", 0)
-    # TODO: set _ res
-    assert False
+    assert res == "*CONFIG SET failed*"
 
 
 def test_flushall_while_watching_several_keys_by_one_client(r: ValkeyTestClient) -> None:

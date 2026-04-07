@@ -1777,9 +1777,5 @@ def regexp(*args):
     raise NotImplementedError("regexp")
 
 
-def set_(*args):
-    raise NotImplementedError("set_")
-
-
 def string(*args):
     raise NotImplementedError("string")

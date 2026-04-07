@@ -1,5 +1,6 @@
 # ruff: noqa: PLR2004, F841, ANN002, ANN201
 import time
+from fnmatch import fnmatch
 
 import pytest
 
@@ -8,7 +9,6 @@ from tests.valkey_test_client import ValkeyTestClient
 pytestmark = [pytest.mark.shutdown_external_skip]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_temp_rdb_will_be_deleted_if_we_use_bg_unlink_when_shutdown(r: ValkeyTestClient) -> None:
     """
     test {Temp rdb will be deleted if we use bg_unlink when shutdown} {
@@ -63,8 +63,11 @@ def test_temp_rdb_will_be_deleted_if_we_use_bg_unlink_when_shutdown(r: ValkeyTes
         r.run("shutdown", "nosave")
     except Exception:
         pass
-    catch("set rd [valkey_deferring_client]", "e")
-    # TODO: assert_match {*connection refused*} e
+    try:
+        e = valkey_deferring_client()
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*connection refused*")
     assert_("![file exists $temp_rdb]")
 
 
@@ -311,6 +314,10 @@ def if_(*args):
 
 def s(*args):
     raise NotImplementedError("s")
+
+
+def valkey_deferring_client(*args):
+    raise NotImplementedError("valkey_deferring_client")
 
 
 def verify_log_message(*args):

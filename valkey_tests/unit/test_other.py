@@ -148,7 +148,6 @@ def test_bgsave(r: ValkeyTestClient) -> None:
     assert r.run("get", "x") == "10"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_select_an_out_of_range_db(r: ValkeyTestClient) -> None:
     """
     test {SELECT an out of range DB} {
@@ -160,8 +159,7 @@ def test_select_an_out_of_range_db(r: ValkeyTestClient) -> None:
         err = r.run("select", 1000000)
     except Exception as _catch_err:
         err = str(_catch_err)
-    # TODO: set _ err
-    assert False
+    assert err == "*index is out of range*"
 
 
 @pytest.mark.xfail(reason="not implemented")

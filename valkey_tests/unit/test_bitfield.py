@@ -46,7 +46,6 @@ def test_bitfield_unsigned_set_and_get_basics(r: ValkeyTestClient) -> None:
     assert results == "0 255 100"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitfield_signed_set_and_get_together(r: ValkeyTestClient) -> None:
     """
     test {BITFIELD signed SET and GET together} {
@@ -55,11 +54,9 @@ def test_bitfield_signed_set_and_get_together(r: ValkeyTestClient) -> None:
     } {0 -1 100}
     """
     r.run("del", "bits")
-    # TODO: set results r bitfield bits set i8 0 255 set i8 0 100 get i8 0
-    assert False
+    assert r.run("bitfield", "bits", "set", "i8", 0, 255, "set", "i8", 0, 100, "get", "i8", 0) == "0 -1 100"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_bitfield_unsigned_with_set_get_and_incrby_arguments(r: ValkeyTestClient) -> None:
     """
     test {BITFIELD unsigned with SET, GET and INCRBY arguments} {
@@ -68,8 +65,7 @@ def test_bitfield_unsigned_with_set_get_and_incrby_arguments(r: ValkeyTestClient
     } {0 99 99}
     """
     r.run("del", "bits")
-    # TODO: set results r bitfield bits set u8 0 255 incrby u8 0 100 get u8 0
-    assert False
+    assert r.run("bitfield", "bits", "set", "u8", 0, 255, "incrby", "u8", 0, 100, "get", "u8", 0) == "0 99 99"
 
 
 def test_bitfield_with_only_key_as_argument(r: ValkeyTestClient) -> None:

@@ -1,5 +1,4 @@
 # ruff: noqa: PLR2004, F841, ANN002, ANN201
-
 from fnmatch import fnmatch
 
 import pytest
@@ -181,7 +180,6 @@ def test_module_info_one_section(r: ValkeyTestClient) -> None:
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_info_dict(r: ValkeyTestClient) -> None:
     """
     test {module info dict} {
@@ -192,8 +190,7 @@ def test_module_info_dict(r: ValkeyTestClient) -> None:
     """
     info = r.run("info", "infotest_keyspace")
     keyspace = field(info, "infotest_db0")
-    # TODO: set keys scan [regexp -inline {keys\=([\d]*)} $keyspace] keys=%d
-    assert False
+    assert scan(regexp("-inline", "keys\\=([\\d]*)", keyspace), "keys=%d") == "3"
 
 
 def test_module_info_unsafe_fields(r: ValkeyTestClient) -> None:
@@ -283,6 +280,14 @@ def catch(*args):
 
 def field(*args):
     raise NotImplementedError("field")
+
+
+def regexp(*args):
+    raise NotImplementedError("regexp")
+
+
+def scan(*args):
+    raise NotImplementedError("scan")
 
 
 def string(*args):

@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841, ANN002, ANN201
+# ruff: noqa: PLR2004, ANN002, ANN201
 import time
 from fnmatch import fnmatch
 
@@ -33,7 +33,6 @@ def test_function_basic_usage(r: ValkeyTestClient) -> None:
     assert r.run("fcall", "test", 0) == "hello"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_load_with_unknown_argument(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - Load with unknown argument} {
@@ -47,11 +46,9 @@ def test_function_load_with_unknown_argument(r: ValkeyTestClient) -> None:
         e = r.run("function", "load", "foo", "bar", get_function_code("LUA", "test", "test", "return 'hello'"))
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*Unknown option given*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_create_an_already_exiting_library_raise_error(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - Create an already exiting library raise error} {
@@ -65,11 +62,9 @@ def test_function_create_an_already_exiting_library_raise_error(r: ValkeyTestCli
         e = r.run("function", "load", get_function_code("LUA", "test", "test", "return 'hello1'"))
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*already exists*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_create_an_already_exiting_library_raise_error_case_insensitive(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - Create an already exiting library raise error (case insensitive)} {
@@ -83,11 +78,9 @@ def test_function_create_an_already_exiting_library_raise_error_case_insensitive
         e = r.run("function", "load", get_function_code("LUA", "test", "test", "return 'hello1'"))
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*already exists*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_create_a_library_with_wrong_name_format(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - Create a library with wrong name format} {
@@ -101,11 +94,9 @@ def test_function_create_a_library_with_wrong_name_format(r: ValkeyTestClient) -
         e = r.run("function", "load", get_function_code("LUA", "bad\\0foramat", "test", "return 'hello1'"))
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*Library names can only contain letters, numbers, or underscores(_)*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_create_library_with_unexisting_engine(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - Create library with unexisting engine} {
@@ -119,11 +110,9 @@ def test_function_create_library_with_unexisting_engine(r: ValkeyTestClient) -> 
         e = r.run("function", "load", get_function_code("bad_engine", "test", "test", "return 'hello1'"))
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*Engine 'bad_engine' not found*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_test_uncompiled_script(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - Test uncompiled script} {
@@ -137,8 +126,7 @@ def test_function_test_uncompiled_script(r: ValkeyTestClient) -> None:
         e = r.run("function", "load", "replace", get_function_code("LUA", "test", "test", "bad script"))
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*Error compiling function*"
 
 
 def test_function_test_replace_argument(r: ValkeyTestClient) -> None:
@@ -177,7 +165,6 @@ def test_function_test_replace_argument_with_failure_keeps_old_libraries(r: Valk
     assert r.run("fcall", "test", 0) == "hello1"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_test_function_delete(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - test function delete} {
@@ -193,11 +180,9 @@ def test_function_test_function_delete(r: ValkeyTestClient) -> None:
         e = r.run("fcall", "test", 0)
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*Function not found*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_test_fcall_bad_arguments(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - test fcall bad arguments} {
@@ -213,11 +198,9 @@ def test_function_test_fcall_bad_arguments(r: ValkeyTestClient) -> None:
         e = r.run("fcall", "test", "bad_arg")
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*Bad number of keys provided*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_test_fcall_bad_number_of_keys_arguments(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - test fcall bad number of keys arguments} {
@@ -231,11 +214,9 @@ def test_function_test_fcall_bad_number_of_keys_arguments(r: ValkeyTestClient) -
         e = r.run("fcall", "test", 10, "key1")
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*Number of keys can't be greater than number of args*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_test_fcall_negative_number_of_keys(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - test fcall negative number of keys} {
@@ -249,11 +230,9 @@ def test_function_test_fcall_negative_number_of_keys(r: ValkeyTestClient) -> Non
         e = r.run("fcall", "test", -1, "key1")
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*Number of keys can't be negative*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_test_delete_on_not_exiting_library(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - test delete on not exiting library} {
@@ -267,11 +246,9 @@ def test_function_test_delete_on_not_exiting_library(r: ValkeyTestClient) -> Non
         e = r.run("function", "delete", "test1")
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*Library not found*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_test_function_kill_when_function_is_not_running(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - test function kill when function is not running} {
@@ -285,11 +262,9 @@ def test_function_test_function_kill_when_function_is_not_running(r: ValkeyTestC
         e = r.run("function", "kill")
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*No scripts in execution*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_test_wrong_subcommand(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - test wrong subcommand} {
@@ -303,8 +278,7 @@ def test_function_test_wrong_subcommand(r: ValkeyTestClient) -> None:
         e = r.run("function", "bad_subcommand")
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*unknown subcommand*"
 
 
 def test_function_test_loading_from_rdb(r: ValkeyTestClient) -> None:
@@ -491,7 +465,6 @@ def test_function_test_function_restore_with_bad_payload_do_not_drop_existing_fu
     assert r.run("function", "list") == "{library_name test engine LUA functions {{name test description {} flags {}}}}"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_test_function_restore_with_wrong_number_of_arguments(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - test function restore with wrong number of arguments} {
@@ -503,11 +476,9 @@ def test_function_test_function_restore_with_wrong_number_of_arguments(r: Valkey
         e = r.run("function", "restore", "arg1", "args2", "arg3")
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*unknown subcommand or wrong number of arguments for 'restore'. Try FUNCTION HELP."
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_test_fcall_ro_with_write_command(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - test fcall_ro with write command} {
@@ -526,8 +497,7 @@ def test_function_test_fcall_ro_with_write_command(r: ValkeyTestClient) -> None:
         e = r.run("fcall_ro", "test", 1, "x")
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*Write commands are not allowed from read-only scripts*"
 
 
 def test_function_test_fcall_ro_with_read_only_commands(r: ValkeyTestClient) -> None:
@@ -1165,7 +1135,6 @@ def test_libraries_test_registration_function_name_collision(r: ValkeyTestClient
     assert r.run("fcall", "f2", 0) == "3"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_libraries_test_registration_function_name_collision_on_same_library(r: ValkeyTestClient) -> None:
     """
     test {LIBRARIES - test registration function name collision on same library} {
@@ -1197,11 +1166,9 @@ def test_libraries_test_registration_function_name_collision_on_same_library(r: 
         )
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*Function already exists in the library*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_libraries_test_registration_with_no_argument(r: ValkeyTestClient) -> None:
     """
     test {LIBRARIES - test registration with no argument} {
@@ -1219,11 +1186,9 @@ def test_libraries_test_registration_with_no_argument(r: ValkeyTestClient) -> No
         )
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*wrong number of arguments to server.register_function*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_libraries_test_registration_with_only_name(r: ValkeyTestClient) -> None:
     """
     test {LIBRARIES - test registration with only name} {
@@ -1244,11 +1209,9 @@ def test_libraries_test_registration_with_only_name(r: ValkeyTestClient) -> None
         )
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*calling server.register_function with a single argument is only applicable to Lua table*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_libraries_test_registration_with_to_many_arguments(r: ValkeyTestClient) -> None:
     """
     test {LIBRARIES - test registration with to many arguments} {
@@ -1269,11 +1232,9 @@ def test_libraries_test_registration_with_to_many_arguments(r: ValkeyTestClient)
         )
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*wrong number of arguments to server.register_function*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_libraries_test_registration_with_no_string_name(r: ValkeyTestClient) -> None:
     """
     test {LIBRARIES - test registration with no string name} {
@@ -1294,11 +1255,9 @@ def test_libraries_test_registration_with_no_string_name(r: ValkeyTestClient) ->
         )
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*first argument to server.register_function must be a string*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_libraries_test_registration_with_wrong_name_format(r: ValkeyTestClient) -> None:
     """
     test {LIBRARIES - test registration with wrong name format} {
@@ -1319,11 +1278,12 @@ def test_libraries_test_registration_with_wrong_name_format(r: ValkeyTestClient)
         )
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert (
+        e
+        == "*Function names can only contain letters, numbers, or underscores(_) and must be at least one character long*"
+    )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_libraries_test_registration_with_empty_name(r: ValkeyTestClient) -> None:
     """
     test {LIBRARIES - test registration with empty name} {
@@ -1344,11 +1304,12 @@ def test_libraries_test_registration_with_empty_name(r: ValkeyTestClient) -> Non
         )
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert (
+        e
+        == "*Function names can only contain letters, numbers, or underscores(_) and must be at least one character long*"
+    )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_libraries_math_random_from_function_load(r: ValkeyTestClient) -> None:
     """
     test {LIBRARIES - math.random from function load} {
@@ -1364,11 +1325,9 @@ def test_libraries_math_random_from_function_load(r: ValkeyTestClient) -> None:
         e = r.run("function", "load", "replace", "#!lua name=lib2\n                return math.random()\n            ")
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*attempted to access nonexistent global variable 'math'*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_libraries_redis_call_from_function_load(r: ValkeyTestClient) -> None:
     """
     test {LIBRARIES - redis.call from function load} {
@@ -1386,11 +1345,9 @@ def test_libraries_redis_call_from_function_load(r: ValkeyTestClient) -> None:
         )
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*attempted to access nonexistent global variable 'call'*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_libraries_redis_setresp_from_function_load(r: ValkeyTestClient) -> None:
     """
     test {LIBRARIES - redis.setresp from function load} {
@@ -1408,11 +1365,9 @@ def test_libraries_redis_setresp_from_function_load(r: ValkeyTestClient) -> None
         )
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*attempted to access nonexistent global variable 'setresp'*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_libraries_redis_set_repl_from_function_load(r: ValkeyTestClient) -> None:
     """
     test {LIBRARIES - redis.set_repl from function load} {
@@ -1433,11 +1388,9 @@ def test_libraries_redis_set_repl_from_function_load(r: ValkeyTestClient) -> Non
         )
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*attempted to access nonexistent global variable 'set_repl'*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_libraries_redis_acl_check_cmd_from_function_load(r: ValkeyTestClient) -> None:
     """
     test {LIBRARIES - redis.acl_check_cmd from function load} {
@@ -1458,8 +1411,7 @@ def test_libraries_redis_acl_check_cmd_from_function_load(r: ValkeyTestClient) -
         )
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*attempted to access nonexistent global variable 'acl_check_cmd'*"
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1534,7 +1486,6 @@ def test_libraries_delete_removed_all_functions_on_library(r: ValkeyTestClient) 
     r.run("function", "list")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_libraries_register_function_inside_a_function(r: ValkeyTestClient) -> None:
     """
     test {LIBRARIES - register function inside a function} {
@@ -1565,11 +1516,9 @@ def test_libraries_register_function_inside_a_function(r: ValkeyTestClient) -> N
         e = r.run("fcall", "f1", 0)
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*attempt to call field 'register_function' (a nil value)*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_libraries_register_library_with_no_functions(r: ValkeyTestClient) -> None:
     """
     test {LIBRARIES - register library with no functions} {
@@ -1587,11 +1536,9 @@ def test_libraries_register_library_with_no_functions(r: ValkeyTestClient) -> No
         e = r.run("function", "load", "#!lua name=lib\n                return 1\n            ")
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*No functions registered*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_libraries_load_timeout(r: ValkeyTestClient) -> None:
     """
     test {LIBRARIES - load timeout} {
@@ -1612,11 +1559,9 @@ def test_libraries_load_timeout(r: ValkeyTestClient) -> None:
         )
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*FUNCTION LOAD timeout*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_libraries_verify_global_protection_on_the_load_run(r: ValkeyTestClient) -> None:
     """
     test {LIBRARIES - verify global protection on the load run} {
@@ -1632,8 +1577,7 @@ def test_libraries_verify_global_protection_on_the_load_run(r: ValkeyTestClient)
         e = r.run("function", "load", "#!lua name=lib\n                a = 1\n            ")
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*Attempt to modify a readonly table*"
 
 
 def test_libraries_named_arguments(r: ValkeyTestClient) -> None:
@@ -1662,7 +1606,6 @@ def test_libraries_named_arguments(r: ValkeyTestClient) -> None:
     )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_libraries_named_arguments_bad_function_name(r: ValkeyTestClient) -> None:
     """
     test {LIBRARIES - named arguments, bad function name} {
@@ -1689,11 +1632,9 @@ def test_libraries_named_arguments_bad_function_name(r: ValkeyTestClient) -> Non
         )
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*function_name argument given to server.register_function must be a string*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_libraries_named_arguments_bad_callback_type(r: ValkeyTestClient) -> None:
     """
     test {LIBRARIES - named arguments, bad callback type} {
@@ -1718,11 +1659,9 @@ def test_libraries_named_arguments_bad_callback_type(r: ValkeyTestClient) -> Non
         )
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*callback argument given to server.register_function must be a function*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_libraries_named_arguments_bad_description(r: ValkeyTestClient) -> None:
     """
     test {LIBRARIES - named arguments, bad description} {
@@ -1749,11 +1688,9 @@ def test_libraries_named_arguments_bad_description(r: ValkeyTestClient) -> None:
         )
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*description argument given to server.register_function must be a string*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_libraries_named_arguments_unknown_argument(r: ValkeyTestClient) -> None:
     """
     test {LIBRARIES - named arguments, unknown argument} {
@@ -1781,11 +1718,9 @@ def test_libraries_named_arguments_unknown_argument(r: ValkeyTestClient) -> None
         )
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*unknown argument given to server.register_function*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_libraries_named_arguments_missing_function_name(r: ValkeyTestClient) -> None:
     """
     test {LIBRARIES - named arguments, missing function name} {
@@ -1811,11 +1746,9 @@ def test_libraries_named_arguments_missing_function_name(r: ValkeyTestClient) ->
         )
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*server.register_function must get a function name argument*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_libraries_named_arguments_missing_callback(r: ValkeyTestClient) -> None:
     """
     test {LIBRARIES - named arguments, missing callback} {
@@ -1839,8 +1772,7 @@ def test_libraries_named_arguments_missing_callback(r: ValkeyTestClient) -> None
         )
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*server.register_function must get a callback argument*"
 
 
 def test_function_test_function_restore_with_function_name_collision(r: ValkeyTestClient) -> None:
@@ -2001,7 +1933,6 @@ def test_function_test_function_list_with_pattern(r: ValkeyTestClient) -> None:
     )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_test_function_list_wrong_argument(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - test function list wrong argument} {
@@ -2013,11 +1944,9 @@ def test_function_test_function_list_wrong_argument(r: ValkeyTestClient) -> None
         e = r.run("function", "list", "bad_argument")
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*Unknown argument bad_argument*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_test_function_list_with_bad_argument_to_library_name(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - test function list with bad argument to library name} {
@@ -2029,11 +1958,9 @@ def test_function_test_function_list_with_bad_argument_to_library_name(r: Valkey
         e = r.run("function", "list", "libraryname")
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*library name argument was not given*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_test_function_list_withcode_multiple_times(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - test function list withcode multiple times} {
@@ -2045,11 +1972,9 @@ def test_function_test_function_list_withcode_multiple_times(r: ValkeyTestClient
         e = r.run("function", "list", "withcode", "withcode")
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*Unknown argument withcode*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_test_function_list_libraryname_multiple_times(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - test function list libraryname multiple times} {
@@ -2061,8 +1986,7 @@ def test_function_test_function_list_libraryname_multiple_times(r: ValkeyTestCli
         e = r.run("function", "list", "withcode", "libraryname", "foo", "libraryname", "foo")
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*Unknown argument libraryname*"
 
 
 def test_function_verify_oom_on_function_load_and_function_restore(r: ValkeyTestClient) -> None:
@@ -2151,7 +2075,6 @@ def test_function_verify_allow_omm_allows_running_any_command(r: ValkeyTestClien
 pytestmark = [pytest.mark.scripting]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_wrong_flags_type_named_arguments(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - wrong flags type named arguments} {
@@ -2174,11 +2097,9 @@ def test_function_wrong_flags_type_named_arguments(r: ValkeyTestClient) -> None:
         )
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*flags argument to server.register_function must be a table representing function flags*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_wrong_flag_type(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - wrong flag type} {
@@ -2201,11 +2122,9 @@ def test_function_wrong_flag_type(r: ValkeyTestClient) -> None:
         )
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*unknown flag given*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_unknown_flag(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - unknown flag} {
@@ -2228,11 +2147,9 @@ def test_function_unknown_flag(r: ValkeyTestClient) -> None:
         )
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*unknown flag given*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_write_script_on_fcall_ro(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - write script on fcall_ro} {
@@ -2256,11 +2173,9 @@ def test_function_write_script_on_fcall_ro(r: ValkeyTestClient) -> None:
         e = r.run("fcall_ro", "f1", 1, "x")
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*Can not execute a script with write flag using \\*_ro command*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_write_script_with_no_writes_flag(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - write script with no-writes flag} {
@@ -2285,8 +2200,7 @@ def test_function_write_script_with_no_writes_flag(r: ValkeyTestClient) -> None:
         e = r.run("fcall", "f1", 1, "x")
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*Write commands are not allowed from read-only scripts*"
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -2522,7 +2436,6 @@ def test_function_function_stats_cleaned_after_flush(r: ValkeyTestClient) -> Non
     assert r.run("function", "stats") == "running_script {} engines {LUA {libraries_count 0 functions_count 0}}"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_function_test_empty_engine(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - function test empty engine} {
@@ -2541,11 +2454,9 @@ def test_function_function_test_empty_engine(r: ValkeyTestClient) -> None:
         )
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "ERR Engine '' not found"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_function_test_unknown_metadata_value(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - function test unknown metadata value} {
@@ -2564,11 +2475,9 @@ def test_function_function_test_unknown_metadata_value(r: ValkeyTestClient) -> N
         )
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "ERR Invalid metadata value given: foo=bar"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_function_test_no_name(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - function test no name} {
@@ -2587,11 +2496,9 @@ def test_function_function_test_no_name(r: ValkeyTestClient) -> None:
         )
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "ERR Library name was not given"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_function_test_multiple_names(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - function test multiple names} {
@@ -2610,8 +2517,7 @@ def test_function_function_test_multiple_names(r: ValkeyTestClient) -> None:
         )
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "ERR Invalid metadata value, name argument was given multiple times"
 
 
 def test_function_function_test_name_with_quotes(r: ValkeyTestClient) -> None:
@@ -2662,7 +2568,6 @@ def test_function_trick_global_protection_1(r: ValkeyTestClient) -> None:
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_test_getmetatable_on_script_load(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - test getmetatable on script load} {
@@ -2682,8 +2587,7 @@ def test_function_test_getmetatable_on_script_load(r: ValkeyTestClient) -> None:
         e = r.run("FUNCTION", "load", "#!lua name=test1\n                mt = getmetatable(_G)\n            ")
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*Script attempted to access nonexistent global variable 'getmetatable'*"
 
 
 # --- stubs for unimplemented TCL helpers ---

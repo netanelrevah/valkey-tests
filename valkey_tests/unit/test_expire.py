@@ -104,7 +104,6 @@ def test_setex_overwrite_old_key(r: ValkeyTestClient) -> None:
     assert r.run("get", "y") == "foo"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_setex_wrong_time_parameter(r: ValkeyTestClient) -> None:
     """
     test {SETEX - Wrong time parameter} {
@@ -116,8 +115,7 @@ def test_setex_wrong_time_parameter(r: ValkeyTestClient) -> None:
         e = r.run("setex", "z", -10, "foo")
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*invalid expire*"
 
 
 @pytest.mark.xfail(reason="not implemented")

@@ -472,7 +472,6 @@ def test_hget_against_the_big_hash(r: ValkeyTestClient) -> None:
     _ = err
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hget_against_non_existing_key(r: ValkeyTestClient) -> None:
     """
     test {HGET against non existing key} {
@@ -485,11 +484,9 @@ def test_hget_against_non_existing_key(r: ValkeyTestClient) -> None:
     rv = ""
     lappend("rv", r.run("hget", "smallhash", "__123123123__"))
     lappend("rv", r.run("hget", "bighash", "__123123123__"))
-    # TODO: set _ rv
-    assert False
+    assert rv == "{} {}"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hset_in_update_and_insert_mode(r: ValkeyTestClient) -> None:
     """
     test {HSET in update and insert mode} {
@@ -522,8 +519,7 @@ def test_hset_in_update_and_insert_mode(r: ValkeyTestClient) -> None:
     lappend("rv", r.run("hset", "bighash", "__foobar123__", "newval"))
     lappend("rv", r.run("hdel", "smallhash", "__foobar123__"))
     lappend("rv", r.run("hdel", "bighash", "__foobar123__"))
-    # TODO: set _ rv
-    assert False
+    assert rv == "0 newval1 1 0 newval2 1 1 1"
 
 
 def test_hsetnx_target_key_missing_small_hash(r: ValkeyTestClient) -> None:
@@ -537,7 +533,6 @@ def test_hsetnx_target_key_missing_small_hash(r: ValkeyTestClient) -> None:
     assert r.run("hget", "smallhash", "__123123123__") == "foo"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hsetnx_target_key_exists_small_hash(r: ValkeyTestClient) -> None:
     """
     test {HSETNX target key exists - small hash} {
@@ -550,8 +545,7 @@ def test_hsetnx_target_key_exists_small_hash(r: ValkeyTestClient) -> None:
     r.run("hsetnx", "smallhash", "__123123123__", "bar")
     result = r.run("hget", "smallhash", "__123123123__")
     r.run("hdel", "smallhash", "__123123123__")
-    # TODO: set _ result
-    assert False
+    assert result == "foo"
 
 
 def test_hsetnx_target_key_missing_big_hash(r: ValkeyTestClient) -> None:
@@ -565,7 +559,6 @@ def test_hsetnx_target_key_missing_big_hash(r: ValkeyTestClient) -> None:
     assert r.run("hget", "bighash", "__123123123__") == "foo"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hsetnx_target_key_exists_big_hash(r: ValkeyTestClient) -> None:
     """
     test {HSETNX target key exists - big hash} {
@@ -578,8 +571,7 @@ def test_hsetnx_target_key_exists_big_hash(r: ValkeyTestClient) -> None:
     r.run("hsetnx", "bighash", "__123123123__", "bar")
     result = r.run("hget", "bighash", "__123123123__")
     r.run("hdel", "bighash", "__123123123__")
-    # TODO: set _ result
-    assert False
+    assert result == "foo"
 
 
 def test_hset_or_hmset_wrong_number_of_args(r: ValkeyTestClient) -> None:
@@ -637,7 +629,6 @@ def test_hmset_big_hash(r: ValkeyTestClient) -> None:
     assert r.run("hmset", "bighash", "*", args) == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hmget_against_non_existing_key_and_fields(r: ValkeyTestClient) -> None:
     """
     test {HMGET against non existing key and fields} {
@@ -652,8 +643,7 @@ def test_hmget_against_non_existing_key_and_fields(r: ValkeyTestClient) -> None:
     lappend("rv", r.run("hmget", "doesntexist", "__123123123__", "__456456456__"))
     lappend("rv", r.run("hmget", "smallhash", "__123123123__", "__456456456__"))
     lappend("rv", r.run("hmget", "bighash", "__123123123__", "__456456456__"))
-    # TODO: set _ rv
-    assert False
+    assert rv == "{{} {}} {{} {}} {{} {}}"
 
 
 def test_hash_commands_against_wrong_type(r: ValkeyTestClient) -> None:
@@ -844,7 +834,6 @@ def test_hgetall_against_non_existing_key(r: ValkeyTestClient) -> None:
     r.run("hgetall", "htest")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hgetdel_single_field(r: ValkeyTestClient) -> None:
     """
     test {HGETDEL - single field} {
@@ -863,11 +852,9 @@ def test_hgetdel_single_field(r: ValkeyTestClient) -> None:
     lappend("rv", r.run("hgetdel", "myhash", "FIELDS", 1, "field1"))
     lappend("rv", r.run("hexists", "myhash", "field1"))
     lappend("rv", r.run("exists", "myhash"))
-    # TODO: set _ rv
-    assert False
+    assert rv == "value1 0 0"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hgetdel_multiple_fields(r: ValkeyTestClient) -> None:
     """
     test {HGETDEL - multiple fields} {
@@ -890,11 +877,9 @@ def test_hgetdel_multiple_fields(r: ValkeyTestClient) -> None:
     lappend("rv", r.run("hexists", "myhash", "field2"))
     lappend("rv", r.run("hexists", "myhash", "field3"))
     lappend("rv", r.run("hget", "myhash", "field2"))
-    # TODO: set _ rv
-    assert False
+    assert rv == "{value1 value3} 0 1 0 value2"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hgetdel_non_existing_field(r: ValkeyTestClient) -> None:
     """
     test {HGETDEL - non-existing field} {
@@ -911,8 +896,7 @@ def test_hgetdel_non_existing_field(r: ValkeyTestClient) -> None:
     rv = ""
     lappend("rv", r.run("hgetdel", "myhash", "FIELDS", 1, "nonexisting"))
     lappend("rv", r.run("hexists", "myhash", "field1"))
-    # TODO: set _ rv
-    assert False
+    assert rv == "{{}} 1"
 
 
 def test_hgetdel_non_existing_key_and_hash_after_the_key_is_deleted(r: ValkeyTestClient) -> None:
@@ -939,7 +923,6 @@ def test_hgetdel_non_existing_key(r: ValkeyTestClient) -> None:
     assert "{}" == r.run("hgetdel", "myhash", "FIELDS", 1, "field1")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hgetdel_mix_of_existing_and_non_existing_fields(r: ValkeyTestClient) -> None:
     """
     test {HGETDEL - mix of existing and non-existing fields} {
@@ -960,11 +943,9 @@ def test_hgetdel_mix_of_existing_and_non_existing_fields(r: ValkeyTestClient) ->
     lappend("rv", r.run("hexists", "myhash", "a"))
     lappend("rv", r.run("hexists", "myhash", "b"))
     lappend("rv", r.run("hexists", "myhash", "c"))
-    # TODO: set _ rv
-    assert False
+    assert rv == "{1 {} 2} 0 0 1"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hgetdel_hash_becomes_empty_after_deletion(r: ValkeyTestClient) -> None:
     """
     test {HGETDEL - hash becomes empty after deletion} {
@@ -981,8 +962,7 @@ def test_hgetdel_hash_becomes_empty_after_deletion(r: ValkeyTestClient) -> None:
     rv = ""
     lappend("rv", r.run("hgetdel", "myhash", "FIELDS", 2, "a", "b"))
     lappend("rv", r.run("exists", "myhash"))
-    # TODO: set _ rv
-    assert False
+    assert rv == "{1 2} 0"
 
 
 def test_hgetdel_wrong_type(r: ValkeyTestClient) -> None:
@@ -1034,7 +1014,6 @@ def test_hgetdel_check_for_syntax_and_type_errors(r: ValkeyTestClient) -> None:
         r.run("hgetdel", "myhash", "FIELDS", 4, "a", "b", "c")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hdel_and_return_value(r: ValkeyTestClient) -> None:
     """
     test {HDEL and return value} {
@@ -1067,8 +1046,7 @@ def test_hdel_and_return_value(r: ValkeyTestClient) -> None:
     lappend("rv", r.run("hdel", "bighash", k))
     lappend("rv", r.run("hget", "bighash", k))
     unset("bighash($k)")
-    # TODO: set _ rv
-    assert False
+    assert rv == "0 0 1 0 {} 1 0 {}"
 
 
 def test_hdel_more_than_a_single_value(r: ValkeyTestClient) -> None:
@@ -1566,7 +1544,6 @@ def test_hstrlen_against_the_big_hash(r: ValkeyTestClient) -> None:
     _ = err
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hstrlen_against_non_existing_field(r: ValkeyTestClient) -> None:
     """
     test {HSTRLEN against non existing field} {
@@ -1579,8 +1556,7 @@ def test_hstrlen_against_non_existing_field(r: ValkeyTestClient) -> None:
     rv = ""
     lappend("rv", r.run("hstrlen", "smallhash", "__123123123__"))
     lappend("rv", r.run("hstrlen", "bighash", "__123123123__"))
-    # TODO: set _ rv
-    assert False
+    assert rv == "0 0"
 
 
 def test_hstrlen_corner_cases(r: ValkeyTestClient) -> None:
@@ -1826,7 +1802,6 @@ def test_test_hincrbyfloat_for_correct_float_representation_issue_2846(r: Valkey
     assert r.run("hincrbyfloat", "myhash", "float", -0.1) == "1.9"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hash_ziplist_of_various_encodings(r: ValkeyTestClient) -> None:
     """
     test {Hash ziplist of various encodings} {
@@ -1887,8 +1862,10 @@ def test_hash_ziplist_of_various_encodings(r: ValkeyTestClient) -> None:
     k = dict_("remove", k, "ZIP_STR_14B")
     assert k["ZIP_STR_32B"] == string("repeat", "x", 65535)
     k = dict_("remove", k, "ZIP_STR_32B")
-    # TODO: set _ k
-    assert False
+    assert (
+        k
+        == "ZIP_INT_8B 127 ZIP_INT_16B 32767 ZIP_INT_32B 2147483647 ZIP_INT_64B 9223372036854775808 ZIP_INT_IMM_MIN 0 ZIP_INT_IMM_MAX 12"
+    )
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1922,8 +1899,10 @@ def test_hash_ziplist_of_various_encodings_sanitize_dump(r: ValkeyTestClient) ->
     k = dict_("remove", k, "ZIP_STR_14B")
     assert k["ZIP_STR_32B"] == string("repeat", "x", 65535)
     k = dict_("remove", k, "ZIP_STR_32B")
-    # TODO: set _ k
-    assert False
+    assert (
+        k
+        == "ZIP_INT_8B 127 ZIP_INT_16B 32767 ZIP_INT_32B 2147483647 ZIP_INT_64B 9223372036854775808 ZIP_INT_IMM_MIN 0 ZIP_INT_IMM_MAX 12"
+    )
 
 
 def test_hincrbyfloat_does_not_allow_nan_or_infinity(r: ValkeyTestClient) -> None:

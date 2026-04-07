@@ -1,5 +1,3 @@
-# ruff: noqa: F841
-
 from fnmatch import fnmatch
 
 import pytest
@@ -116,7 +114,6 @@ def test_command_getkeysandflags_correctly_reports_a_movable_keys_module_command
     )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_rm_getcommandkeys_on_non_existing_command(r: ValkeyTestClient) -> None:
     """
     test {RM_GetCommandKeys on non-existing command} {
@@ -128,8 +125,7 @@ def test_rm_getcommandkeys_on_non_existing_command(r: ValkeyTestClient) -> None:
         e = r.run("getkeys.introspect", 0, "non-command", "key1", "key2")
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*ENOENT*"
 
 
 def test_rm_getcommandkeys_on_built_in_fixed_keys_command(r: ValkeyTestClient) -> None:
@@ -196,7 +192,6 @@ def test_rm_getcommandkeys_on_a_non_movable_module_command(r: ValkeyTestClient) 
     assert r.run("getkeys.introspect", 0, "getkeys.fixed", "arg1", "key1", "key2", "key3", "arg2") == "key1 key2 key3"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_rm_getcommandkeys_with_bad_arity(r: ValkeyTestClient) -> None:
     """
     test {RM_GetCommandKeys with bad arity} {
@@ -208,8 +203,7 @@ def test_rm_getcommandkeys_with_bad_arity(r: ValkeyTestClient) -> None:
         e = r.run("getkeys.introspect", 0, "set", "key")
     except Exception as _catch_err:
         e = str(_catch_err)
-    # TODO: set _ e
-    assert False
+    assert e == "*EINVAL*"
 
 
 """

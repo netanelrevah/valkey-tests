@@ -1,4 +1,4 @@
-# ruff: noqa: F841, ANN002, ANN201
+# ruff: noqa: ANN002, ANN201
 
 from fnmatch import fnmatch
 
@@ -9,7 +9,6 @@ from tests.valkey_test_client import ValkeyTestClient
 pytestmark = [pytest.mark.auth_external_skip]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_auth_fails_if_there_is_no_password_configured_server_side(r: ValkeyTestClient) -> None:
     """
     test {AUTH fails if there is no password configured server side} {
@@ -21,11 +20,9 @@ def test_auth_fails_if_there_is_no_password_configured_server_side(r: ValkeyTest
         err = r.run("auth", "foo")
     except Exception as _catch_err:
         err = str(_catch_err)
-    # TODO: set _ err
-    assert False
+    assert err == "ERR *any password*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_arity_check_for_auth_command(r: ValkeyTestClient) -> None:
     """
     test {Arity check for auth command} {
@@ -37,14 +34,12 @@ def test_arity_check_for_auth_command(r: ValkeyTestClient) -> None:
         err = r.run("auth", "a", "b", "c")
     except Exception as _catch_err:
         err = str(_catch_err)
-    # TODO: set _ err
-    assert False
+    assert err == "*syntax error*"
 
 
 pytestmark = [pytest.mark.auth_external_skip]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_auth_fails_when_a_wrong_password_is_given(r: ValkeyTestClient) -> None:
     """
     test {AUTH fails when a wrong password is given} {
@@ -56,11 +51,9 @@ def test_auth_fails_when_a_wrong_password_is_given(r: ValkeyTestClient) -> None:
         err = r.run("auth", "wrong!")
     except Exception as _catch_err:
         err = str(_catch_err)
-    # TODO: set _ err
-    assert False
+    assert err == "WRONGPASS*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_arbitrary_command_gives_an_error_when_auth_is_required(r: ValkeyTestClient) -> None:
     """
     test {Arbitrary command gives an error when AUTH is required} {
@@ -72,8 +65,7 @@ def test_arbitrary_command_gives_an_error_when_auth_is_required(r: ValkeyTestCli
         err = r.run("set", "foo", "bar")
     except Exception as _catch_err:
         err = str(_catch_err)
-    # TODO: set _ err
-    assert False
+    assert err == "NOAUTH*"
 
 
 def test_auth_succeeds_when_the_right_password_is_given(r: ValkeyTestClient) -> None:
