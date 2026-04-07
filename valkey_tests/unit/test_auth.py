@@ -1,5 +1,4 @@
-# ruff: noqa: ANN002, ANN201
-
+# ruff: noqa: F841, N806, ANN002, ANN201
 from fnmatch import fnmatch
 
 import pytest
@@ -238,11 +237,11 @@ def test_unauthenticated_multibulk_limit_works_in_pipeline_after_auth(r: ValkeyT
         $rd close
     }
     """
-    # TODO: set auth_proto "*2\r\n\$4\r\nAUTH\r\n\$6\r\nfoobar\r\n"
-    # TODO: set set_proto "*3\r\n\$3\r\nSET\r\n\$1\r\nA\r\n\$1\r\nX\r\n"
-    # TODO: set A "\$1\r\nA\r\n"
-    # TODO: set mget_proto "*11\r\n\$4\r\nMGET\r\n$A$A$A$A$A$A$A$A$A$A"
-    # TODO: set proto "$auth_proto$set_proto$mget_proto"
+    auth_proto = "*2\\r\\n\\$4\\r\\nAUTH\\r\\n\\$6\\r\\nfoobar\\r\\n"
+    set_proto = "*3\\r\\n\\$3\\r\\nSET\\r\\n\\$1\\r\\nA\\r\\n\\$1\\r\\nX\\r\\n"
+    A = "\\$1\\r\\nA\\r\\n"
+    mget_proto = f"*11\r\n$4\r\nMGET\r\n{A}{A}{A}{A}{A}{A}{A}{A}{A}{A}"
+    proto = f"{auth_proto}{set_proto}{mget_proto}"
     # TODO: set rd valkey [srv "host"] [srv "port"] 1 $::tls
     # TODO: set fd $rd channel
     # TODO: flush fd

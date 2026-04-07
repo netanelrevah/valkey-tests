@@ -14,7 +14,6 @@ set db expr {$::singledb ? 0 : 9}
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_dump_or_restore_are_able_to_serialize_or_unserialize_a_simple_key(r: ValkeyTestClient) -> None:
     """
     test {DUMP / RESTORE are able to serialize / unserialize a simple key} {
@@ -27,8 +26,12 @@ def test_dump_or_restore_are_able_to_serialize_or_unserialize_a_simple_key(r: Va
     r.run("set", "foo", "bar")
     encoded = r.run("dump", "foo")
     r.run("del", "foo")
-    # TODO: list r exists foo r restore foo 0 $encoded r ttl foo r get foo
-    assert False
+    assert [
+        r.run("exists", "foo"),
+        r.run("restore", "foo", 0, encoded),
+        r.run("ttl", "foo"),
+        r.run("get", "foo"),
+    ] == "0 OK -1 bar"
 
 
 def test_restore_can_set_an_arbitrary_expire_to_the_materialized_key(r: ValkeyTestClient) -> None:

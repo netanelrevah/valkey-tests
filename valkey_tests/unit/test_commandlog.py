@@ -739,10 +739,13 @@ def test_commandlog_slow_the_commands_in_script_are_recorded_normally_is_eval_is
         assert_equal {test-client} [lindex $ping_cmd 5]
     }
     """
-    if_(
-        "$is_eval == 0",
-        "                r function load replace \"#!lua name=mylib \\n redis.register_function('myfunc', function(KEYS, ARGS) server.call('ping') end)\"\n            ",
-    )
+    if is_eval == 0:
+        r.run(
+            "function",
+            "load",
+            "replace",
+            "#!lua name=mylib \\n redis.register_function('myfunc', function(KEYS, ARGS) server.call('ping') end)",
+        )
     r.run("client", "setname", "test-client")
     r.run("config", "set", "commandlog-execution-slower-than", 0)
     r.run("commandlog", "reset", "slow")

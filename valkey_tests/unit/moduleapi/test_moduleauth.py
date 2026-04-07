@@ -1,4 +1,4 @@
-# ruff: noqa: F841, RUF043, ANN002, ANN201
+# ruff: noqa: RUF043, ANN002, ANN201
 
 from fnmatch import fnmatch
 
@@ -236,7 +236,6 @@ def test_test_non_blocking_module_hello_auth_setname(r: ValkeyTestClient) -> Non
     assert fnmatch(str(cmdstat("hello")), "*calls=4,*,rejected_calls=0,failed_calls=2")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_blocking_module_auth(r: ValkeyTestClient) -> None:
     """
     test {test blocking module AUTH} {
@@ -287,7 +286,7 @@ def test_test_blocking_module_auth(r: ValkeyTestClient) -> None:
     assert fnmatch(str(cmdstat("auth")), "*calls=6,*,rejected_calls=0,failed_calls=3")
     assert "OK" == r.run("AUTH", "foo", "nomatch")
     stats = cmdstat("auth")
-    # TODO: regexp "usec_per_call=(\[0-9]{1,})\.*," stats all usec_per_call
+    regexp("usec_per_call=(\\[0-9]{1,})\\.*,", stats, "all", "usec_per_call")
     assert_("$usec_per_call >= 500000")
     entry = r.run("ACL", "LOG")[0]
     assert entry["username"] == "foo"
@@ -352,7 +351,7 @@ def test_test_blocking_module_hello_auth(r: ValkeyTestClient) -> None:
         r.run("HELLO", 3, "AUTH", "foo", "nomatch")
     assert fnmatch(str(cmdstat("hello")), "*calls=8,*,rejected_calls=0,failed_calls=4")
     stats = cmdstat("hello")
-    # TODO: regexp "usec_per_call=(\[0-9]{1,})\.*," stats all usec_per_call
+    regexp("usec_per_call=(\\[0-9]{1,})\\.*,", stats, "all", "usec_per_call")
     assert_("$usec_per_call >= 500000")
     entry = r.run("ACL", "LOG")[1]
     assert entry["username"] == "foo"
@@ -404,11 +403,10 @@ def test_test_blocking_module_hello_auth_setname(r: ValkeyTestClient) -> None:
     assert r.run("client", "getname") == "client0"
     assert fnmatch(str(cmdstat("hello")), "*calls=4,*,rejected_calls=0,failed_calls=2")
     stats = cmdstat("hello")
-    # TODO: regexp "usec_per_call=(\[0-9]{1,})\.*," stats all usec_per_call
+    regexp("usec_per_call=(\\[0-9]{1,})\\.*,", stats, "all", "usec_per_call")
     assert_("$usec_per_call >= 500000")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_auth_after_registering_multiple_module_auth_callbacks(r: ValkeyTestClient) -> None:
     """
     test {test AUTH after registering multiple module auth callbacks} {
@@ -482,7 +480,7 @@ def test_test_auth_after_registering_multiple_module_auth_callbacks(r: ValkeyTes
         r.run("AUTH", "foo", "block_deny")
     assert fnmatch(str(cmdstat("auth")), "*calls=2,*,rejected_calls=0,failed_calls=1")
     stats = cmdstat("auth")
-    # TODO: regexp "usec_per_call=(\[0-9]{1,})\.*," stats all usec_per_call
+    regexp("usec_per_call=(\\[0-9]{1,})\\.*,", stats, "all", "usec_per_call")
     assert_("$usec_per_call >= 500000")
     r.run("config", "resetstat")
     assert "OK" == r.run("AUTH", "foo", "allow_two")
@@ -495,7 +493,7 @@ def test_test_auth_after_registering_multiple_module_auth_callbacks(r: ValkeyTes
     assert fnmatch(str(cmdstat("auth")), "*calls=1,*,rejected_calls=0,failed_calls=1")
     assert "OK" == r.run("AUTH", "foo", "pwd")
     stats = cmdstat("auth")
-    # TODO: regexp "usec_per_call=(\[0-9]{1,})\.*," stats all usec_per_call
+    regexp("usec_per_call=(\\[0-9]{1,})\\.*,", stats, "all", "usec_per_call")
     assert_("$usec_per_call >= 1000000")
 
 
@@ -663,7 +661,6 @@ def test_test_rm_abortblock_module_api_during_blocking_module_auth(r: ValkeyTest
     assert fnmatch(str(cmdstat("auth")), "*calls=1,*,rejected_calls=0,failed_calls=1")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_rm_registerauthcallback_module_api_during_blocking_module_auth(r: ValkeyTestClient) -> None:
     """
     test {test RM_RegisterAuthCallback Module API during blocking module auth} {
@@ -706,7 +703,7 @@ def test_test_rm_registerauthcallback_module_api_during_blocking_module_auth(r: 
     assert rd.run("read") == "OK"
     stats = cmdstat("auth")
     assert fnmatch(str(stats), "*calls=1,*,rejected_calls=0,failed_calls=0")
-    # TODO: regexp "usec_per_call=(\[0-9]{1,})\.*," stats all usec_per_call
+    regexp("usec_per_call=(\\[0-9]{1,})\\.*,", stats, "all", "usec_per_call")
     assert_("$usec_per_call >= 1000000")
 
 
@@ -795,6 +792,10 @@ def assert_error(*args):
 
 def cmdstat(*args):
     raise NotImplementedError("cmdstat")
+
+
+def regexp(*args):
+    raise NotImplementedError("regexp")
 
 
 def valkey_deferring_client(*args):

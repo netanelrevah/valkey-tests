@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841, RUF043, ANN002, ANN201
+# ruff: noqa: PLR2004, RUF043, ANN002, ANN201
 
 import pytest
 
@@ -16,7 +16,6 @@ r module load testmodule
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_stream_add_and_delete(r: ValkeyTestClient) -> None:
     """
     test {Module stream add and delete} {
@@ -47,13 +46,13 @@ def test_module_stream_add_and_delete(r: ValkeyTestClient) -> None:
     streamid2 = r.run("stream.add", "mystream", "item", 2, "value", "b")
     assert string("match", "*-*", streamid1)
     items = r.run("XRANGE", "mystream", "-", "+")
-    # TODO: assert_equal items "{$streamid1 {item 1 value a}} {$streamid2 {item 2 value b}}"
+    assert items == f"{{{streamid1} {{item 1 value a}}}} {{{streamid2} {{item 2 value b}}}}"
     assert "OK" == r.run("stream.delete", "mystream", streamid1)
     with pytest.raises(Exception, match="ERR\\ StreamDelete.*"):
         r.run("stream.delete", "mystream", "123-456")
     with pytest.raises(Exception, match="Invalid\\ stream\\ ID.*"):
         r.run("stream.delete", "mystream", "foo")
-    # TODO: assert_equal "{$streamid2 {item 2 value b}}" r XRANGE mystream - +
+    assert f"{{{streamid2} {{item 2 value b}}}}" == r.run("XRANGE", "mystream", "-", "+")
     r.run("del", "mystream")
     r.run("set", "mystream", "mystring")
     with pytest.raises(Exception, match="ERR\\ StreamAdd.*"):
@@ -104,7 +103,7 @@ def test_module_stream_add_unblocks_blocking_xread(r: ValkeyTestClient) -> None:
         '            fail "Client is not blocked"\n        ',
     )
     id = r.run("stream.add", "mystream", "field", 1, "value", "a")
-    # TODO: assert_equal "{mystream {{$id {field 1 value a}}}}" $rd1 read
+    assert f"{{mystream {{{{{id} {{field 1 value a}}}}}}}}" == rd1.run("read")
     rd2 = valkey_deferring_client()
     # TODO: $rd2 XREAD BLOCK 3000 STREAMS mystream
     wait_for_condition(
@@ -115,7 +114,7 @@ def test_module_stream_add_unblocks_blocking_xread(r: ValkeyTestClient) -> None:
         '            fail "Client is not blocked"\n        ',
     )
     id = r.run("stream.add", "mystream", "field", 2, "value", "b")
-    # TODO: assert_equal "{mystream {{$id {field 2 value b}}}}" $rd2 read
+    assert f"{{mystream {{{{{id} {{field 2 value b}}}}}}}}" == rd2.run("read")
 
 
 def test_module_stream_add_benchmark_1m_stream_add(r: ValkeyTestClient) -> None:
@@ -133,7 +132,6 @@ def test_module_stream_add_benchmark_1m_stream_add(r: ValkeyTestClient) -> None:
     assert result == n
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_stream_iterator(r: ValkeyTestClient) -> None:
     """
     test {Module stream iterator} {
@@ -169,14 +167,13 @@ def test_module_stream_iterator(r: ValkeyTestClient) -> None:
     expect_rev = r.run("xrevrange", "mystream", "+", "-")
     assert result_rev == expect_rev
     result2 = r.run("stream.range", "mystream", "-", streamid1)
-    # TODO: assert_equal result2 "{$streamid1 {item 1 value a}}"
-    assert result2 == list_(list_(streamid1, "item 1 value a"))
+    assert result2 == f"{{{streamid1} {{item 1 value a}}}}"
+    assert result2 == [[streamid1, "item 1 value a"]]
     result3 = r.run("stream.range", "mystream", streamid2, streamid2)
-    # TODO: assert_equal result3 "{$streamid2 {item 2 value b}}"
-    assert result3 == list_(list_(streamid2, "item 2 value b"))
+    assert result3 == f"{{{streamid2} {{item 2 value b}}}}"
+    assert result3 == [[streamid2, "item 2 value b"]]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_stream_iterator_delete(r: ValkeyTestClient) -> None:
     """
     test {Module stream iterator delete} {
@@ -198,8 +195,10 @@ def test_module_stream_iterator_delete(r: ValkeyTestClient) -> None:
     id1 = r.run("xadd", "mystream", "*", "normal", "item")
     id2 = r.run("xadd", "mystream", "*", "selfdestruct", "yes")
     id3 = r.run("xadd", "mystream", "*", "another", "item")
-    # TODO: assert_equal "{$id1 {normal item}} {$id2 {selfdestruct yes}} {$id3 {another item}}" r stream.range mystream - +
-    # TODO: assert_equal "{$id1 {normal item}} {$id3 {another item}}" r stream.range mystream - +
+    assert f"{{{id1} {{normal item}}}} {{{id2} {{selfdestruct yes}}}} {{{id3} {{another item}}}}" == r.run(
+        "stream.range", "mystream", "-", "+"
+    )
+    assert f"{{{id1} {{normal item}}}} {{{id3} {{another item}}}}" == r.run("stream.range", "mystream", "-", "+")
 
 
 def test_module_stream_trim_by_length(r: ValkeyTestClient) -> None:
@@ -345,10 +344,6 @@ run_solo {stream-large-memory} {
 
 
 # --- stubs for unimplemented TCL helpers ---
-
-
-def list_(*args):
-    raise NotImplementedError("list_")
 
 
 def string(*args):

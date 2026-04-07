@@ -9,7 +9,6 @@ from tests.valkey_test_client import ValkeyTestClient
 pytestmark = [pytest.mark.expire]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_expire_set_timeouts_multiple_times(r: ValkeyTestClient) -> None:
     """
     test {EXPIRE - set timeouts multiple times} {
@@ -28,8 +27,7 @@ def test_expire_set_timeouts_multiple_times(r: ValkeyTestClient) -> None:
     v3 = r.run("expire", "x", 10)
     v4 = r.run("ttl", "x")
     r.run("expire", "x", 2)
-    # TODO: list v1 v2 v3 v4
-    assert False
+    assert [v1, v2, v3, v4] == "1 [45] 1 10"
 
 
 def test_expire_it_should_be_still_possible_to_read_x(r: ValkeyTestClient) -> None:
@@ -118,7 +116,6 @@ def test_setex_wrong_time_parameter(r: ValkeyTestClient) -> None:
     assert e == "*invalid expire*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_persist_can_undo_an_expire(r: ValkeyTestClient) -> None:
     """
     test {PERSIST can undo an EXPIRE} {
@@ -129,11 +126,9 @@ def test_persist_can_undo_an_expire(r: ValkeyTestClient) -> None:
     """
     r.run("set", "x", "foo")
     r.run("expire", "x", 50)
-    # TODO: list r ttl x r persist x r ttl x r get x
-    assert False
+    assert [r.run("ttl", "x"), r.run("persist", "x"), r.run("ttl", "x"), r.run("get", "x")] == "50 1 -1 foo"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_persist_returns_0_against_non_existing_or_non_volatile_keys(r: ValkeyTestClient) -> None:
     """
     test {PERSIST returns 0 against non existing or non volatile keys} {
@@ -142,8 +137,7 @@ def test_persist_returns_0_against_non_existing_or_non_volatile_keys(r: ValkeyTe
     } {0 0}
     """
     r.run("set", "x", "foo")
-    # TODO: list r persist foo r persist nokeyatall
-    assert False
+    assert [r.run("persist", "foo"), r.run("persist", "nokeyatall")] == "0 0"
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -369,7 +363,6 @@ def test_pttl_returns_time_to_live_in_milliseconds(r: ValkeyTestClient) -> None:
     assert (ttl > 500) and (ttl <= 1000)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_ttl_or_pttl_or_expiretime_or_pexpiretime_return_1_if_key_has_no_expire(r: ValkeyTestClient) -> None:
     """
     test {TTL / PTTL / EXPIRETIME / PEXPIRETIME return -1 if key has no expire} {
@@ -380,11 +373,9 @@ def test_ttl_or_pttl_or_expiretime_or_pexpiretime_return_1_if_key_has_no_expire(
     """
     r.run("del", "x")
     r.run("set", "x", "hello")
-    # TODO: list r ttl x r pttl x r expiretime x r pexpiretime x
-    assert False
+    assert [r.run("ttl", "x"), r.run("pttl", "x"), r.run("expiretime", "x"), r.run("pexpiretime", "x")] == "-1 -1 -1 -1"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_ttl_or_pttl_or_expiretime_or_pexpiretime_return_2_if_key_does_not_exit(r: ValkeyTestClient) -> None:
     """
     test {TTL / PTTL / EXPIRETIME / PEXPIRETIME return -2 if key does not exit} {
@@ -393,8 +384,7 @@ def test_ttl_or_pttl_or_expiretime_or_pexpiretime_return_2_if_key_does_not_exit(
     } {-2 -2 -2 -2}
     """
     r.run("del", "x")
-    # TODO: list r ttl x r pttl x r expiretime x r pexpiretime x
-    assert False
+    assert [r.run("ttl", "x"), r.run("pttl", "x"), r.run("expiretime", "x"), r.run("pexpiretime", "x")] == "-2 -2 -2 -2"
 
 
 def test_expiretime_returns_absolute_expiration_time_in_seconds(r: ValkeyTestClient) -> None:
@@ -459,7 +449,6 @@ def test_server_should_actively_expire_keys_incrementally(r: ValkeyTestClient) -
     )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_server_should_lazy_expire_keys(r: ValkeyTestClient) -> None:
     """
     test {Server should lazy expire keys} {
@@ -491,8 +480,7 @@ def test_server_should_lazy_expire_keys(r: ValkeyTestClient) -> None:
     r.run("mget", "key1{t}", "key2{t}", "key3{t}")
     size3 = r.run("dbsize")
     r.run("debug", "set-active-expire", 1)
-    # TODO: list size1 size2 size3
-    assert False
+    assert [size1, size2, size3] == "3 3 0"
 
 
 def test_expire_should_not_resurrect_keys_issue_1026(r: ValkeyTestClient) -> None:
@@ -1884,13 +1872,14 @@ def test_active_expiration_triggers_hashtable_shrink(r: ValkeyTestClient) -> Non
     persistent_keys = 5
     volatile_keys = 100
     total_keys = expr(persistent_keys, "+", volatile_keys)
-    for_("set i 0", "$i < $persistent_keys", "incr i", '            r set "key_$i" "value_$i"\n        ')
-    for_(
-        "set i 0",
-        "$i < $volatile_keys",
-        "incr i",
-        '            r psetex "expire_key_${i}" 100 "expire_value_${i}"\n        ',
-    )
+    i = 0
+    while i < persistent_keys:
+        r.run("set", f"key_{i}", f"value_{i}")
+        i += 1
+    i = 0
+    while i < volatile_keys:
+        r.run("psetex", f"expire_key_{i}", 100, f"expire_value_{i}")
+        i += 1
     table_size_before_expire = main_hash_table_size()
     assert total_keys == r.run("dbsize")
     r.run("debug", "SET-ACTIVE-EXPIRE", 1)
@@ -2022,10 +2011,6 @@ def continue_(*args):
 
 def expr(*args):
     raise NotImplementedError("expr")
-
-
-def for_(*args):
-    raise NotImplementedError("for_")
 
 
 def if_(*args):

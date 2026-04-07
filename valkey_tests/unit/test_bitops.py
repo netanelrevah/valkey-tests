@@ -1221,7 +1221,7 @@ def test_bitpos_or_bitcount_fuzzy_testing_using_setbit(r: ValkeyTestClient) -> N
             r.run("setbit", "str", j, bit)
             foreach(
                 "curr end pos_type",
-                list_(expr(j, ">>", 3), bytes, "byte", j, max, "bit"),
+                [expr(j, ">>", 3), bytes, "byte", j, max, "bit"],
                 "                    # start==end set to bit position\n                    test_one $curr $curr $curr $curr $j $bit $pos_type\n                    # Both start and end are before bit position\n                    if {$curr > 0} {\n                        test_one 0 $curr 0 $curr $j $bit $pos_type\n                    }\n                    # Both start and end are after bit position\n                    if {$curr < [expr $end - 1]} {\n                        test_one [expr $curr + 1] $end [expr $curr + 1] $end $j $bit $pos_type\n                    }\n                    # start is before and end is after bit position\n                    if {$curr > 0 && $curr < [expr $end - 1]} {\n                        test_one 0 $curr [expr $curr +1] $end $j $bit $pos_type\n                    }\n                ",
             )
             r.run("setbit", "str", j, expr(1, "-", bit))

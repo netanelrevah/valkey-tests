@@ -432,13 +432,13 @@ def test_hgetex_command_overwrites_existing_field_ttl_with_bigger_value_1(r: Val
         "create",
         "\\",
         "EX",
-        list_("setup_cmd", "EX", "setup_val", 100000, "bigger_val", 200000),
+        ["setup_cmd", "EX", "setup_val", 100000, "bigger_val", 200000],
         "PX",
-        list_("setup_cmd", "PX", "setup_val", 100000000, "bigger_val", 200000000),
+        ["setup_cmd", "PX", "setup_val", 100000000, "bigger_val", 200000000],
         "EXAT",
-        list_("setup_cmd", "EX", "setup_val", 100000, "bigger_val", expr("[clock seconds] + 200000")),
+        ["setup_cmd", "EX", "setup_val", 100000, "bigger_val", expr("[clock seconds] + 200000")],
         "PXAT",
-        list_("setup_cmd", "PX", "setup_val", 100000000, "bigger_val", expr("[clock milliseconds] + 200000000")),
+        ["setup_cmd", "PX", "setup_val", 100000000, "bigger_val", expr("[clock milliseconds] + 200000000")],
     )
     params = config[command]
     setup_cmd = params["setup_cmd"]
@@ -479,13 +479,13 @@ def test_hgetex_command_overwrites_existing_field_ttl_with_smaller_value_1(r: Va
         "create",
         "\\",
         "EX",
-        list_("setup_cmd", "EX", "setup_val", 100000, "smaller_val", 50000),
+        ["setup_cmd", "EX", "setup_val", 100000, "smaller_val", 50000],
         "PX",
-        list_("setup_cmd", "PX", "setup_val", 100000000, "smaller_val", 50000000),
+        ["setup_cmd", "PX", "setup_val", 100000000, "smaller_val", 50000000],
         "EXAT",
-        list_("setup_cmd", "EX", "setup_val", 100000, "smaller_val", expr("[clock seconds] + 50000")),
+        ["setup_cmd", "EX", "setup_val", 100000, "smaller_val", expr("[clock seconds] + 50000")],
         "PXAT",
-        list_("setup_cmd", "PX", "setup_val", 100000000, "smaller_val", expr("[clock milliseconds] + 50000000")),
+        ["setup_cmd", "PX", "setup_val", 100000000, "smaller_val", expr("[clock milliseconds] + 50000000")],
     )
     params = config[command]
     setup_cmd = params["setup_cmd"]
@@ -2464,7 +2464,7 @@ def test_hexpiretime_multiple_fields_mixed_cases(r: ValkeyTestClient) -> None:
     now = clock("seconds")
     r.run("HEXPIREAT", "myhash", expr("$now + 100"), "FIELDS", 1, "f1")
     out = r.run("HEXPIRETIME", "myhash", "FIELDS", 3, "f1", "f2", "f3")
-    assert list_(expr("$now + 100"), -1, -2) == out
+    assert [expr("$now + 100"), -1, -2] == out
 
 
 def test_hexpiretime_no_fields_keyword(r: ValkeyTestClient) -> None:
@@ -3256,17 +3256,24 @@ def test_hash_encoding_transitions_with_ttl_create_new_fields_with_ttl(r: Valkey
     r.run("DEBUG", "SET-ACTIVE-EXPIRE", 0)
     r.run("HSET", "myhash", "f1", "v1", "f2", "v2")
     set_("listpack", r.run("OBJECT", "ENCODING", "myhash"))
-    for_("set i 3", "$i <= 600", "incr i", '            lappend pairs "f$i" "v$i"\n        ')
+    i = 3
+    while i <= 600:
+        lappend("pairs", f"f{i}", f"v{i}")
+        i += 1
     # TODO: r HSET myhash {*} pairs
     expire_time = get_long_expire_value("HEXPIREAT")
     r.run("HEXPIREAT", "myhash", expire_time, "FIELDS", 5, "f1", "f10", "f100", "f200", "f300")
     set_("hashtable", r.run("OBJECT", "ENCODING", "myhash"))
-    for_(
-        "set i 1",
-        "$i <= 600",
-        "incr i",
-        '            assert_equal "v$i" [r HGET myhash "f$i"]\n            if {$i == 1 || $i == 10 || $i == 100 || $i == 200 || $i == 300} {\n                assert_equal [r HEXPIRETIME myhash FIELDS 1 "f$i"] $expire_time\n            } else {\n                assert_equal [r HTTL myhash FIELDS 1 "f$i"] -1\n            }\n        ',
-    )
+    i = 1
+    while i <= 600:
+        assert f"v{i}" == r.run("HGET", "myhash", f"f{i}")
+        if_(
+            "$i == 1 || $i == 10 || $i == 100 || $i == 200 || $i == 300",
+            '                assert_equal [r HEXPIRETIME myhash FIELDS 1 "f$i"] $expire_time\n            ',
+            "else",
+            '                assert_equal [r HTTL myhash FIELDS 1 "f$i"] -1\n            ',
+        )
+        i += 1
     assert r.run("DEBUG", "SET-ACTIVE-EXPIRE", 1) == "OK"
 
 
@@ -5575,7 +5582,10 @@ def test_active_expiry_reclaims_memory_correctly_with_large_hash_containing_many
     initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     value = string("repeat", "x", 1024)
     num_fields = 10000
-    for_("set i 1", "$i <= $num_fields", "incr i", '            lappend pairs "f$i" $value$i\n        ')
+    i = 1
+    while i <= num_fields:
+        lappend("pairs", f"f{i}", value, i)
+        i += 1
     # TODO: r HSET myhash {*} pairs
     assert 0 == get_keys_with_volatile_items("r")
     assert num_fields == r.run("HLEN", "myhash")
@@ -5595,7 +5605,10 @@ def test_active_expiry_reclaims_memory_correctly_with_large_hash_containing_many
         i += 1
     assert 0 == get_keys_with_volatile_items("r")
     all_field_names = ""
-    for_("set i 2", "$i <= $num_fields", "incr i", '            lappend all_field_names "f$i"\n        ')
+    i = 2
+    while i <= num_fields:
+        lappend("all_field_names", f"f{i}")
+        i += 1
     r.run("HPEXPIRE", "myhash", 100, "FIELDS", expr("$num_fields - 1"), "*", all_field_names)
     wait_for_active_expiry("r", "myhash", 0, initial_expired, num_fields, 350, 100)
     mem_after_expire = r.run("MEMORY", "USAGE", "myhash")
@@ -6401,7 +6414,6 @@ def test_cmd_preserves_existing_ttl_when_incrementing_field_value(r: ValkeyTestC
     assert_morethan(r.run("HTTL", "myhash", "FIELDS", 1, "f1"), 90000)
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd", "inc1", "inc2", "inc3"], [("HINCRBY", 2, 3, 4), ("HINCRBYFLOAT", 2.5, 3.5, 4.5)])
 def test_cmd_handles_mix_of_expired_and_existing_fields_during_increment_operations(
     r: ValkeyTestClient, cmd, inc1, inc2, inc3
@@ -6438,10 +6450,9 @@ def test_cmd_handles_mix_of_expired_and_existing_fields_during_increment_operati
     r.run(cmd, "myhash", "f1", inc1)
     r.run(cmd, "myhash", "f2", inc2)
     r.run(cmd, "myhash", "f3", inc3)
-    # TODO: assert_equal "$inc1 [expr {$inc2+2}] $inc3" r HMGET myhash f1 f2 f3
+    assert f"{inc1} [expr {{{inc2}+2}}] {inc3}" == r.run("HMGET", "myhash", "f1", "f2", "f3")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd", "inc1", "inc2", "inc3"], [("HINCRBY", 2, 3, 4), ("HINCRBYFLOAT", 2.5, 3.5, 4.5)])
 def test_cmd_maintains_ttl_values_when_incrementing_fields_with_existing_expiry(
     r: ValkeyTestClient, cmd, inc1, inc2, inc3
@@ -6471,7 +6482,7 @@ def test_cmd_maintains_ttl_values_when_incrementing_fields_with_existing_expiry(
     r.run("HEXPIRE", "myhash", 100000, "FIELDS", 2, "f1", "f3")
     r.run(cmd, "myhash", "f1", inc1)
     r.run(cmd, "myhash", "f3", "-$inc3")
-    # TODO: assert_equal "[expr {$inc1+1}] 2 [expr {-$inc3+3}]" r HMGET myhash f1 f2 f3
+    assert f"[expr {{{inc1}+1}}] 2 [expr {{-{inc3}+3}}]" == r.run("HMGET", "myhash", "f1", "f2", "f3")
 
 
 def test_hdel_removes_both_expired_and_non_expired_fields_deleting_key_when_empty(r: ValkeyTestClient) -> None:
@@ -7593,10 +7604,6 @@ def expr(*args):
     raise NotImplementedError("expr")
 
 
-def for_(*args):
-    raise NotImplementedError("for_")
-
-
 def get_calls(*args):
     raise NotImplementedError("get_calls")
 
@@ -7637,8 +7644,8 @@ def info_field(*args):
     raise NotImplementedError("info_field")
 
 
-def list_(*args):
-    raise NotImplementedError("list_")
+def lappend(*args):
+    raise NotImplementedError("lappend")
 
 
 def lmap(*args):
@@ -7655,6 +7662,10 @@ def proc(*args):
 
 def psubscribe(*args):
     raise NotImplementedError("psubscribe")
+
+
+def regexp(*args):
+    raise NotImplementedError("regexp")
 
 
 def set_(*args):

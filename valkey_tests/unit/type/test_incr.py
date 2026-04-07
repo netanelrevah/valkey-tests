@@ -225,7 +225,6 @@ def test_incr_can_modify_objects_in_place(r: ValkeyTestClient) -> None:
     assert old == new
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_incrbyfloat_against_non_existing_key(r: ValkeyTestClient) -> None:
     """
     test {INCRBYFLOAT against non existing key} {
@@ -237,8 +236,12 @@ def test_incrbyfloat_against_non_existing_key(r: ValkeyTestClient) -> None:
     } {1 1 1.25 1.25}
     """
     r.run("del", "novar")
-    # TODO: list roundFloat [r incrbyfloat novar 1] roundFloat [r get novar] roundFloat [r incrbyfloat novar 0.25] roundFloat [r get novar]
-    assert False
+    assert [
+        round_float(r.run("incrbyfloat", "novar", 1)),
+        round_float(r.run("get", "novar")),
+        round_float(r.run("incrbyfloat", "novar", 0.25)),
+        round_float(r.run("get", "novar")),
+    ] == "1 1 1.25 1.25"
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -537,6 +540,10 @@ def if_(*args):
 
 def lappend(*args):
     raise NotImplementedError("lappend")
+
+
+def round_float(*args):
+    raise NotImplementedError("round_float")
 
 
 def split(*args):

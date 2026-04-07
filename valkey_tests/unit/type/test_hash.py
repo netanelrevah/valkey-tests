@@ -7,7 +7,6 @@ from tests.valkey_test_client import ValkeyTestClient
 pytestmark = [pytest.mark.hash]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hset_or_hlen_small_hash_creation(r: ValkeyTestClient) -> None:
     """
     test {HSET/HLEN - Small hash creation} {
@@ -34,8 +33,7 @@ def test_hset_or_hlen_small_hash_creation(r: ValkeyTestClient) -> None:
         r.run("hset", "smallhash", key, val)
         set_("smallhash($key)", val)
         i += 1
-    # TODO: list r hlen smallhash
-    assert False
+    assert [r.run("hlen", "smallhash")] == "8"
 
 
 def test_is_the_small_hash_encoded_with_a_listpack(r: ValkeyTestClient) -> None:
@@ -388,7 +386,6 @@ r config set hash-max-ziplist-value original_max_value
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hset_or_hlen_big_hash_creation(r: ValkeyTestClient) -> None:
     """
     test {HSET/HLEN - Big hash creation} {
@@ -415,8 +412,7 @@ def test_hset_or_hlen_big_hash_creation(r: ValkeyTestClient) -> None:
         r.run("hset", "bighash", key, val)
         set_("bighash($key)", val)
         i += 1
-    # TODO: list r hlen bighash
-    assert False
+    assert [r.run("hlen", "bighash")] == "1024"
 
 
 def test_is_the_big_hash_encoded_with_an_hash_table(r: ValkeyTestClient) -> None:
@@ -1119,7 +1115,6 @@ def test_is_a_ziplist_encoded_hash_promoted_on_big_payload(r: ValkeyTestClient) 
     assert r.run("debug", "object", "smallhash") == "*hashtable*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hincrby_against_non_existing_database_key(r: ValkeyTestClient) -> None:
     """
     test {HINCRBY against non existing database key} {
@@ -1128,8 +1123,7 @@ def test_hincrby_against_non_existing_database_key(r: ValkeyTestClient) -> None:
     } {2}
     """
     r.run("del", "htest")
-    # TODO: list r hincrby htest foo 2
-    assert False
+    assert [r.run("hincrby", "htest", "foo", 2)] == "2"
 
 
 def test_hincrby_hincrbyfloat_against_non_integer_increment_value(r: ValkeyTestClient) -> None:
@@ -1191,7 +1185,6 @@ def test_hincrby_against_hash_key_created_by_hincrby_itself(r: ValkeyTestClient)
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hincrby_against_hash_key_originally_set_with_hset(r: ValkeyTestClient) -> None:
     """
     test {HINCRBY against hash key originally set with HSET} {
@@ -1202,11 +1195,9 @@ def test_hincrby_against_hash_key_originally_set_with_hset(r: ValkeyTestClient) 
     """
     r.run("hset", "smallhash", "tmp", 100)
     r.run("hset", "bighash", "tmp", 100)
-    # TODO: list r hincrby smallhash tmp 2 r hincrby bighash tmp 2
-    assert False
+    assert [r.run("hincrby", "smallhash", "tmp", 2), r.run("hincrby", "bighash", "tmp", 2)] == "102 102"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hincrby_over_32bit_value(r: ValkeyTestClient) -> None:
     """
     test {HINCRBY over 32bit value} {
@@ -1217,11 +1208,9 @@ def test_hincrby_over_32bit_value(r: ValkeyTestClient) -> None:
     """
     r.run("hset", "smallhash", "tmp", 17179869184)
     r.run("hset", "bighash", "tmp", 17179869184)
-    # TODO: list r hincrby smallhash tmp 1 r hincrby bighash tmp 1
-    assert False
+    assert [r.run("hincrby", "smallhash", "tmp", 1), r.run("hincrby", "bighash", "tmp", 1)] == "17179869185 17179869185"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hincrby_over_32bit_value_with_over_32bit_increment(r: ValkeyTestClient) -> None:
     """
     test {HINCRBY over 32bit value with over 32bit increment} {
@@ -1232,8 +1221,10 @@ def test_hincrby_over_32bit_value_with_over_32bit_increment(r: ValkeyTestClient)
     """
     r.run("hset", "smallhash", "tmp", 17179869184)
     r.run("hset", "bighash", "tmp", 17179869184)
-    # TODO: list r hincrby smallhash tmp 17179869184 r hincrby bighash tmp 17179869184
-    assert False
+    assert [
+        r.run("hincrby", "smallhash", "tmp", 17179869184),
+        r.run("hincrby", "bighash", "tmp", 17179869184),
+    ] == "34359738368 34359738368"
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1314,7 +1305,6 @@ def test_hincrby_can_detect_overflows(r: ValkeyTestClient) -> None:
     assert e == "*overflow*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hincrbyfloat_against_non_existing_database_key(r: ValkeyTestClient) -> None:
     """
     test {HINCRBYFLOAT against non existing database key} {
@@ -1323,8 +1313,7 @@ def test_hincrbyfloat_against_non_existing_database_key(r: ValkeyTestClient) -> 
     } {2.5}
     """
     r.run("del", "htest")
-    # TODO: list r hincrbyfloat htest foo 2.5
-    assert False
+    assert [r.run("hincrbyfloat", "htest", "foo", 2.5)] == "2.5"
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1369,7 +1358,6 @@ def test_hincrbyfloat_against_hash_key_created_by_hincrby_itself(r: ValkeyTestCl
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hincrbyfloat_against_hash_key_originally_set_with_hset(r: ValkeyTestClient) -> None:
     """
     test {HINCRBYFLOAT against hash key originally set with HSET} {
@@ -1381,11 +1369,12 @@ def test_hincrbyfloat_against_hash_key_originally_set_with_hset(r: ValkeyTestCli
     """
     r.run("hset", "smallhash", "tmp", 100)
     r.run("hset", "bighash", "tmp", 100)
-    # TODO: list roundFloat [r hincrbyfloat smallhash tmp 2.5] roundFloat [r hincrbyfloat bighash tmp 2.5]
-    assert False
+    assert [
+        round_float(r.run("hincrbyfloat", "smallhash", "tmp", 2.5)),
+        round_float(r.run("hincrbyfloat", "bighash", "tmp", 2.5)),
+    ] == "102.5 102.5"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hincrbyfloat_over_32bit_value(r: ValkeyTestClient) -> None:
     """
     test {HINCRBYFLOAT over 32bit value} {
@@ -1397,11 +1386,12 @@ def test_hincrbyfloat_over_32bit_value(r: ValkeyTestClient) -> None:
     """
     r.run("hset", "smallhash", "tmp", 17179869184)
     r.run("hset", "bighash", "tmp", 17179869184)
-    # TODO: list r hincrbyfloat smallhash tmp 1 r hincrbyfloat bighash tmp 1
-    assert False
+    assert [
+        r.run("hincrbyfloat", "smallhash", "tmp", 1),
+        r.run("hincrbyfloat", "bighash", "tmp", 1),
+    ] == "17179869185 17179869185"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hincrbyfloat_over_32bit_value_with_over_32bit_increment(r: ValkeyTestClient) -> None:
     """
     test {HINCRBYFLOAT over 32bit value with over 32bit increment} {
@@ -1413,8 +1403,10 @@ def test_hincrbyfloat_over_32bit_value_with_over_32bit_increment(r: ValkeyTestCl
     """
     r.run("hset", "smallhash", "tmp", 17179869184)
     r.run("hset", "bighash", "tmp", 17179869184)
-    # TODO: list r hincrbyfloat smallhash tmp 17179869184 r hincrbyfloat bighash tmp 17179869184
-    assert False
+    assert [
+        r.run("hincrbyfloat", "smallhash", "tmp", 17179869184),
+        r.run("hincrbyfloat", "bighash", "tmp", 17179869184),
+    ] == "34359738368 34359738368"
 
 
 @pytest.mark.xfail(reason="not implemented")

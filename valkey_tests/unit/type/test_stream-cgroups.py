@@ -680,7 +680,6 @@ def test_xread_and_xreadgroup_against_wrong_parameter(r: ValkeyTestClient) -> No
         r.run("XREAD", "COUNT", 1, "STREAMS", "mystream")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_blocking_xread_key_deleted(r: ValkeyTestClient) -> None:
     """
     test {Blocking XREAD: key deleted} {
@@ -700,7 +699,7 @@ def test_blocking_xread_key_deleted(r: ValkeyTestClient) -> None:
     r.run("DEL", "mystream")
     r.run("XADD", "mystream", 666, "f", "v")
     rd = valkey_deferring_client()
-    # TODO: $rd XREAD BLOCK 0 STREAMS mystream "$"
+    rd.run("XREAD", "BLOCK", 0, "STREAMS", "mystream", "$")
     wait_for_blocked_clients_count(1)
     r.run("DEL", "mystream")
     r.run("XADD", "mystream", 667, "f", "v")
@@ -709,7 +708,6 @@ def test_blocking_xread_key_deleted(r: ValkeyTestClient) -> None:
     rd.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_blocking_xread_key_type_changed_with_set(r: ValkeyTestClient) -> None:
     """
     test {Blocking XREAD: key type changed with SET} {
@@ -730,7 +728,7 @@ def test_blocking_xread_key_type_changed_with_set(r: ValkeyTestClient) -> None:
     r.run("DEL", "mystream")
     r.run("XADD", "mystream", 666, "f", "v")
     rd = valkey_deferring_client()
-    # TODO: $rd XREAD BLOCK 0 STREAMS mystream "$"
+    rd.run("XREAD", "BLOCK", 0, "STREAMS", "mystream", "$")
     wait_for_blocked_clients_count(1)
     r.run("SET", "mystream", "val1")
     r.run("DEL", "mystream")

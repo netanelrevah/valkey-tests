@@ -1,4 +1,4 @@
-# ruff: noqa: F841, ANN002, ANN201
+# ruff: noqa: ANN002, ANN201
 from fnmatch import fnmatch
 
 import pytest
@@ -29,7 +29,6 @@ r module load testmodule
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_blocked_clients_time_tracking_check_blocked_command_that_uses_redismodule_blockedclientmeasuretimestart_is_tracking_background_time(
     r: ValkeyTestClient,
 ) -> None:
@@ -81,7 +80,7 @@ def test_blocked_clients_time_tracking_check_blocked_command_that_uses_redismodu
         "usec",
         "usec_per_call",
     )
-    # TODO: regexp "p50=(.+\..+)" latencystatline_debug -> p50
+    regexp("p50=(.+\\..+)", latencystatline_debug, "->", "p50")
     assert_("$usec >= 100000")
     assert_("$usec_per_call >= 100000")
     assert_("$p50 >= 100000")

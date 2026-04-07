@@ -1,5 +1,4 @@
 # ruff: noqa: PLR2004, F841, RUF043, ANN002, ANN201
-
 from fnmatch import fnmatch
 
 import pytest
@@ -614,12 +613,16 @@ def test_pfcount_multiple_keys_merge_returns_cardinality_of_union_1(r: ValkeyTes
     }
     """
     r.run("del", "hll1{t}", "hll2{t}", "hll3{t}")
-    for_(
-        "set x 1",
-        "$x < 10000",
-        "incr x",
-        '            r pfadd hll1{t} "foo-$x"\n            r pfadd hll2{t} "bar-$x"\n            r pfadd hll3{t} "zap-$x"\n\n            set card [r pfcount hll1{t} hll2{t} hll3{t}]\n            set realcard [expr {$x*3}]\n            set err [expr {abs($card-$realcard)}]\n            assert {$err < (double($card)/100)*5}\n        ',
-    )
+    x = 1
+    while x < 10000:
+        r.run("pfadd", "hll1{t}", f"foo-{x}")
+        r.run("pfadd", "hll2{t}", f"bar-{x}")
+        r.run("pfadd", "hll3{t}", f"zap-{x}")
+        card = r.run("pfcount", "hll1{t}", "hll2{t}", "hll3{t}")
+        realcard = expr("$x*3")
+        err = expr("abs($card-$realcard)")
+        assert_("$err < (double($card)/100)*5")
+        x += 1
 
 
 def test_pfcount_multiple_keys_merge_returns_cardinality_of_union_2(r: ValkeyTestClient) -> None:

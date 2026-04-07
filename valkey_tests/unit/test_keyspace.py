@@ -24,7 +24,6 @@ def test_del_against_a_single_item(r: ValkeyTestClient) -> None:
     r.run("get", "x")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_vararg_del(r: ValkeyTestClient) -> None:
     """
     test {Vararg DEL} {
@@ -37,8 +36,10 @@ def test_vararg_del(r: ValkeyTestClient) -> None:
     r.run("set", "foo1{t}", "a")
     r.run("set", "foo2{t}", "b")
     r.run("set", "foo3{t}", "c")
-    # TODO: list r del foo1{t} foo2{t} foo3{t} foo4{t} r mget foo1{t} foo2{t} foo3{t}
-    assert False
+    assert [
+        r.run("del", "foo1{t}", "foo2{t}", "foo3{t}", "foo4{t}"),
+        r.run("mget", "foo1{t}", "foo2{t}", "foo3{t}"),
+    ] == "3 {{} {} {}}"
 
 
 def test_untagged_multi_key_commands(r: ValkeyTestClient) -> None:
@@ -100,8 +101,8 @@ def test_keys_with_hashtag(r: ValkeyTestClient) -> None:
     }
     """
     foreach("key", '"{a}x" "{a}y" "{a}z" "{b}a" "{b}b" "{b}c"', "            r set $key hello\n        ")
-    assert lsort(r.run("keys", "{a}*")) == list_("{a}x", "{a}y", "{a}z")
-    assert lsort(r.run("keys", "*{b}*")) == list_("{b}a", "{b}b", "{b}c")
+    assert lsort(r.run("keys", "{a}*")) == ["{a}x", "{a}y", "{a}z"]
+    assert lsort(r.run("keys", "*{b}*")) == ["{b}a", "{b}b", "{b}c"]
 
 
 def test_del_all_keys(r: ValkeyTestClient) -> None:
@@ -1016,7 +1017,6 @@ def test_set_or_get_keys_in_different_dbs(r: ValkeyTestClient) -> None:
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_randomkey(r: ValkeyTestClient) -> None:
     """
     test {RANDOMKEY} {
@@ -1050,8 +1050,7 @@ def test_randomkey(r: ValkeyTestClient) -> None:
         if rkey == "bar":
             bar_seen = 1
         i += 1
-    # TODO: list foo_seen bar_seen
-    assert False
+    assert [foo_seen, bar_seen] == "1 1"
 
 
 def test_randomkey_against_empty_db(r: ValkeyTestClient) -> None:
@@ -1260,10 +1259,6 @@ def if_(*args):
 
 def lappend(*args):
     raise NotImplementedError("lappend")
-
-
-def list_(*args):
-    raise NotImplementedError("list_")
 
 
 def lsort(*args):

@@ -373,7 +373,6 @@ def test_become_replica_while_having_async_rm_call_running(r: ValkeyTestClient) 
     rd.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_pipeline_with_blocking_rm_call(r: ValkeyTestClient) -> None:
     """
     test {Pipeline with blocking RM_Call} {
@@ -399,8 +398,8 @@ def test_pipeline_with_blocking_rm_call(r: ValkeyTestClient) -> None:
     r.run("flushall")
     rd = valkey_deferring_client()
     buf = ""
-    # TODO: append buf "do_rm_call_async blpop l 0\r\n"
-    # TODO: append buf "ping\r\n"
+    append("buf", "do_rm_call_async blpop l 0\\r\\n")
+    append("buf", "ping\\r\\n")
     rd.run("write", buf)
     rd.run("flush")
     wait_for_blocked_clients_count(1)
@@ -790,6 +789,10 @@ def test_test_unblock_handler_on_module_blocked_on_keys(r: ValkeyTestClient) -> 
 
 
 # --- stubs for unimplemented TCL helpers ---
+
+
+def append(*args):
+    raise NotImplementedError("append")
 
 
 def assert_error(*args):

@@ -461,12 +461,15 @@ def test_maxmemory_policy_policy_should_only_remove_volatile_keys(r: ValkeyTestC
     err = 0
     j = 0
     while j < numkeys:
-        catch('r setex "foo:$j" 10000 x')
+        try:
+            r.run("setex", f"foo:{j}", 10000, "x")
+        except Exception:
+            pass
         j += 1
     assert_("[s used_memory] < ($limit+4096)")
     j = 0
     while j < numkeys:
-        assert_('[r exists "key:$j"]')
+        assert r.run("exists", f"key:{j}")
         j += 2
 
 

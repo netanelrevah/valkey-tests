@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, ANN002, ANN201
+# ruff: noqa: PLR2004, ANN001, ANN002, ANN201
 
 import pytest
 
@@ -7,7 +7,7 @@ from tests.valkey_test_client import ValkeyTestClient
 pytestmark = [pytest.mark.pubsubshard_external_skip]
 
 
-def test_spublish_or_ssubscribe_basics(r: ValkeyTestClient) -> None:
+def test_spublish_or_ssubscribe_basics(r: ValkeyTestClient, rd1) -> None:
     """
     test "SPUBLISH/SSUBSCRIBE basics" {
         set rd1 [valkey_deferring_client]
@@ -80,7 +80,7 @@ def test_spublish_or_ssubscribe_with_two_clients(r: ValkeyTestClient) -> None:
     rd2.run("close")
 
 
-def test_spublish_or_ssubscribe_after_unsubscribe_without_arguments(r: ValkeyTestClient) -> None:
+def test_spublish_or_ssubscribe_after_unsubscribe_without_arguments(r: ValkeyTestClient, rd1) -> None:
     """
     test "SPUBLISH/SSUBSCRIBE after UNSUBSCRIBE without arguments" {
         set rd1 [valkey_deferring_client]

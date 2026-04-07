@@ -1,4 +1,4 @@
-# ruff: noqa: RUF043, ANN002, ANN201
+# ruff: noqa: PLR2004, RUF043, ANN002, ANN201
 
 import pytest
 
@@ -138,7 +138,10 @@ def test_module_zset_rangebylex(r: ValkeyTestClient) -> None:
     r.run("del", "k")
     r.run("config", "set", "zset-max-listpack-entries", 2)
     r.run("config", "set", "zset-max-listpack-value", 64)
-    for_("set i 0", "$i < 4", "incr i", '            r zadd k 0 "ele$i"\n        ')
+    i = 0
+    while i < 4:
+        r.run("zadd", "k", 0, f"ele{i}")
+        i += 1
     assert "ele0 ele1 ele2 ele3" == r.run("zset.rangebylex", "k", "-", "+")
     assert "ele3 ele2 ele1 ele0" == r.run("zset.revrangebylex", "k", "-", "+")
     assert "ele1 ele2" == r.run("zset.rangebylex", "k", "(ele0", "(ele3")
@@ -146,7 +149,10 @@ def test_module_zset_rangebylex(r: ValkeyTestClient) -> None:
     r.run("del", "k")
     r.run("config", "set", "zset-max-listpack-entries", 128)
     r.run("config", "set", "zset-max-listpack-value", 64)
-    for_("set i 0", "$i < 4", "incr i", '            r zadd k 0 "ele$i"\n        ')
+    i = 0
+    while i < 4:
+        r.run("zadd", "k", 0, f"ele{i}")
+        i += 1
     assert "ele0 ele1 ele2 ele3" == r.run("zset.rangebylex", "k", "-", "+")
     assert "ele3 ele2 ele1 ele0" == r.run("zset.revrangebylex", "k", "-", "+")
     assert "ele1 ele2" == r.run("zset.rangebylex", "k", "(ele0", "(ele3")
@@ -192,12 +198,18 @@ def test_module_zset_members(r: ValkeyTestClient) -> None:
     r.run("del", "k")
     r.run("config", "set", "zset-max-listpack-entries", 2)
     r.run("config", "set", "zset-max-listpack-value", 64)
-    for_("set i 0", "$i < 4", "incr i", '            r zadd k 0 "ele$i"\n        ')
+    i = 0
+    while i < 4:
+        r.run("zadd", "k", 0, f"ele{i}")
+        i += 1
     assert "ele0 ele1 ele2 ele3" == lsort(r.run("zset.members", "k"))
     r.run("del", "k")
     r.run("config", "set", "zset-max-listpack-entries", 128)
     r.run("config", "set", "zset-max-listpack-value", 64)
-    for_("set i 0", "$i < 4", "incr i", '            r zadd k 0 "ele$i"\n        ')
+    i = 0
+    while i < 4:
+        r.run("zadd", "k", 0, f"ele{i}")
+        i += 1
     assert "ele0 ele1 ele2 ele3" == lsort(r.run("zset.members", "k"))
 
 
@@ -211,10 +223,6 @@ def test_unload_the_module_zset(r: ValkeyTestClient) -> None:
 
 
 # --- stubs for unimplemented TCL helpers ---
-
-
-def for_(*args):
-    raise NotImplementedError("for_")
 
 
 def lsort(*args):

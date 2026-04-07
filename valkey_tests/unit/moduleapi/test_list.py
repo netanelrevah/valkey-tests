@@ -190,7 +190,6 @@ def test_module_list_encoding_conversion_while_inserting(r: ValkeyTestClient) ->
     assert r.run("list.getall", "k") == "c d"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_list_encoding_conversion_while_replacing(r: ValkeyTestClient) -> None:
     """
     test {Module list - encoding conversion while replacing} {
@@ -218,7 +217,7 @@ def test_module_list_encoding_conversion_while_replacing(r: ValkeyTestClient) ->
     big = string("repeat", "x", 4096)
     r.run("list.edit", "k", "r", big)
     assert_encoding("quicklist", "k")
-    # TODO: assert_equal r list.getall k "$big y z"
+    assert r.run("list.getall", "k") == f"{big} y z"
     r.run("list.edit", "k", "d")
     assert_encoding("listpack", "k")
     assert r.run("list.getall", "k") == "y z"

@@ -504,7 +504,7 @@ def test_test_multiple_clients_can_be_queued_up_and_unblocked(r: ValkeyTestClien
     }
     """
     r.run("client", "PAUSE", 60000, "WRITE")
-    clients = list_(valkey_deferring_client(), valkey_deferring_client(), valkey_deferring_client())
+    clients = [valkey_deferring_client(), valkey_deferring_client(), valkey_deferring_client()]
     foreach("client", clients, "            $client SET FOO BAR\n        ")
     wait_for_blocked_clients_count(3, 50, 100)
     r.run("client", "unpause")
@@ -884,10 +884,6 @@ def expr(*args):
 
 def foreach(*args):
     raise NotImplementedError("foreach")
-
-
-def list_(*args):
-    raise NotImplementedError("list_")
 
 
 def s(*args):

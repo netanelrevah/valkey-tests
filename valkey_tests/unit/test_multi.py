@@ -21,7 +21,6 @@ proc wait_for_dbsize {size} {
 pytestmark = [pytest.mark.multi]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_multi_or_exec_basics(r: ValkeyTestClient) -> None:
     """
     test {MULTI / EXEC basics} {
@@ -44,11 +43,9 @@ def test_multi_or_exec_basics(r: ValkeyTestClient) -> None:
     v1 = r.run("lrange", "mylist", 0, -1)
     v2 = r.run("ping")
     v3 = r.run("exec")
-    # TODO: list v1 v2 v3
-    assert False
+    assert [v1, v2, v3] == "QUEUED QUEUED {{a b c} PONG}"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_discard(r: ValkeyTestClient) -> None:
     """
     test {DISCARD} {
@@ -71,8 +68,7 @@ def test_discard(r: ValkeyTestClient) -> None:
     v1 = r.run("del", "mylist")
     v2 = r.run("discard")
     v3 = r.run("lrange", "mylist", 0, -1)
-    # TODO: list v1 v2 v3
-    assert False
+    assert [v1, v2, v3] == "QUEUED OK {a b c}"
 
 
 def test_nested_multi_are_not_allowed(r: ValkeyTestClient) -> None:
@@ -90,7 +86,6 @@ def test_nested_multi_are_not_allowed(r: ValkeyTestClient) -> None:
         r.run("exec")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_multi_where_commands_alter_argc_or_argv(r: ValkeyTestClient) -> None:
     """
     test {MULTI where commands alter argc/argv} {
@@ -103,8 +98,7 @@ def test_multi_where_commands_alter_argc_or_argv(r: ValkeyTestClient) -> None:
     r.run("sadd", "myset", "a")
     r.run("multi")
     r.run("spop", "myset")
-    # TODO: list r exec r exists myset
-    assert False
+    assert [r.run("exec"), r.run("exists", "myset")] == "a 0"
 
 
 def test_watch_inside_multi_is_not_allowed(r: ValkeyTestClient) -> None:
@@ -122,7 +116,6 @@ def test_watch_inside_multi_is_not_allowed(r: ValkeyTestClient) -> None:
         r.run("exec")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_exec_fails_if_there_are_errors_while_queueing_commands_1(r: ValkeyTestClient) -> None:
     """
     test {EXEC fails if there are errors while queueing commands #1} {
@@ -149,11 +142,9 @@ def test_exec_fails_if_there_are_errors_while_queueing_commands_1(r: ValkeyTestC
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "EXECABORT*")
-    # TODO: list r exists foo1{t} r exists foo2{t}
-    assert False
+    assert [r.run("exists", "foo1{t}"), r.run("exists", "foo2{t}")] == "0 0"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_exec_fails_if_there_are_errors_while_queueing_commands_2(r: ValkeyTestClient) -> None:
     """
     test {EXEC fails if there are errors while queueing commands #2} {
@@ -192,8 +183,7 @@ def test_exec_fails_if_there_are_errors_while_queueing_commands_2(r: ValkeyTestC
         e = str(_catch_err)
     assert fnmatch(str(e), "EXECABORT*")
     rd.run("close")
-    # TODO: list r exists foo1{t} r exists foo2{t}
-    assert False
+    assert [r.run("exists", "foo1{t}"), r.run("exists", "foo2{t}")] == "0 0"
 
 
 def test_if_exec_aborts_the_client_multi_state_is_cleared(r: ValkeyTestClient) -> None:
@@ -1509,8 +1499,7 @@ def test_blocking_commands_ignores_the_timeout(r: ValkeyTestClient) -> None:
     # TODO: r xread BLOCK 0 STREAMS s{t}
     r.run("xreadgroup", "group", "g", "c", "BLOCK", 0, "STREAMS", "s{t}", ">")
     res = r.run("exec")
-    # TODO: list m res
-    assert False
+    assert [m, res] == "OK {{} {} {} {} {} {} {} {}}"
 
 
 def test_multi_propagation_of_publish(r: ValkeyTestClient) -> None:

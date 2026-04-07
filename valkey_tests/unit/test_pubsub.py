@@ -40,9 +40,8 @@ $rd1 read
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["resp"], [(2), (3)])
-def test_pub_or_sub_ping_on_resp_resp(r: ValkeyTestClient, resp) -> None:
+def test_pub_or_sub_ping_on_resp_resp(r: ValkeyTestClient, resp, rd1) -> None:
     """
     test "Pub/Sub PING on RESP$resp" {
         subscribe $rd1 somechannel
@@ -66,18 +65,18 @@ def test_pub_or_sub_ping_on_resp_resp(r: ValkeyTestClient, resp) -> None:
         assert_equal {PONG} [$rd1 read]
     }
     """
-    # TODO: subscribe rd1 somechannel
-    # TODO: $rd1 ping
-    # TODO: $rd1 ping "foo"
+    subscribe(rd1, "somechannel")
+    rd1.run("ping")
+    rd1.run("ping", "foo")
     if_(
         "$resp == 3",
         "                assert_equal {PONG} [$rd1 read]\n                assert_equal {foo} [$rd1 read]\n            ",
         "else",
         "                assert_equal {pong {}} [$rd1 read]\n                assert_equal {pong foo} [$rd1 read]\n            ",
     )
-    # TODO: unsubscribe rd1 somechannel
-    # TODO: $rd1 ping
-    # TODO: assert_equal {PONG} $rd1 read
+    unsubscribe(rd1, "somechannel")
+    rd1.run("ping")
+    assert "PONG" == rd1.run("read")
 
 
 """
@@ -85,7 +84,7 @@ $rd1 close
 """
 
 
-def test_publish_or_subscribe_basics(r: ValkeyTestClient) -> None:
+def test_publish_or_subscribe_basics(r: ValkeyTestClient, rd1) -> None:
     """
     test "PUBLISH/SUBSCRIBE basics" {
         set rd1 [valkey_deferring_client]
@@ -156,7 +155,7 @@ def test_publish_or_subscribe_with_two_clients(r: ValkeyTestClient) -> None:
     rd2.run("close")
 
 
-def test_publish_or_subscribe_after_unsubscribe_without_arguments(r: ValkeyTestClient) -> None:
+def test_publish_or_subscribe_after_unsubscribe_without_arguments(r: ValkeyTestClient, rd1) -> None:
     """
     test "PUBLISH/SUBSCRIBE after UNSUBSCRIBE without arguments" {
         set rd1 [valkey_deferring_client]
@@ -302,7 +301,7 @@ def test_publish_or_psubscribe_with_two_clients(r: ValkeyTestClient) -> None:
     rd2.run("close")
 
 
-def test_publish_or_psubscribe_after_punsubscribe_without_arguments(r: ValkeyTestClient) -> None:
+def test_publish_or_psubscribe_after_punsubscribe_without_arguments(r: ValkeyTestClient, rd1) -> None:
     """
     test "PUBLISH/PSUBSCRIBE after PUNSUBSCRIBE without arguments" {
         set rd1 [valkey_deferring_client]
@@ -406,7 +405,7 @@ def test_numsub_returns_numbers_not_strings_1561(r: ValkeyTestClient) -> None:
     assert r.run("pubsub", "numsub", "abc", "def") == "abc 0 def 0"
 
 
-def test_numpats_returns_the_number_of_unique_patterns(r: ValkeyTestClient) -> None:
+def test_numpats_returns_the_number_of_unique_patterns(r: ValkeyTestClient, rd1, rd2) -> None:
     """
     test "NUMPATs returns the number of unique patterns" {
         set rd1 [valkey_deferring_client]

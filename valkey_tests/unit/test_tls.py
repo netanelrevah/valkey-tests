@@ -1,5 +1,7 @@
 # ruff: noqa: F841, ANN002, ANN201
 
+from fnmatch import fnmatch
+
 import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
@@ -222,12 +224,12 @@ def test_tls_verify_tls_cert_file_is_also_used_as_a_client_cert_if_none_specifie
     valkey_crt = format_("%s/tests/tls/valkey.crt", pwd())
     valkey_key = format_("%s/tests/tls/valkey.key", pwd())
     start_server(
-        list_(
+        [
             "overrides",
-            list_("tls-cert-file", valkey_crt, "tls-key-file", valkey_key),
+            ["tls-cert-file", valkey_crt, "tls-key-file", valkey_key],
             "omit",
-            list_("tls-client-cert-file", "tls-client-key-file"),
-        ),
+            ["tls-client-cert-file", "tls-client-key-file"],
+        ],
         '                set replica [srv 0 client]\n                $replica replicaof $master_host $master_port\n                wait_for_condition 30 100 {\n                    [string match {*master_link_status:up*} [$replica info replication]]\n                } else {\n                    fail "Can\'t authenticate to master using just tls-cert-file!"\n                }\n            ',
     )
 
@@ -276,7 +278,6 @@ def test_tls_switch_between_tcp_and_tls_ports(r: ValkeyTestClient) -> None:
     rd.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.skipif("", reason="{$::tls}")
 def test_tls_working_with_an_encrypted_keyfile(r: ValkeyTestClient) -> None:
     """
@@ -296,12 +297,27 @@ def test_tls_working_with_an_encrypted_keyfile(r: ValkeyTestClient) -> None:
     }
     """
     keyfile = r.run("config", "get", "tls-key-file")[1]
-    # TODO: set keyfile_encrypted "$keyfile.encrypted"
-    # TODO: exec -ignorestderr openssl rsa -in keyfile -out keyfile_encrypted -aes256 -passout pass:1234 2>/dev/null
-    catch("r config set tls-key-file $keyfile_encrypted", "e")
-    # TODO: assert_match {*Unable to update TLS*} e
+    keyfile_encrypted = f"{keyfile}.encrypted"
+    exec_(
+        "-ignorestderr",
+        "openssl",
+        "rsa",
+        "-in",
+        keyfile,
+        "-out",
+        keyfile_encrypted,
+        "-aes256",
+        "-passout",
+        "pass:1234",
+        "2>/dev/null",
+    )
+    try:
+        e = r.run("config", "set", "tls-key-file", keyfile_encrypted)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*Unable to update TLS*")
     r.run("config", "set", "tls-key-file-pass", 1234)
-    # TODO: r config set tls-key-file keyfile_encrypted
+    r.run("config", "set", "tls-key-file", keyfile_encrypted)
 
 
 @pytest.mark.skipif("", reason="{$::tls}")
@@ -334,7 +350,6 @@ def test_tls_auto_authenticate_using_tls_auth_clients_user_cn(r: ValkeyTestClien
     s.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.skipif("", reason="{$::tls}")
 def test_tls_auto_reload_detects_changes(r: ValkeyTestClient) -> None:
     """
@@ -429,10 +444,10 @@ def test_tls_auto_reload_detects_changes(r: ValkeyTestClient) -> None:
     )
     orig_server_crt = r.run("config", "get", "tls-cert-file")[1]
     orig_server_key = r.run("config", "get", "tls-key-file")[1]
-    # TODO: set temp_crt "$orig_server_crt.temp"
-    # TODO: set temp_key "$orig_server_key.temp"
-    # TODO: file copy -force orig_server_crt temp_crt
-    # TODO: file copy -force orig_server_key temp_key
+    temp_crt = f"{orig_server_crt}.temp"
+    temp_key = f"{orig_server_key}.temp"
+    file("copy", "-force", orig_server_crt, temp_crt)
+    file("copy", "-force", orig_server_key, temp_key)
     try_(
         '                # Update server to use temporary certificate files\n                r CONFIG SET tls-cert-file $temp_crt tls-key-file $temp_key\n\n                # Enable auto-reload with 1 second interval for faster testing\n                r CONFIG SET tls-auto-reload-interval 1\n\n                # Verify initial connection works\n                set s [valkey_client]\n                assert_equal "PONG" [$s PING]\n                $s close\n                set info1 [r info tls]\n                if {![regexp {tls_server_cert_serial:([^\\r\\n]+)} $info1 -> serial1]} {\n                    fail "INFO tls missing tls_server_cert_serial"\n                }\n                assert {$serial1 ne "none"}\n\n                # Wait for at least one auto-reload cycle to complete\n                after 1100\n\n                # Update temporary files with different certificate\n                set valkey_crt [format "%s/tests/tls/valkey.crt" [pwd]]\n                set valkey_key [format "%s/tests/tls/valkey.key" [pwd]]\n                file copy -force $valkey_crt $temp_crt\n                file copy -force $valkey_key $temp_key\n\n                # Wait for reload to actually complete by checking server logs\n                # Use generous timeout for slow/busy CI systems\n                wait_for_log_messages 0 {"*TLS materials reloaded successfully*"} 0 150 100\n\n                # Verify connection still works after reload\n                set s [valkey_client]\n                assert_equal "PONG" [$s PING]\n                $s close\n                set info2 [r info tls]\n                if {![regexp {tls_server_cert_serial:([^\\r\\n]+)} $info2 -> serial2]} {\n                    fail "INFO tls missing tls_server_cert_serial after reload"\n                }\n                assert {$serial2 ne "none"}\n                assert {$serial1 ne $serial2}\n\n                # Wait again to ensure filesystem timestamp will be different\n                # for the second modification and next reload cycle can detect it\n                after 1100\n\n                # Restore original certificate content to temporary files\n                file copy -force $orig_server_crt $temp_crt\n                file copy -force $orig_server_key $temp_key\n\n                # Wait for second reload to complete\n                # Use generous timeout for slow/busy CI systems\n                wait_for_log_messages 0 {"*TLS materials reloaded successfully*"} 0 150 100\n\n                # Verify connection still works after restore\n                set s [valkey_client]\n                assert_equal "PONG" [$s PING]\n                $s close\n            ',
         "finally",
@@ -860,7 +875,7 @@ def test_tls_info_tls_uses_earliest_ca_expiry_in_bundle(r: ValkeyTestClient) -> 
         '                fail "missing $ca_bundle; run utils/gen-test-certs.sh"\n            ',
     )
     start_server(
-        list_("overrides", list_("tls-ca-cert-file", ca_bundle)),
+        ["overrides", ["tls-ca-cert-file", ca_bundle]],
         '                set info [r info tls]\n                if {![regexp {tls_server_cert_expires_in_seconds:(-?[0-9]+)} $info -> server_exp]} {\n                    fail "INFO tls missing tls_server_cert_expires_in_seconds"\n                }\n                if {![regexp {tls_ca_cert_expires_in_seconds:(-?[0-9]+)} $info -> ca_exp]} {\n                    fail "INFO tls missing tls_ca_cert_expires_in_seconds"\n                }\n                if {![regexp {tls_ca_cert_serial:([^\\r\\n]+)} $info -> ca_serial]} {\n                    fail "INFO tls missing tls_ca_cert_serial"\n                }\n                assert_morethan $server_exp 0\n                assert_morethan $ca_exp 0\n                assert {$ca_serial ne "none"}\n                assert_morethan_equal $server_exp $ca_exp\n            ',
     )
 
@@ -892,7 +907,7 @@ def test_tls_info_tls_reports_ca_cert_info_from_directory(r: ValkeyTestClient) -
         '                fail "missing $ca_dir; run utils/gen-test-certs.sh"\n            ',
     )
     start_server(
-        list_("overrides", list_("tls-ca-cert-dir", ca_dir)),
+        ["overrides", ["tls-ca-cert-dir", ca_dir]],
         '                set info [r info tls]\n                if {![regexp {tls_ca_cert_serial:([^\\r\\n]+)} $info -> ca_serial]} {\n                    fail "INFO tls missing tls_ca_cert_serial"\n                }\n                assert {$ca_serial ne "none"}\n                if {![regexp {tls_ca_cert_expires_in_seconds:(-?[0-9]+)} $info -> ca_exp]} {\n                    fail "INFO tls missing tls_ca_cert_expires_in_seconds"\n                }\n                assert_morethan $ca_exp 0\n            ',
     )
 
@@ -925,7 +940,7 @@ def test_tls_info_tls_reports_ca_cert_info_from_directory_only(r: ValkeyTestClie
         '                fail "missing $ca_dir; run utils/gen-test-certs.sh"\n            ',
     )
     start_server(
-        list_("overrides", list_("tls-ca-cert-dir", ca_dir), "omit", list_("tls-ca-cert-file")),
+        ["overrides", ["tls-ca-cert-dir", ca_dir], "omit", ["tls-ca-cert-file"]],
         '                set info [r info tls]\n                if {![regexp {tls_ca_cert_serial:([^\\r\\n]+)} $info -> ca_serial]} {\n                    fail "INFO tls missing tls_ca_cert_serial"\n                }\n                assert {$ca_serial ne "none"}\n                if {![regexp {tls_ca_cert_expires_in_seconds:(-?[0-9]+)} $info -> ca_exp]} {\n                    fail "INFO tls missing tls_ca_cert_expires_in_seconds"\n                }\n                assert_morethan $ca_exp 0\n            ',
     )
 
@@ -948,9 +963,7 @@ def test_tls_info_tls_shows_none_for_missing_client_cert(r: ValkeyTestClient) ->
     }
     """
     start_server(
-        list_(
-            "overrides", list_("tls-auth-clients", "no"), "omit", list_("tls-client-cert-file", "tls-client-key-file")
-        ),
+        ["overrides", ["tls-auth-clients", "no"], "omit", ["tls-client-cert-file", "tls-client-key-file"]],
         '                set info [r info tls]\n                set client_serial [getInfoProperty $info tls_client_cert_serial]\n                assert_not_equal $client_serial {}\n                assert_equal "none" $client_serial\n                if {![regexp {tls_client_cert_expires_in_seconds:(-?[0-9]+)} $info -> client_exp]} {\n                    fail "INFO tls missing tls_client_cert_expires_in_seconds"\n                }\n                assert_equal 0 $client_exp\n            ',
     )
 
@@ -1241,6 +1254,10 @@ def catch(*args):
     raise NotImplementedError("catch")
 
 
+def exec_(*args):
+    raise NotImplementedError("exec_")
+
+
 def expr(*args):
     raise NotImplementedError("expr")
 
@@ -1267,10 +1284,6 @@ def get_info_property(*args):
 
 def if_(*args):
     raise NotImplementedError("if_")
-
-
-def list_(*args):
-    raise NotImplementedError("list_")
 
 
 def pwd(*args):

@@ -162,7 +162,6 @@ def test_select_an_out_of_range_db(r: ValkeyTestClient) -> None:
     assert err == "*index is out of range*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_expires_after_a_reload_snapshot_append_only_file_rewrite(r: ValkeyTestClient) -> None:
     """
     test {EXPIRES after a reload (snapshot + append only file rewrite)} {
@@ -193,8 +192,7 @@ def test_expires_after_a_reload_snapshot_append_only_file_rewrite(r: ValkeyTestC
     r.run("debug", "loadaof")
     ttl = r.run("ttl", "x")
     e2 = expr("$ttl > 900 && $ttl <= 1000")
-    # TODO: list e1 e2
-    assert False
+    assert [e1, e2] == "1 1"
 
 
 def test_expires_after_aof_reload_without_rewrite(r: ValkeyTestClient) -> None:
@@ -270,7 +268,6 @@ def test_expires_after_aof_reload_without_rewrite(r: ValkeyTestClient) -> None:
     assert r.run("config", "set", "appendonly", "no") == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_append_basics(r: ValkeyTestClient) -> None:
     """
     test {APPEND basics} {
@@ -280,8 +277,12 @@ def test_append_basics(r: ValkeyTestClient) -> None:
     } {3 bar 6 bar100}
     """
     r.run("del", "foo")
-    # TODO: list r append foo bar r get foo r append foo 100 r get foo
-    assert False
+    assert [
+        r.run("append", "foo", "bar"),
+        r.run("get", "foo"),
+        r.run("append", "foo", 100),
+        r.run("get", "foo"),
+    ] == "3 bar 6 bar100"
 
 
 @pytest.mark.xfail(reason="not implemented")

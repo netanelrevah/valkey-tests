@@ -406,7 +406,6 @@ def test_mget_against_non_string_key(r: ValkeyTestClient) -> None:
     assert r.run("mget", "foo{t}", "baazz{t}", "bar{t}", "myset{t}") == "BAR {} FOO {}"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_getset_set_new_value(r: ValkeyTestClient) -> None:
     """
     test {GETSET (set new value)} {
@@ -415,11 +414,9 @@ def test_getset_set_new_value(r: ValkeyTestClient) -> None:
     } {{} xyz}
     """
     r.run("del", "foo")
-    # TODO: list r getset foo xyz r get foo
-    assert False
+    assert [r.run("getset", "foo", "xyz"), r.run("get", "foo")] == "{} xyz"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_getset_replace_old_value(r: ValkeyTestClient) -> None:
     """
     test {GETSET (replace old value)} {
@@ -428,11 +425,9 @@ def test_getset_replace_old_value(r: ValkeyTestClient) -> None:
     } {bar xyz}
     """
     r.run("set", "foo", "bar")
-    # TODO: list r getset foo xyz r get foo
-    assert False
+    assert [r.run("getset", "foo", "xyz"), r.run("get", "foo")] == "bar xyz"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_mset_base_case(r: ValkeyTestClient) -> None:
     """
     test {MSET base case} {
@@ -440,7 +435,7 @@ def test_mset_base_case(r: ValkeyTestClient) -> None:
         r mget x{t} y{t} z{t}
     } list 10 {foo bar} "x x x x x x x\n\n\r\n"
     """
-    # TODO: r mset x{t} 10 y{t} "foo bar" z{t} "x x x x x x x\n\n\r\n"
+    r.run("mset", "x{t}", 10, "y{t}", "foo bar", "z{t}", "x x x x x x x\\n\\n\\r\\n")
     r.run("mget", "x{t}", "y{t}", "z{t}")
 
 
@@ -457,7 +452,6 @@ def test_mset_or_msetnx_wrong_number_of_args(r: ValkeyTestClient) -> None:
         r.run("msetnx", "x{t}", 20, "y{t}", "foo bar", "z{t}")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_mset_with_already_existing_same_key_twice(r: ValkeyTestClient) -> None:
     """
     test {MSET with already existing - same key twice} {
@@ -466,33 +460,35 @@ def test_mset_with_already_existing_same_key_twice(r: ValkeyTestClient) -> None:
     } {OK yyy}
     """
     r.run("set", "x{t}", "x")
-    # TODO: list r mset x{t} xxx x{t} yyy r get x{t}
-    assert False
+    assert [r.run("mset", "x{t}", "xxx", "x{t}", "yyy"), r.run("get", "x{t}")] == "OK yyy"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_msetnx_with_already_existent_key(r: ValkeyTestClient) -> None:
     """
     test {MSETNX with already existent key} {
         list [r msetnx x1{t} xxx y2{t} yyy x{t} 20] [r exists x1{t}] [r exists y2{t}]
     } {0 0 0}
     """
-    # TODO: list r msetnx x1{t} xxx y2{t} yyy x{t} 20 r exists x1{t} r exists y2{t}
-    assert False
+    assert [
+        r.run("msetnx", "x1{t}", "xxx", "y2{t}", "yyy", "x{t}", 20),
+        r.run("exists", "x1{t}"),
+        r.run("exists", "y2{t}"),
+    ] == "0 0 0"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_msetnx_with_not_existing_keys(r: ValkeyTestClient) -> None:
     """
     test {MSETNX with not existing keys} {
         list [r msetnx x1{t} xxx y2{t} yyy] [r get x1{t}] [r get y2{t}]
     } {1 xxx yyy}
     """
-    # TODO: list r msetnx x1{t} xxx y2{t} yyy r get x1{t} r get y2{t}
-    assert False
+    assert [
+        r.run("msetnx", "x1{t}", "xxx", "y2{t}", "yyy"),
+        r.run("get", "x1{t}"),
+        r.run("get", "y2{t}"),
+    ] == "1 xxx yyy"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_msetnx_with_not_existing_keys_same_key_twice(r: ValkeyTestClient) -> None:
     """
     test {MSETNX with not existing keys - same key twice} {
@@ -501,19 +497,16 @@ def test_msetnx_with_not_existing_keys_same_key_twice(r: ValkeyTestClient) -> No
     } {1 yyy}
     """
     r.run("del", "x1{t}")
-    # TODO: list r msetnx x1{t} xxx x1{t} yyy r get x1{t}
-    assert False
+    assert [r.run("msetnx", "x1{t}", "xxx", "x1{t}", "yyy"), r.run("get", "x1{t}")] == "1 yyy"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_msetnx_with_already_existing_keys_same_key_twice(r: ValkeyTestClient) -> None:
     """
     test {MSETNX with already existing keys - same key twice} {
         list [r msetnx x1{t} xxx x1{t} zzz] [r get x1{t}]
     } {0 yyy}
     """
-    # TODO: list r msetnx x1{t} xxx x1{t} zzz r get x1{t}
-    assert False
+    assert [r.run("msetnx", "x1{t}", "xxx", "x1{t}", "zzz"), r.run("get", "x1{t}")] == "0 yyy"
 
 
 def test_strlen_against_non_existing_key(r: ValkeyTestClient) -> None:
@@ -754,7 +747,6 @@ def test_getbit_against_integer_encoded_key(r: ValkeyTestClient) -> None:
     assert 0 == r.run("getbit", "mykey", 10000)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_setrange_against_non_existing_key(r: ValkeyTestClient) -> None:
     """
     test "SETRANGE against non-existing key" {
@@ -779,10 +771,9 @@ def test_setrange_against_non_existing_key(r: ValkeyTestClient) -> None:
     assert 0 == r.run("exists", "mykey")
     r.run("del", "mykey")
     assert 4 == r.run("setrange", "mykey", 1, "foo")
-    # TODO: assert_equal "\000foo" r get mykey
+    assert "\\000foo" == r.run("get", "mykey")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_setrange_against_string_encoded_key(r: ValkeyTestClient) -> None:
     """
     test "SETRANGE against string-encoded key" {
@@ -814,10 +805,9 @@ def test_setrange_against_string_encoded_key(r: ValkeyTestClient) -> None:
     assert "fbo" == r.run("get", "mykey")
     r.run("set", "mykey", "foo")
     assert 7 == r.run("setrange", "mykey", 4, "bar")
-    # TODO: assert_equal "foo\000bar" r get mykey
+    assert "foo\\000bar" == r.run("get", "mykey")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_setrange_against_integer_encoded_key(r: ValkeyTestClient) -> None:
     """
     test "SETRANGE against integer-encoded key" {
@@ -866,7 +856,7 @@ def test_setrange_against_integer_encoded_key(r: ValkeyTestClient) -> None:
     assert_encoding("int", "mykey")
     assert 6 == r.run("setrange", "mykey", 5, 2)
     assert_encoding("raw", "mykey")
-    # TODO: assert_equal "1234\0002" r get mykey
+    assert "1234\\0002" == r.run("get", "mykey")
 
 
 def test_setrange_against_key_with_wrong_type(r: ValkeyTestClient) -> None:
@@ -1046,7 +1036,6 @@ def test_extended_set_can_detect_syntax_errors(r: ValkeyTestClient) -> None:
     assert e == "*syntax*"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_extended_set_nx_option(r: ValkeyTestClient) -> None:
     """
     test {Extended SET NX option} {
@@ -1059,11 +1048,9 @@ def test_extended_set_nx_option(r: ValkeyTestClient) -> None:
     r.run("del", "foo")
     v1 = r.run("set", "foo", 1, "nx")
     v2 = r.run("set", "foo", 2, "nx")
-    # TODO: list v1 v2 r get foo
-    assert False
+    assert [v1, v2, r.run("get", "foo")] == "OK {} 1"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_extended_set_xx_option(r: ValkeyTestClient) -> None:
     """
     test {Extended SET XX option} {
@@ -1078,11 +1065,9 @@ def test_extended_set_xx_option(r: ValkeyTestClient) -> None:
     v1 = r.run("set", "foo", 1, "xx")
     r.run("set", "foo", "bar")
     v2 = r.run("set", "foo", 2, "xx")
-    # TODO: list v1 v2 r get foo
-    assert False
+    assert [v1, v2, r.run("get", "foo")] == "{} OK 2"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_extended_set_get_option(r: ValkeyTestClient) -> None:
     """
     test {Extended SET GET option} {
@@ -1097,11 +1082,9 @@ def test_extended_set_get_option(r: ValkeyTestClient) -> None:
     r.run("set", "foo", "bar")
     old_value = r.run("set", "foo", "bar2", "GET")
     new_value = r.run("get", "foo")
-    # TODO: list old_value new_value
-    assert False
+    assert [old_value, new_value] == "bar bar2"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_extended_set_get_option_with_no_previous_value(r: ValkeyTestClient) -> None:
     """
     test {Extended SET GET option with no previous value} {
@@ -1114,11 +1097,9 @@ def test_extended_set_get_option_with_no_previous_value(r: ValkeyTestClient) -> 
     r.run("del", "foo")
     old_value = r.run("set", "foo", "bar", "GET")
     new_value = r.run("get", "foo")
-    # TODO: list old_value new_value
-    assert False
+    assert [old_value, new_value] == "{} bar"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_extended_set_get_option_with_xx(r: ValkeyTestClient) -> None:
     """
     test {Extended SET GET option with XX} {
@@ -1133,11 +1114,9 @@ def test_extended_set_get_option_with_xx(r: ValkeyTestClient) -> None:
     r.run("set", "foo", "bar")
     old_value = r.run("set", "foo", "baz", "GET", "XX")
     new_value = r.run("get", "foo")
-    # TODO: list old_value new_value
-    assert False
+    assert [old_value, new_value] == "bar baz"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_extended_set_get_option_with_xx_and_no_previous_value(r: ValkeyTestClient) -> None:
     """
     test {Extended SET GET option with XX and no previous value} {
@@ -1150,11 +1129,9 @@ def test_extended_set_get_option_with_xx_and_no_previous_value(r: ValkeyTestClie
     r.run("del", "foo")
     old_value = r.run("set", "foo", "bar", "GET", "XX")
     new_value = r.run("get", "foo")
-    # TODO: list old_value new_value
-    assert False
+    assert [old_value, new_value] == "{} {}"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_extended_set_get_option_with_nx(r: ValkeyTestClient) -> None:
     """
     test {Extended SET GET option with NX} {
@@ -1167,11 +1144,9 @@ def test_extended_set_get_option_with_nx(r: ValkeyTestClient) -> None:
     r.run("del", "foo")
     old_value = r.run("set", "foo", "bar", "GET", "NX")
     new_value = r.run("get", "foo")
-    # TODO: list old_value new_value
-    assert False
+    assert [old_value, new_value] == "{} bar"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_extended_set_get_option_with_nx_and_previous_value(r: ValkeyTestClient) -> None:
     """
     test {Extended SET GET option with NX and previous value} {
@@ -1186,8 +1161,7 @@ def test_extended_set_get_option_with_nx_and_previous_value(r: ValkeyTestClient)
     r.run("set", "foo", "bar")
     old_value = r.run("set", "foo", "baz", "GET", "NX")
     new_value = r.run("get", "foo")
-    # TODO: list old_value new_value
-    assert False
+    assert [old_value, new_value] == "bar bar"
 
 
 def test_extended_set_get_with_incorrect_type_should_result_in_wrong_type_error(r: ValkeyTestClient) -> None:
