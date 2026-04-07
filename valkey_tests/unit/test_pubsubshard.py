@@ -7,7 +7,6 @@ from tests.valkey_test_client import ValkeyTestClient
 pytestmark = [pytest.mark.pubsubshard_external_skip]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_spublish_or_ssubscribe_basics(r: ValkeyTestClient) -> None:
     """
     test "SPUBLISH/SSUBSCRIBE basics" {
@@ -41,19 +40,18 @@ def test_spublish_or_ssubscribe_basics(r: ValkeyTestClient) -> None:
     assert "2" == ssubscribe(rd1, "chan2")
     assert 1 == r.run("SPUBLISH", "chan1", "hello")
     assert 1 == r.run("SPUBLISH", "chan2", "world")
-    # TODO: assert_equal {smessage chan1 hello} $rd1 read
-    # TODO: assert_equal {smessage chan2 world} $rd1 read
+    assert "smessage chan1 hello" == rd1.run("read")
+    assert "smessage chan2 world" == rd1.run("read")
     sunsubscribe(rd1, "chan1")
     assert 0 == r.run("SPUBLISH", "chan1", "hello")
     assert 1 == r.run("SPUBLISH", "chan2", "world")
-    # TODO: assert_equal {smessage chan2 world} $rd1 read
+    assert "smessage chan2 world" == rd1.run("read")
     sunsubscribe(rd1, "chan2")
     assert 0 == r.run("SPUBLISH", "chan1", "hello")
     assert 0 == r.run("SPUBLISH", "chan2", "world")
-    # TODO: $rd1 close
+    rd1.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_spublish_or_ssubscribe_with_two_clients(r: ValkeyTestClient) -> None:
     """
     test "SPUBLISH/SSUBSCRIBE with two clients" {
@@ -76,13 +74,12 @@ def test_spublish_or_ssubscribe_with_two_clients(r: ValkeyTestClient) -> None:
     assert "1" == ssubscribe(rd1, "chan1")
     assert "1" == ssubscribe(rd2, "chan1")
     assert 2 == r.run("SPUBLISH", "chan1", "hello")
-    # TODO: assert_equal {smessage chan1 hello} $rd1 read
-    # TODO: assert_equal {smessage chan1 hello} $rd2 read
-    # TODO: $rd1 close
-    # TODO: $rd2 close
+    assert "smessage chan1 hello" == rd1.run("read")
+    assert "smessage chan1 hello" == rd2.run("read")
+    rd1.run("close")
+    rd2.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_spublish_or_ssubscribe_after_unsubscribe_without_arguments(r: ValkeyTestClient) -> None:
     """
     test "SPUBLISH/SSUBSCRIBE after UNSUBSCRIBE without arguments" {
@@ -122,10 +119,9 @@ def test_spublish_or_ssubscribe_after_unsubscribe_without_arguments(r: ValkeyTes
     assert 0 == r.run("SPUBLISH", "chan1", "hello")
     assert 0 == r.run("SPUBLISH", "chan2", "hello")
     assert 0 == r.run("SPUBLISH", "chan3", "hello")
-    # TODO: $rd1 close
+    rd1.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_ssubscribe_to_one_channel_more_than_once(r: ValkeyTestClient) -> None:
     """
     test "SSUBSCRIBE to one channel more than once" {
@@ -141,11 +137,10 @@ def test_ssubscribe_to_one_channel_more_than_once(r: ValkeyTestClient) -> None:
     rd1 = valkey_deferring_client()
     assert "1 1 1" == ssubscribe(rd1, "chan1 chan1 chan1")
     assert 1 == r.run("SPUBLISH", "chan1", "hello")
-    # TODO: assert_equal {smessage chan1 hello} $rd1 read
-    # TODO: $rd1 close
+    assert "smessage chan1 hello" == rd1.run("read")
+    rd1.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_sunsubscribe_from_non_subscribed_channels(r: ValkeyTestClient) -> None:
     """
     test "SUNSUBSCRIBE from non-subscribed channels" {
@@ -162,7 +157,7 @@ def test_sunsubscribe_from_non_subscribed_channels(r: ValkeyTestClient) -> None:
     assert "0" == sunsubscribe(rd1, "foo")
     assert "0" == sunsubscribe(rd1, "bar")
     assert "0" == sunsubscribe(rd1, "quux")
-    # TODO: $rd1 close
+    rd1.run("close")
 
 
 def test_pubsub_command_basics(r: ValkeyTestClient) -> None:
@@ -174,7 +169,6 @@ def test_pubsub_command_basics(r: ValkeyTestClient) -> None:
     assert r.run("pubsub", "shardnumsub", "abc", "def") == "abc 0 def 0"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_spublish_or_ssubscribe_with_two_clients_1(r: ValkeyTestClient) -> None:
     """
     test "SPUBLISH/SSUBSCRIBE with two clients" {
@@ -199,11 +193,10 @@ def test_spublish_or_ssubscribe_with_two_clients_1(r: ValkeyTestClient) -> None:
     assert 2 == r.run("SPUBLISH", "chan1", "hello")
     assert "chan1 2" == r.run("pubsub", "shardnumsub", "chan1")
     assert "chan1" == r.run("pubsub", "shardchannels")
-    # TODO: $rd1 close
-    # TODO: $rd2 close
+    rd1.run("close")
+    rd2.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_spublish_or_ssubscribe_with_publish_or_subscribe(r: ValkeyTestClient) -> None:
     """
     test "SPUBLISH/SSUBSCRIBE with PUBLISH/SUBSCRIBE" {
@@ -233,11 +226,10 @@ def test_spublish_or_ssubscribe_with_publish_or_subscribe(r: ValkeyTestClient) -
     assert "chan1 1" == r.run("pubsub", "numsub", "chan1")
     assert "chan1" == r.run("pubsub", "shardchannels")
     assert "chan1" == r.run("pubsub", "channels")
-    # TODO: $rd1 close
-    # TODO: $rd2 close
+    rd1.run("close")
+    rd2.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_pubsubshard_with_client_reply_off(r: ValkeyTestClient) -> None:
     """
     test "PubSubShard with CLIENT REPLY OFF" {
@@ -265,19 +257,19 @@ def test_pubsubshard_with_client_reply_off(r: ValkeyTestClient) -> None:
     }
     """
     rd = valkey_deferring_client()
-    # TODO: $rd hello 3
-    # TODO: $rd read
-    # TODO: $rd client reply off
-    # TODO: $rd ping
+    rd.run("hello", 3)
+    rd.run("read")
+    rd.run("client", "reply", "off")
+    rd.run("ping")
     assert "1" == ssubscribe(rd, "channel")
-    # TODO: $rd client reply off
-    # TODO: $rd ping
+    rd.run("client", "reply", "off")
+    rd.run("ping")
     assert 1 == r.run("spublish", "channel", "hello")
-    # TODO: assert_equal {smessage channel hello} $rd read
-    # TODO: $rd client reply off
-    # TODO: $rd ping
+    assert "smessage channel hello" == rd.run("read")
+    rd.run("client", "reply", "off")
+    rd.run("ping")
     assert "0" == sunsubscribe(rd, "channel")
-    # TODO: $rd close
+    rd.run("close")
 
 
 pytestmark = [pytest.mark.pubsubshard_external_skip]

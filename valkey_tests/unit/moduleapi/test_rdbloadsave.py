@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841, RUF043, ANN002, ANN201
+# ruff: noqa: PLR2004, RUF043, ANN002, ANN201
 
 import pytest
 
@@ -42,7 +42,6 @@ def test_module_rdbloadsave_sanity(r: ValkeyTestClient) -> None:
     assert 1 == r.run("get", "x")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_rdbloadsave_test_with_pipelining(r: ValkeyTestClient) -> None:
     """
     test "Module rdbloadsave test with pipelining" {
@@ -95,7 +94,7 @@ def test_module_rdbloadsave_test_with_pipelining(r: ValkeyTestClient) -> None:
     r.run("flushdb")
     assert r.run("dbsize") == 0
     rd1 = valkey_deferring_client()
-    # TODO: $rd1 test.rdbload blabla.rdb
+    rd1.run("test.rdbload", "blabla.rdb")
     wait_for_condition(
         50,
         100,
@@ -103,11 +102,11 @@ def test_module_rdbloadsave_test_with_pipelining(r: ValkeyTestClient) -> None:
         "else",
         '            fail "Redis did not start loading or loaded RDB too fast"\n        ',
     )
-    # TODO: $rd1 get x
-    # TODO: $rd1 dbsize
-    # TODO: assert_equal OK $rd1 read
-    # TODO: assert_equal 111 $rd1 read
-    # TODO: assert_equal 3001 $rd1 read
+    rd1.run("get", "x")
+    rd1.run("dbsize")
+    assert "OK" == rd1.run("read")
+    assert 111 == rd1.run("read")
+    assert 3001 == rd1.run("read")
     r.run("flushdb")
     r.run("config", "set", "key-load-delay", 0)
 

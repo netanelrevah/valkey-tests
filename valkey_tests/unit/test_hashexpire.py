@@ -772,7 +772,6 @@ r config set notify-keyspace-events KEA
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
 def test_hgetex_command_generates_hexpire_keyspace_notification(r: ValkeyTestClient, command, rd) -> None:
     """
@@ -796,10 +795,9 @@ def test_hgetex_command_generates_hexpire_keyspace_notification(r: ValkeyTestCli
     r.run("HGETEX", "myhash", command, get_long_expire_value(command), "FIELDS", 1, "f1")
     assert_keyevent_patterns(rd, "myhash", "hexpire")
     assert 1 == get_keys_with_volatile_items("r")
-    # TODO: $rd close
+    rd.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
 def test_hgetex_command_with_multiple_fields_generates_single_notification(r: ValkeyTestClient, command, rd) -> None:
     """
@@ -828,10 +826,9 @@ def test_hgetex_command_with_multiple_fields_generates_single_notification(r: Va
     r.run("HSET", "dummy", "dummy", "dummy")
     assert_keyevent_patterns(rd, "dummy", "hset")
     assert 1 == get_keys_with_volatile_items("r")
-    # TODO: $rd close
+    rd.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
 def test_hgetex_command_on_non_existent_field_generates_no_notification(r: ValkeyTestClient, command, rd) -> None:
     """
@@ -859,10 +856,9 @@ def test_hgetex_command_on_non_existent_field_generates_no_notification(r: Valke
     r.run("HSET", "dummy", "dummy", "dummy")
     assert_keyevent_patterns(rd, "dummy", "hset")
     assert 0 == get_keys_with_volatile_items("r")
-    # TODO: $rd close
+    rd.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hgetex_persist_generates_hpersist_keyspace_notification(r: ValkeyTestClient, rd) -> None:
     """
     test {HGETEX PERSIST generates hpersist keyspace notification} {
@@ -891,10 +887,9 @@ def test_hgetex_persist_generates_hpersist_keyspace_notification(r: ValkeyTestCl
     r.run("HGETEX", "myhash", "PERSIST", "FIELDS", 1, "f1")
     assert_keyevent_patterns(rd, "myhash", "hpersist")
     assert 0 == get_keys_with_volatile_items("r")
-    # TODO: $rd close
+    rd.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
 def test_hgetex_command_0_or_past_time_works_correctly_with_1_field(r: ValkeyTestClient, command, rd) -> None:
     """
@@ -937,7 +932,7 @@ def test_hgetex_command_0_or_past_time_works_correctly_with_1_field(r: ValkeyTes
     assert 0 == get_keys("r")
     assert 0 == get_keys_with_volatile_items("r")
     assert 1 == info_field(r.run("info", "stats"), "expired_fields")
-    # TODO: $rd close
+    rd.run("close")
 
 
 def test_hsetex_keepttl_preserves_existing_ttl_of_field(r: ValkeyTestClient) -> None:
@@ -1099,7 +1094,6 @@ def test_hsetex_ex_mismatched_field_or_value_count(r: ValkeyTestClient) -> None:
     assert e == "ERR *"
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
 def test_hsetex_command_0_or_past_time_works_correctly_with_2_fields(r: ValkeyTestClient, command, rd) -> None:
     """
@@ -1144,7 +1138,7 @@ def test_hsetex_command_0_or_past_time_works_correctly_with_2_fields(r: ValkeyTe
     assert 0 == get_keys("r")
     assert 0 == get_keys_with_volatile_items("r")
     assert 2 == info_field(r.run("info", "stats"), "expired_fields")
-    # TODO: $rd close
+    rd.run("close")
 
 
 def test_hsetex_px_test_negative_ttl(r: ValkeyTestClient) -> None:
@@ -1837,7 +1831,6 @@ def test_hexpire_on_a_non_existent_field_should_not_create_field(r: ValkeyTestCl
     assert -2 == r.run("HTTL", "myhash", "FIELDS", 1, "f2")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hexpire_on_a_non_existent_field_should_not_issue_notifications(r: ValkeyTestClient, rd) -> None:
     """
     test {HEXPIRE on a non-existent field (should not issue notifications)} {
@@ -1862,7 +1855,7 @@ def test_hexpire_on_a_non_existent_field_should_not_issue_notifications(r: Valke
     r.run("HSET", "dummy", "dummy", "dummy")
     assert_keyevent_patterns(rd, "dummy", "hset")
     assert 0 == get_keys_with_volatile_items("r")
-    # TODO: $rd close
+    rd.run("close")
 
 
 def test_hexpire_conflicting_conditions_error(r: ValkeyTestClient) -> None:
@@ -2012,7 +2005,6 @@ def test_hexpire_lt_condition_succeeds_when_field_has_no_ttl(r: ValkeyTestClient
     assert 1 == r.run("HEXPIRE", "myhash", 10, "LT", "fields", 1, "f1")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("HEXPIRE"), ("HPEXPIRE"), ("HEXPIREAT"), ("HPEXPIREAT")])
 def test_hsetex_command_0_or_past_time_works_correctly_with_1_field(r: ValkeyTestClient, command, rd) -> None:
     """
@@ -2055,7 +2047,7 @@ def test_hsetex_command_0_or_past_time_works_correctly_with_1_field(r: ValkeyTes
     assert 0 == get_keys("r")
     assert 0 == get_keys_with_volatile_items("r")
     assert 1 == info_field(r.run("info", "stats"), "expired_fields")
-    # TODO: $rd close
+    rd.run("close")
 
 
 def test_httl_persistent_field_returns_1(r: ValkeyTestClient) -> None:
@@ -3732,7 +3724,6 @@ def test_expired_fields_metric_increments_by_one_when_single_hash_field_expires(
     assert "{} v2 v3" == r.run("HMGET", "myhash", "f1", "f2", "f3")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_expired_fields_metric_tracks_multiple_field_expirations_with_keyspace_notifications(
     r: ValkeyTestClient, rd
 ) -> None:
@@ -3800,10 +3791,9 @@ def test_expired_fields_metric_tracks_multiple_field_expirations_with_keyspace_n
     assert_keyevent_patterns(
         rd, "myhash", "hset", "hexpire", "hexpire", "hexpire", "hexpired", "hpersist", "hexpire", "hexpired"
     )
-    # TODO: $rd close
+    rd.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["time_unit"], [("s,"), ("ms")])
 def test_key_ttl_expires_before_field_ttl_entire_hash_should_be_deleted_timeunit_time_unit(
     r: ValkeyTestClient, time_unit, rd
@@ -3869,11 +3859,10 @@ def test_key_ttl_expires_before_field_ttl_entire_hash_should_be_deleted_timeunit
     assert 0 == get_keys("r")
     assert_keyevent_patterns(rd, "myhash", "hset", "hexpire", "expire")
     assert 0 == get_keys_with_volatile_items("r")
-    # TODO: $rd close
+    rd.run("close")
     assert r.run("DEBUG", "SET-ACTIVE-EXPIRE", 1) == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["time_unit"], [("s,"), ("ms")])
 def test_field_ttl_expires_before_key_ttl_only_the_specific_field_should_expire_time_unit(
     r: ValkeyTestClient, time_unit, rd
@@ -3940,7 +3929,7 @@ def test_field_ttl_expires_before_key_ttl_only_the_specific_field_should_expire_
     assert "{} v2 v3" == r.run("HMGET", "myhash", "f1", "f2", "f3")
     assert_keyevent_patterns(rd, "myhash", "hset", "hexpire")
     assert 1 == get_keys_with_volatile_items("r")
-    # TODO: $rd close
+    rd.run("close")
     assert r.run("DEBUG", "SET-ACTIVE-EXPIRE", 1) == "OK"
 
 
@@ -5162,7 +5151,6 @@ def test_hgetex_overwrite_existing_expiry_with_active_expiry(r: ValkeyTestClient
     assert 0 == get_keys_with_volatile_items("r")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
 def test_hgetex_command_keyspace_notifications_for_active_expiry(r: ValkeyTestClient, command, rd) -> None:
     """
@@ -5197,10 +5185,9 @@ def test_hgetex_command_keyspace_notifications_for_active_expiry(r: ValkeyTestCl
     wait_for_active_expiry("r", "myhash", 1, initial_expired, 1)
     assert_keyevent_patterns(rd, "myhash", "hexpire", "hexpired")
     assert 0 == get_keys_with_volatile_items("r")
-    # TODO: $rd close
+    rd.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hgetex_keyspace_notification_when_key_deleted_with_active_expiry(r: ValkeyTestClient, rd) -> None:
     """
     test "HGETEX keyspace notification when key deleted with active expiry" {
@@ -5235,7 +5222,7 @@ def test_hgetex_keyspace_notification_when_key_deleted_with_active_expiry(r: Val
     assert 0 == r.run("EXISTS", "myhash")
     assert_keyevent_patterns(rd, "myhash", "hexpire", "hexpired", "del")
     assert 0 == get_keys_with_volatile_items("r")
-    # TODO: $rd close
+    rd.run("close")
 
 
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
@@ -5388,7 +5375,6 @@ def test_hsetex_overwrites_existing_field_expiry_with_new_shorter_expiry(r: Valk
     assert 0 == r.run("EXISTS", "myhash")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["command"], [("EX"), ("PX"), ("EXAT"), ("PXAT")])
 def test_hsetex_command_keyspace_notifications_fired_on_field_expiry(r: ValkeyTestClient, command, rd) -> None:
     """
@@ -5416,10 +5402,9 @@ def test_hsetex_command_keyspace_notifications_fired_on_field_expiry(r: ValkeyTe
     wait_for_active_expiry("r", "myhash", 1, initial_expired, 1)
     assert_keyevent_patterns(rd, "myhash", "hset", "hexpire", "hexpired")
     assert 0 == get_keys_with_volatile_items("r")
-    # TODO: $rd close
+    rd.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hsetex_keyspace_notifications_include_del_event_when_hash_key_removed(r: ValkeyTestClient, rd) -> None:
     """
     test "HSETEX - keyspace notifications include del event when hash key removed" {
@@ -5440,7 +5425,7 @@ def test_hsetex_keyspace_notifications_include_del_event_when_hash_key_removed(r
     wait_for_active_expiry("r", "myhash", 0, initial_expired, 1)
     assert 0 == r.run("EXISTS", "myhash")
     assert_keyevent_patterns(rd, "myhash", "hset", "hexpire", "hexpired", "del")
-    # TODO: $rd close
+    rd.run("close")
 
 
 """
@@ -6352,9 +6337,9 @@ if {$cmd eq "HINCRBY"} {
 """
 
 
-@pytest.mark.parametrize(["cmd", "inc1", "inc2", "inc3"], [("HINCRBY", 2, 3, 4), ("HINCRBYFLOAT", 2.5, 3.5, 4.5)])
+@pytest.mark.parametrize(["cmd", "inc2", "inc1", "inc3"], [("HINCRBY", 3, 2, 4), ("HINCRBYFLOAT", 3.5, 2.5, 4.5)])
 def test_cmd_recreates_field_with_correct_value_after_active_expiry_deletion(
-    r: ValkeyTestClient, cmd, inc1, inc2, inc3
+    r: ValkeyTestClient, cmd, inc2, inc1, inc3
 ) -> None:
     """
     test "$cmd recreates field with correct value after active expiry deletion" {
@@ -6385,8 +6370,8 @@ def test_cmd_recreates_field_with_correct_value_after_active_expiry_deletion(
     assert inc1 == r.run("HGET", "myhash", "f1")
 
 
-@pytest.mark.parametrize(["cmd", "inc1", "inc2", "inc3"], [("HINCRBY", 2, 3, 4), ("HINCRBYFLOAT", 2.5, 3.5, 4.5)])
-def test_cmd_preserves_existing_ttl_when_incrementing_field_value(r: ValkeyTestClient, cmd, inc1, inc2, inc3) -> None:
+@pytest.mark.parametrize(["cmd", "inc2", "inc1", "inc3"], [("HINCRBY", 3, 2, 4), ("HINCRBYFLOAT", 3.5, 2.5, 4.5)])
+def test_cmd_preserves_existing_ttl_when_incrementing_field_value(r: ValkeyTestClient, cmd, inc2, inc1, inc3) -> None:
     """
     test "$cmd preserves existing TTL when incrementing field value" {
         r FLUSHALL
@@ -6417,9 +6402,9 @@ def test_cmd_preserves_existing_ttl_when_incrementing_field_value(r: ValkeyTestC
 
 
 @pytest.mark.xfail(reason="not implemented")
-@pytest.mark.parametrize(["cmd", "inc1", "inc2", "inc3"], [("HINCRBY", 2, 3, 4), ("HINCRBYFLOAT", 2.5, 3.5, 4.5)])
+@pytest.mark.parametrize(["cmd", "inc2", "inc1", "inc3"], [("HINCRBY", 3, 2, 4), ("HINCRBYFLOAT", 3.5, 2.5, 4.5)])
 def test_cmd_handles_mix_of_expired_and_existing_fields_during_increment_operations(
-    r: ValkeyTestClient, cmd, inc1, inc2, inc3
+    r: ValkeyTestClient, cmd, inc2, inc1, inc3
 ) -> None:
     """
     test "$cmd handles mix of expired and existing fields during increment operations" {
@@ -6457,9 +6442,9 @@ def test_cmd_handles_mix_of_expired_and_existing_fields_during_increment_operati
 
 
 @pytest.mark.xfail(reason="not implemented")
-@pytest.mark.parametrize(["cmd", "inc1", "inc2", "inc3"], [("HINCRBY", 2, 3, 4), ("HINCRBYFLOAT", 2.5, 3.5, 4.5)])
+@pytest.mark.parametrize(["cmd", "inc2", "inc1", "inc3"], [("HINCRBY", 3, 2, 4), ("HINCRBYFLOAT", 3.5, 2.5, 4.5)])
 def test_cmd_maintains_ttl_values_when_incrementing_fields_with_existing_expiry(
-    r: ValkeyTestClient, cmd, inc1, inc2, inc3
+    r: ValkeyTestClient, cmd, inc2, inc1, inc3
 ) -> None:
     """
     test "$cmd maintains TTL values when incrementing fields with existing expiry" {

@@ -177,21 +177,21 @@ def test_exec_fails_if_there_are_errors_while_queueing_commands_2(r: ValkeyTestC
     r.run("del", "foo1{t}", "foo2{t}")
     r.run("multi")
     r.run("set", "foo1{t}", "bar1")
-    # TODO: $rd config set maxmemory 1
-    assert_("[$rd read] eq {OK}")
+    rd.run("config", "set", "maxmemory", 1)
+    assert rd.run("read") == "OK"
     try:
         r.run("lpush", "mylist{t}", "myvalue")
     except Exception:
         pass
-    # TODO: $rd config set maxmemory 0
-    assert_("[$rd read] eq {OK}")
+    rd.run("config", "set", "maxmemory", 0)
+    assert rd.run("read") == "OK"
     r.run("set", "foo2{t}", "bar2")
     try:
         e = r.run("exec")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "EXECABORT*")
-    # TODO: $rd close
+    rd.run("close")
     # TODO: list r exists foo1{t} r exists foo2{t}
     assert False
 
@@ -1080,7 +1080,6 @@ def test_multi_or_exec_with_replicaof(r: ValkeyTestClient) -> None:
     assert r.run("replicaof", "no", "one") == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_discard_should_not_fail_during_oom(r: ValkeyTestClient) -> None:
     """
     test {DISCARD should not fail during OOM} {
@@ -1098,8 +1097,8 @@ def test_discard_should_not_fail_during_oom(r: ValkeyTestClient) -> None:
     } {PONG} {needs:config-maxmemory}
     """
     rd = valkey_deferring_client()
-    # TODO: $rd config set maxmemory 1
-    assert_("[$rd read] eq {OK}")
+    rd.run("config", "set", "maxmemory", 1)
+    assert rd.run("read") == "OK"
     r.run("multi")
     try:
         e = r.run("set", "x", 1)
@@ -1107,9 +1106,9 @@ def test_discard_should_not_fail_during_oom(r: ValkeyTestClient) -> None:
         e = str(_catch_err)
     assert fnmatch(str(e), "OOM*")
     r.run("discard")
-    # TODO: $rd config set maxmemory 0
-    assert_("[$rd read] eq {OK}")
-    # TODO: $rd close
+    rd.run("config", "set", "maxmemory", 0)
+    assert rd.run("read") == "OK"
+    rd.run("close")
     assert r.run("ping") == "PONG"
 
 
@@ -1145,7 +1144,7 @@ def test_multi_and_script_timeout(r: ValkeyTestClient) -> None:
     r2 = valkey_client()
     r.run("config", "set", "lua-time-limit", 10)
     r.run("set", "xx", 1)
-    # TODO: $rd1 eval {while true do end} 0
+    rd1.run("eval", "while true do end", 0)
     time.sleep(200 / 1000)
     catch(" $r2 multi; ", "e")
     catch(" $r2 incr xx; ", "e")
@@ -1156,10 +1155,10 @@ def test_multi_and_script_timeout(r: ValkeyTestClient) -> None:
     # TODO: assert_match {EXECABORT*previous errors*} e
     xx = r.run("get", "xx")
     assert (xx == 1) or (xx == 3)
-    # TODO: set pong $r2 ping asdf
-    # TODO: assert_equal pong "asdf"
-    # TODO: $rd1 close
-    # TODO: $r2 close
+    pong = r2.run("ping", "asdf")
+    assert pong == "asdf"
+    rd1.run("close")
+    r2.run("close")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1196,7 +1195,7 @@ def test_exec_and_script_timeout(r: ValkeyTestClient) -> None:
     r.run("set", "xx", 1)
     catch(" $r2 multi; ", "e")
     catch(" $r2 incr xx; ", "e")
-    # TODO: $rd1 eval {while true do end} 0
+    rd1.run("eval", "while true do end", 0)
     time.sleep(200 / 1000)
     catch(" $r2 incr xx; ", "e")
     catch(" $r2 exec; ", "e")
@@ -1205,10 +1204,10 @@ def test_exec_and_script_timeout(r: ValkeyTestClient) -> None:
     time.sleep(200 / 1000)
     xx = r.run("get", "xx")
     assert (xx == 1) or (xx == 3)
-    # TODO: set pong $r2 ping asdf
-    # TODO: assert_equal pong "asdf"
-    # TODO: $rd1 close
-    # TODO: $r2 close
+    pong = r2.run("ping", "asdf")
+    assert pong == "asdf"
+    rd1.run("close")
+    r2.run("close")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1245,7 +1244,7 @@ def test_multi_exec_body_and_script_timeout(r: ValkeyTestClient) -> None:
     r.run("set", "xx", 1)
     catch(" $r2 multi; ", "e")
     catch(" $r2 incr xx; ", "e")
-    # TODO: $rd1 eval {while true do end} 0
+    rd1.run("eval", "while true do end", 0)
     time.sleep(200 / 1000)
     catch(" $r2 incr xx; ", "e")
     r.run("script", "kill")
@@ -1254,10 +1253,10 @@ def test_multi_exec_body_and_script_timeout(r: ValkeyTestClient) -> None:
     # TODO: assert_match {EXECABORT*previous errors*} e
     xx = r.run("get", "xx")
     assert (xx == 1) or (xx == 3)
-    # TODO: set pong $r2 ping asdf
-    # TODO: assert_equal pong "asdf"
-    # TODO: $rd1 close
-    # TODO: $r2 close
+    pong = r2.run("ping", "asdf")
+    assert pong == "asdf"
+    rd1.run("close")
+    r2.run("close")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1293,7 +1292,7 @@ def test_just_exec_and_script_timeout(r: ValkeyTestClient) -> None:
     r.run("set", "xx", 1)
     catch(" $r2 multi; ", "e")
     catch(" $r2 incr xx; ", "e")
-    # TODO: $rd1 eval {while true do end} 0
+    rd1.run("eval", "while true do end", 0)
     time.sleep(200 / 1000)
     catch(" $r2 exec; ", "e")
     # TODO: assert_match {EXECABORT*BUSY*} e
@@ -1301,10 +1300,10 @@ def test_just_exec_and_script_timeout(r: ValkeyTestClient) -> None:
     time.sleep(200 / 1000)
     xx = r.run("get", "xx")
     assert xx == 1
-    # TODO: set pong $r2 ping asdf
-    # TODO: assert_equal pong "asdf"
-    # TODO: $rd1 close
-    # TODO: $r2 close
+    pong = r2.run("ping", "asdf")
+    assert pong == "asdf"
+    rd1.run("close")
+    r2.run("close")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1330,7 +1329,7 @@ def test_exec_with_write_commands_and_state_change(r: ValkeyTestClient) -> None:
     r.run("set", "xx", 1)
     r.run("multi")
     r.run("incr", "xx")
-    # TODO: $r1 config set min-replicas-to-write 2
+    r1.run("config", "set", "min-replicas-to-write", 2)
     try:
         e = r.run("exec")
     except Exception as _catch_err:
@@ -1338,7 +1337,7 @@ def test_exec_with_write_commands_and_state_change(r: ValkeyTestClient) -> None:
     assert fnmatch(str(e), "*EXECABORT*NOREPLICAS*")
     xx = r.run("get", "xx")
     assert xx == 1
-    # TODO: $r1 config set min-replicas-to-write 0
+    r1.run("config", "set", "min-replicas-to-write", 0)
     # TODO: $r1 close
     assert False
 
@@ -1384,23 +1383,23 @@ def test_exec_with_read_commands_and_stale_replica_state_change(r: ValkeyTestCli
     r.run("set", "xx", 1)
     r.run("multi")
     r.run("get", "xx")
-    # TODO: $r1 replicaof localhost_ 0
+    r1.run("replicaof", "localhost_", 0)
     try:
         e = r.run("exec")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*EXECABORT*MASTERDOWN*")
-    # TODO: $r1 replicaof no one
+    r1.run("replicaof", "no", "one")
     r.run("multi")
     r.run("ping")
-    # TODO: $r1 replicaof localhost_ 0
+    r1.run("replicaof", "localhost_", 0)
     try:
         e = r.run("exec")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*EXECABORT*MASTERDOWN*")
     r.run("multi")
-    # TODO: $r1 replicaof no one
+    r1.run("replicaof", "no", "one")
     r.run("get", "xx")
     xx = r.run("exec")
     assert xx == 1
@@ -1435,9 +1434,9 @@ def test_exec_with_only_read_commands_should_not_be_rejected_when_oom(r: ValkeyT
     r.run("multi")
     r.run("get", "x")
     r.run("ping")
-    # TODO: $r2 config set maxmemory 1
+    r2.run("config", "set", "maxmemory", 1)
     assert r.run("exec") == "value PONG"
-    # TODO: $r2 config set maxmemory 0
+    r2.run("config", "set", "maxmemory", 0)
     # TODO: $r2 close
     assert False
 
@@ -1468,13 +1467,13 @@ def test_exec_with_at_least_one_use_memory_command_should_fail(r: ValkeyTestClie
     r.run("multi")
     r.run("set", "x", 1)
     r.run("get", "x")
-    # TODO: $r2 config set maxmemory 1
+    r2.run("config", "set", "maxmemory", 1)
     try:
         e = r.run("exec")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "EXECABORT*OOM*")
-    # TODO: $r2 config set maxmemory 0
+    r2.run("config", "set", "maxmemory", 0)
     # TODO: $r2 close
     assert False
 
@@ -1802,7 +1801,6 @@ def test_multi_is_rejected_when_client_reply_is_on_or_off_or_skip(r: ValkeyTestC
     r.run("client", "reply", "on")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_client_reply_off_or_skip_multi_command(r: ValkeyTestClient) -> None:
     """
     test "CLIENT REPLY OFF/SKIP: multi command" {
@@ -1843,28 +1841,28 @@ def test_client_reply_off_or_skip_multi_command(r: ValkeyTestClient) -> None:
     }
     """
     rd = valkey_deferring_client()
-    # TODO: $rd client reply off
-    # TODO: $rd multi
-    # TODO: $rd ping pong2
-    # TODO: $rd ping pong3
-    # TODO: $rd exec
-    # TODO: $rd client reply on
-    # TODO: $rd ping
-    # TODO: assert_equal {OK} $rd read
-    # TODO: assert_equal {PONG} $rd read
-    # TODO: $rd client reply skip
-    # TODO: $rd multi
-    # TODO: $rd ping pong2
-    # TODO: $rd ping pong3
-    # TODO: $rd exec
-    # TODO: assert_equal {QUEUED} $rd read
-    # TODO: assert_equal {QUEUED} $rd read
-    # TODO: assert_equal {pong2 pong3} $rd read
-    # TODO: $rd client reply on
-    # TODO: $rd ping
-    # TODO: assert_equal {OK} $rd read
-    # TODO: assert_equal {PONG} $rd read
-    # TODO: $rd close
+    rd.run("client", "reply", "off")
+    rd.run("multi")
+    rd.run("ping", "pong2")
+    rd.run("ping", "pong3")
+    rd.run("exec")
+    rd.run("client", "reply", "on")
+    rd.run("ping")
+    assert "OK" == rd.run("read")
+    assert "PONG" == rd.run("read")
+    rd.run("client", "reply", "skip")
+    rd.run("multi")
+    rd.run("ping", "pong2")
+    rd.run("ping", "pong3")
+    rd.run("exec")
+    assert "QUEUED" == rd.run("read")
+    assert "QUEUED" == rd.run("read")
+    assert "pong2 pong3" == rd.run("read")
+    rd.run("client", "reply", "on")
+    rd.run("ping")
+    assert "OK" == rd.run("read")
+    assert "PONG" == rd.run("read")
+    rd.run("close")
 
 
 def test_auth_errored_inside_multi_will_add_the_reply(r: ValkeyTestClient) -> None:
@@ -1957,10 +1955,6 @@ start_cluster 1 0 {tags {"external:skip cluster needs:debug"} overrides {appendo
 
 
 # --- stubs for unimplemented TCL helpers ---
-
-
-def assert_(*args):
-    raise NotImplementedError("assert_")
 
 
 def assert_aof_content(*args):

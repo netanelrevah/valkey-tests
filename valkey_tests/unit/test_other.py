@@ -404,7 +404,6 @@ def test_reset_clears_client_state(r: ValkeyTestClient) -> None:
     assert fnmatch(str(client), "*flags=N *")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_reset_clears_monitor_state(r: ValkeyTestClient) -> None:
     """
     test {RESET clears MONITOR state} {
@@ -420,11 +419,11 @@ def test_reset_clears_monitor_state(r: ValkeyTestClient) -> None:
     } {} {needs:reset}
     """
     rd = valkey_deferring_client()
-    # TODO: $rd monitor
-    # TODO: assert_equal $rd read "OK"
-    # TODO: $rd reset
-    # TODO: assert_equal $rd read "RESET"
-    # TODO: $rd close
+    rd.run("monitor")
+    assert rd.run("read") == "OK"
+    rd.run("reset")
+    assert rd.run("read") == "RESET"
+    rd.run("close")
     assert_no_match("*flags=O*", r.run("client", "list"))
 
 

@@ -1,4 +1,4 @@
-# ruff: noqa: F841, ANN001, ANN002, ANN201
+# ruff: noqa: ANN001, ANN002, ANN201
 import time
 
 import pytest
@@ -49,7 +49,6 @@ def test_blpop_on_async_rm_call_fire_and_forget(r: ValkeyTestClient) -> None:
     assert "0" == r.run("llen", "l")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_blpop_on_threaded_async_rm_call(r: ValkeyTestClient) -> None:
     """
     test "Blpop on threaded async RM_Call" {
@@ -64,12 +63,12 @@ def test_blpop_on_threaded_async_rm_call(r: ValkeyTestClient) -> None:
     }
     """
     rd = valkey_deferring_client()
-    # TODO: $rd do_rm_call_async_on_thread blpop l 0
+    rd.run("do_rm_call_async_on_thread", "blpop", "l", 0)
     wait_for_blocked_clients_count(1)
     r.run("lpush", "l", "a")
-    # TODO: assert_equal $rd read {l a}
+    assert rd.run("read") == "l a"
     wait_for_blocked_clients_count(0)
-    # TODO: $rd close
+    rd.run("close")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -91,9 +90,9 @@ def test_blpop_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd) -> None:
     # TODO: $rd cmd blpop l 0
     wait_for_blocked_clients_count(1)
     r.run("lpush", "l", "a")
-    # TODO: assert_equal $rd read {l a}
+    assert rd.run("read") == "l a"
     wait_for_blocked_clients_count(0)
-    # TODO: $rd close
+    rd.run("close")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -115,9 +114,9 @@ def test_brpop_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd) -> None:
     # TODO: $rd cmd brpop l 0
     wait_for_blocked_clients_count(1)
     r.run("lpush", "l", "a")
-    # TODO: assert_equal $rd read {l a}
+    assert rd.run("read") == "l a"
     wait_for_blocked_clients_count(0)
-    # TODO: $rd close
+    rd.run("close")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -140,9 +139,9 @@ def test_brpoplpush_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd) -> None
     # TODO: $rd cmd brpoplpush l1 l2 0
     wait_for_blocked_clients_count(1)
     r.run("lpush", "l1", "a")
-    # TODO: assert_equal $rd read {a}
+    assert rd.run("read") == "a"
     wait_for_blocked_clients_count(0)
-    # TODO: $rd close
+    rd.run("close")
     assert r.run("lpop", "l2") == "a"
 
 
@@ -166,9 +165,9 @@ def test_blmove_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd) -> None:
     # TODO: $rd cmd blmove l1 l2 LEFT LEFT 0
     wait_for_blocked_clients_count(1)
     r.run("lpush", "l1", "a")
-    # TODO: assert_equal $rd read {a}
+    assert rd.run("read") == "a"
     wait_for_blocked_clients_count(0)
-    # TODO: $rd close
+    rd.run("close")
     assert r.run("lpop", "l2") == "a"
 
 
@@ -191,9 +190,9 @@ def test_bzpopmin_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd) -> None:
     # TODO: $rd cmd bzpopmin s 0
     wait_for_blocked_clients_count(1)
     r.run("zadd", "s", 10, "foo")
-    # TODO: assert_equal $rd read {s foo 10}
+    assert rd.run("read") == "s foo 10"
     wait_for_blocked_clients_count(0)
-    # TODO: $rd close
+    rd.run("close")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -215,12 +214,11 @@ def test_bzpopmax_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd) -> None:
     # TODO: $rd cmd bzpopmax s 0
     wait_for_blocked_clients_count(1)
     r.run("zadd", "s", 10, "foo")
-    # TODO: assert_equal $rd read {s foo 10}
+    assert rd.run("read") == "s foo 10"
     wait_for_blocked_clients_count(0)
-    # TODO: $rd close
+    rd.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_nested_async_rm_call(r: ValkeyTestClient) -> None:
     """
     test {Nested async RM_Call} {
@@ -235,15 +233,14 @@ def test_nested_async_rm_call(r: ValkeyTestClient) -> None:
     }
     """
     rd = valkey_deferring_client()
-    # TODO: $rd do_rm_call_async do_rm_call_async do_rm_call_async do_rm_call_async blpop l 0
+    rd.run("do_rm_call_async", "do_rm_call_async", "do_rm_call_async", "do_rm_call_async", "blpop", "l", 0)
     wait_for_blocked_clients_count(1)
     r.run("lpush", "l", "a")
-    # TODO: assert_equal $rd read {l a}
+    assert rd.run("read") == "l a"
     wait_for_blocked_clients_count(0)
-    # TODO: $rd close
+    rd.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_multiple_async_rm_call_waiting_on_the_same_event(r: ValkeyTestClient) -> None:
     """
     test {Test multiple async RM_Call waiting on the same event} {
@@ -263,15 +260,15 @@ def test_test_multiple_async_rm_call_waiting_on_the_same_event(r: ValkeyTestClie
     """
     rd1 = valkey_deferring_client()
     rd2 = valkey_deferring_client()
-    # TODO: $rd1 do_rm_call_async do_rm_call_async do_rm_call_async do_rm_call_async blpop l 0
-    # TODO: $rd2 do_rm_call_async do_rm_call_async do_rm_call_async do_rm_call_async blpop l 0
+    rd1.run("do_rm_call_async", "do_rm_call_async", "do_rm_call_async", "do_rm_call_async", "blpop", "l", 0)
+    rd2.run("do_rm_call_async", "do_rm_call_async", "do_rm_call_async", "do_rm_call_async", "blpop", "l", 0)
     wait_for_blocked_clients_count(2)
     r.run("lpush", "l", "element", "element")
-    # TODO: assert_equal $rd1 read {l element}
-    # TODO: assert_equal $rd2 read {l element}
+    assert rd1.run("read") == "l element"
+    assert rd2.run("read") == "l element"
     wait_for_blocked_clients_count(0)
-    # TODO: $rd1 close
-    # TODO: $rd2 close
+    rd1.run("close")
+    rd2.run("close")
 
 
 def test_async_rm_call_calls_rm_call(r: ValkeyTestClient) -> None:
@@ -301,7 +298,6 @@ def test_async_rm_call_calls_background_rm_call_calls_rm_call_calls_async_rm_cal
     assert "PONG" == r.run("do_rm_call_async", "do_bg_rm_call", "do_rm_call", "do_rm_call_async", "ping")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_async_rm_call_inside_async_rm_call_callback(r: ValkeyTestClient) -> None:
     """
     test {async RM_Call inside async RM_Call callback} {
@@ -329,14 +325,14 @@ def test_async_rm_call_inside_async_rm_call_callback(r: ValkeyTestClient) -> Non
     }
     """
     rd = valkey_deferring_client()
-    # TODO: $rd wait_and_do_rm_call blpop l 0
+    rd.run("wait_and_do_rm_call", "blpop", "l", 0)
     wait_for_blocked_clients_count(1)
     start_server(
         "",
         '            test "Connect a replica to the master instance" {\n                r slaveof [srv -1 host] [srv -1 port]\n                wait_for_condition 50 100 {\n                    [s role] eq {slave} &&\n                    [string match {*master_link_status:up*} [r info replication]]\n                } else {\n                    fail "Can\'t turn the instance into a replica"\n                }\n            }\n\n            assert_equal {1} [r -1 lpush l a]\n            assert_equal [$rd read] {l a}\n        ',
     )
     wait_for_blocked_clients_count(0)
-    # TODO: $rd close
+    rd.run("close")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -365,7 +361,7 @@ def test_become_replica_while_having_async_rm_call_running(r: ValkeyTestClient) 
     """
     r.run("flushall")
     rd = valkey_deferring_client()
-    # TODO: $rd do_rm_call_async blpop l 0
+    rd.run("do_rm_call_async", "blpop", "l", 0)
     wait_for_blocked_clients_count(1)
     r.run("replicaof", "localhost", 30000)
     catch("[$rd read]", "e")
@@ -374,7 +370,7 @@ def test_become_replica_while_having_async_rm_call_running(r: ValkeyTestClient) 
     r.run("replicaof", "no", "one")
     r.run("lpush", "l", 1)
     assert r.run("llen", "l") == "1"
-    # TODO: $rd close
+    rd.run("close")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -405,17 +401,16 @@ def test_pipeline_with_blocking_rm_call(r: ValkeyTestClient) -> None:
     buf = ""
     # TODO: append buf "do_rm_call_async blpop l 0\r\n"
     # TODO: append buf "ping\r\n"
-    # TODO: $rd write buf
-    # TODO: $rd flush
+    rd.run("write", buf)
+    rd.run("flush")
     wait_for_blocked_clients_count(1)
     r.run("lpush", "l", 1)
-    # TODO: assert_equal $rd read {l 1}
-    # TODO: assert_equal $rd read {PONG}
+    assert rd.run("read") == "l 1"
+    assert rd.run("read") == "PONG"
     wait_for_blocked_clients_count(0)
-    # TODO: $rd close
+    rd.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_blocking_rm_call_abort(r: ValkeyTestClient) -> None:
     """
     test {blocking RM_Call abort} {
@@ -441,16 +436,16 @@ def test_blocking_rm_call_abort(r: ValkeyTestClient) -> None:
     """
     r.run("flushall")
     rd = valkey_deferring_client()
-    # TODO: $rd client id
-    # TODO: set client_id $rd read
-    # TODO: $rd do_rm_call_async blpop l 0
+    rd.run("client", "id")
+    client_id = rd.run("read")
+    rd.run("do_rm_call_async", "blpop", "l", 0)
     wait_for_blocked_clients_count(1)
-    # TODO: r client kill ID client_id
+    r.run("client", "kill", "ID", client_id)
     assert_error("*error reading reply*", "$rd read")
     wait_for_blocked_clients_count(0)
     r.run("lpush", "l", 1)
     assert r.run("llen", "l") == "1"
-    # TODO: $rd close
+    rd.run("close")
 
 
 pytestmark = [pytest.mark.modules]
@@ -461,7 +456,6 @@ r module load testmodule
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_basic_replication_stream_on_unblock_handler(r: ValkeyTestClient) -> None:
     """
     test {Test basic replication stream on unblock handler} {
@@ -489,17 +483,16 @@ def test_test_basic_replication_stream_on_unblock_handler(r: ValkeyTestClient) -
     r.run("flushall")
     repl = attach_to_replication_stream()
     rd = valkey_deferring_client()
-    # TODO: $rd do_rm_call_async blpop l 0
+    rd.run("do_rm_call_async", "blpop", "l", 0)
     wait_for_blocked_clients_count(1)
     r.run("lpush", "l", "a")
-    # TODO: assert_equal $rd read {l a}
+    assert rd.run("read") == "l a"
     assert_replication_stream(repl, "            {select *}\n            {lpush l a}\n            {lpop l}\n        ")
     close_replication_stream(repl)
     wait_for_blocked_clients_count(0)
-    # TODO: $rd close
+    rd.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_unblock_handler_are_executed_as_a_unit(r: ValkeyTestClient) -> None:
     """
     test {Test unblock handler are executed as a unit} {
@@ -531,20 +524,19 @@ def test_test_unblock_handler_are_executed_as_a_unit(r: ValkeyTestClient) -> Non
     r.run("flushall")
     repl = attach_to_replication_stream()
     rd = valkey_deferring_client()
-    # TODO: $rd blpop_and_set_multiple_keys l x 1 y 2
+    rd.run("blpop_and_set_multiple_keys", "l", "x", 1, "y", 2)
     wait_for_blocked_clients_count(1)
     r.run("lpush", "l", "a")
-    # TODO: assert_equal $rd read {OK}
+    assert rd.run("read") == "OK"
     assert_replication_stream(
         repl,
         "            {select *}\n            {lpush l a}\n            {multi}\n            {lpop l}\n            {set x 1}\n            {set y 2}\n            {exec}\n        ",
     )
     close_replication_stream(repl)
     wait_for_blocked_clients_count(0)
-    # TODO: $rd close
+    rd.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_no_propagation_of_blocking_command(r: ValkeyTestClient) -> None:
     """
     test {Test no propagation of blocking command} {
@@ -575,15 +567,15 @@ def test_test_no_propagation_of_blocking_command(r: ValkeyTestClient) -> None:
     r.run("flushall")
     repl = attach_to_replication_stream()
     rd = valkey_deferring_client()
-    # TODO: $rd do_rm_call_async_no_replicate blpop l 0
+    rd.run("do_rm_call_async_no_replicate", "blpop", "l", 0)
     wait_for_blocked_clients_count(1)
     r.run("lpush", "l", "a")
-    # TODO: assert_equal $rd read {l a}
+    assert rd.run("read") == "l a"
     r.run("set", "x", 1)
     assert_replication_stream(repl, "            {select *}\n            {lpush l a}\n            {set x 1}\n        ")
     close_replication_stream(repl)
     wait_for_blocked_clients_count(0)
-    # TODO: $rd close
+    rd.run("close")
 
 
 pytestmark = [pytest.mark.modules]
@@ -599,7 +591,6 @@ r module load testmodule2
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_unblock_handler_are_executed_as_a_unit_with_key_space_notifications(r: ValkeyTestClient) -> None:
     """
     test {Test unblock handler are executed as a unit with key space notifications} {
@@ -643,20 +634,19 @@ def test_test_unblock_handler_are_executed_as_a_unit_with_key_space_notification
     r.run("flushall")
     repl = attach_to_replication_stream()
     rd = valkey_deferring_client()
-    # TODO: $rd blpop_and_set_multiple_keys l string_foo 1 string_bar 2
+    rd.run("blpop_and_set_multiple_keys", "l", "string_foo", 1, "string_bar", 2)
     wait_for_blocked_clients_count(1)
     r.run("lpush", "l", "a")
-    # TODO: assert_equal $rd read {OK}
+    assert rd.run("read") == "OK"
     assert_replication_stream(
         repl,
         "            {select *}\n            {lpush l a}\n            {multi}\n            {lpop l}\n            {set string_foo 1}\n            {set string_bar 2}\n            {incr string_changed{string_foo}}\n            {incr string_changed{string_bar}}\n            {incr string_total}\n            {incr string_total}\n            {exec}\n        ",
     )
     close_replication_stream(repl)
     wait_for_blocked_clients_count(0)
-    # TODO: $rd close
+    rd.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_unblock_handler_are_executed_as_a_unit_with_lazy_expire(r: ValkeyTestClient) -> None:
     """
     test {Test unblock handler are executed as a unit with lazy expire} {
@@ -737,16 +727,16 @@ def test_test_unblock_handler_are_executed_as_a_unit_with_lazy_expire(r: ValkeyT
     r.run("DEBUG", "SET-ACTIVE-EXPIRE", 0)
     repl = attach_to_replication_stream()
     rd = valkey_deferring_client()
-    # TODO: $rd blpop_and_set_multiple_keys l string_foo 1 string_bar 2
+    rd.run("blpop_and_set_multiple_keys", "l", "string_foo", 1, "string_bar", 2)
     wait_for_blocked_clients_count(1)
     r.run("lpush", "l", "a")
-    # TODO: assert_equal $rd read {OK}
+    assert rd.run("read") == "OK"
     r.run("pexpire", "string_foo", 1)
     time.sleep(10 / 1000)
-    # TODO: $rd blpop_and_set_multiple_keys l string_foo 1 string_bar 2
+    rd.run("blpop_and_set_multiple_keys", "l", "string_foo", 1, "string_bar", 2)
     wait_for_blocked_clients_count(1)
     r.run("lpush", "l", "a")
-    # TODO: assert_equal $rd read {OK}
+    assert rd.run("read") == "OK"
     assert_replication_stream(
         repl,
         "            {select *}\n            {lpush l a}\n            {multi}\n            {lpop l}\n            {set string_foo 1}\n            {set string_bar 2}\n            {incr string_changed{string_foo}}\n            {incr string_changed{string_bar}}\n            {incr string_total}\n            {incr string_total}\n            {exec}\n            {pexpireat string_foo *}\n            {lpush l a}\n            {multi}\n            {lpop l}\n            {unlink string_foo}\n            {set string_foo 1}\n            {set string_bar 2}\n            {incr expired}\n            {incr string_changed{string_foo}}\n            {incr string_changed{string_bar}}\n            {incr string_total}\n            {incr string_total}\n            {exec}\n        ",
@@ -754,7 +744,7 @@ def test_test_unblock_handler_are_executed_as_a_unit_with_lazy_expire(r: ValkeyT
     close_replication_stream(repl)
     r.run("DEBUG", "SET-ACTIVE-EXPIRE", 1)
     wait_for_blocked_clients_count(0)
-    # TODO: $rd close
+    rd.run("close")
 
 
 pytestmark = [pytest.mark.modules]
@@ -770,7 +760,6 @@ r module load testmodule3
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_unblock_handler_on_module_blocked_on_keys(r: ValkeyTestClient) -> None:
     """
     test {Test unblock handler on module blocked on keys} {
@@ -790,14 +779,14 @@ def test_test_unblock_handler_on_module_blocked_on_keys(r: ValkeyTestClient) -> 
     """
     rd = valkey_deferring_client()
     r.run("fsl.push", "l", 1)
-    # TODO: $rd do_rm_call_async FSL.BPOPGT l 3 0
+    rd.run("do_rm_call_async", "FSL.BPOPGT", "l", 3, 0)
     wait_for_blocked_clients_count(1)
     r.run("fsl.push", "l", 2)
     r.run("fsl.push", "l", 3)
     r.run("fsl.push", "l", 4)
-    # TODO: assert_equal $rd read {4}
+    assert rd.run("read") == "4"
     wait_for_blocked_clients_count(0)
-    # TODO: $rd close
+    rd.run("close")
 
 
 # --- stubs for unimplemented TCL helpers ---

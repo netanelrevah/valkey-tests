@@ -333,7 +333,6 @@ def test_test_module_clientinfo_api(r: ValkeyTestClient) -> None:
     assert_(' "ever_authenticated" in $flags ')
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_tracking_with_rm_call_sanity(r: ValkeyTestClient) -> None:
     """
     test {tracking with rm_call sanity} {
@@ -352,18 +351,17 @@ def test_tracking_with_rm_call_sanity(r: ValkeyTestClient) -> None:
     }
     """
     rd_trk = valkey_client()
-    # TODO: $rd_trk HELLO 3
-    # TODO: $rd_trk CLIENT TRACKING on
+    rd_trk.run("HELLO", 3)
+    rd_trk.run("CLIENT", "TRACKING", "on")
     r.run("MSET", "key1{t}", 1, "key2{t}", 1)
-    # TODO: $rd_trk test.rm_call GET key1{t}
-    # TODO: $rd_trk test.rm_call SET key2{t} 2
+    rd_trk.run("test.rm_call", "GET", "key1{t}")
+    rd_trk.run("test.rm_call", "SET", "key2{t}", 2)
     r.run("MSET", "key1{t}", 2, "key2{t}", 2)
-    # TODO: assert_equal {invalidate key1{t}} $rd_trk read
-    # TODO: assert_equal "PONG" $rd_trk ping
-    # TODO: $rd_trk close
+    assert "invalidate key1{t}" == rd_trk.run("read")
+    assert "PONG" == rd_trk.run("ping")
+    rd_trk.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_tracking_with_rm_call_with_script(r: ValkeyTestClient) -> None:
     """
     test {tracking with rm_call with script} {
@@ -381,14 +379,14 @@ def test_tracking_with_rm_call_with_script(r: ValkeyTestClient) -> None:
     }
     """
     rd_trk = valkey_client()
-    # TODO: $rd_trk HELLO 3
-    # TODO: $rd_trk CLIENT TRACKING on
+    rd_trk.run("HELLO", 3)
+    rd_trk.run("CLIENT", "TRACKING", "on")
     r.run("MSET", "key1{t}", 1, "key2{t}", 1)
-    # TODO: $rd_trk test.rm_call EVAL "redis.call('get', 'key1{t}')" 2 key1{t} key2{t}
+    rd_trk.run("test.rm_call", "EVAL", "redis.call('get', 'key1{t}')", 2, "key1{t}", "key2{t}")
     r.run("MSET", "key1{t}", 2, "key2{t}", 2)
-    # TODO: assert_equal {invalidate key1{t}} $rd_trk read
-    # TODO: assert_equal "PONG" $rd_trk ping
-    # TODO: $rd_trk close
+    assert "invalidate key1{t}" == rd_trk.run("read")
+    assert "PONG" == rd_trk.run("ping")
+    rd_trk.run("close")
 
 
 def test_publish_to_self_inside_rm_call(r: ValkeyTestClient) -> None:

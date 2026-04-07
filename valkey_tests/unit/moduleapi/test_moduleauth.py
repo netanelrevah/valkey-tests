@@ -499,7 +499,6 @@ def test_test_auth_after_registering_multiple_module_auth_callbacks(r: ValkeyTes
     assert_("$usec_per_call >= 1000000")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_auth_during_blocking_module_auth(r: ValkeyTestClient) -> None:
     """
     test {module auth during blocking module auth} {
@@ -532,18 +531,18 @@ def test_module_auth_during_blocking_module_auth(r: ValkeyTestClient) -> None:
     r.run("acl", "setuser", "foo", ">pwd", "on", "~*", "&*", "+@all")
     rd = valkey_deferring_client()
     rd_two = valkey_deferring_client()
-    # TODO: $rd AUTH foo block_allow
+    rd.run("AUTH", "foo", "block_allow")
     wait_for_blocked_clients_count(1)
     assert "OK" == r.run("AUTH", "foo", "allow")
     assert "OK" == r.run("AUTH", "foo", "allow_two")
     info_clients = r.run("info", "clients")
     assert fnmatch(str(info_clients), "*blocked_clients:1*")
-    # TODO: $rd_two AUTH foo block_allow
+    rd_two.run("AUTH", "foo", "block_allow")
     wait_for_blocked_clients_count(0, 500, 10)
-    # TODO: $rd flush
-    # TODO: assert_equal $rd read "OK"
-    # TODO: $rd_two flush
-    # TODO: assert_equal $rd_two read "OK"
+    rd.run("flush")
+    assert rd.run("read") == "OK"
+    rd_two.run("flush")
+    assert rd_two.run("read") == "OK"
     assert fnmatch(str(cmdstat("auth")), "*calls=4,*,rejected_calls=0,failed_calls=0")
 
 
@@ -577,7 +576,6 @@ def test_module_auth_inside_multi_exec(r: ValkeyTestClient) -> None:
     assert fnmatch(str(cmdstat("auth")), "*calls=2,*,rejected_calls=0,failed_calls=1")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_disabling_valkey_user_during_blocking_module_auth(r: ValkeyTestClient) -> None:
     """
     test {Disabling Valkey User during blocking module auth} {
@@ -600,16 +598,15 @@ def test_disabling_valkey_user_during_blocking_module_auth(r: ValkeyTestClient) 
     r.run("config", "resetstat")
     r.run("acl", "setuser", "foo", ">pwd", "on", "~*", "&*", "+@all")
     rd = valkey_deferring_client()
-    # TODO: $rd AUTH foo pwd
+    rd.run("AUTH", "foo", "pwd")
     wait_for_blocked_clients_count(1)
     r.run("acl", "setuser", "foo", ">pwd", "off", "~*", "&*", "+@all")
     wait_for_blocked_clients_count(0, 500, 10)
-    # TODO: $rd flush
+    rd.run("flush")
     assert_error("*WRONGPASS*", " $rd read ")
     assert fnmatch(str(cmdstat("auth")), "*calls=1,*,rejected_calls=0,failed_calls=1")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_killing_a_client_in_the_middle_of_blocking_module_auth(r: ValkeyTestClient) -> None:
     """
     test {Killing a client in the middle of blocking module auth} {
@@ -635,13 +632,13 @@ def test_killing_a_client_in_the_middle_of_blocking_module_auth(r: ValkeyTestCli
     r.run("config", "resetstat")
     r.run("acl", "setuser", "foo", ">pwd", "on", "~*", "&*", "+@all")
     rd = valkey_deferring_client()
-    # TODO: $rd client id
-    # TODO: set cid $rd read
-    # TODO: $rd AUTH foo pwd
+    rd.run("client", "id")
+    cid = rd.run("read")
+    rd.run("AUTH", "foo", "pwd")
     wait_for_blocked_clients_count(1)
-    # TODO: r client kill id cid
+    r.run("client", "kill", "id", cid)
     wait_for_blocked_clients_count(0, 500, 10)
-    # TODO: $rd flush
+    rd.run("flush")
     assert_error("*I/O error reading reply*", " $rd read ")
     assert fnmatch(str(cmdstat("auth")), "")
 
@@ -700,13 +697,13 @@ def test_test_rm_registerauthcallback_module_api_during_blocking_module_auth(r: 
     r.run("config", "resetstat")
     r.run("acl", "setuser", "foo", ">defaultpwd", "on", "~*", "&*", "+@all")
     rd = valkey_deferring_client()
-    # TODO: $rd AUTH foo defaultpwd
+    rd.run("AUTH", "foo", "defaultpwd")
     wait_for_blocked_clients_count(1)
     assert "OK" == r.run("testmoduleone.rm_register_blocking_auth_cb")
     assert "OK" == r.run("testmoduletwo.rm_register_auth_cb")
     wait_for_blocked_clients_count(0, 500, 10)
-    # TODO: $rd flush
-    # TODO: assert_equal $rd read "OK"
+    rd.run("flush")
+    assert rd.run("read") == "OK"
     stats = cmdstat("auth")
     assert fnmatch(str(stats), "*calls=1,*,rejected_calls=0,failed_calls=0")
     # TODO: regexp "usec_per_call=(\[0-9]{1,})\.*," stats all usec_per_call
@@ -761,7 +758,7 @@ def test_module_unload_during_blocking_module_auth(r: ValkeyTestClient) -> None:
     # TODO: r module load miscmodule
     rd = valkey_deferring_client()
     r.run("acl", "setuser", "foo", ">pwd", "on", "~*", "&*", "+@all")
-    # TODO: $rd AUTH foo block_allow
+    rd.run("AUTH", "foo", "block_allow")
     wait_for_blocked_clients_count(1)
     try:
         e = r.run("module", "unload", "testacl")
@@ -771,8 +768,8 @@ def test_module_unload_during_blocking_module_auth(r: ValkeyTestClient) -> None:
     assert "OK" == r.run("module", "unload", "moduleauthtwo")
     assert "OK" == r.run("module", "unload", "misc")
     wait_for_blocked_clients_count(0, 500, 10)
-    # TODO: $rd flush
-    # TODO: assert_equal $rd read "OK"
+    rd.run("flush")
+    assert rd.run("read") == "OK"
     assert fnmatch(str(cmdstat("auth")), "*calls=1,*,rejected_calls=0,failed_calls=0")
     assert "OK" == r.run("AUTH", "foo", "allow")
     r.run("module", "unload", "testacl")

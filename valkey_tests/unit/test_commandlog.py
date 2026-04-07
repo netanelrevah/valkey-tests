@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841, ANN001, ANN002, ANN201
+# ruff: noqa: PLR2004, ANN001, ANN002, ANN201
 
 from fnmatch import fnmatch
 
@@ -392,7 +392,6 @@ def test_commandlog_slow_some_commands_can_redact_sensitive_fields(r: ValkeyTest
     assert fnmatch(str(slowlog_resp[0][3]), "* key 9 5000 AUTH2 (redacted) (redacted)")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_commandlog_slow_rewritten_commands_are_logged_as_their_original_command(r: ValkeyTestClient) -> None:
     """
     test {COMMANDLOG slow - Rewritten commands are logged as their original command} {
@@ -459,14 +458,14 @@ def test_commandlog_slow_rewritten_commands_are_logged_as_their_original_command
     r.run("INCRBYFLOAT", "A", 1.0)
     assert "INCRBYFLOAT A 1.0" == r.run("commandlog", "get", -1, "slow")[0][3]
     rd = valkey_deferring_client()
-    # TODO: $rd blpop l 0
+    rd.run("blpop", "l", 0)
     wait_for_blocked_clients_count(1, 50, 100)
     r.run("multi")
     r.run("lpush", "l", "foo")
     r.run("commandlog", "reset", "slow")
     r.run("exec")
-    # TODO: $rd read
-    # TODO: $rd close
+    rd.run("read")
+    rd.run("close")
     assert "blpop l 0" == r.run("commandlog", "get", -1, "slow")[0][3]
 
 
@@ -661,7 +660,6 @@ def test_commandlog_slow_get_all_slow_logs(r: ValkeyTestClient) -> None:
     assert 3 == len(r.run("commandlog", "get", 3, "slow"))
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_commandlog_slow_blocking_command_is_reported_only_after_unblocked(r: ValkeyTestClient) -> None:
     """
     test {COMMANDLOG slow - blocking command is reported only after unblocked} {
@@ -691,13 +689,13 @@ def test_commandlog_slow_blocking_command_is_reported_only_after_unblocked(r: Va
     r.run("config", "set", "commandlog-execution-slower-than", 0)
     r.run("config", "set", "commandlog-slow-execution-max-len", 110)
     r.run("commandlog", "reset", "slow")
-    # TODO: $rd BLPOP mylist 0
+    rd.run("BLPOP", "mylist", 0)
     wait_for_blocked_clients_count(1, 50, 20)
     assert 0 == len(regexp("-all", "-inline", "(?=BLPOP)", r.run("commandlog", "get", -1, "slow")))
     r.run("LPUSH", "mylist", 1)
     wait_for_blocked_clients_count(0, 50, 20)
     assert 1 == len(regexp("-all", "-inline", "(?=BLPOP)", r.run("commandlog", "get", -1, "slow")))
-    # TODO: $rd close
+    rd.run("close")
 
 
 @pytest.mark.parametrize(["is_eval"], [(0), (1)])

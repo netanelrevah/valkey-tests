@@ -85,7 +85,6 @@ $rd1 close
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_publish_or_subscribe_basics(r: ValkeyTestClient) -> None:
     """
     test "PUBLISH/SUBSCRIBE basics" {
@@ -117,19 +116,18 @@ def test_publish_or_subscribe_basics(r: ValkeyTestClient) -> None:
     assert "1 2" == subscribe(rd1, "chan1 chan2")
     assert 1 == r.run("publish", "chan1", "hello")
     assert 1 == r.run("publish", "chan2", "world")
-    # TODO: assert_equal {message chan1 hello} $rd1 read
-    # TODO: assert_equal {message chan2 world} $rd1 read
+    assert "message chan1 hello" == rd1.run("read")
+    assert "message chan2 world" == rd1.run("read")
     unsubscribe(rd1, "chan1")
     assert 0 == r.run("publish", "chan1", "hello")
     assert 1 == r.run("publish", "chan2", "world")
-    # TODO: assert_equal {message chan2 world} $rd1 read
+    assert "message chan2 world" == rd1.run("read")
     unsubscribe(rd1, "chan2")
     assert 0 == r.run("publish", "chan1", "hello")
     assert 0 == r.run("publish", "chan2", "world")
-    # TODO: $rd1 close
+    rd1.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_publish_or_subscribe_with_two_clients(r: ValkeyTestClient) -> None:
     """
     test "PUBLISH/SUBSCRIBE with two clients" {
@@ -152,13 +150,12 @@ def test_publish_or_subscribe_with_two_clients(r: ValkeyTestClient) -> None:
     assert "1" == subscribe(rd1, "chan1")
     assert "1" == subscribe(rd2, "chan1")
     assert 2 == r.run("publish", "chan1", "hello")
-    # TODO: assert_equal {message chan1 hello} $rd1 read
-    # TODO: assert_equal {message chan1 hello} $rd2 read
-    # TODO: $rd1 close
-    # TODO: $rd2 close
+    assert "message chan1 hello" == rd1.run("read")
+    assert "message chan1 hello" == rd2.run("read")
+    rd1.run("close")
+    rd2.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_publish_or_subscribe_after_unsubscribe_without_arguments(r: ValkeyTestClient) -> None:
     """
     test "PUBLISH/SUBSCRIBE after UNSUBSCRIBE without arguments" {
@@ -192,10 +189,9 @@ def test_publish_or_subscribe_after_unsubscribe_without_arguments(r: ValkeyTestC
     assert 0 == r.run("publish", "chan1", "hello")
     assert 0 == r.run("publish", "chan2", "hello")
     assert 0 == r.run("publish", "chan3", "hello")
-    # TODO: $rd1 close
+    rd1.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_subscribe_to_one_channel_more_than_once(r: ValkeyTestClient) -> None:
     """
     test "SUBSCRIBE to one channel more than once" {
@@ -211,11 +207,10 @@ def test_subscribe_to_one_channel_more_than_once(r: ValkeyTestClient) -> None:
     rd1 = valkey_deferring_client()
     assert "1 1 1" == subscribe(rd1, "chan1 chan1 chan1")
     assert 1 == r.run("publish", "chan1", "hello")
-    # TODO: assert_equal {message chan1 hello} $rd1 read
-    # TODO: $rd1 close
+    assert "message chan1 hello" == rd1.run("read")
+    rd1.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_unsubscribe_from_non_subscribed_channels(r: ValkeyTestClient) -> None:
     """
     test "UNSUBSCRIBE from non-subscribed channels" {
@@ -227,10 +222,9 @@ def test_unsubscribe_from_non_subscribed_channels(r: ValkeyTestClient) -> None:
     """
     rd1 = valkey_deferring_client()
     assert "0 0 0" == unsubscribe(rd1, "foo bar quux")
-    # TODO: $rd1 close
+    rd1.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_publish_or_psubscribe_basics(r: ValkeyTestClient) -> None:
     """
     test "PUBLISH/PSUBSCRIBE basics" {
@@ -268,19 +262,18 @@ def test_publish_or_psubscribe_basics(r: ValkeyTestClient) -> None:
     assert 0 == r.run("publish", "foo1", "hello")
     assert 0 == r.run("publish", "barfoo.1", "hello")
     assert 0 == r.run("publish", "qux.1", "hello")
-    # TODO: assert_equal {pmessage foo.* foo.1 hello} $rd1 read
-    # TODO: assert_equal {pmessage bar.* bar.1 hello} $rd1 read
+    assert "pmessage foo.* foo.1 hello" == rd1.run("read")
+    assert "pmessage bar.* bar.1 hello" == rd1.run("read")
     assert "1" == punsubscribe(rd1, "foo.*")
     assert 0 == r.run("publish", "foo.1", "hello")
     assert 1 == r.run("publish", "bar.1", "hello")
-    # TODO: assert_equal {pmessage bar.* bar.1 hello} $rd1 read
+    assert "pmessage bar.* bar.1 hello" == rd1.run("read")
     assert "0" == punsubscribe(rd1, "bar.*")
     assert 0 == r.run("publish", "foo.1", "hello")
     assert 0 == r.run("publish", "bar.1", "hello")
-    # TODO: $rd1 close
+    rd1.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_publish_or_psubscribe_with_two_clients(r: ValkeyTestClient) -> None:
     """
     test "PUBLISH/PSUBSCRIBE with two clients" {
@@ -303,13 +296,12 @@ def test_publish_or_psubscribe_with_two_clients(r: ValkeyTestClient) -> None:
     assert "1" == psubscribe(rd1, "chan.*")
     assert "1" == psubscribe(rd2, "chan.*")
     assert 2 == r.run("publish", "chan.foo", "hello")
-    # TODO: assert_equal {pmessage chan.* chan.foo hello} $rd1 read
-    # TODO: assert_equal {pmessage chan.* chan.foo hello} $rd2 read
-    # TODO: $rd1 close
-    # TODO: $rd2 close
+    assert "pmessage chan.* chan.foo hello" == rd1.run("read")
+    assert "pmessage chan.* chan.foo hello" == rd2.run("read")
+    rd1.run("close")
+    rd2.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_publish_or_psubscribe_after_punsubscribe_without_arguments(r: ValkeyTestClient) -> None:
     """
     test "PUBLISH/PSUBSCRIBE after PUNSUBSCRIBE without arguments" {
@@ -343,7 +335,7 @@ def test_publish_or_psubscribe_after_punsubscribe_without_arguments(r: ValkeyTes
     assert 0 == r.run("publish", "chan1.hi", "hello")
     assert 0 == r.run("publish", "chan2.hi", "hello")
     assert 0 == r.run("publish", "chan3.hi", "hello")
-    # TODO: $rd1 close
+    rd1.run("close")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -374,23 +366,22 @@ def test_pubsub_messages_with_client_reply_off(r: ValkeyTestClient) -> None:
     } {0} {resp3}
     """
     rd = valkey_deferring_client()
-    # TODO: $rd hello 3
-    # TODO: $rd read
-    # TODO: $rd client reply off
+    rd.run("hello", 3)
+    rd.run("read")
+    rd.run("client", "reply", "off")
     assert "1" == subscribe(rd, "channel")
     assert "2" == psubscribe(rd, "ch*")
-    # TODO: $rd client reply off
+    rd.run("client", "reply", "off")
     assert 2 == r.run("publish", "channel", "hello")
-    # TODO: assert_equal {message channel hello} $rd read
-    # TODO: assert_equal {pmessage ch* channel hello} $rd read
-    # TODO: $rd client reply off
+    assert "message channel hello" == rd.run("read")
+    assert "pmessage ch* channel hello" == rd.run("read")
+    rd.run("client", "reply", "off")
     assert "1" == unsubscribe(rd, "channel")
     assert "0" == punsubscribe(rd, "ch*")
     # TODO: $rd close
     assert False
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_punsubscribe_from_non_subscribed_channels(r: ValkeyTestClient) -> None:
     """
     test "PUNSUBSCRIBE from non-subscribed channels" {
@@ -403,7 +394,7 @@ def test_punsubscribe_from_non_subscribed_channels(r: ValkeyTestClient) -> None:
     """
     rd1 = valkey_deferring_client()
     assert "0 0 0" == punsubscribe(rd1, "foo.* bar.* quux.*")
-    # TODO: $rd1 close
+    rd1.run("close")
 
 
 def test_numsub_returns_numbers_not_strings_1561(r: ValkeyTestClient) -> None:
@@ -415,7 +406,6 @@ def test_numsub_returns_numbers_not_strings_1561(r: ValkeyTestClient) -> None:
     assert r.run("pubsub", "numsub", "abc", "def") == "abc 0 def 0"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_numpats_returns_the_number_of_unique_patterns(r: ValkeyTestClient) -> None:
     """
     test "NUMPATs returns the number of unique patterns" {
@@ -448,11 +438,10 @@ def test_numpats_returns_the_number_of_unique_patterns(r: ValkeyTestClient) -> N
     punsubscribe(rd1)
     punsubscribe(rd2)
     assert 3 == patterns
-    # TODO: $rd1 close
-    # TODO: $rd2 close
+    rd1.run("close")
+    rd2.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_mix_subscribe_and_psubscribe(r: ValkeyTestClient) -> None:
     """
     test "Mix SUBSCRIBE and PSUBSCRIBE" {
@@ -472,9 +461,9 @@ def test_mix_subscribe_and_psubscribe(r: ValkeyTestClient) -> None:
     assert "1" == subscribe(rd1, "foo.bar")
     assert "2" == psubscribe(rd1, "foo.*")
     assert 2 == r.run("publish", "foo.bar", "hello")
-    # TODO: assert_equal {message foo.bar hello} $rd1 read
-    # TODO: assert_equal {pmessage foo.* foo.bar hello} $rd1 read
-    # TODO: $rd1 close
+    assert "message foo.bar hello" == rd1.run("read")
+    assert "pmessage foo.* foo.bar hello" == rd1.run("read")
+    rd1.run("close")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -513,11 +502,11 @@ def test_keyspace_notifications_we_receive_keyspace_notifications(r: ValkeyTestC
     """
     r.run("config", "set", "notify-keyspace-events", "KA")
     rd1 = valkey_deferring_client()
-    # TODO: $rd1 CLIENT REPLY OFF
+    rd1.run("CLIENT", "REPLY", "OFF")
     assert "1" == psubscribe(rd1, "*")
     r.run("set", "foo", "bar")
     # TODO: assert_equal "pmessage * __keyspace@${db}__:foo set" $rd1 read
-    # TODO: $rd1 close
+    rd1.run("close")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -535,11 +524,11 @@ def test_keyspace_notifications_we_receive_keyevent_notifications(r: ValkeyTestC
     """
     r.run("config", "set", "notify-keyspace-events", "EA")
     rd1 = valkey_deferring_client()
-    # TODO: $rd1 CLIENT REPLY SKIP
+    rd1.run("CLIENT", "REPLY", "SKIP")
     assert "1" == psubscribe(rd1, "*")
     r.run("set", "foo", "bar")
     # TODO: assert_equal "pmessage * __keyevent@${db}__:set foo" $rd1 read
-    # TODO: $rd1 close
+    rd1.run("close")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -559,13 +548,13 @@ def test_keyspace_notifications_we_can_receive_both_kind_of_events(r: ValkeyTest
     """
     r.run("config", "set", "notify-keyspace-events", "KEA")
     rd1 = valkey_deferring_client()
-    # TODO: $rd1 CLIENT REPLY ON
-    # TODO: assert_equal {OK} $rd1 read
+    rd1.run("CLIENT", "REPLY", "ON")
+    assert "OK" == rd1.run("read")
     assert "1" == psubscribe(rd1, "*")
     r.run("set", "foo", "bar")
     # TODO: assert_equal "pmessage * __keyspace@${db}__:foo set" $rd1 read
     # TODO: assert_equal "pmessage * __keyevent@${db}__:set foo" $rd1 read
-    # TODO: $rd1 close
+    rd1.run("close")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -592,7 +581,7 @@ def test_keyspace_notifications_we_are_able_to_mask_events(r: ValkeyTestClient) 
     r.run("lpush", "mylist", "a")
     # TODO: assert_equal "pmessage * __keyspace@${db}__:mylist lpush" $rd1 read
     # TODO: assert_equal "pmessage * __keyevent@${db}__:lpush mylist" $rd1 read
-    # TODO: $rd1 close
+    rd1.run("close")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -622,7 +611,7 @@ def test_keyspace_notifications_general_events_test(r: ValkeyTestClient) -> None
     # TODO: assert_equal "pmessage * __keyevent@${db}__:expire foo" $rd1 read
     # TODO: assert_equal "pmessage * __keyspace@${db}__:foo del" $rd1 read
     # TODO: assert_equal "pmessage * __keyevent@${db}__:del foo" $rd1 read
-    # TODO: $rd1 close
+    rd1.run("close")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -658,7 +647,7 @@ def test_keyspace_notifications_list_events_test(r: ValkeyTestClient) -> None:
     # TODO: assert_equal "pmessage * __keyevent@${db}__:rpush mylist" $rd1 read
     # TODO: assert_equal "pmessage * __keyspace@${db}__:mylist rpop" $rd1 read
     # TODO: assert_equal "pmessage * __keyevent@${db}__:rpop mylist" $rd1 read
-    # TODO: $rd1 close
+    rd1.run("close")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -690,7 +679,7 @@ def test_keyspace_notifications_set_events_test(r: ValkeyTestClient) -> None:
     # TODO: assert_equal "pmessage * __keyspace@${db}__:myset sadd" $rd1 read
     # TODO: assert_equal "pmessage * __keyspace@${db}__:myset sadd" $rd1 read
     # TODO: assert_equal "pmessage * __keyspace@${db}__:myset srem" $rd1 read
-    # TODO: $rd1 close
+    rd1.run("close")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -722,7 +711,7 @@ def test_keyspace_notifications_zset_events_test(r: ValkeyTestClient) -> None:
     # TODO: assert_equal "pmessage * __keyspace@${db}__:myzset zadd" $rd1 read
     # TODO: assert_equal "pmessage * __keyspace@${db}__:myzset zadd" $rd1 read
     # TODO: assert_equal "pmessage * __keyspace@${db}__:myzset zrem" $rd1 read
-    # TODO: $rd1 close
+    rd1.run("close")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -748,7 +737,7 @@ def test_keyspace_notifications_hash_events_test(r: ValkeyTestClient) -> None:
     r.run("hincrby", "myhash", "yes", 10)
     # TODO: assert_equal "pmessage * __keyspace@${db}__:myhash hset" $rd1 read
     # TODO: assert_equal "pmessage * __keyspace@${db}__:myhash hincrby" $rd1 read
-    # TODO: $rd1 close
+    rd1.run("close")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -796,7 +785,7 @@ def test_keyspace_notifications_stream_events_test(r: ValkeyTestClient) -> None:
     # TODO: assert_equal "pmessage * __keyspace@${db}__:mystream xgroup-createconsumer" $rd1 read
     # TODO: assert_equal "pmessage * __keyspace@${db}__:mystream xgroup-createconsumer" $rd1 read
     # TODO: assert_equal "pmessage * __keyspace@${db}__:mystream xgroup-delconsumer" $rd1 read
-    # TODO: $rd1 close
+    rd1.run("close")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -830,7 +819,7 @@ def test_keyspace_notifications_expired_events_triggered_expire(r: ValkeyTestCli
         '            fail "Key does not expire?!"\n        ',
     )
     # TODO: assert_equal "pmessage * __keyevent@${db}__:expired foo" $rd1 read
-    # TODO: $rd1 close
+    rd1.run("close")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -852,7 +841,7 @@ def test_keyspace_notifications_expired_events_background_expire(r: ValkeyTestCl
     assert "1" == psubscribe(rd1, "*")
     r.run("psetex", "foo", 100, 1)
     # TODO: assert_equal "pmessage * __keyevent@${db}__:expired foo" $rd1 read
-    # TODO: $rd1 close
+    rd1.run("close")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -876,7 +865,7 @@ def test_keyspace_notification_expired_event_expiration_time_is_already_expired(
     r.run("set", "foo", 1)
     r.run("expire", "foo", -1)
     # TODO: assert_equal "pmessage * __keyevent@${db}__:expired foo" $rd1 read
-    # TODO: $rd1 close
+    rd1.run("close")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -905,7 +894,7 @@ def test_keyspace_notifications_evicted_events(r: ValkeyTestClient) -> None:
     r.run("config", "set", "maxmemory", 1)
     # TODO: assert_equal "pmessage * __keyevent@${db}__:evicted foo" $rd1 read
     r.run("config", "set", "maxmemory", 0)
-    # TODO: $rd1 close
+    rd1.run("close")
     assert r.run("config", "set", "maxmemory-policy", "noeviction") == "OK"
 
 
@@ -956,7 +945,7 @@ def test_keyspace_notifications_new_key_test(r: ValkeyTestClient) -> None:
     r.run("set", "bar", "bar")
     # TODO: assert_equal "pmessage * __keyevent@${db}__:new foo" $rd1 read
     # TODO: assert_equal "pmessage * __keyevent@${db}__:new bar" $rd1 read
-    # TODO: $rd1 close
+    rd1.run("close")
 
 
 def test_publish_to_self_inside_multi(r: ValkeyTestClient) -> None:

@@ -139,7 +139,6 @@ def test_datatype_copy_command_works_for_modules(r: ValkeyTestClient) -> None:
     assert r.run("datatype.get", "targetkey") == "1234 AAA/sourcekey/targetkey"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_datatype_slow_loading(r: ValkeyTestClient) -> None:
     """
     test {DataType: Slow Loading} {
@@ -176,7 +175,7 @@ def test_datatype_slow_loading(r: ValkeyTestClient) -> None:
     r.run("datatype.slow_loading", 1)
     rd = valkey_deferring_client()
     start = clock("clicks", "-milliseconds")
-    # TODO: $rd debug reload
+    rd.run("debug", "reload")
     wait_for_condition(
         50,
         100,
@@ -195,8 +194,8 @@ def test_datatype_slow_loading(r: ValkeyTestClient) -> None:
         "else",
         '            fail "Failed waiting for loading to end"\n        ',
     )
-    # TODO: $rd read
-    # TODO: $rd close
+    rd.run("read")
+    rd.run("close")
 
 
 def test_datatype_check_the_type_name(r: ValkeyTestClient) -> None:

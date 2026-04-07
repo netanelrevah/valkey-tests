@@ -16,7 +16,6 @@ r module load testmodule
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_publish_and_spublish_via_a_module(r: ValkeyTestClient) -> None:
     """
     test {PUBLISH and SPUBLISH via a module} {
@@ -39,10 +38,10 @@ def test_publish_and_spublish_via_a_module(r: ValkeyTestClient) -> None:
     assert "1" == subscribe(rd2, "chan1")
     assert 1 == r.run("publish.shard", "chan1", "hello")
     assert 1 == r.run("publish.classic", "chan1", "world")
-    # TODO: assert_equal {smessage chan1 hello} $rd1 read
-    # TODO: assert_equal {message chan1 world} $rd2 read
-    # TODO: $rd1 close
-    # TODO: $rd2 close
+    assert "smessage chan1 hello" == rd1.run("read")
+    assert "message chan1 world" == rd2.run("read")
+    rd1.run("close")
+    rd2.run("close")
 
 
 def test_module_publish_to_self_with_multi_message(r: ValkeyTestClient) -> None:

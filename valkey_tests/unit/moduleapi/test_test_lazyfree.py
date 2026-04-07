@@ -47,8 +47,14 @@ def test_modules_allocated_memory_can_be_reclaimed_in_the_background(r: ValkeyTe
     """
     orig_mem = s("used_memory")
     rd = valkey_deferring_client()
-    for_("set i 0", "$i < 10000", "incr i", "            $rd lazyfreelink.insert lazykey $i\n        ")
-    for_("set j 0", "$j < 10000", "incr j", "            $rd read \n        ")
+    i = 0
+    while i < 10000:
+        rd.run("lazyfreelink.insert", "lazykey", i)
+        i += 1
+    j = 0
+    while j < 10000:
+        rd.run("read")
+        j += 1
     assert r.run("lazyfreelink.len", "lazykey") == 10000
     peak_mem = s("used_memory")
     assert r.run("unlink", "lazykey") == 1
@@ -67,10 +73,6 @@ def test_modules_allocated_memory_can_be_reclaimed_in_the_background(r: ValkeyTe
 
 def assert_(*args):
     raise NotImplementedError("assert_")
-
-
-def for_(*args):
-    raise NotImplementedError("for_")
 
 
 def s(*args):

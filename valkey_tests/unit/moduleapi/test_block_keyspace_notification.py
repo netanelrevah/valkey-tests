@@ -32,7 +32,6 @@ def test_blocking_keyspace_notification_one(r: ValkeyTestClient) -> None:
     assert "{event hset key a}" == r.run("b_keyspace.events")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_blocking_keyspace_notification_two(r: ValkeyTestClient) -> None:
     """
     test {Blocking keyspace notification two} {
@@ -54,10 +53,10 @@ def test_blocking_keyspace_notification_two(r: ValkeyTestClient) -> None:
     wait_for_blocked_clients_count(0)
     r.run("b_keyspace.clear")
     rd1 = valkey_deferring_client()
-    # TODO: $rd1 hset b c d
+    rd1.run("hset", "b", "c", "d")
     time.sleep(500 / 1000)
     rd2 = valkey_deferring_client()
-    # TODO: $rd2 hset c d e
+    rd2.run("hset", "c", "d", "e")
     wait_for_blocked_clients_count(2)
     assert "" == r.run("b_keyspace.events")
     wait_for_blocked_clients_count(1)
@@ -66,7 +65,6 @@ def test_blocking_keyspace_notification_two(r: ValkeyTestClient) -> None:
     assert "{event hset key b} {event hset key c}" == r.run("b_keyspace.events")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_blocking_keyspace_notification_with_pipelining_hset_after_hget(r: ValkeyTestClient) -> None:
     """
     test {Blocking keyspace notification with pipelining hset after hget} {
@@ -97,27 +95,26 @@ def test_blocking_keyspace_notification_with_pipelining_hset_after_hget(r: Valke
     wait_for_blocked_clients_count(0)
     r.run("b_keyspace.clear")
     rd1 = valkey_deferring_client()
-    # TODO: $rd1 hset key_10 field_10 value_10
+    rd1.run("hset", "key_10", "field_10", "value_10")
     wait_for_blocked_clients_count(0)
-    # TODO: assert_equal "1" $rd1 read
+    assert "1" == rd1.run("read")
     pause_process(srv(0, "pid"))
-    # TODO: $rd1 hget key_10 field_10
-    # TODO: $rd1 hset key_10 value_10 ss
-    # TODO: $rd1 hget key_10 field_10
+    rd1.run("hget", "key_10", "field_10")
+    rd1.run("hset", "key_10", "value_10", "ss")
+    rd1.run("hget", "key_10", "field_10")
     start = clock("milliseconds")
     resume_process(srv(0, "pid"))
-    # TODO: assert_equal "value_10" $rd1 read
+    assert "value_10" == rd1.run("read")
     first_hget = expr(clock("milliseconds"), "-", start)
-    # TODO: assert_equal "1" $rd1 read
+    assert "1" == rd1.run("read")
     first_hset = expr(clock("milliseconds"), "-", start)
-    # TODO: assert_equal "value_10" $rd1 read
+    assert "value_10" == rd1.run("read")
     second_hget = expr(clock("milliseconds"), "-", start)
     assert expr("$first_hget * 10 < $first_hset")
     assert expr("$second_hget - $first_hset <= 50")
     wait_for_blocked_clients_count(0)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_blocking_keyspace_notification_with_pipelining_hget_after_hset(r: ValkeyTestClient) -> None:
     """
     test {Blocking keyspace notification with pipelining hget after hset} {
@@ -140,15 +137,15 @@ def test_blocking_keyspace_notification_with_pipelining_hget_after_hset(r: Valke
     r.run("b_keyspace.clear")
     rd1 = valkey_deferring_client()
     pause_process(srv(0, "pid"))
-    # TODO: $rd1 hset key_2 field_1 value_1
-    # TODO: $rd1 hget key_2 field_1
+    rd1.run("hset", "key_2", "field_1", "value_1")
+    rd1.run("hget", "key_2", "field_1")
     resume_process(srv(0, "pid"))
     wait_for_blocked_clients_count(1)
     assert "" == r.run("b_keyspace.events")
     wait_for_blocked_clients_count(0)
     assert "{event hset key key_2}" == r.run("b_keyspace.events")
-    # TODO: assert_equal "1" $rd1 read
-    # TODO: assert_equal "value_1" $rd1 read
+    assert "1" == rd1.run("read")
+    assert "value_1" == rd1.run("read")
 
 
 def test_blocking_keyspace_notif_during_multi(r: ValkeyTestClient) -> None:
@@ -188,7 +185,6 @@ def test_blocking_keyspace_notif_during_multi(r: ValkeyTestClient) -> None:
     )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_event_that_fires_twice(r: ValkeyTestClient) -> None:
     """
     test {Event that fires twice} {
@@ -216,7 +212,7 @@ def test_event_that_fires_twice(r: ValkeyTestClient) -> None:
     wait_for_blocked_clients_count(0)
     assert "OK" == r.run("b_keyspace.clear")
     rd1 = valkey_deferring_client()
-    # TODO: $rd1 RENAME f g
+    rd1.run("RENAME", "f", "g")
     assert s(0, "blocked_clients") == 1
     assert "" == r.run("b_keyspace.events")
     wait_for_condition(

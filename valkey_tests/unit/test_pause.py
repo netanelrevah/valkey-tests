@@ -59,7 +59,6 @@ def test_test_check_paused_info_in_info_clients(r: ValkeyTestClient) -> None:
     assert s("paused_timeout_milliseconds") == 0
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_read_commands_are_not_blocked_by_client_pause(r: ValkeyTestClient) -> None:
     """
     test "Test read commands are not blocked by client pause" {
@@ -75,15 +74,14 @@ def test_test_read_commands_are_not_blocked_by_client_pause(r: ValkeyTestClient)
     """
     r.run("client", "PAUSE", 100000, "WRITE")
     rd = valkey_deferring_client()
-    # TODO: $rd GET FOO
-    # TODO: $rd PING
-    # TODO: $rd INFO
+    rd.run("GET", "FOO")
+    rd.run("PING")
+    rd.run("INFO")
     assert s(0, "blocked_clients") == 0
     r.run("client", "unpause")
-    # TODO: $rd close
+    rd.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_old_pause_all_takes_precedence_over_new_pause_write_less_restrictive(r: ValkeyTestClient) -> None:
     """
     test "Test old pause-all takes precedence over new pause-write (less restrictive)" {
@@ -113,17 +111,16 @@ def test_test_old_pause_all_takes_precedence_over_new_pause_write_less_restricti
     }
     """
     rd = valkey_deferring_client()
-    # TODO: $rd SET FOO BAR
+    rd.run("SET", "FOO", "BAR")
     test_start_time = clock("milliseconds")
     r.run("client", "PAUSE", 200, "ALL")
     r.run("client", "PAUSE", 20, "WRITE")
     time.sleep(50 / 1000)
-    # TODO: $rd get FOO
+    rd.run("get", "FOO")
     elapsed = expr("[clock milliseconds]-$test_start_time")
     assert_lessthan(200, elapsed)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_new_pause_time_is_smaller_than_old_one_then_old_time_preserved(r: ValkeyTestClient) -> None:
     """
     test "Test new pause time is smaller than old one, then old time preserved" {
@@ -143,14 +140,13 @@ def test_test_new_pause_time_is_smaller_than_old_one_then_old_time_preserved(r: 
     r.run("client", "PAUSE", 10, "WRITE")
     time.sleep(100 / 1000)
     rd = valkey_deferring_client()
-    # TODO: $rd SET FOO BAR
+    rd.run("SET", "FOO", "BAR")
     wait_for_blocked_clients_count(1, 100, 10)
     r.run("client", "unpause")
-    # TODO: assert_match "OK" $rd read
-    # TODO: $rd close
+    assert fnmatch(str(rd.run("read")), "OK")
+    rd.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_write_commands_are_paused_by_ro(r: ValkeyTestClient) -> None:
     """
     test "Test write commands are paused by RO" {
@@ -167,14 +163,13 @@ def test_test_write_commands_are_paused_by_ro(r: ValkeyTestClient) -> None:
     """
     r.run("client", "PAUSE", 60000, "WRITE")
     rd = valkey_deferring_client()
-    # TODO: $rd SET FOO BAR
+    rd.run("SET", "FOO", "BAR")
     wait_for_blocked_clients_count(1, 50, 100)
     r.run("client", "unpause")
-    # TODO: assert_match "OK" $rd read
-    # TODO: $rd close
+    assert fnmatch(str(rd.run("read")), "OK")
+    rd.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_special_commands_are_paused_by_ro(r: ValkeyTestClient) -> None:
     """
     test "Test special commands are paused by RO" {
@@ -202,19 +197,18 @@ def test_test_special_commands_are_paused_by_ro(r: ValkeyTestClient) -> None:
     r.run("PFADD", "pause-hll", "test")
     r.run("client", "PAUSE", 100000, "WRITE")
     rd = valkey_deferring_client()
-    # TODO: $rd PFCOUNT pause-hll
+    rd.run("PFCOUNT", "pause-hll")
     wait_for_blocked_clients_count(1, 50, 100)
     rd2 = valkey_deferring_client()
-    # TODO: $rd2 publish foo bar
+    rd2.run("publish", "foo", "bar")
     wait_for_blocked_clients_count(2, 50, 100)
     r.run("client", "unpause")
-    # TODO: assert_match "1" $rd read
-    # TODO: assert_match "0" $rd2 read
-    # TODO: $rd close
-    # TODO: $rd2 close
+    assert fnmatch(str(rd.run("read")), "1")
+    assert fnmatch(str(rd2.run("read")), "0")
+    rd.run("close")
+    rd2.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_read_or_admin_multi_execs_are_not_blocked_by_pause_ro(r: ValkeyTestClient) -> None:
     """
     test "Test read/admin multi-execs are not blocked by pause RO" {
@@ -233,16 +227,15 @@ def test_test_read_or_admin_multi_execs_are_not_blocked_by_pause_ro(r: ValkeyTes
     r.run("SET", "FOO", "BAR")
     r.run("client", "PAUSE", 100000, "WRITE")
     rr = valkey_client()
-    # TODO: assert_equal $rr MULTI "OK"
-    # TODO: assert_equal $rr PING "QUEUED"
-    # TODO: assert_equal $rr GET FOO "QUEUED"
-    # TODO: assert_match "PONG BAR" $rr EXEC
+    assert rr.run("MULTI") == "OK"
+    assert rr.run("PING") == "QUEUED"
+    assert rr.run("GET", "FOO") == "QUEUED"
+    assert fnmatch(str(rr.run("EXEC")), "PONG BAR")
     assert s(0, "blocked_clients") == 0
     r.run("client", "unpause")
-    # TODO: $rr close
+    rr.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_write_multi_execs_are_blocked_by_pause_ro(r: ValkeyTestClient) -> None:
     """
     test "Test write multi-execs are blocked by pause RO" {
@@ -260,19 +253,18 @@ def test_test_write_multi_execs_are_blocked_by_pause_ro(r: ValkeyTestClient) -> 
     }
     """
     rd = valkey_deferring_client()
-    # TODO: $rd MULTI
-    # TODO: assert_equal $rd read "OK"
-    # TODO: $rd SET FOO BAR
-    # TODO: assert_equal $rd read "QUEUED"
+    rd.run("MULTI")
+    assert rd.run("read") == "OK"
+    rd.run("SET", "FOO", "BAR")
+    assert rd.run("read") == "QUEUED"
     r.run("client", "PAUSE", 60000, "WRITE")
-    # TODO: $rd EXEC
+    rd.run("EXEC")
     wait_for_blocked_clients_count(1, 50, 100)
     r.run("client", "unpause")
-    # TODO: assert_match "OK" $rd read
-    # TODO: $rd close
+    assert fnmatch(str(rd.run("read")), "OK")
+    rd.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_scripts_are_blocked_by_pause_ro(r: ValkeyTestClient) -> None:
     """
     test "Test scripts are blocked by pause RO" {
@@ -297,20 +289,16 @@ def test_test_scripts_are_blocked_by_pause_ro(r: ValkeyTestClient) -> None:
     r.run("client", "PAUSE", 60000, "WRITE")
     rd = valkey_deferring_client()
     rd2 = valkey_deferring_client()
-    # TODO: $rd EVAL "return 1" 0
-    # TODO: $rd2 EVAL {
-    #       #!lua
-    #                   return 1
-    #   } 0
+    rd.run("EVAL", "return 1", 0)
+    rd2.run("EVAL", "#!lua\n            return 1\n        ", 0)
     wait_for_blocked_clients_count(2, 50, 100)
     r.run("client", "unpause")
-    # TODO: assert_match "1" $rd read
-    # TODO: assert_match "1" $rd2 read
-    # TODO: $rd close
-    # TODO: $rd2 close
+    assert fnmatch(str(rd.run("read")), "1")
+    assert fnmatch(str(rd2.run("read")), "1")
+    rd.run("close")
+    rd2.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_ro_scripts_are_not_blocked_by_pause_ro(r: ValkeyTestClient) -> None:
     """
     test "Test RO scripts are not blocked by pause RO" {
@@ -367,28 +355,23 @@ def test_test_ro_scripts_are_not_blocked_by_pause_ro(r: ValkeyTestClient) -> Non
     )
     r.run("client", "PAUSE", 6000000, "WRITE")
     rr = valkey_client()
-    # TODO: assert_equal $rr EVAL {#!lua flags=no-writes
-    #                   return 'unique script'
-    #               } 0
-    #            "unique script"
-    # TODO: assert_equal $rr EVAL {#!lua flags=no-writes
-    #                   return 'unique script'
-    #               } 0
-    #            "unique script"
-    # TODO: assert_equal $rr EVAL_RO {
-    #               return redis.call('GeT', 'x')..' unique script'
-    #               } 1 x
-    #            "y unique script"
-    # TODO: set sha $rr script load {#!lua flags=no-writes
-    #                   return 2
-    #               }
-    # TODO: assert_equal $rr EVALSHA $sha 0 2
-    # TODO: assert_equal $rr fcall f1 0 hello
+    assert (
+        rr.run("EVAL", "#!lua flags=no-writes                return 'unique script'            ", 0) == "unique script"
+    )
+    assert (
+        rr.run("EVAL", "#!lua flags=no-writes                return 'unique script'            ", 0) == "unique script"
+    )
+    assert (
+        rr.run("EVAL_RO", "            return redis.call('GeT', 'x')..' unique script'            ", 1, "x")
+        == "y unique script"
+    )
+    sha = rr.run("script", "load", "#!lua flags=no-writes                return 2            ")
+    assert rr.run("EVALSHA", sha, 0) == 2
+    assert rr.run("fcall", "f1", 0) == "hello"
     r.run("client", "unpause")
-    # TODO: $rr close
+    rr.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_read_only_scripts_in_multi_exec_are_not_blocked_by_pause_ro(r: ValkeyTestClient) -> None:
     """
     test "Test read-only scripts in multi-exec are not blocked by pause RO" {
@@ -413,22 +396,15 @@ def test_test_read_only_scripts_in_multi_exec_are_not_blocked_by_pause_ro(r: Val
     r.run("SET", "FOO", "BAR")
     r.run("client", "PAUSE", 100000, "WRITE")
     rr = valkey_client()
-    # TODO: assert_equal $rr MULTI "OK"
-    # TODO: assert_equal $rr EVAL {#!lua flags=no-writes
-    #                   return 12
-    #               } 0
-    #            QUEUED
-    # TODO: assert_equal $rr EVAL {#!lua flags=no-writes
-    #                   return 13
-    #               } 0
-    #            QUEUED
-    # TODO: assert_match "12 13" $rr EXEC
+    assert rr.run("MULTI") == "OK"
+    assert rr.run("EVAL", "#!lua flags=no-writes                return 12            ", 0) == "QUEUED"
+    assert rr.run("EVAL", "#!lua flags=no-writes                return 13            ", 0) == "QUEUED"
+    assert fnmatch(str(rr.run("EXEC")), "12 13")
     assert s(0, "blocked_clients") == 0
     r.run("client", "unpause")
-    # TODO: $rr close
+    rr.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_write_scripts_in_multi_exec_are_blocked_by_pause_ro(r: ValkeyTestClient) -> None:
     """
     test "Test write scripts in multi-exec are blocked by pause RO" {
@@ -464,29 +440,23 @@ def test_test_write_scripts_in_multi_exec_are_blocked_by_pause_ro(r: ValkeyTestC
     """
     rd = valkey_deferring_client()
     rd2 = valkey_deferring_client()
-    # TODO: $rd MULTI
-    # TODO: assert_equal $rd read "OK"
-    # TODO: $rd EVAL {
-    #       #!lua
-    #                       return 12
-    #   } 0
-    # TODO: assert_equal $rd read "QUEUED"
-    # TODO: $rd2 MULTI
-    # TODO: assert_equal $rd2 read "OK"
-    # TODO: $rd2 EVAL {
-    #       #!lua
-    #                       return 13
-    #   } 0
-    # TODO: assert_equal $rd2 read "QUEUED"
+    rd.run("MULTI")
+    assert rd.run("read") == "OK"
+    rd.run("EVAL", "#!lua\n                return 12\n            ", 0)
+    assert rd.run("read") == "QUEUED"
+    rd2.run("MULTI")
+    assert rd2.run("read") == "OK"
+    rd2.run("EVAL", "#!lua\n                return 13\n            ", 0)
+    assert rd2.run("read") == "QUEUED"
     r.run("client", "PAUSE", 60000, "WRITE")
-    # TODO: $rd EXEC
-    # TODO: $rd2 EXEC
+    rd.run("EXEC")
+    rd2.run("EXEC")
     wait_for_blocked_clients_count(2, 50, 100)
     r.run("client", "unpause")
-    # TODO: assert_match "12" $rd read
-    # TODO: assert_match "13" $rd2 read
-    # TODO: $rd close
-    # TODO: $rd2 close
+    assert fnmatch(str(rd.run("read")), "12")
+    assert fnmatch(str(rd2.run("read")), "13")
+    rd.run("close")
+    rd2.run("close")
 
 
 def test_test_may_replicate_commands_are_rejected_in_ro_scripts(r: ValkeyTestClient) -> None:
@@ -658,7 +628,6 @@ def test_test_both_active_and_passive_expires_are_skipped_during_client_pause(r:
     assert fnmatch(str(s(0, "expired_keys")), str(expr(expired_keys, "+", 2)))
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_that_client_pause_starts_at_the_end_of_a_transaction(r: ValkeyTestClient) -> None:
     """
     test "Test that client pause starts at the end of a transaction" {
@@ -688,14 +657,14 @@ def test_test_that_client_pause_starts_at_the_end_of_a_transaction(r: ValkeyTest
     r.run("SET", "FOO2{t}", "BAR")
     r.run("exec")
     rd = valkey_deferring_client()
-    # TODO: $rd SET FOO3{t} BAR
+    rd.run("SET", "FOO3{t}", "BAR")
     wait_for_blocked_clients_count(1, 50, 100)
     assert fnmatch(str(r.run("GET", "FOO1{t}")), "BAR")
     assert fnmatch(str(r.run("GET", "FOO2{t}")), "BAR")
     assert fnmatch(str(r.run("GET", "FOO3{t}")), "")
     r.run("client", "unpause")
-    # TODO: assert_match "OK" $rd read
-    # TODO: $rd close
+    assert fnmatch(str(rd.run("read")), "OK")
+    rd.run("close")
 
 
 """
@@ -797,7 +766,6 @@ def test_test_the_randomkey_command_will_not_cause_the_server_to_get_into_an_inf
     assert r.run("randomkey") == ""
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_client_unblock_is_not_allow_to_unblock_client_blocked_by_client_pause(r: ValkeyTestClient) -> None:
     """
     test "CLIENT UNBLOCK is not allow to unblock client blocked by CLIENT PAUSE" {
@@ -832,24 +800,24 @@ def test_client_unblock_is_not_allow_to_unblock_client_blocked_by_client_pause(r
     """
     rd1 = valkey_deferring_client()
     rd2 = valkey_deferring_client()
-    # TODO: $rd1 client id
-    # TODO: $rd2 client id
-    # TODO: set client_id1 $rd1 read
-    # TODO: set client_id2 $rd2 read
+    rd1.run("client", "id")
+    rd2.run("client", "id")
+    client_id1 = rd1.run("read")
+    client_id2 = rd2.run("read")
     r.run("del", "mylist")
     r.run("client", "pause", 100000, "write")
-    # TODO: $rd1 blpop mylist 0
-    # TODO: $rd2 blpop mylist 0
+    rd1.run("blpop", "mylist", 0)
+    rd2.run("blpop", "mylist", 0)
     wait_for_blocked_clients_count(2, 50, 100)
-    # TODO: assert_equal 0 r client unblock $client_id1 timeout
-    # TODO: assert_equal 0 r client unblock $client_id2 error
+    assert 0 == r.run("client", "unblock", client_id1, "timeout")
+    assert 0 == r.run("client", "unblock", client_id2, "error")
     r.run("client", "unpause")
-    # TODO: assert_equal 1 r client unblock $client_id1 timeout
-    # TODO: assert_equal 1 r client unblock $client_id2 error
-    # TODO: assert_equal {} $rd1 read
+    assert 1 == r.run("client", "unblock", client_id1, "timeout")
+    assert 1 == r.run("client", "unblock", client_id2, "error")
+    assert "" == rd1.run("read")
     assert_error("UNBLOCKED*", "$rd2 read")
-    # TODO: $rd1 close
-    # TODO: $rd2 close
+    rd1.run("close")
+    rd2.run("close")
 
 
 """

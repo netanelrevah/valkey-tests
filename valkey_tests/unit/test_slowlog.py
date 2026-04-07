@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841, ANN001, ANN002, ANN201
+# ruff: noqa: PLR2004, ANN001, ANN002, ANN201
 
 from fnmatch import fnmatch
 
@@ -230,7 +230,6 @@ def test_slowlog_some_commands_can_redact_sensitive_fields(r: ValkeyTestClient) 
     assert fnmatch(str(slowlog_resp[0][3]), "* key 9 5000 AUTH2 (redacted) (redacted)")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_slowlog_rewritten_commands_are_logged_as_their_original_command(r: ValkeyTestClient) -> None:
     """
     test {SLOWLOG - Rewritten commands are logged as their original command} {
@@ -297,14 +296,14 @@ def test_slowlog_rewritten_commands_are_logged_as_their_original_command(r: Valk
     r.run("INCRBYFLOAT", "A", 1.0)
     assert "INCRBYFLOAT A 1.0" == r.run("slowlog", "get")[0][3]
     rd = valkey_deferring_client()
-    # TODO: $rd blpop l 0
+    rd.run("blpop", "l", 0)
     wait_for_blocked_clients_count(1, 50, 100)
     r.run("multi")
     r.run("lpush", "l", "foo")
     r.run("slowlog", "reset")
     r.run("exec")
-    # TODO: $rd read
-    # TODO: $rd close
+    rd.run("read")
+    rd.run("close")
     assert "blpop l 0" == r.run("slowlog", "get")[0][3]
 
 
@@ -499,7 +498,6 @@ def test_slowlog_get_all_slow_logs(r: ValkeyTestClient) -> None:
     assert 3 == len(r.run("slowlog", "get", 3))
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_slowlog_blocking_command_is_reported_only_after_unblocked(r: ValkeyTestClient) -> None:
     """
     test {SLOWLOG - blocking command is reported only after unblocked} {
@@ -529,13 +527,13 @@ def test_slowlog_blocking_command_is_reported_only_after_unblocked(r: ValkeyTest
     r.run("config", "set", "slowlog-log-slower-than", 0)
     r.run("config", "set", "slowlog-max-len", 110)
     r.run("slowlog", "reset")
-    # TODO: $rd BLPOP mylist 0
+    rd.run("BLPOP", "mylist", 0)
     wait_for_blocked_clients_count(1, 50, 20)
     assert 0 == len(regexp("-all", "-inline", "(?=BLPOP)", r.run("slowlog", "get")))
     r.run("LPUSH", "mylist", 1)
     wait_for_blocked_clients_count(0, 50, 20)
     assert 1 == len(regexp("-all", "-inline", "(?=BLPOP)", r.run("slowlog", "get")))
-    # TODO: $rd close
+    rd.run("close")
 
 
 @pytest.mark.parametrize(["is_eval"], [(0), (1)])

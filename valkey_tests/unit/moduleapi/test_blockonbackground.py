@@ -1,4 +1,5 @@
 # ruff: noqa: F841, ANN002, ANN201
+from fnmatch import fnmatch
 
 import pytest
 
@@ -195,7 +196,6 @@ def test_blocked_clients_time_tracking_check_blocked_command_without_calling_red
     if_("!$::no_latency", "            assert_equal [r slowlog len] 0\n        ")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_client_unblock_works_only_for_modules_with_timeout_support(r: ValkeyTestClient) -> None:
     """
     test "client unblock works only for modules with timeout support" {
@@ -228,9 +228,9 @@ def test_client_unblock_works_only_for_modules_with_timeout_support(r: ValkeyTes
     }
     """
     rd = valkey_deferring_client()
-    # TODO: $rd client id
-    # TODO: set id $rd read
-    # TODO: $rd block.block 20000
+    rd.run("client", "id")
+    id = rd.run("read")
+    rd.run("block.block", 20000)
     wait_for_condition(
         50,
         100,
@@ -238,9 +238,9 @@ def test_client_unblock_works_only_for_modules_with_timeout_support(r: ValkeyTes
         "else",
         '            fail "Module did not block"\n        ',
     )
-    # TODO: assert_equal 1 r client unblock $id
-    # TODO: assert_match {*Timed out*} $rd read
-    # TODO: $rd block.block 0
+    assert 1 == r.run("client", "unblock", id)
+    assert fnmatch(str(rd.run("read")), "*Timed out*")
+    rd.run("block.block", 0)
     wait_for_condition(
         50,
         100,
@@ -248,9 +248,9 @@ def test_client_unblock_works_only_for_modules_with_timeout_support(r: ValkeyTes
         "else",
         '            fail "Module did not block"\n        ',
     )
-    # TODO: assert_equal 0 r client unblock $id
+    assert 0 == r.run("client", "unblock", id)
     assert "OK" == r.run("block.release", "foobar")
-    # TODO: assert_equal "foobar" $rd read
+    assert "foobar" == rd.run("read")
 
 
 # --- stubs for unimplemented TCL helpers ---

@@ -85,12 +85,12 @@ def test_query_buffer_resized_correctly(r: ValkeyTestClient) -> None:
     }
     """
     rd = valkey_deferring_client()
-    # TODO: $rd client setname test_client
-    # TODO: $rd read
+    rd.run("client", "setname", "test_client")
+    rd.run("read")
     assert client_query_buffer("test_client") == 0
     r.run("debug", "pause-cron", 1)
     # TODO: $rd write "*3\r\n\$3\r\nset\r\n\$2\r\na"
-    # TODO: $rd flush
+    rd.run("flush")
     wait_for_condition(
         1000,
         10,
@@ -99,8 +99,8 @@ def test_query_buffer_resized_correctly(r: ValkeyTestClient) -> None:
         '            fail "client should start using a private query buffer"\n        ',
     )
     # TODO: $rd write "a\r\n\$1\r\nb\r\n"
-    # TODO: $rd flush
-    # TODO: assert_equal {OK} $rd read
+    rd.run("flush")
+    assert "OK" == rd.run("read")
     orig_test_client_qbuf = client_query_buffer("test_client")
     MAX_QUERY_BUFFER_SIZE = expr(32768, "+", 2)
     assert (orig_test_client_qbuf >= 16384) and (orig_test_client_qbuf <= MAX_QUERY_BUFFER_SIZE)
@@ -112,7 +112,7 @@ def test_query_buffer_resized_correctly(r: ValkeyTestClient) -> None:
         "else",
         '            fail "query buffer was not resized"\n        ',
     )
-    # TODO: $rd close
+    rd.run("close")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -152,8 +152,8 @@ def test_query_buffer_resized_correctly_when_not_idle(r: ValkeyTestClient) -> No
     """
     r.run("debug", "pause-cron", 1)
     rd = valkey_client()
-    # TODO: $rd client setname test_client
-    # TODO: $rd set x string repeat A 400000
+    rd.run("client", "setname", "test_client")
+    rd.run("set", "x", string("repeat", "A", 400000))
     orig_test_client_qbuf = client_query_buffer("test_client")
     assert orig_test_client_qbuf > 32768
     r.run("debug", "pause-cron", 0)
@@ -197,12 +197,12 @@ def test_query_buffer_resized_correctly_with_fat_argv(r: ValkeyTestClient) -> No
     }
     """
     rd = valkey_client()
-    # TODO: $rd client setname test_client
+    rd.run("client", "setname", "test_client")
     # TODO: $rd write "*3\r\n\$3\r\nset\r\n\$1\r\na\r\n\$1000000\r\n"
-    # TODO: $rd flush
+    rd.run("flush")
     time.sleep(200 / 1000)
-    # TODO: $rd write "a"
-    # TODO: $rd flush
+    rd.run("write", "a")
+    rd.run("flush")
     time.sleep(20 / 1000)
     if client_query_buffer("test_client") < 1000000:
         fail("query buffer should not be resized when client idle time smaller than 2s")
@@ -213,7 +213,7 @@ def test_query_buffer_resized_correctly_with_fat_argv(r: ValkeyTestClient) -> No
         "else",
         '            fail "query buffer should be resized when client idle time bigger than 2s"\n        ',
     )
-    # TODO: $rd close
+    rd.run("close")
 
 
 # --- stubs for unimplemented TCL helpers ---
@@ -233,6 +233,10 @@ def expr(*args):
 
 def fail(*args):
     raise NotImplementedError("fail")
+
+
+def string(*args):
+    raise NotImplementedError("string")
 
 
 def valkey_client(*args):

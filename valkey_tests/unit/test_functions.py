@@ -584,7 +584,6 @@ def test_function_test_command_get_keys_on_fcall_ro(r: ValkeyTestClient) -> None
     assert r.run("COMMAND", "GETKEYS", "fcall_ro", "test", 1, "x", "foo") == "x"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_test_function_kill(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - test function kill} {
@@ -611,7 +610,7 @@ def test_function_test_function_kill(r: ValkeyTestClient) -> None:
         "REPLACE",
         get_function_code("lua", "test", "test", "local a = 1 while true do a = a + 1 end"),
     )
-    # TODO: $rd fcall test 0
+    rd.run("fcall", "test", 0)
     time.sleep(200 / 1000)
     try:
         e = r.run("ping")
@@ -625,10 +624,9 @@ def test_function_test_function_kill(r: ValkeyTestClient) -> None:
     time.sleep(200 / 1000)
     assert r.run("ping") == "PONG"
     assert_error("ERR Script killed by user with FUNCTION KILL*", "$rd read")
-    # TODO: $rd close
+    rd.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_test_script_kill_not_working_on_function(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - test script kill not working on function} {
@@ -656,7 +654,7 @@ def test_function_test_script_kill_not_working_on_function(r: ValkeyTestClient) 
         "REPLACE",
         get_function_code("lua", "test", "test", "local a = 1 while true do a = a + 1 end"),
     )
-    # TODO: $rd fcall test 0
+    rd.run("fcall", "test", 0)
     time.sleep(200 / 1000)
     try:
         e = r.run("ping")
@@ -672,10 +670,9 @@ def test_function_test_script_kill_not_working_on_function(r: ValkeyTestClient) 
     time.sleep(200 / 1000)
     assert r.run("ping") == "PONG"
     assert_error("ERR Script killed by user with FUNCTION KILL*", "$rd read")
-    # TODO: $rd close
+    rd.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_function_test_function_kill_not_working_on_eval(r: ValkeyTestClient) -> None:
     """
     test {FUNCTION - test function kill not working on eval} {
@@ -696,7 +693,7 @@ def test_function_test_function_kill_not_working_on_eval(r: ValkeyTestClient) ->
     """
     rd = valkey_deferring_client()
     r.run("config", "set", "busy-reply-threshold", 10)
-    # TODO: $rd eval {local a = 1 while true do a = a + 1 end} 0
+    rd.run("eval", "local a = 1 while true do a = a + 1 end", 0)
     time.sleep(200 / 1000)
     try:
         e = r.run("ping")
@@ -712,7 +709,7 @@ def test_function_test_function_kill_not_working_on_eval(r: ValkeyTestClient) ->
     time.sleep(200 / 1000)
     assert r.run("ping") == "PONG"
     assert_error("ERR Script killed by user with SCRIPT KILL*", "$rd read")
-    # TODO: $rd close
+    rd.run("close")
 
 
 def test_function_test_function_flush(r: ValkeyTestClient) -> None:

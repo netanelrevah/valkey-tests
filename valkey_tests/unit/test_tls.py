@@ -232,7 +232,6 @@ def test_tls_verify_tls_cert_file_is_also_used_as_a_client_cert_if_none_specifie
     )
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.skipif("", reason="{$::tls}")
 def test_tls_switch_between_tcp_and_tls_ports(r: ValkeyTestClient) -> None:
     """
@@ -263,18 +262,18 @@ def test_tls_switch_between_tcp_and_tls_ports(r: ValkeyTestClient) -> None:
     """
     srv_port = srv(0, "port")
     rd = valkey(srv(0, "host"), srv_port, 0, 1)
-    # TODO: $rd PING
-    # TODO: $rd CONFIG SET tls-port 0
-    # TODO: $rd CONFIG SET port srv_port
-    # TODO: $rd close
+    rd.run("PING")
+    rd.run("CONFIG", "SET", "tls-port", 0)
+    rd.run("CONFIG", "SET", "port", srv_port)
+    rd.run("close")
     rd = valkey(srv(0, "host"), srv_port, 0, 0)
-    # TODO: $rd PING
-    # TODO: $rd CONFIG SET port 0
-    # TODO: $rd CONFIG SET tls-port srv_port
-    # TODO: $rd close
+    rd.run("PING")
+    rd.run("CONFIG", "SET", "port", 0)
+    rd.run("CONFIG", "SET", "tls-port", srv_port)
+    rd.run("close")
     rd = valkey(srv(0, "host"), srv_port, 0, 1)
-    # TODO: $rd PING
-    # TODO: $rd close
+    rd.run("PING")
+    rd.run("close")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -305,7 +304,6 @@ def test_tls_working_with_an_encrypted_keyfile(r: ValkeyTestClient) -> None:
     # TODO: r config set tls-key-file keyfile_encrypted
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.skipif("", reason="{$::tls}")
 def test_tls_auto_authenticate_using_tls_auth_clients_user_cn(r: ValkeyTestClient) -> None:
     """
@@ -331,9 +329,9 @@ def test_tls_auto_authenticate_using_tls_auth_clients_user_cn(r: ValkeyTestClien
     r.run("ACL", "SETUSER", "Client-only", "on", ">clientpass", "allcommands", "allkeys")
     r.run("CONFIG", "SET", "tls-auth-clients-user", "CN")
     s = valkey_client()
-    # TODO: assert_equal "PONG" $s PING
-    # TODO: assert_equal "Client-only" $s ACL WHOAMI
-    # TODO: $s close
+    assert "PONG" == s.run("PING")
+    assert "Client-only" == s.run("ACL", "WHOAMI")
+    s.run("close")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1046,10 +1044,10 @@ def test_tls_info_tls_clears_expiration_countdown_when_tls_disabled(r: ValkeyTes
     if plain_port == 0:
         fail("Plaintext port not available for TLS test harness")
     plain_client = valkey(host, plain_port, 0, 0)
-    # TODO: $plain_client CONFIG SET port plain_port
-    # TODO: $plain_client CONFIG SET tls-port tls_port
-    # TODO: $plain_client CONFIG SET tls-replication yes
-    # TODO: $plain_client CONFIG SET tls-cluster yes
+    plain_client.run("CONFIG", "SET", "port", plain_port)
+    plain_client.run("CONFIG", "SET", "tls-port", tls_port)
+    plain_client.run("CONFIG", "SET", "tls-replication", "yes")
+    plain_client.run("CONFIG", "SET", "tls-cluster", "yes")
     if_(
         "$::tls_module",
         "                # Force TLS module to refresh cert info after re-enable.\n                set cert [lindex [$plain_client config get tls-cert-file] 1]\n                set key [lindex [$plain_client config get tls-key-file] 1]\n                set cafile [lindex [$plain_client config get tls-ca-cert-file] 1]\n                $plain_client config set tls-cert-file $cert\n                $plain_client config set tls-key-file $key\n                $plain_client config set tls-ca-cert-file $cafile\n            ",
@@ -1068,9 +1066,9 @@ def test_tls_info_tls_clears_expiration_countdown_when_tls_disabled(r: ValkeyTes
     )
     # TODO: assert_morethan expire_enabled 0
     # TODO: $tls_client close
-    # TODO: $plain_client CONFIG SET tls-replication no
-    # TODO: $plain_client CONFIG SET tls-cluster no
-    # TODO: $plain_client CONFIG SET tls-port 0
+    plain_client.run("CONFIG", "SET", "tls-replication", "no")
+    plain_client.run("CONFIG", "SET", "tls-cluster", "no")
+    plain_client.run("CONFIG", "SET", "tls-port", 0)
     wait_for_condition(
         50,
         100,
@@ -1078,7 +1076,7 @@ def test_tls_info_tls_clears_expiration_countdown_when_tls_disabled(r: ValkeyTes
         "else",
         '                fail "Timed out waiting for TLS to disable"\n            ',
     )
-    # TODO: set info_disabled $plain_client info tls
+    info_disabled = plain_client.run("info", "tls")
     foreach(
         "field",
         "tls_server_cert_serial tls_client_cert_serial tls_ca_cert_serial",
@@ -1094,7 +1092,7 @@ def test_tls_info_tls_clears_expiration_countdown_when_tls_disabled(r: ValkeyTes
         "tls_client_cert_expires_in_seconds tls_ca_cert_expires_in_seconds",
         '                set pattern [format {%s:(-?[0-9]+)} $field]\n                if {![regexp $pattern $info_disabled -> exp_value]} {\n                    fail "INFO tls missing $field (disabled)"\n                }\n                assert_equal 0 $exp_value\n            ',
     )
-    # TODO: $plain_client close
+    plain_client.run("close")
 
 
 @pytest.mark.xfail(reason="not implemented")
@@ -1179,10 +1177,10 @@ def test_tls_info_tls_shows_expiration_countdown_when_tls_re_enabled(r: ValkeyTe
     if plain_port == 0:
         fail("Plaintext port not available for TLS test harness")
     plain_client = valkey(host, plain_port, 0, 0)
-    # TODO: $plain_client CONFIG SET port plain_port
-    # TODO: $plain_client CONFIG SET tls-replication no
-    # TODO: $plain_client CONFIG SET tls-cluster no
-    # TODO: $plain_client CONFIG SET tls-port 0
+    plain_client.run("CONFIG", "SET", "port", plain_port)
+    plain_client.run("CONFIG", "SET", "tls-replication", "no")
+    plain_client.run("CONFIG", "SET", "tls-cluster", "no")
+    plain_client.run("CONFIG", "SET", "tls-port", 0)
     wait_for_condition(
         50,
         100,
@@ -1190,9 +1188,9 @@ def test_tls_info_tls_shows_expiration_countdown_when_tls_re_enabled(r: ValkeyTe
         "else",
         '                fail "Timed out waiting for TLS to disable"\n            ',
     )
-    # TODO: $plain_client CONFIG SET tls-port tls_port
-    # TODO: $plain_client CONFIG SET tls-replication yes
-    # TODO: $plain_client CONFIG SET tls-cluster yes
+    plain_client.run("CONFIG", "SET", "tls-port", tls_port)
+    plain_client.run("CONFIG", "SET", "tls-replication", "yes")
+    plain_client.run("CONFIG", "SET", "tls-cluster", "yes")
     if_(
         "$::tls_module",
         "                # Force TLS module to refresh cert info after re-enable.\n                set cert [lindex [$plain_client config get tls-cert-file] 1]\n                set key [lindex [$plain_client config get tls-key-file] 1]\n                set cafile [lindex [$plain_client config get tls-ca-cert-file] 1]\n                $plain_client config set tls-cert-file $cert\n                $plain_client config set tls-key-file $key\n                $plain_client config set tls-ca-cert-file $cafile\n            ",
@@ -1221,7 +1219,7 @@ def test_tls_info_tls_shows_expiration_countdown_when_tls_re_enabled(r: ValkeyTe
         '                set pattern [format {%s:(-?[0-9]+)} $field]\n                if {![regexp $pattern $info_reenabled -> exp_value]} {\n                    fail "INFO tls missing $field (re-enabled)"\n                }\n                assert_morethan $exp_value 0\n            ',
     )
     # TODO: $tls_client close
-    # TODO: $plain_client close
+    plain_client.run("close")
 
 
 # --- stubs for unimplemented TCL helpers ---
