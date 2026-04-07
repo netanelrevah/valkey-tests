@@ -554,6 +554,27 @@ def test_generate_file__rd_fixture_added_to_signature():
     assert "assert_keyevent_patterns(rd, " in output
 
 
+def test_generate_file__outer_if_else_extends_parametrize():
+    output = generate("""
+        start_server {tags {}} {
+            foreach cmd {HINCRBY HINCRBYFLOAT} {
+                if {$cmd eq "HINCRBY"} {
+                    set inc1 2
+                } else {
+                    set inc1 2.5
+                }
+                test {$cmd uses inc1} {
+                    r $cmd myhash f1 $inc1
+                }
+            }
+        }
+    """)
+    assert '@pytest.mark.parametrize(["cmd","inc1"], [("HINCRBY",2),("HINCRBYFLOAT",2.5)])' in output
+    assert "def test_cmd_uses_inc1(r: ValkeyTestClient, cmd, inc1)" in output
+    assert "r.run(cmd, 'myhash', 'f1', inc1)" in output
+    assert "@pytest.mark.xfail" not in output
+
+
 def test_generate_file__vars_set_in_if_else_available_after():
     output = generate("""
         start_server {tags {}} {

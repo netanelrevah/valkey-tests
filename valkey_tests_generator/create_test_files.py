@@ -83,6 +83,20 @@ class TCLTestFileGenerator:
     _translated_tests: int = field(default=0)
     _used_names: Counter = field(default_factory=Counter)
 
+    def generate_parametrize_extended(self, foreach_command: TCLCommandForEach, derived: dict[str, list[str]]) -> str:
+        name_to_values: dict[str, list] = defaultdict(list)
+        for var_names, var_values in foreach_command.variables_names_and_values_lists:
+            for value, name in zip(var_values.words, cycle(var_names)):
+                name_to_values[name].append(value)
+        name_to_values.update(derived)
+
+        names = ",".join(f'"{_safe_var_name(n)}"' for n in name_to_values)
+        tuples = ",".join(
+            "(" + ",".join(_format_parametrize_value(v) for v in row) + ")"
+            for row in zip_longest(*name_to_values.values(), fillvalue=None)
+        )
+        return f"@pytest.mark.parametrize([{names}], [{tuples}])\n"
+
     def generate_parametrize(self, foreach_command: TCLCommandForEach) -> str:
         name_to_values: dict[str, list] = defaultdict(list)
         for var_names, var_values in foreach_command.variables_names_and_values_lists:
