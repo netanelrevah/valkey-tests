@@ -194,10 +194,14 @@ class WordArgumentTranslator(ArgumentTranslator):
 @ExpressionTranslator.register("set")
 class SetExpressionTranslator(ExpressionTranslator):
     def get_expression(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> str | None:
-        if len(arguments) != 1 or not isinstance(arguments[0], TCLWord):
+        if not arguments or not isinstance(arguments[0], TCLWord):
             return None
         name = arguments[0].value
-        return _safe_var_name(name) if name in defined_vars else None
+        if len(arguments) == 1:
+            # getter: [set varname] — return the variable if already in scope
+            return _safe_var_name(name) if name in defined_vars else None
+        # setter: [set varname value] — TCL returns the assigned value
+        return ArgumentTranslator.translate(arguments[1], defined_vars)
 
 
 @ExpressionTranslator.register("r")
