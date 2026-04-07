@@ -225,6 +225,17 @@ class TCLBodyTranslator:
                         collected_stubs.add(safe_name)
                         lines.append(f"{safe_name}({', '.join(args)})")
                         continue
+                # Variable-as-command: $var subcmd args → var.run(subcmd, args)
+                if command.name.startswith("$"):
+                    var_name = command.name[1:]
+                    if var_name.isidentifier() and var_name in defined_vars and command.args:
+                        subcmd_arg = command.args[0]
+                        if isinstance(subcmd_arg, TCLWord):
+                            rest = ArgumentTranslator.translate_all(command.args[1:], defined_vars)
+                            if rest is not None:
+                                safe_var = _safe_var_name(var_name)
+                                lines.append(f"{safe_var}.run({', '.join([repr(subcmd_arg.value), *rest])})")
+                                continue
 
             formatted = command.formatted()
             first_line, *rest_lines = formatted.splitlines()

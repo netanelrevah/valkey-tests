@@ -554,6 +554,21 @@ def test_generate_file__rd_fixture_added_to_signature():
     assert "assert_keyevent_patterns(rd, " in output
 
 
+def test_generate_file__rd_method_call_translates():
+    output = generate("""
+        start_server {tags {}} {
+            test {rd method call} {
+                set rd [setup_rd]
+                $rd SET foo bar
+                $rd close
+            }
+        }
+    """)
+    assert "@pytest.mark.xfail" not in output
+    assert "rd.run('SET', 'foo', 'bar')" in output
+    assert "rd.run('close')" in output
+
+
 def test_generate_file__outer_if_else_extends_parametrize():
     output = generate("""
         start_server {tags {}} {

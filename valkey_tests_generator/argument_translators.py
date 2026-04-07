@@ -142,6 +142,15 @@ class BracketArgumentTranslator(ArgumentTranslator):
                 safe_name = _safe_stub_name(name)
                 collected_stubs.add(safe_name)
                 return f"{safe_name}({', '.join(args)})"
+        # Variable-as-command: [$var subcmd args] → var.run(subcmd, args)
+        if name.startswith("$"):
+            var_name = name[1:]
+            if var_name.isidentifier() and var_name in defined_vars and commands[0].args:
+                subcmd_arg = commands[0].args[0]
+                if isinstance(subcmd_arg, TCLWord):
+                    rest = ArgumentTranslator.translate_all(commands[0].args[1:], defined_vars)
+                    if rest is not None:
+                        return f"{_safe_var_name(var_name)}.run({', '.join([repr(subcmd_arg.value), *rest])})"
         return None
 
 
