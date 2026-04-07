@@ -6352,9 +6352,10 @@ if {$cmd eq "HINCRBY"} {
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
-@pytest.mark.parametrize(["cmd"], [("HINCRBY"), ("HINCRBYFLOAT")])
-def test_cmd_recreates_field_with_correct_value_after_active_expiry_deletion(r: ValkeyTestClient, cmd) -> None:
+@pytest.mark.parametrize(["cmd", "inc1", "inc2", "inc3"], [("HINCRBY", 2, 3, 4), ("HINCRBYFLOAT", 2.5, 3.5, 4.5)])
+def test_cmd_recreates_field_with_correct_value_after_active_expiry_deletion(
+    r: ValkeyTestClient, cmd, inc1, inc2, inc3
+) -> None:
     """
     test "$cmd recreates field with correct value after active expiry deletion" {
         r FLUSHALL
@@ -6380,13 +6381,12 @@ def test_cmd_recreates_field_with_correct_value_after_active_expiry_deletion(r: 
     assert 1 == r.run("HLEN", "myhash")
     r.run("HPEXPIRE", "myhash", 100, "FIELDS", 1, "f1")
     wait_for_active_expiry("r", "myhash", 0, initial_expired, 1)
-    # TODO: r cmd myhash f1 inc1
-    # TODO: assert_equal inc1 r HGET myhash f1
+    r.run(cmd, "myhash", "f1", inc1)
+    assert inc1 == r.run("HGET", "myhash", "f1")
 
 
-@pytest.mark.xfail(reason="not implemented")
-@pytest.mark.parametrize(["cmd"], [("HINCRBY"), ("HINCRBYFLOAT")])
-def test_cmd_preserves_existing_ttl_when_incrementing_field_value(r: ValkeyTestClient, cmd) -> None:
+@pytest.mark.parametrize(["cmd", "inc1", "inc2", "inc3"], [("HINCRBY", 2, 3, 4), ("HINCRBYFLOAT", 2.5, 3.5, 4.5)])
+def test_cmd_preserves_existing_ttl_when_incrementing_field_value(r: ValkeyTestClient, cmd, inc1, inc2, inc3) -> None:
     """
     test "$cmd preserves existing TTL when incrementing field value" {
         r FLUSHALL
@@ -6411,14 +6411,16 @@ def test_cmd_preserves_existing_ttl_when_incrementing_field_value(r: ValkeyTestC
     r.run("HSET", "myhash", "f1", 1)
     assert 1 == r.run("HLEN", "myhash")
     r.run("HEXPIRE", "myhash", 100000, "FIELDS", 1, "f1")
-    # TODO: r cmd myhash f1 inc1
+    r.run(cmd, "myhash", "f1", inc1)
     assert expr("$inc1 + 1") == r.run("HGET", "myhash", "f1")
     assert_morethan(r.run("HTTL", "myhash", "FIELDS", 1, "f1"), 90000)
 
 
 @pytest.mark.xfail(reason="not implemented")
-@pytest.mark.parametrize(["cmd"], [("HINCRBY"), ("HINCRBYFLOAT")])
-def test_cmd_handles_mix_of_expired_and_existing_fields_during_increment_operations(r: ValkeyTestClient, cmd) -> None:
+@pytest.mark.parametrize(["cmd", "inc1", "inc2", "inc3"], [("HINCRBY", 2, 3, 4), ("HINCRBYFLOAT", 2.5, 3.5, 4.5)])
+def test_cmd_handles_mix_of_expired_and_existing_fields_during_increment_operations(
+    r: ValkeyTestClient, cmd, inc1, inc2, inc3
+) -> None:
     """
     test "$cmd handles mix of expired and existing fields during increment operations" {
         r FLUSHALL
@@ -6448,15 +6450,17 @@ def test_cmd_handles_mix_of_expired_and_existing_fields_during_increment_operati
     assert 3 == r.run("HLEN", "myhash")
     r.run("HPEXPIRE", "myhash", 100, "FIELDS", 2, "f1", "f3")
     wait_for_active_expiry("r", "myhash", 1, initial_expired, 2)
-    # TODO: r cmd myhash f1 inc1
-    # TODO: r cmd myhash f2 inc2
-    # TODO: r cmd myhash f3 inc3
+    r.run(cmd, "myhash", "f1", inc1)
+    r.run(cmd, "myhash", "f2", inc2)
+    r.run(cmd, "myhash", "f3", inc3)
     # TODO: assert_equal "$inc1 [expr {$inc2+2}] $inc3" r HMGET myhash f1 f2 f3
 
 
 @pytest.mark.xfail(reason="not implemented")
-@pytest.mark.parametrize(["cmd"], [("HINCRBY"), ("HINCRBYFLOAT")])
-def test_cmd_maintains_ttl_values_when_incrementing_fields_with_existing_expiry(r: ValkeyTestClient, cmd) -> None:
+@pytest.mark.parametrize(["cmd", "inc1", "inc2", "inc3"], [("HINCRBY", 2, 3, 4), ("HINCRBYFLOAT", 2.5, 3.5, 4.5)])
+def test_cmd_maintains_ttl_values_when_incrementing_fields_with_existing_expiry(
+    r: ValkeyTestClient, cmd, inc1, inc2, inc3
+) -> None:
     """
     test "$cmd maintains TTL values when incrementing fields with existing expiry" {
         r FLUSHALL
@@ -6480,7 +6484,7 @@ def test_cmd_maintains_ttl_values_when_incrementing_fields_with_existing_expiry(
     r.run("HSET", "myhash", "f1", 1, "f2", 2, "f3", 3)
     assert 3 == r.run("HLEN", "myhash")
     r.run("HEXPIRE", "myhash", 100000, "FIELDS", 2, "f1", "f3")
-    # TODO: r cmd myhash f1 inc1
+    r.run(cmd, "myhash", "f1", inc1)
     r.run(cmd, "myhash", "f3", "-$inc3")
     # TODO: assert_equal "[expr {$inc1+1}] 2 [expr {-$inc3+3}]" r HMGET myhash f1 f2 f3
 
