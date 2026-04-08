@@ -12,6 +12,7 @@ from pytcl.words import (
     TCLCommandArguments,
     TCLCommandWord,
     TCLDoubleQuotedWord,
+    TCLVariableSubstitutionWord,
     TCLWord,
 )
 
@@ -421,12 +422,16 @@ class TCLBodyTranslator:
         if not var_name.isidentifier() or var_name not in defined_vars or not command.args:
             return None
         subcmd_arg = command.args[0]
-        if not isinstance(subcmd_arg, TCLWord):
+        if isinstance(subcmd_arg, TCLWord):
+            subcmd_str = repr(subcmd_arg.value)
+        elif isinstance(subcmd_arg, TCLVariableSubstitutionWord) and subcmd_arg.variable_name in defined_vars:
+            subcmd_str = _safe_var_name(subcmd_arg.variable_name)
+        else:
             return None
         rest = ArgumentTranslator.translate_all(command.args[1:], defined_vars)
         if rest is None:
             return None
-        return [f"{_safe_var_name(var_name)}.run({', '.join([repr(subcmd_arg.value), *rest])})"]
+        return [f"{_safe_var_name(var_name)}.run({', '.join([subcmd_str, *rest])})"]
 
     @classmethod
     def _make_todo(cls, command: TCLCommandWord, is_last: bool, expected: str | None) -> list[str]:

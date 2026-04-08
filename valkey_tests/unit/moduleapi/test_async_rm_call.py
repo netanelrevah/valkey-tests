@@ -67,7 +67,6 @@ def test_blpop_on_threaded_async_rm_call(r: ValkeyTestClient) -> None:
     rd.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd"], [("do_rm_call_async"), ("do_rm_call_async_script_mode")])
 def test_blpop_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd: str) -> None:
     """
@@ -83,7 +82,7 @@ def test_blpop_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd: str) -> None
     }
     """
     rd = ValkeyTestClient.create_from(r)
-    # TODO: $rd cmd blpop l 0
+    rd.run(cmd, "blpop", "l", 0)
     wait_for_blocked_clients_count(1)
     r.run("lpush", "l", "a")
     assert rd.run("read") == "l a"
@@ -91,7 +90,6 @@ def test_blpop_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd: str) -> None
     rd.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd"], [("do_rm_call_async"), ("do_rm_call_async_script_mode")])
 def test_brpop_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd: str) -> None:
     """
@@ -107,7 +105,7 @@ def test_brpop_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd: str) -> None
     }
     """
     rd = ValkeyTestClient.create_from(r)
-    # TODO: $rd cmd brpop l 0
+    rd.run(cmd, "brpop", "l", 0)
     wait_for_blocked_clients_count(1)
     r.run("lpush", "l", "a")
     assert rd.run("read") == "l a"
@@ -115,7 +113,6 @@ def test_brpop_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd: str) -> None
     rd.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd"], [("do_rm_call_async"), ("do_rm_call_async_script_mode")])
 def test_brpoplpush_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd: str) -> None:
     """
@@ -132,7 +129,7 @@ def test_brpoplpush_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd: str) ->
     } {a}
     """
     rd = ValkeyTestClient.create_from(r)
-    # TODO: $rd cmd brpoplpush l1 l2 0
+    rd.run(cmd, "brpoplpush", "l1", "l2", 0)
     wait_for_blocked_clients_count(1)
     r.run("lpush", "l1", "a")
     assert rd.run("read") == "a"
@@ -141,7 +138,6 @@ def test_brpoplpush_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd: str) ->
     assert r.run("lpop", "l2") == "a"
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd"], [("do_rm_call_async"), ("do_rm_call_async_script_mode")])
 def test_blmove_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd: str) -> None:
     """
@@ -158,7 +154,7 @@ def test_blmove_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd: str) -> Non
     } {a}
     """
     rd = ValkeyTestClient.create_from(r)
-    # TODO: $rd cmd blmove l1 l2 LEFT LEFT 0
+    rd.run(cmd, "blmove", "l1", "l2", "LEFT", "LEFT", 0)
     wait_for_blocked_clients_count(1)
     r.run("lpush", "l1", "a")
     assert rd.run("read") == "a"
@@ -167,7 +163,6 @@ def test_blmove_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd: str) -> Non
     assert r.run("lpop", "l2") == "a"
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd"], [("do_rm_call_async"), ("do_rm_call_async_script_mode")])
 def test_bzpopmin_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd: str) -> None:
     """
@@ -183,7 +178,7 @@ def test_bzpopmin_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd: str) -> N
     }
     """
     rd = ValkeyTestClient.create_from(r)
-    # TODO: $rd cmd bzpopmin s 0
+    rd.run(cmd, "bzpopmin", "s", 0)
     wait_for_blocked_clients_count(1)
     r.run("zadd", "s", 10, "foo")
     assert rd.run("read") == "s foo 10"
@@ -191,7 +186,6 @@ def test_bzpopmin_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd: str) -> N
     rd.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd"], [("do_rm_call_async"), ("do_rm_call_async_script_mode")])
 def test_bzpopmax_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd: str) -> None:
     """
@@ -207,7 +201,7 @@ def test_bzpopmax_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd: str) -> N
     }
     """
     rd = ValkeyTestClient.create_from(r)
-    # TODO: $rd cmd bzpopmax s 0
+    rd.run(cmd, "bzpopmax", "s", 0)
     wait_for_blocked_clients_count(1)
     r.run("zadd", "s", 10, "foo")
     assert rd.run("read") == "s foo 10"
