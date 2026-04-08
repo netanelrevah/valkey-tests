@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841, RUF043, ANN001, ANN002, ANN201
+# ruff: noqa: PLR2004, F841, RUF043, ANN002, ANN201
 from fnmatch import fnmatch
 
 import pytest
@@ -73,7 +73,7 @@ proc get_keys {l} {
 @pytest.mark.parametrize(
     ["type", "contents"], [("listpack", "{a 1} {b 2} {c 3}"), ("hashtable", "{a 1} {b 2} {[randstring 70 90 alpha] 3}")]
 )
-def test_hrandfield_type(r: ValkeyTestClient, type, contents) -> None:
+def test_hrandfield_type(r: ValkeyTestClient, type: str, contents: str) -> None:
     """
     test "HRANDFIELD - $type" {
         unset -nocomplain myhash
@@ -197,7 +197,7 @@ r readraw 0
         ("listpack", "{a 1} {b 2} {c 3} {d 4} {e 5} {6 f} {7 g} {8 h} {9 i} {10 j}"),
     ],
 )
-def test_hrandfield_with_count_type(r: ValkeyTestClient, type, contents) -> None:
+def test_hrandfield_with_count_type(r: ValkeyTestClient, type: str, contents: str) -> None:
     """
     test "HRANDFIELD with <count> - $type" {
         set original_max_value [lindex [r config get hash-max-ziplist-value] 1]
@@ -1616,7 +1616,7 @@ def test_hash_ziplist_regression_test_for_large_keys(r: ValkeyTestClient) -> Non
 
 
 @pytest.mark.parametrize(["size"], [(10), (512)])
-def test_hash_fuzzing_1_size_fields(r: ValkeyTestClient, size) -> None:
+def test_hash_fuzzing_1_size_fields(r: ValkeyTestClient, size: int) -> None:
     """
     test "Hash fuzzing #1 - $size fields" {
         for {set times 0} {$times < 10} {incr times} {
@@ -1661,7 +1661,7 @@ def test_hash_fuzzing_1_size_fields(r: ValkeyTestClient, size) -> None:
 
 
 @pytest.mark.parametrize(["size"], [(10), (512)])
-def test_hash_fuzzing_2_size_fields(r: ValkeyTestClient, size) -> None:
+def test_hash_fuzzing_2_size_fields(r: ValkeyTestClient, size: int) -> None:
     """
     test "Hash fuzzing #2 - $size fields" {
         for {set times 0} {$times < 10} {incr times} {

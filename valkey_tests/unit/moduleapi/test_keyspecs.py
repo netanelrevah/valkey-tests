@@ -1,5 +1,4 @@
-# ruff: noqa: PLR2004, ANN001, ANN002, ANN201
-
+# ruff: noqa: PLR2004, ANN002, ANN201
 from fnmatch import fnmatch
 
 import pytest
@@ -391,7 +390,7 @@ def test_module_key_specs_tworanges_acl(r: ValkeyTestClient) -> None:
 
 
 @pytest.mark.parametrize(["cmd"], [("kspec.none"), ("kspec.tworanges")])
-def test_cmd_command_will_not_be_marked_with_movablekeys(r: ValkeyTestClient, cmd) -> None:
+def test_cmd_command_will_not_be_marked_with_movablekeys(r: ValkeyTestClient, cmd: str) -> None:
     """
     test "$cmd command will not be marked with movablekeys" {
         set info [lindex [r command info $cmd] 0]
@@ -405,7 +404,7 @@ def test_cmd_command_will_not_be_marked_with_movablekeys(r: ValkeyTestClient, cm
 @pytest.mark.parametrize(
     ["cmd"], [("kspec.keyword"), ("kspec.complex1"), ("kspec.complex2"), ("kspec.nonewithgetkeys")]
 )
-def test_cmd_command_is_marked_with_movablekeys(r: ValkeyTestClient, cmd) -> None:
+def test_cmd_command_is_marked_with_movablekeys(r: ValkeyTestClient, cmd: str) -> None:
     """
     test "$cmd command is marked with movablekeys" {
         set info [lindex [r command info $cmd] 0]

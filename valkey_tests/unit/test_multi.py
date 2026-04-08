@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, PLR1714, F841, RUF043, ANN001, ANN002, ANN201
+# ruff: noqa: PLR2004, PLR1714, F841, RUF043, ANN002, ANN201
 import time
 from fnmatch import fnmatch
 
@@ -1641,7 +1641,7 @@ def test_multi_propagation_of_script_flush(r: ValkeyTestClient) -> None:
 
 
 @pytest.mark.parametrize(["cmd"], [("SAVE"), ("SHUTDOWN")])
-def test_multi_with_cmd(r: ValkeyTestClient, cmd) -> None:
+def test_multi_with_cmd(r: ValkeyTestClient, cmd: str) -> None:
     """
     test "MULTI with $cmd" {
         r del foo

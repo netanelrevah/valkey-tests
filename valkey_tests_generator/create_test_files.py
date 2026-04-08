@@ -116,6 +116,27 @@ def _format_parametrize_value(value: str | None) -> str:
     return f'"{value}"'
 
 
+def _infer_param_type(values: list) -> str:
+    """Return 'int', 'float', or 'str' based on whether all values fit that type."""
+    all_int = True
+    all_float = True
+    for v in values:
+        raw = v if isinstance(v, str) else str(v)
+        try:
+            int(raw)
+        except (ValueError, TypeError):
+            all_int = False
+        try:
+            float(raw)
+        except (ValueError, TypeError):
+            all_float = False
+    if all_int:
+        return "int"
+    if all_float:
+        return "float"
+    return "str"
+
+
 @dataclass
 class TCLTestFileGenerator:
     output: IO = field(default=sys.stdout)
@@ -123,6 +144,7 @@ class TCLTestFileGenerator:
     _total_tests: int = field(default=0)
     _translated_tests: int = field(default=0)
     _used_names: Counter = field(default_factory=Counter)
+    _parametrize_var_types: dict = field(default_factory=dict)
 
     def generate_parametrize_extended(self, foreach_command: TCLCommandForEach, derived: dict[str, list[str]]) -> str:
         name_to_values: dict[str, list] = defaultdict(list)
@@ -131,6 +153,7 @@ class TCLTestFileGenerator:
                 name_to_values[name].append(value)
         name_to_values.update(derived)
 
+        self._parametrize_var_types.update({n: _infer_param_type(vs) for n, vs in name_to_values.items()})
         names = ",".join(f'"{_safe_var_name(n)}"' for n in name_to_values)
         tuples = ",".join(
             "(" + ",".join(_format_parametrize_value(v) for v in row) + ")"
@@ -144,6 +167,7 @@ class TCLTestFileGenerator:
             for value, name in zip(var_values.words, cycle(var_names)):
                 name_to_values[name].append(value)
 
+        self._parametrize_var_types.update({n: _infer_param_type(vs) for n, vs in name_to_values.items()})
         names = ",".join(f'"{_safe_var_name(n)}"' for n in name_to_values)
         tuples = ",".join(
             "(" + ",".join(_format_parametrize_value(v) for v in row) + ")"
@@ -200,7 +224,9 @@ class TCLTestFileGenerator:
             self.output.write(f"@pytest.mark.skipif('', reason={if_expression!r})\n")
         if parametrizes:
             self.output.writelines(parametrizes)
-        extra_params = "".join(f", {_safe_var_name(v)}" for v in (parametrize_vars or []))
+        extra_params = "".join(
+            f", {_safe_var_name(v)}: {self._parametrize_var_types.get(v, 'str')}" for v in (parametrize_vars or [])
+        )
         fixture_params = "".join(f", {v}" for v in sorted(fixture_refs))
         self.output.write(f"def {test_name}(r: ValkeyTestClient{extra_params}{fixture_params}) -> None:\n")
         self.output.write('    """\n')

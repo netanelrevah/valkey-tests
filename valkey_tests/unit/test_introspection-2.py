@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, RUF043, ANN001, ANN002, ANN201
+# ruff: noqa: PLR2004, RUF043, ANN002, ANN201
 import time
 from fnmatch import fnmatch
 
@@ -630,7 +630,7 @@ def test_command_info_of_invalid_subcommands(r: ValkeyTestClient) -> None:
         ("GEORADIUS_RO"),
     ],
 )
-def test_cmd_command_will_not_be_marked_with_movablekeys(r: ValkeyTestClient, cmd) -> None:
+def test_cmd_command_will_not_be_marked_with_movablekeys(r: ValkeyTestClient, cmd: str) -> None:
     """
     test "$cmd command will not be marked with movablekeys" {
         set info [lindex [r command info $cmd] 0]
@@ -644,7 +644,7 @@ def test_cmd_command_will_not_be_marked_with_movablekeys(r: ValkeyTestClient, cm
 @pytest.mark.parametrize(
     ["cmd"], [("ZUNIONSTORE"), ("XREAD"), ("EVAL"), ("SORT"), ("SORT_RO"), ("MIGRATE"), ("GEORADIUS")]
 )
-def test_cmd_command_is_marked_with_movablekeys(r: ValkeyTestClient, cmd) -> None:
+def test_cmd_command_is_marked_with_movablekeys(r: ValkeyTestClient, cmd: str) -> None:
     """
     test "$cmd command is marked with movablekeys" {
         set info [lindex [r command info $cmd] 0]

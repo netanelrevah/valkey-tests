@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, ANN001, ANN002, ANN201
+# ruff: noqa: PLR2004, ANN002, ANN201
 
 from fnmatch import fnmatch
 
@@ -67,7 +67,7 @@ proc check_sort_store_encoding {key} {
         (10000, "sadd", "hashtable", "Big Hash table"),
     ],
 )
-def test_title_sort_by_key(r: ValkeyTestClient, num, cmd, enc, title) -> None:
+def test_title_sort_by_key(r: ValkeyTestClient, num: int, cmd: str, enc: str, title: str) -> None:
     """
     test "$title: SORT BY key" {
         assert_equal $result [r sort tosort BY weight_*]
@@ -89,7 +89,7 @@ def test_title_sort_by_key(r: ValkeyTestClient, num, cmd, enc, title) -> None:
         (10000, "sadd", "hashtable", "Big Hash table"),
     ],
 )
-def test_title_sort_by_key_with_limit(r: ValkeyTestClient, num, cmd, enc, title) -> None:
+def test_title_sort_by_key_with_limit(r: ValkeyTestClient, num: int, cmd: str, enc: str, title: str) -> None:
     """
     test "$title: SORT BY key with limit" {
         assert_equal [lrange $result 5 9] [r sort tosort BY weight_* LIMIT 5 5]
@@ -111,7 +111,7 @@ def test_title_sort_by_key_with_limit(r: ValkeyTestClient, num, cmd, enc, title)
         (10000, "sadd", "hashtable", "Big Hash table"),
     ],
 )
-def test_title_sort_by_hash_field(r: ValkeyTestClient, num, cmd, enc, title) -> None:
+def test_title_sort_by_hash_field(r: ValkeyTestClient, num: int, cmd: str, enc: str, title: str) -> None:
     """
     test "$title: SORT BY hash field" {
         assert_equal $result [r sort tosort BY wobj_*->weight]
@@ -133,7 +133,7 @@ def test_sort_get(r: ValkeyTestClient) -> None:
 
 
 @pytest.mark.parametrize(["command"], [("SORT"), ("SORT_RO")])
-def test_command_get_const(r: ValkeyTestClient, command) -> None:
+def test_command_get_const(r: ValkeyTestClient, command: str) -> None:
     """
     test "$command GET <const>" {
         r del foo

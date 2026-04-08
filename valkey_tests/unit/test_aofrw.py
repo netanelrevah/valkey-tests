@@ -1,4 +1,4 @@
-# ruff: noqa: F841, ANN001, ANN002, ANN201
+# ruff: noqa: F841, ANN002, ANN201
 import time
 from fnmatch import fnmatch
 
@@ -25,7 +25,7 @@ waitForBgrewriteaof r
 
 
 @pytest.mark.parametrize(["rdbpre"], [("yes"), ("no")])
-def test_aof_rewrite_during_write_load_rdb_preamble_rdbpre(r: ValkeyTestClient, rdbpre) -> None:
+def test_aof_rewrite_during_write_load_rdb_preamble_rdbpre(r: ValkeyTestClient, rdbpre: str) -> None:
     """
     test "AOF rewrite during write load: RDB preamble=$rdbpre" {
         # Start with an empty db

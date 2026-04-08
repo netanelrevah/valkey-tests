@@ -1,4 +1,4 @@
-# ruff: noqa: ANN001, ANN002, ANN201
+# ruff: noqa: ANN002, ANN201
 import time
 from fnmatch import fnmatch
 
@@ -69,7 +69,7 @@ def test_blpop_on_threaded_async_rm_call(r: ValkeyTestClient) -> None:
 
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd"], [("do_rm_call_async"), ("do_rm_call_async_script_mode")])
-def test_blpop_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd) -> None:
+def test_blpop_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd: str) -> None:
     """
     test "Blpop on async RM_Call using $cmd" {
         set rd [valkey_deferring_client]
@@ -93,7 +93,7 @@ def test_blpop_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd) -> None:
 
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd"], [("do_rm_call_async"), ("do_rm_call_async_script_mode")])
-def test_brpop_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd) -> None:
+def test_brpop_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd: str) -> None:
     """
     test "Brpop on async RM_Call using $cmd" {
         set rd [valkey_deferring_client]
@@ -117,7 +117,7 @@ def test_brpop_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd) -> None:
 
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd"], [("do_rm_call_async"), ("do_rm_call_async_script_mode")])
-def test_brpoplpush_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd) -> None:
+def test_brpoplpush_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd: str) -> None:
     """
     test "Brpoplpush on async RM_Call using $cmd" {
         set rd [valkey_deferring_client]
@@ -143,7 +143,7 @@ def test_brpoplpush_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd) -> None
 
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd"], [("do_rm_call_async"), ("do_rm_call_async_script_mode")])
-def test_blmove_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd) -> None:
+def test_blmove_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd: str) -> None:
     """
     test "Blmove on async RM_Call using $cmd" {
         set rd [valkey_deferring_client]
@@ -169,7 +169,7 @@ def test_blmove_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd) -> None:
 
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd"], [("do_rm_call_async"), ("do_rm_call_async_script_mode")])
-def test_bzpopmin_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd) -> None:
+def test_bzpopmin_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd: str) -> None:
     """
     test "Bzpopmin on async RM_Call using $cmd" {
         set rd [valkey_deferring_client]
@@ -193,7 +193,7 @@ def test_bzpopmin_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd) -> None:
 
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["cmd"], [("do_rm_call_async"), ("do_rm_call_async_script_mode")])
-def test_bzpopmax_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd) -> None:
+def test_bzpopmax_on_async_rm_call_using_cmd(r: ValkeyTestClient, cmd: str) -> None:
     """
     test "Bzpopmax on async RM_Call using $cmd" {
         set rd [valkey_deferring_client]

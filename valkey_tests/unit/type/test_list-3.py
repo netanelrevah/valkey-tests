@@ -1,4 +1,4 @@
-# ruff: noqa: F841, ANN001, ANN002, ANN201
+# ruff: noqa: F841, ANN002, ANN201
 
 import pytest
 
@@ -214,7 +214,7 @@ def test_linsert_correctly_recompress_full_quicklistnode_after_inserting_a_eleme
 
 
 @pytest.mark.parametrize(["comp"], [(2), (1), (0)])
-def test_stress_tester_for_3343_alike_bugs_comp_comp(r: ValkeyTestClient, comp) -> None:
+def test_stress_tester_for_3343_alike_bugs_comp_comp(r: ValkeyTestClient, comp: int) -> None:
     """
     test "Stress tester for #3343-alike bugs comp: $comp" {
         r del key

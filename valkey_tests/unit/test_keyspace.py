@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841, RUF043, ANN001, ANN002, ANN201
+# ruff: noqa: PLR2004, F841, RUF043, ANN002, ANN201
 import time
 from fnmatch import fnmatch
 
@@ -590,7 +590,7 @@ foreach {type large} array get largevalue {
 
 
 @pytest.mark.parametrize(["type"], [("intset"), ("listpack"), ("hashtable")])
-def test_copy_basic_usage_for_type_set(r: ValkeyTestClient, type) -> None:
+def test_copy_basic_usage_for_type_set(r: ValkeyTestClient, type: str) -> None:
     """
     test {COPY basic usage for $type set} {
         r del set1{t} newset1{t}

@@ -94,7 +94,7 @@ proc verify_eviction_test {client_eviction} {
 
 @pytest.mark.parametrize(["client_eviction"], [("false"), ("true")])
 def test_eviction_due_to_output_buffers_of_many_mget_clients_client_eviction_client_eviction(
-    r: ValkeyTestClient, client_eviction, rr
+    r: ValkeyTestClient, client_eviction: str, rr
 ) -> None:
     """
     test "eviction due to output buffers of many MGET clients, client eviction: $client_eviction" {
@@ -146,7 +146,7 @@ foreach rr clients {
 
 @pytest.mark.parametrize(["client_eviction"], [("false"), ("true")])
 def test_eviction_due_to_input_buffer_of_a_dead_client_client_eviction_client_eviction(
-    r: ValkeyTestClient, client_eviction, rr
+    r: ValkeyTestClient, client_eviction: str, rr
 ) -> None:
     """
     test "eviction due to input buffer of a dead client, client eviction: $client_eviction" {
@@ -200,7 +200,7 @@ foreach rr clients {
 
 @pytest.mark.parametrize(["client_eviction"], [("false"), ("true")])
 def test_eviction_due_to_output_buffers_of_pubsub_client_eviction_client_eviction(
-    r: ValkeyTestClient, client_eviction, rr
+    r: ValkeyTestClient, client_eviction: str, rr
 ) -> None:
     """
     test "eviction due to output buffers of pubsub, client eviction: $client_eviction" {
@@ -269,7 +269,7 @@ pytestmark = [pytest.mark.maxmemory_external_skip]
         ("volatile-ttl"),
     ],
 )
-def test_maxmemory_is_the_memory_limit_honoured_policy_policy(r: ValkeyTestClient, policy) -> None:
+def test_maxmemory_is_the_memory_limit_honoured_policy_policy(r: ValkeyTestClient, policy: str) -> None:
     """
     test "maxmemory - is the memory limit honoured? (policy $policy)" {
         # make sure to start with a blank instance
@@ -319,7 +319,7 @@ def test_maxmemory_is_the_memory_limit_honoured_policy_policy(r: ValkeyTestClien
 @pytest.mark.parametrize(
     ["policy"], [("allkeys-random"), ("allkeys-lru"), ("volatile-lru"), ("volatile-random"), ("volatile-ttl")]
 )
-def test_maxmemory_only_allkeys_should_remove_non_volatile_keys_policy(r: ValkeyTestClient, policy) -> None:
+def test_maxmemory_only_allkeys_should_remove_non_volatile_keys_policy(r: ValkeyTestClient, policy: str) -> None:
     """
     test "maxmemory - only allkeys-* should remove non-volatile keys ($policy)" {
         # make sure to start with a blank instance
@@ -382,7 +382,7 @@ def test_maxmemory_only_allkeys_should_remove_non_volatile_keys_policy(r: Valkey
 
 
 @pytest.mark.parametrize(["policy"], [("volatile-lru"), ("volatile-lfu"), ("volatile-random"), ("volatile-ttl")])
-def test_maxmemory_policy_policy_should_only_remove_volatile_keys(r: ValkeyTestClient, policy) -> None:
+def test_maxmemory_policy_policy_should_only_remove_volatile_keys(r: ValkeyTestClient, policy: str) -> None:
     """
     test "maxmemory - policy $policy should only remove volatile keys." {
         # make sure to start with a blank instance

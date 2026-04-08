@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841, RUF043, ANN001, ANN002, ANN201
+# ruff: noqa: PLR2004, F841, RUF043, ANN002, ANN201
 from fnmatch import fnmatch
 
 import pytest
@@ -30,7 +30,7 @@ for {set i 0} {$i < 130} {incr i} {
 
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["type"], [("listpack"), ("hashtable")])
-def test_sadd_scard_sismember_smismember_smembers_basics_type(r: ValkeyTestClient, type) -> None:
+def test_sadd_scard_sismember_smismember_smembers_basics_type(r: ValkeyTestClient, type: str) -> None:
     """
     test "SADD, SCARD, SISMEMBER, SMISMEMBER, SMEMBERS basics - $type" {
         create_set myset $initelems($type)
@@ -245,7 +245,7 @@ def test_sadd_an_integer_larger_than_64_bits_to_a_large_intset(r: ValkeyTestClie
 
 
 @pytest.mark.parametrize(["type"], [("single"), ("multiple"), ("single_multiple")])
-def test_sadd_overflows_the_maximum_allowed_integers_in_an_intset_type(r: ValkeyTestClient, type) -> None:
+def test_sadd_overflows_the_maximum_allowed_integers_in_an_intset_type(r: ValkeyTestClient, type: str) -> None:
     """
     test "SADD overflows the maximum allowed integers in an intset - $type" {
         r del myset
@@ -300,7 +300,7 @@ def test_sadd_overflows_the_maximum_allowed_integers_in_an_intset_type(r: Valkey
 
 
 @pytest.mark.parametrize(["type"], [("single"), ("multiple"), ("single_multiple")])
-def test_sadd_overflows_the_maximum_allowed_elements_in_a_listpack_type(r: ValkeyTestClient, type) -> None:
+def test_sadd_overflows_the_maximum_allowed_elements_in_a_listpack_type(r: ValkeyTestClient, type: str) -> None:
     """
     test "SADD overflows the maximum allowed elements in a listpack - $type" {
         r del myset
@@ -431,7 +431,7 @@ def test_set_encoding_after_debug_reload(r: ValkeyTestClient) -> None:
 
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["type"], [("listpack"), ("hashtable")])
-def test_srem_basics_type(r: ValkeyTestClient, type) -> None:
+def test_srem_basics_type(r: ValkeyTestClient, type: str) -> None:
     """
     test {SREM basics - $type} {
         create_set myset $initelems($type)
@@ -580,7 +580,9 @@ def test_sintercard_against_non_existing_key(r: ValkeyTestClient) -> None:
 @pytest.mark.parametrize(
     ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
 )
-def test_generated_sets_must_be_encoded_correctly_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
+def test_generated_sets_must_be_encoded_correctly_type(
+    r: ValkeyTestClient, type: str, smallenc: str, bigenc: str
+) -> None:
     """
     test "Generated sets must be encoded correctly - $type" {
         for {set i 1} {$i <= 5} {incr i} {
@@ -628,7 +630,7 @@ def test_generated_sets_must_be_encoded_correctly_type(r: ValkeyTestClient, type
 @pytest.mark.parametrize(
     ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
 )
-def test_sinter_with_two_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
+def test_sinter_with_two_sets_type(r: ValkeyTestClient, type: str, smallenc: str, bigenc: str) -> None:
     """
     test "SINTER with two sets - $type" {
         assert_equal [list 195 196 197 198 199 $large] [lsort [r sinter set1{t} set2{t}]]
@@ -669,7 +671,7 @@ def test_sinter_with_two_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) 
 @pytest.mark.parametrize(
     ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
 )
-def test_sintercard_with_two_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
+def test_sintercard_with_two_sets_type(r: ValkeyTestClient, type: str, smallenc: str, bigenc: str) -> None:
     """
     test "SINTERCARD with two sets - $type" {
         assert_equal 6 [r sintercard 2 set1{t} set2{t}]
@@ -716,7 +718,7 @@ def test_sintercard_with_two_sets_type(r: ValkeyTestClient, type, smallenc, bige
 @pytest.mark.parametrize(
     ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
 )
-def test_sinterstore_with_two_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
+def test_sinterstore_with_two_sets_type(r: ValkeyTestClient, type: str, smallenc: str, bigenc: str) -> None:
     """
     test "SINTERSTORE with two sets - $type" {
         r sinterstore setres{t} set1{t} set2{t}
@@ -761,7 +763,9 @@ def test_sinterstore_with_two_sets_type(r: ValkeyTestClient, type, smallenc, big
 @pytest.mark.parametrize(
     ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
 )
-def test_sinterstore_with_two_sets_after_a_debug_reload_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
+def test_sinterstore_with_two_sets_after_a_debug_reload_type(
+    r: ValkeyTestClient, type: str, smallenc: str, bigenc: str
+) -> None:
     """
     test "SINTERSTORE with two sets, after a DEBUG RELOAD - $type" {
         r debug reload
@@ -808,7 +812,7 @@ def test_sinterstore_with_two_sets_after_a_debug_reload_type(r: ValkeyTestClient
 @pytest.mark.parametrize(
     ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
 )
-def test_sunion_with_two_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
+def test_sunion_with_two_sets_type(r: ValkeyTestClient, type: str, smallenc: str, bigenc: str) -> None:
     """
     test "SUNION with two sets - $type" {
         set expected [lsort -uniq "[r smembers set1{t}] [r smembers set2{t}]"]
@@ -851,7 +855,7 @@ def test_sunion_with_two_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) 
 @pytest.mark.parametrize(
     ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
 )
-def test_sunionstore_with_two_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
+def test_sunionstore_with_two_sets_type(r: ValkeyTestClient, type: str, smallenc: str, bigenc: str) -> None:
     """
     test "SUNIONSTORE with two sets - $type" {
         r sunionstore setres{t} set1{t} set2{t}
@@ -898,7 +902,7 @@ def test_sunionstore_with_two_sets_type(r: ValkeyTestClient, type, smallenc, big
 @pytest.mark.parametrize(
     ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
 )
-def test_sinter_against_three_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
+def test_sinter_against_three_sets_type(r: ValkeyTestClient, type: str, smallenc: str, bigenc: str) -> None:
     """
     test "SINTER against three sets - $type" {
         assert_equal [list 195 199 $large] [lsort [r sinter set1{t} set2{t} set3{t}]]
@@ -939,7 +943,7 @@ def test_sinter_against_three_sets_type(r: ValkeyTestClient, type, smallenc, big
 @pytest.mark.parametrize(
     ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
 )
-def test_sintercard_against_three_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
+def test_sintercard_against_three_sets_type(r: ValkeyTestClient, type: str, smallenc: str, bigenc: str) -> None:
     """
     test "SINTERCARD against three sets - $type" {
         assert_equal 3 [r sintercard 3 set1{t} set2{t} set3{t}]
@@ -986,7 +990,7 @@ def test_sintercard_against_three_sets_type(r: ValkeyTestClient, type, smallenc,
 @pytest.mark.parametrize(
     ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
 )
-def test_sinterstore_with_three_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
+def test_sinterstore_with_three_sets_type(r: ValkeyTestClient, type: str, smallenc: str, bigenc: str) -> None:
     """
     test "SINTERSTORE with three sets - $type" {
         r sinterstore setres{t} set1{t} set2{t} set3{t}
@@ -1029,7 +1033,7 @@ def test_sinterstore_with_three_sets_type(r: ValkeyTestClient, type, smallenc, b
 @pytest.mark.parametrize(
     ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
 )
-def test_sunion_with_non_existing_keys_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
+def test_sunion_with_non_existing_keys_type(r: ValkeyTestClient, type: str, smallenc: str, bigenc: str) -> None:
     """
     test "SUNION with non existing keys - $type" {
         set expected [lsort -uniq "[r smembers set1{t}] [r smembers set2{t}]"]
@@ -1072,7 +1076,7 @@ def test_sunion_with_non_existing_keys_type(r: ValkeyTestClient, type, smallenc,
 @pytest.mark.parametrize(
     ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
 )
-def test_sdiff_with_two_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
+def test_sdiff_with_two_sets_type(r: ValkeyTestClient, type: str, smallenc: str, bigenc: str) -> None:
     """
     test "SDIFF with two sets - $type" {
         assert_equal {0 1 2 3 4} [lsort [r sdiff set1{t} set4{t}]]
@@ -1113,7 +1117,7 @@ def test_sdiff_with_two_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -
 @pytest.mark.parametrize(
     ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
 )
-def test_sdiff_with_three_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
+def test_sdiff_with_three_sets_type(r: ValkeyTestClient, type: str, smallenc: str, bigenc: str) -> None:
     """
     test "SDIFF with three sets - $type" {
         assert_equal {1 2 3 4} [lsort [r sdiff set1{t} set4{t} set5{t}]]
@@ -1154,7 +1158,7 @@ def test_sdiff_with_three_sets_type(r: ValkeyTestClient, type, smallenc, bigenc)
 @pytest.mark.parametrize(
     ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
 )
-def test_sdiffstore_with_three_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
+def test_sdiffstore_with_three_sets_type(r: ValkeyTestClient, type: str, smallenc: str, bigenc: str) -> None:
     """
     test "SDIFFSTORE with three sets - $type" {
         r sdiffstore setres{t} set1{t} set4{t} set5{t}
@@ -1203,7 +1207,9 @@ def test_sdiffstore_with_three_sets_type(r: ValkeyTestClient, type, smallenc, bi
 @pytest.mark.parametrize(
     ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
 )
-def test_sinter_or_sunion_or_sdiff_with_three_same_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
+def test_sinter_or_sunion_or_sdiff_with_three_same_sets_type(
+    r: ValkeyTestClient, type: str, smallenc: str, bigenc: str
+) -> None:
     """
     test "SINTER/SUNION/SDIFF with three same sets - $type" {
         set expected [lsort "[r smembers set1{t}]"]
@@ -1833,7 +1839,7 @@ def test_sunionstore_against_non_existing_keys_should_delete_dstkey(r: ValkeyTes
 
 
 @pytest.mark.parametrize(["type", "contents"], [("listpack", "a b c"), ("intset", "1 2 3")])
-def test_spop_basics_type(r: ValkeyTestClient, type, contents) -> None:
+def test_spop_basics_type(r: ValkeyTestClient, type: str, contents: str) -> None:
     """
     test "SPOP basics - $type" {
         create_set myset $contents
@@ -1849,7 +1855,7 @@ def test_spop_basics_type(r: ValkeyTestClient, type, contents) -> None:
 
 
 @pytest.mark.parametrize(["type", "contents"], [("listpack", "a b c"), ("intset", "1 2 3")])
-def test_spop_with_count_1_type(r: ValkeyTestClient, type, contents) -> None:
+def test_spop_with_count_1_type(r: ValkeyTestClient, type: str, contents: str) -> None:
     """
     test "SPOP with <count>=1 - $type" {
         create_set myset $contents
@@ -1865,7 +1871,7 @@ def test_spop_with_count_1_type(r: ValkeyTestClient, type, contents) -> None:
 
 
 @pytest.mark.parametrize(["type", "contents"], [("listpack", "a b c"), ("intset", "1 2 3")])
-def test_srandmember_type(r: ValkeyTestClient, type, contents) -> None:
+def test_srandmember_type(r: ValkeyTestClient, type: str, contents: str) -> None:
     """
     test "SRANDMEMBER - $type" {
         create_set myset $contents
@@ -1912,7 +1918,7 @@ def test_spop_integer_from_listpack_set(r: ValkeyTestClient) -> None:
         ("hashtable", "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 b c d e f g h i j k l m n o p q r s t u v w x y z"),
     ],
 )
-def test_spop_with_count_type(r: ValkeyTestClient, type, contents) -> None:
+def test_spop_with_count_type(r: ValkeyTestClient, type: str, contents: str) -> None:
     """
     test "SPOP with <count> - $type" {
         create_set myset $contents
@@ -1991,7 +1997,7 @@ def test_spop_using_integers_with_knuth_s_algorithm(r: ValkeyTestClient) -> None
         ("listpack", "a 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20"),
     ],
 )
-def test_spop_new_implementation_code_path_1_type(r: ValkeyTestClient, type, content) -> None:
+def test_spop_new_implementation_code_path_1_type(r: ValkeyTestClient, type: str, content: str) -> None:
     """
     test "SPOP new implementation: code path #1 $type" {
         create_set myset $content
@@ -2015,7 +2021,7 @@ def test_spop_new_implementation_code_path_1_type(r: ValkeyTestClient, type, con
         ("listpack", "a 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20"),
     ],
 )
-def test_spop_new_implementation_code_path_2_type(r: ValkeyTestClient, type, content) -> None:
+def test_spop_new_implementation_code_path_2_type(r: ValkeyTestClient, type: str, content: str) -> None:
     """
     test "SPOP new implementation: code path #2 $type" {
         create_set myset $content
@@ -2043,7 +2049,7 @@ def test_spop_new_implementation_code_path_2_type(r: ValkeyTestClient, type, con
         ("listpack", "a 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20"),
     ],
 )
-def test_spop_new_implementation_code_path_3_type(r: ValkeyTestClient, type, content) -> None:
+def test_spop_new_implementation_code_path_3_type(r: ValkeyTestClient, type: str, content: str) -> None:
     """
     test "SPOP new implementation: code path #3 $type" {
         create_set myset $content
@@ -2263,7 +2269,7 @@ r readraw 0
         ),
     ],
 )
-def test_srandmember_with_count_type(r: ValkeyTestClient, type, contents) -> None:
+def test_srandmember_with_count_type(r: ValkeyTestClient, type: str, contents: str) -> None:
     """
     test "SRANDMEMBER with <count> - $type" {
         create_set myset $contents
@@ -2408,7 +2414,7 @@ def test_srandmember_with_count_type(r: ValkeyTestClient, type, contents) -> Non
         ),
     ],
 )
-def test_srandmember_histogram_distribution_type(r: ValkeyTestClient, type, contents) -> None:
+def test_srandmember_histogram_distribution_type(r: ValkeyTestClient, type: str, contents: str) -> None:
     """
     test "SRANDMEMBER histogram distribution - $type" {
         create_set myset $contents

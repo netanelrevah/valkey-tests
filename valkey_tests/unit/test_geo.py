@@ -1,4 +1,5 @@
-# ruff: noqa: PLR2004, F841, ANN001, ANN002, ANN201
+# ruff: noqa: PLR2004, F841, ANN002, ANN201
+
 from fnmatch import fnmatch
 
 import pytest
@@ -1927,7 +1928,7 @@ def test_geosearch_with_exact_zero_distances(r: ValkeyTestClient) -> None:
 
 
 @pytest.mark.parametrize(["type"], [("byradius"), ("bybox")])
-def test_geosearch_fuzzy_test_type(r: ValkeyTestClient, type) -> None:
+def test_geosearch_fuzzy_test_type(r: ValkeyTestClient, type: str) -> None:
     """
     test "GEOSEARCH fuzzy test - $type" {
         if {$::accurate} { set attempt 300 } else { set attempt 30 }

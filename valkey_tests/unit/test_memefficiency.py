@@ -1,4 +1,4 @@
-# ruff: noqa: ANN001, ANN002, ANN201
+# ruff: noqa: ANN002, ANN201
 
 import pytest
 
@@ -36,7 +36,7 @@ pytestmark = [pytest.mark.memefficiency_external_skip]
     ["size_range", "expected_min_efficiency"], [(32, 0.15), (64, 0.25), (128, 0.35), (1024, 0.75), (16384, 0.82)]
 )
 def test_memory_efficiency_with_values_in_range_size_range(
-    r: ValkeyTestClient, size_range, expected_min_efficiency
+    r: ValkeyTestClient, size_range: int, expected_min_efficiency: float
 ) -> None:
     """
     test "Memory efficiency with values in range $size_range" {

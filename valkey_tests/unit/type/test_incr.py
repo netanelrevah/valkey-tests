@@ -1,4 +1,5 @@
-# ruff: noqa: F841, RUF043, ANN001, ANN002, ANN201
+# ruff: noqa: F841, RUF043, ANN002, ANN201
+
 from fnmatch import fnmatch
 
 import pytest
@@ -438,7 +439,7 @@ def test_incrby_incrbyfloat_decrby_against_unhappy_path(r: ValkeyTestClient) -> 
 
 
 @pytest.mark.parametrize(["cmd"], [("incr"), ("decr"), ("incrby"), ("decrby")])
-def test_cmd_operation_should_update_encoding_from_raw_to_int(r: ValkeyTestClient, cmd) -> None:
+def test_cmd_operation_should_update_encoding_from_raw_to_int(r: ValkeyTestClient, cmd: str) -> None:
     """
     test "$cmd operation should update encoding from raw to int" {
         set res {}

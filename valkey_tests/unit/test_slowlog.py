@@ -1,4 +1,5 @@
-# ruff: noqa: PLR2004, ANN001, ANN002, ANN201
+# ruff: noqa: PLR2004, ANN002, ANN201
+
 from fnmatch import fnmatch
 
 import pytest
@@ -537,7 +538,9 @@ def test_slowlog_blocking_command_is_reported_only_after_unblocked(r: ValkeyTest
 
 
 @pytest.mark.parametrize(["is_eval"], [(0), (1)])
-def test_slowlog_the_commands_in_script_are_recorded_normally_is_eval_is_eval(r: ValkeyTestClient, is_eval) -> None:
+def test_slowlog_the_commands_in_script_are_recorded_normally_is_eval_is_eval(
+    r: ValkeyTestClient, is_eval: int
+) -> None:
     """
     test "SLOWLOG - the commands in script are recorded normally - is_eval: $is_eval" {
         if {$is_eval == 0} {

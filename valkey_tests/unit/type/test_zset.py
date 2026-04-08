@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841, RUF043, ANN001, ANN002, ANN201
+# ruff: noqa: PLR2004, F841, RUF043, ANN002, ANN201
 
 from fnmatch import fnmatch
 
@@ -320,7 +320,7 @@ def test_zmpop_propagate_as_pop_with_count_command_to_replica(r: ValkeyTestClien
 
 
 @pytest.mark.parametrize(["resp"], [(3), (2)])
-def test_zpopmin_or_zpopmax_readraw_in_resp_resp(r: ValkeyTestClient, resp) -> None:
+def test_zpopmin_or_zpopmax_readraw_in_resp_resp(r: ValkeyTestClient, resp: int) -> None:
     """
     test "ZPOPMIN/ZPOPMAX readraw in RESP$resp" {
         r del zset{t}
@@ -388,7 +388,7 @@ def test_zpopmin_or_zpopmax_readraw_in_resp_resp(r: ValkeyTestClient, resp) -> N
 
 
 @pytest.mark.parametrize(["resp"], [(3), (2)])
-def test_bzpopmin_or_bzpopmax_readraw_in_resp_resp(r: ValkeyTestClient, resp) -> None:
+def test_bzpopmin_or_bzpopmax_readraw_in_resp_resp(r: ValkeyTestClient, resp: int) -> None:
     """
     test "BZPOPMIN/BZPOPMAX readraw in RESP$resp" {
         r del zset{t}
@@ -463,7 +463,7 @@ def test_bzpopmin_or_bzpopmax_readraw_in_resp_resp(r: ValkeyTestClient, resp) ->
 
 
 @pytest.mark.parametrize(["resp"], [(3), (2)])
-def test_zmpop_readraw_in_resp_resp(r: ValkeyTestClient, resp) -> None:
+def test_zmpop_readraw_in_resp_resp(r: ValkeyTestClient, resp: int) -> None:
     """
     test "ZMPOP readraw in RESP$resp" {
         r del zset{t} zset2{t}
@@ -548,7 +548,7 @@ def test_zmpop_readraw_in_resp_resp(r: ValkeyTestClient, resp) -> None:
 
 
 @pytest.mark.parametrize(["resp"], [(3), (2)])
-def test_bzmpop_readraw_in_resp_resp(r: ValkeyTestClient, resp) -> None:
+def test_bzmpop_readraw_in_resp_resp(r: ValkeyTestClient, resp: int) -> None:
     """
     test "BZMPOP readraw in RESP$resp" {
         r del zset{t} zset2{t}
@@ -2032,7 +2032,7 @@ proc check_member_and_score {mydict res} {
 @pytest.mark.parametrize(
     ["type", "contents"], [("listpack", "1 a 2 b 3 c"), ("skiplist", "1 a 2 b 3 [randstring 70 90 alpha]")]
 )
-def test_zrandmember_type(r: ValkeyTestClient, type, contents) -> None:
+def test_zrandmember_type(r: ValkeyTestClient, type: str, contents: str) -> None:
     """
     test "ZRANDMEMBER - $type" {
         unset -nocomplain myzset
@@ -2155,7 +2155,7 @@ r readraw 0
         ("listpack", "1 a 2 b 3 c 4 d 5 e 6 f 7 g 7 h 9 i 10 j"),
     ],
 )
-def test_zrandmember_with_count_type(r: ValkeyTestClient, type, contents) -> None:
+def test_zrandmember_with_count_type(r: ValkeyTestClient, type: str, contents: str) -> None:
     """
     test "ZRANDMEMBER with <count> - $type" {
         set original_max_value [lindex [r config get zset-max-ziplist-value] 1]
@@ -2444,7 +2444,7 @@ def test_zunioninterdiffgenericcommand_acts_on_set_and_zset(r: ValkeyTestClient)
 
 
 @pytest.mark.parametrize(["type"], [("single"), ("multiple"), ("single_multiple")])
-def test_zadd_overflows_the_maximum_allowed_elements_in_a_listpack_type(r: ValkeyTestClient, type) -> None:
+def test_zadd_overflows_the_maximum_allowed_elements_in_a_listpack_type(r: ValkeyTestClient, type: str) -> None:
     """
     test "ZADD overflows the maximum allowed elements in a listpack - $type" {
         r del myzset

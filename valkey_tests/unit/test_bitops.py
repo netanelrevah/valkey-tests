@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, N806, RUF043, ANN001, ANN002, ANN201
+# ruff: noqa: PLR2004, N806, RUF043, ANN002, ANN201
 
 from fnmatch import fnmatch
 
@@ -494,7 +494,7 @@ def test_bitop_shorter_keys_are_zero_padded_to_the_key_with_max_length(r: Valkey
 
 
 @pytest.mark.parametrize(["op"], [("and"), ("or"), ("xor")])
-def test_bitop_op_fuzzing(r: ValkeyTestClient, op) -> None:
+def test_bitop_op_fuzzing(r: ValkeyTestClient, op: str) -> None:
     """
     test "BITOP $op fuzzing" {
         for {set i 0} {$i < 10} {incr i} {

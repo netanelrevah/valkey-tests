@@ -2103,7 +2103,7 @@ def test_regression_test_for_11715(r: ValkeyTestClient) -> None:
 
 
 @pytest.mark.parametrize(["resp"], [(3), (2)])
-def test_resp_resp_based_basic_invalidation_with_client_reply_off(r: ValkeyTestClient, resp, rd, rd_sg) -> None:
+def test_resp_resp_based_basic_invalidation_with_client_reply_off(r: ValkeyTestClient, resp: int, rd, rd_sg) -> None:
     """
     test "RESP$resp based basic invalidation with client reply off" {
         # This entire test is mostly irrelevant for RESP2, but we run it anyway just for some extra coverage.

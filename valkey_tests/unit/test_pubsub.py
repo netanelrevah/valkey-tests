@@ -17,7 +17,7 @@ if {$::singledb} {
 
 
 @pytest.mark.parametrize(["resp"], [(2), (3)])
-def test_pub_or_sub_ping_on_resp_resp(r: ValkeyTestClient, resp) -> None:
+def test_pub_or_sub_ping_on_resp_resp(r: ValkeyTestClient, resp: int) -> None:
     """
     test "Pub/Sub PING on RESP$resp" {
         subscribe $rd1 somechannel

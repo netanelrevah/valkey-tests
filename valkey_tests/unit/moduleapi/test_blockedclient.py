@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841, RUF043, ANN001, ANN002, ANN201
+# ruff: noqa: PLR2004, F841, RUF043, ANN002, ANN201
 import time
 from fnmatch import fnmatch
 
@@ -231,7 +231,7 @@ def test_resp_version_carries_through_to_blocked_client(r: ValkeyTestClient) -> 
 
 
 @pytest.mark.parametrize(["call_type"], [("nested"), ("normal")])
-def test_busy_module_command_call_type(r: ValkeyTestClient, call_type) -> None:
+def test_busy_module_command_call_type(r: ValkeyTestClient, call_type: str) -> None:
     """
     test "Busy module command - $call_type" {
         set busy_time_limit 50

@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841, RUF043, ANN001, ANN002, ANN201
+# ruff: noqa: PLR2004, F841, RUF043, ANN002, ANN201
 import time
 from fnmatch import fnmatch
 
@@ -17,7 +17,7 @@ r config set list-max-ziplist-size 1
 
 
 @pytest.mark.parametrize(["container", "size"], [("packed", 500), ("plain", 8193)])
-def test_container_node_check_compression_with_insert_and_pop(r: ValkeyTestClient, container, size) -> None:
+def test_container_node_check_compression_with_insert_and_pop(r: ValkeyTestClient, container: str, size: int) -> None:
     """
     test "$container node check compression with insert and pop" {
         r flushdb
@@ -59,7 +59,7 @@ def test_container_node_check_compression_with_insert_and_pop(r: ValkeyTestClien
 
 
 @pytest.mark.parametrize(["container", "size"], [("packed", 500), ("plain", 8193)])
-def test_container_node_check_compression_combined_with_trim(r: ValkeyTestClient, container, size) -> None:
+def test_container_node_check_compression_combined_with_trim(r: ValkeyTestClient, container: str, size: int) -> None:
     """
     test "$container node check compression combined with trim" {
         r flushdb
@@ -81,7 +81,7 @@ def test_container_node_check_compression_combined_with_trim(r: ValkeyTestClient
 
 
 @pytest.mark.parametrize(["container", "size"], [("packed", 500), ("plain", 8193)])
-def test_container_node_check_compression_with_lset(r: ValkeyTestClient, container, size) -> None:
+def test_container_node_check_compression_with_lset(r: ValkeyTestClient, container: str, size: int) -> None:
     """
     test "$container node check compression with lset" {
         r flushdb
@@ -108,7 +108,7 @@ r config set list-compress-depth 0
 
 
 @pytest.mark.parametrize(["type"], [("listpack"), ("quicklist")])
-def test_test_lpush_and_lpop_on_plain_nodes(r: ValkeyTestClient, type) -> None:
+def test_test_lpush_and_lpop_on_plain_nodes(r: ValkeyTestClient, type: str) -> None:
     """
     test {Test LPUSH and LPOP on plain nodes} {
         r flushdb
@@ -161,7 +161,7 @@ def test_test_lpush_and_lpop_on_plain_nodes(r: ValkeyTestClient, type) -> None:
 
 
 @pytest.mark.parametrize(["type"], [("listpack"), ("quicklist")])
-def test_test_lindex_and_linsert_on_plain_nodes(r: ValkeyTestClient, type) -> None:
+def test_test_lindex_and_linsert_on_plain_nodes(r: ValkeyTestClient, type: str) -> None:
     """
     test {Test LINDEX and LINSERT on plain nodes} {
         r flushdb
@@ -197,7 +197,7 @@ def test_test_lindex_and_linsert_on_plain_nodes(r: ValkeyTestClient, type) -> No
 
 
 @pytest.mark.parametrize(["type"], [("listpack"), ("quicklist")])
-def test_test_ltrim_on_plain_nodes(r: ValkeyTestClient, type) -> None:
+def test_test_ltrim_on_plain_nodes(r: ValkeyTestClient, type: str) -> None:
     """
     test {Test LTRIM on plain nodes} {
         r flushdb
@@ -227,7 +227,7 @@ def test_test_ltrim_on_plain_nodes(r: ValkeyTestClient, type) -> None:
 
 
 @pytest.mark.parametrize(["type"], [("listpack"), ("quicklist")])
-def test_test_lrem_on_plain_nodes(r: ValkeyTestClient, type) -> None:
+def test_test_lrem_on_plain_nodes(r: ValkeyTestClient, type: str) -> None:
     """
     test {Test LREM on plain nodes} {
         r flushdb
@@ -261,7 +261,7 @@ def test_test_lrem_on_plain_nodes(r: ValkeyTestClient, type) -> None:
 
 
 @pytest.mark.parametrize(["type"], [("listpack"), ("quicklist")])
-def test_test_lpos_on_plain_nodes(r: ValkeyTestClient, type) -> None:
+def test_test_lpos_on_plain_nodes(r: ValkeyTestClient, type: str) -> None:
     """
     test {Test LPOS on plain nodes} {
         r flushdb
@@ -291,7 +291,7 @@ def test_test_lpos_on_plain_nodes(r: ValkeyTestClient, type) -> None:
 
 
 @pytest.mark.parametrize(["type"], [("listpack"), ("quicklist")])
-def test_test_lmove_on_plain_nodes(r: ValkeyTestClient, type) -> None:
+def test_test_lmove_on_plain_nodes(r: ValkeyTestClient, type: str) -> None:
     """
     test {Test LMOVE on plain nodes} {
         r flushdb
@@ -337,7 +337,7 @@ def test_test_lmove_on_plain_nodes(r: ValkeyTestClient, type) -> None:
 
 
 @pytest.mark.parametrize(["type"], [("listpack"), ("quicklist")])
-def test_test_lset_with_packed_or_plain_combinations(r: ValkeyTestClient, type) -> None:
+def test_test_lset_with_packed_or_plain_combinations(r: ValkeyTestClient, type: str) -> None:
     """
     test {Test LSET with packed / plain combinations} {
         r debug quicklist-packed-threshold 5b
@@ -389,7 +389,7 @@ def test_test_lset_with_packed_or_plain_combinations(r: ValkeyTestClient, type) 
 
 
 @pytest.mark.parametrize(["type"], [("listpack"), ("quicklist")])
-def test_test_lset_with_packed_is_split_in_the_middle(r: ValkeyTestClient, type) -> None:
+def test_test_lset_with_packed_is_split_in_the_middle(r: ValkeyTestClient, type: str) -> None:
     """
     test {Test LSET with packed is split in the middle} {
         set original_config [config_get_set list-max-listpack-size 4]
@@ -435,7 +435,7 @@ def test_test_lset_with_packed_is_split_in_the_middle(r: ValkeyTestClient, type)
 
 
 @pytest.mark.parametrize(["type"], [("listpack"), ("quicklist")])
-def test_test_lset_with_packed_consist_only_one_item(r: ValkeyTestClient, type) -> None:
+def test_test_lset_with_packed_consist_only_one_item(r: ValkeyTestClient, type: str) -> None:
     """
     test {Test LSET with packed consist only one item} {
         r flushdb
@@ -491,7 +491,7 @@ def test_test_lset_with_packed_consist_only_one_item(r: ValkeyTestClient, type) 
 
 
 @pytest.mark.parametrize(["type"], [("listpack"), ("quicklist")])
-def test_crash_due_to_delete_entry_from_a_compress_quicklist_node(r: ValkeyTestClient, type) -> None:
+def test_crash_due_to_delete_entry_from_a_compress_quicklist_node(r: ValkeyTestClient, type: str) -> None:
     """
     test {Crash due to delete entry from a compress quicklist node} {
         r flushdb
@@ -538,7 +538,7 @@ def test_crash_due_to_delete_entry_from_a_compress_quicklist_node(r: ValkeyTestC
 
 
 @pytest.mark.parametrize(["type"], [("listpack"), ("quicklist")])
-def test_crash_due_to_split_quicklist_node_wrongly(r: ValkeyTestClient, type) -> None:
+def test_crash_due_to_split_quicklist_node_wrongly(r: ValkeyTestClient, type: str) -> None:
     """
     test {Crash due to split quicklist node wrongly} {
         r flushdb
@@ -898,7 +898,7 @@ proc verify_resp_response {resp response resp2_response resp3_response} {
 
 
 @pytest.mark.parametrize(["resp"], [(3), (2)])
-def test_lpop_or_rpop_with_the_count_0_returns_an_empty_array_in_resp_resp(r: ValkeyTestClient, resp) -> None:
+def test_lpop_or_rpop_with_the_count_0_returns_an_empty_array_in_resp_resp(r: ValkeyTestClient, resp: int) -> None:
     """
     test "LPOP/RPOP with the count 0 returns an empty array in RESP$resp" {
         r lpush listcount zero
@@ -921,7 +921,7 @@ def test_lpop_or_rpop_with_the_count_0_returns_an_empty_array_in_resp_resp(r: Va
 
 
 @pytest.mark.parametrize(["resp"], [(3), (2)])
-def test_lpop_or_rpop_against_non_existing_key_in_resp_resp(r: ValkeyTestClient, resp) -> None:
+def test_lpop_or_rpop_against_non_existing_key_in_resp_resp(r: ValkeyTestClient, resp: int) -> None:
     """
     test "LPOP/RPOP against non existing key in RESP$resp" {
         r del non_existing_key
@@ -945,7 +945,7 @@ def test_lpop_or_rpop_against_non_existing_key_in_resp_resp(r: ValkeyTestClient,
 
 
 @pytest.mark.parametrize(["resp"], [(3), (2)])
-def test_lpop_or_rpop_with_count_against_non_existing_key_in_resp_resp(r: ValkeyTestClient, resp) -> None:
+def test_lpop_or_rpop_with_count_against_non_existing_key_in_resp_resp(r: ValkeyTestClient, resp: int) -> None:
     """
     test "LPOP/RPOP with <count> against non existing key in RESP$resp" {
         r del non_existing_key
@@ -1137,7 +1137,7 @@ foreach {type large} array get largevalue {
 
 
 @pytest.mark.parametrize(["pop"], [("BLPOP"), ("BLMPOP_LEFT")])
-def test_pop_lpush_del_should_not_awake_blocked_client(r: ValkeyTestClient, pop) -> None:
+def test_pop_lpush_del_should_not_awake_blocked_client(r: ValkeyTestClient, pop: str) -> None:
     """
     test "$pop, LPUSH + DEL should not awake blocked client" {
         set rd [valkey_deferring_client]
@@ -1171,7 +1171,7 @@ def test_pop_lpush_del_should_not_awake_blocked_client(r: ValkeyTestClient, pop)
 
 
 @pytest.mark.parametrize(["pop"], [("BLPOP"), ("BLMPOP_LEFT")])
-def test_pop_lpush_del_set_should_not_awake_blocked_client(r: ValkeyTestClient, pop) -> None:
+def test_pop_lpush_del_set_should_not_awake_blocked_client(r: ValkeyTestClient, pop: str) -> None:
     """
     test "$pop, LPUSH + DEL + SET should not awake blocked client" {
         set rd [valkey_deferring_client]
@@ -1252,7 +1252,7 @@ def test_blpop_with_same_key_multiple_times_should_work_issue_801(r: ValkeyTestC
 
 
 @pytest.mark.parametrize(["pop"], [("BLPOP"), ("BLMPOP_LEFT")])
-def test_multi_or_exec_is_isolated_from_the_point_of_view_of_pop(r: ValkeyTestClient, pop) -> None:
+def test_multi_or_exec_is_isolated_from_the_point_of_view_of_pop(r: ValkeyTestClient, pop: str) -> None:
     """
     test "MULTI/EXEC is isolated from the point of view of $pop" {
         set rd [valkey_deferring_client]
@@ -1284,7 +1284,7 @@ def test_multi_or_exec_is_isolated_from_the_point_of_view_of_pop(r: ValkeyTestCl
 
 
 @pytest.mark.parametrize(["pop"], [("BLPOP"), ("BLMPOP_LEFT")])
-def test_pop_with_variadic_lpush(r: ValkeyTestClient, pop) -> None:
+def test_pop_with_variadic_lpush(r: ValkeyTestClient, pop: str) -> None:
     """
     test "$pop with variadic LPUSH" {
         set rd [valkey_deferring_client]
@@ -2031,7 +2031,7 @@ def test_blpop_unblock_but_the_key_is_expired_and_then_block_again_reprocessing_
 
 
 @pytest.mark.parametrize(["pop"], [("BLPOP"), ("BLMPOP_LEFT")])
-def test_pop_when_new_key_is_moved_into_place(r: ValkeyTestClient, pop) -> None:
+def test_pop_when_new_key_is_moved_into_place(r: ValkeyTestClient, pop: str) -> None:
     """
     test "$pop when new key is moved into place" {
         set rd [valkey_deferring_client]
@@ -2058,7 +2058,7 @@ def test_pop_when_new_key_is_moved_into_place(r: ValkeyTestClient, pop) -> None:
 
 
 @pytest.mark.parametrize(["pop"], [("BLPOP"), ("BLMPOP_LEFT")])
-def test_pop_when_result_key_is_created_by_sort_store(r: ValkeyTestClient, pop) -> None:
+def test_pop_when_result_key_is_created_by_sort_store(r: ValkeyTestClient, pop: str) -> None:
     """
     test "$pop when result key is created by SORT..STORE" {
         set rd [valkey_deferring_client]
@@ -2105,7 +2105,7 @@ def test_blpop_timeout_value_out_of_range(r: ValkeyTestClient) -> None:
 
 
 @pytest.mark.parametrize(["pop"], [("BLPOP"), ("BRPOP"), ("BLMPOP_LEFT"), ("BLMPOP_RIGHT")])
-def test_pop_with_single_empty_list_argument(r: ValkeyTestClient, pop) -> None:
+def test_pop_with_single_empty_list_argument(r: ValkeyTestClient, pop: str) -> None:
     """
     test "$pop: with single empty list argument" {
         set rd [valkey_deferring_client]
@@ -2129,7 +2129,7 @@ def test_pop_with_single_empty_list_argument(r: ValkeyTestClient, pop) -> None:
 
 
 @pytest.mark.parametrize(["pop"], [("BLPOP"), ("BRPOP"), ("BLMPOP_LEFT"), ("BLMPOP_RIGHT")])
-def test_pop_with_negative_timeout(r: ValkeyTestClient, pop) -> None:
+def test_pop_with_negative_timeout(r: ValkeyTestClient, pop: str) -> None:
     """
     test "$pop: with negative timeout" {
         set rd [valkey_deferring_client]
@@ -2145,7 +2145,7 @@ def test_pop_with_negative_timeout(r: ValkeyTestClient, pop) -> None:
 
 
 @pytest.mark.parametrize(["pop"], [("BLPOP"), ("BRPOP"), ("BLMPOP_LEFT"), ("BLMPOP_RIGHT")])
-def test_pop_with_non_integer_timeout(r: ValkeyTestClient, pop) -> None:
+def test_pop_with_non_integer_timeout(r: ValkeyTestClient, pop: str) -> None:
     """
     test "$pop: with non-integer timeout" {
         set rd [valkey_deferring_client]
@@ -2167,7 +2167,7 @@ def test_pop_with_non_integer_timeout(r: ValkeyTestClient, pop) -> None:
 
 
 @pytest.mark.parametrize(["pop"], [("BLPOP"), ("BRPOP"), ("BLMPOP_LEFT"), ("BLMPOP_RIGHT")])
-def test_pop_with_zero_timeout_should_block_indefinitely(r: ValkeyTestClient, pop) -> None:
+def test_pop_with_zero_timeout_should_block_indefinitely(r: ValkeyTestClient, pop: str) -> None:
     """
     test "$pop: with zero timeout should block indefinitely" {
         # To test this, use a timeout of 0 and wait a second.
@@ -2189,7 +2189,7 @@ def test_pop_with_zero_timeout_should_block_indefinitely(r: ValkeyTestClient, po
 
 
 @pytest.mark.parametrize(["pop"], [("BLPOP"), ("BRPOP"), ("BLMPOP_LEFT"), ("BLMPOP_RIGHT")])
-def test_pop_with_0_001_timeout_should_not_block_indefinitely(r: ValkeyTestClient, pop) -> None:
+def test_pop_with_0_001_timeout_should_not_block_indefinitely(r: ValkeyTestClient, pop: str) -> None:
     """
     test "$pop: with 0.001 timeout should not block indefinitely" {
         # Use a timeout of 0.001 and wait for the number of blocked clients to equal 0.
@@ -2209,7 +2209,7 @@ def test_pop_with_0_001_timeout_should_not_block_indefinitely(r: ValkeyTestClien
 
 
 @pytest.mark.parametrize(["pop"], [("BLPOP"), ("BRPOP"), ("BLMPOP_LEFT"), ("BLMPOP_RIGHT")])
-def test_pop_second_argument_is_not_a_list(r: ValkeyTestClient, pop) -> None:
+def test_pop_second_argument_is_not_a_list(r: ValkeyTestClient, pop: str) -> None:
     """
     test "$pop: second argument is not a list" {
         set rd [valkey_deferring_client]
@@ -2229,7 +2229,7 @@ def test_pop_second_argument_is_not_a_list(r: ValkeyTestClient, pop) -> None:
 
 
 @pytest.mark.parametrize(["pop"], [("BLPOP"), ("BRPOP"), ("BLMPOP_LEFT"), ("BLMPOP_RIGHT")])
-def test_pop_timeout(r: ValkeyTestClient, pop) -> None:
+def test_pop_timeout(r: ValkeyTestClient, pop: str) -> None:
     """
     test "$pop: timeout" {
         set rd [valkey_deferring_client]
@@ -2249,7 +2249,7 @@ def test_pop_timeout(r: ValkeyTestClient, pop) -> None:
 
 
 @pytest.mark.parametrize(["pop"], [("BLPOP"), ("BRPOP"), ("BLMPOP_LEFT"), ("BLMPOP_RIGHT")])
-def test_pop_arguments_are_empty(r: ValkeyTestClient, pop) -> None:
+def test_pop_arguments_are_empty(r: ValkeyTestClient, pop: str) -> None:
     """
     test "$pop: arguments are empty" {
         set rd [valkey_deferring_client]
@@ -2289,7 +2289,7 @@ def test_pop_arguments_are_empty(r: ValkeyTestClient, pop) -> None:
 
 
 @pytest.mark.parametrize(["pop"], [("BLPOP"), ("BLMPOP_LEFT")])
-def test_pop_inside_a_transaction(r: ValkeyTestClient, pop) -> None:
+def test_pop_inside_a_transaction(r: ValkeyTestClient, pop: str) -> None:
     """
     test "$pop inside a transaction" {
         r del xlist
@@ -2841,7 +2841,7 @@ def test_lpop_or_rpop_or_lmpop_non_block_or_block_against_non_list_value(r: Valk
 
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["num"], [(250), (500)])
-def test_mass_rpop_or_lpop_type(r: ValkeyTestClient, num) -> None:
+def test_mass_rpop_or_lpop_type(r: ValkeyTestClient, num: int) -> None:
     """
     test "Mass RPOP/LPOP - $type" {
         r del mylist
@@ -3290,7 +3290,7 @@ def test_blpop_or_blmove_should_increase_dirty(r: ValkeyTestClient) -> None:
 
 
 @pytest.mark.parametrize(["pop"], [("BLPOP"), ("BLMPOP_RIGHT")])
-def test_client_unblock_tests(r: ValkeyTestClient, pop) -> None:
+def test_client_unblock_tests(r: ValkeyTestClient, pop: str) -> None:
     """
     test "client unblock tests" {
         r del l
