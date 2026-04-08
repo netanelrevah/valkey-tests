@@ -26,7 +26,6 @@ def test_tls_not_accepting_non_tls_connections_on_a_tls_port(r: ValkeyTestClient
     assert fnmatch(str(e), "*I/O error*")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.skipif("", reason="{$::tls}")
 def test_tls_verify_tls_auth_clients_behaves_as_expected(r: ValkeyTestClient) -> None:
     """
@@ -60,7 +59,7 @@ def test_tls_verify_tls_auth_clients_behaves_as_expected(r: ValkeyTestClient) ->
     """
     package("require", "tls")
     s = ValkeyTestClient.create_from(r)
-    # TODO: ::tls::import $s channel
+    s = s.upgrade_to_tls()
     try:
         e = s.run("PING")
     except Exception as _catch_err:
@@ -68,7 +67,7 @@ def test_tls_verify_tls_auth_clients_behaves_as_expected(r: ValkeyTestClient) ->
     assert fnmatch(str(e), "*error*")
     r.run("CONFIG", "SET", "tls-auth-clients", "no")
     s = ValkeyTestClient.create_from(r)
-    # TODO: ::tls::import $s channel
+    s = s.upgrade_to_tls()
     try:
         e = s.run("PING")
     except Exception as _catch_err:
@@ -76,7 +75,7 @@ def test_tls_verify_tls_auth_clients_behaves_as_expected(r: ValkeyTestClient) ->
     assert fnmatch(str(e), "PONG")
     r.run("CONFIG", "SET", "tls-auth-clients", "optional")
     s = ValkeyTestClient.create_from(r)
-    # TODO: ::tls::import $s channel
+    s = s.upgrade_to_tls()
     try:
         e = s.run("PING")
     except Exception as _catch_err:
@@ -84,7 +83,7 @@ def test_tls_verify_tls_auth_clients_behaves_as_expected(r: ValkeyTestClient) ->
     assert fnmatch(str(e), "PONG")
     r.run("CONFIG", "SET", "tls-auth-clients", "yes")
     s = ValkeyTestClient.create_from(r)
-    # TODO: ::tls::import $s channel
+    s = s.upgrade_to_tls()
     try:
         e = s.run("PING")
     except Exception as _catch_err:

@@ -1,4 +1,5 @@
 import socket
+import ssl
 
 
 class ValkeyError(Exception):
@@ -111,6 +112,14 @@ class ValkeyTestClient:
             raise AssertionError("Expected error but got success")
         except ValkeyError as e:
             return str(e)
+
+    def upgrade_to_tls(self) -> "ValkeyTestClient":
+        """Wrap the existing connection with TLS (analogous to ::tls::import in TCL)."""
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        tls_sock = ctx.wrap_socket(self._sock, server_hostname=self.host)
+        return ValkeyTestClient(tls_sock)
 
     @classmethod
     def create_from(cls, other: "ValkeyTestClient") -> "ValkeyTestClient":

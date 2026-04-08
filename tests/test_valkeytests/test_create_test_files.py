@@ -58,7 +58,7 @@ def test_generate_file__body_translated_no_xfail():
     assert "assert r.run('ping') == 'PONG'" in output
 
 
-def test_generate_file__untranslatable_body_gets_xfail():
+def test_generate_file__unknown_command_gets_stub():
     output = generate("""
         start_server {tags {}} {
             test {complex test} {
@@ -66,9 +66,9 @@ def test_generate_file__untranslatable_body_gets_xfail():
             } {result}
         }
     """)
-    assert "@pytest.mark.xfail(reason='not implemented')" in output
-    assert "# TODO:" in output
-    assert "assert False" in output
+    assert "@pytest.mark.xfail" not in output
+    assert "def some_unknown_command(*args):" in output
+    assert "some_unknown_command('arg')" in output
 
 
 def test_generate_file__test_prefix():
@@ -106,7 +106,7 @@ def test_generate_file__foreach_var_in_signature_and_body():
             }
         }
     """)
-    assert "def test_run_cmd(r: ValkeyTestClient, cmd) -> None:" in output
+    assert "def test_run_cmd(r: ValkeyTestClient, cmd: str) -> None:" in output
     assert "@pytest.mark.xfail" not in output
     assert "result = r.run(cmd, 'foo')" in output
 
@@ -409,7 +409,7 @@ _CATCH_WITH_VAR_EXPECTED = """
         ex = r.run('set')
     except Exception as _catch_err:
         ex = str(_catch_err)
-    assert ex == '*wrong*'
+    assert fnmatch(str(ex), '*wrong*')
 """
 
 _CATCH_WITHOUT_VAR_TCL = """
@@ -585,7 +585,7 @@ def test_generate_file__outer_if_else_extends_parametrize():
         }
     """)
     assert '@pytest.mark.parametrize(["cmd","inc1"], [("HINCRBY",2),("HINCRBYFLOAT",2.5)])' in output
-    assert "def test_cmd_uses_inc1(r: ValkeyTestClient, cmd, inc1)" in output
+    assert "def test_cmd_uses_inc1(r: ValkeyTestClient, cmd: str, inc1: float)" in output
     assert "r.run(cmd, 'myhash', 'f1', inc1)" in output
     assert "@pytest.mark.xfail" not in output
 
@@ -607,3 +607,18 @@ def test_generate_file__vars_set_in_if_else_available_after():
     """)
     assert "@pytest.mark.xfail" not in output
     assert "r.run(cmd, 'myhash', 'f1', inc1)" in output
+
+
+def test_generate_file__tls_import_translates_to_upgrade():
+    output = generate("""
+        start_server {tags {}} {
+            test {tls upgrade} {
+                set s [valkey [srv 0 host] [srv 0 port]]
+                ::tls::import [$s channel]
+                catch {$s PING} e
+            } {}
+        }
+    """)
+    assert "@pytest.mark.xfail" not in output
+    assert "s = s.upgrade_to_tls()" in output
+    assert "# TODO: ::tls::import" not in output

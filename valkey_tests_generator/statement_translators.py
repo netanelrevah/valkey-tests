@@ -631,6 +631,29 @@ class ForStatementTranslator(StatementTranslator):
         return lines
 
 
+@StatementTranslator.register("::tls::import")
+class TLSImportStatementTranslator(StatementTranslator):
+    def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
+        if not arguments:
+            return None
+        arg = arguments[0]
+        if not isinstance(arg, TCLBracketWord):
+            return None
+        script = arg.script
+        if len(script.commands) != 1 or not isinstance(script.commands[0], TCLCommandWord):
+            return None
+        cmd = script.commands[0]
+        if not cmd.name.startswith("$"):
+            return None
+        var_name = cmd.name[1:]
+        if not var_name.isidentifier() or var_name not in defined_vars:
+            return None
+        if not cmd.args or not isinstance(cmd.args[0], TCLWord) or cmd.args[0].value != "channel":
+            return None
+        safe = _safe_var_name(var_name)
+        return [f"{safe} = {safe}.upgrade_to_tls()"]
+
+
 def _has_todos(lines: list[str]) -> bool:
     return any("# TODO:" in line for line in lines)
 
