@@ -1,4 +1,6 @@
-# ruff: noqa: PLR2004, ANN002, ANN201
+# ruff: noqa: PLR2004
+
+from fnmatch import fnmatch
 
 import pytest
 
@@ -40,7 +42,6 @@ def test_modules_can_create_a_user_that_can_be_authenticated(r: ValkeyTestClient
     assert r.run("acl", "whoami") == "global"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_de_authenticating_clients_is_tracked_and_kills_clients(r: ValkeyTestClient) -> None:
     """
     test {De-authenticating clients is tracked and kills clients} {
@@ -58,12 +59,14 @@ def test_de_authenticating_clients_is_tracked_and_kills_clients(r: ValkeyTestCli
     """
     assert r.run("auth.changecount") == 0
     r.run("auth.createmoduleuser")
-    catch(" [r ping] ", "e")
-    # TODO: assert_match {*I/O*} e
+    try:
+        e = r.run("ping")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*I/O*")
     assert r.run("auth.changecount") == 1
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_modules_can_t_authenticate_with_acls_users_that_dont_exist(r: ValkeyTestClient) -> None:
     """
     test {Modules can't authenticate with ACLs users that dont exist} {
@@ -71,8 +74,11 @@ def test_modules_can_t_authenticate_with_acls_users_that_dont_exist(r: ValkeyTes
         assert_match {*Invalid user*} $e
     }
     """
-    catch(" [r auth.authrealuser auth-module-test-fake] ", "e")
-    # TODO: assert_match {*Invalid user*} e
+    try:
+        e = r.run("auth.authrealuser", "auth-module-test-fake")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*Invalid user*")
 
 
 def test_modules_can_authenticate_with_acl_users(r: ValkeyTestClient) -> None:
@@ -167,10 +173,3 @@ def test_unload_the_module_testacl(r: ValkeyTestClient) -> None:
     }
     """
     assert "OK" == r.run("module", "unload", "testacl")
-
-
-# --- stubs for unimplemented TCL helpers ---
-
-
-def catch(*args):
-    raise NotImplementedError("catch")

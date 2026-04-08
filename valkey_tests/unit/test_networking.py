@@ -164,7 +164,6 @@ def test_default_bind_address_configuration_handling(r: ValkeyTestClient) -> Non
     assert 0 == count_message_lines(srv(0, "config_file"), "bind")
     r.run("CONFIG", "SET", "bind", "")
     assert "" == r.run("CONFIG", "GET", "bind")[1]
-    err = None
     try:
         err = valkey_client()
     except Exception as _catch_err:
@@ -173,13 +172,10 @@ def test_default_bind_address_configuration_handling(r: ValkeyTestClient) -> Non
     r.run("CONFIG", "REWRITE")
     assert 1 == count_message_lines(srv(0, "config_file"), "bind")
     restart_server(0, 0, 0, 0)
-    if_(
-        "$::force_resp3",
-        "            assert_equal {{bind }} [valkeycli_exec 0 config get bind]\n        ",
-        "else",
-        "            assert_equal {bind {}} [valkeycli_exec 0 config get bind]\n        ",
-    )
-    err = None
+    if False:
+        assert "{bind }" == valkeycli_exec(0, "config", "get", "bind")
+    else:
+        assert "bind {}" == valkeycli_exec(0, "config", "get", "bind")
     try:
         err = reconnect(0)
     except Exception as _catch_err:

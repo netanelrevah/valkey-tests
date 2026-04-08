@@ -45,37 +45,31 @@ def test_config_set_client_output_buffer_limit(r: ValkeyTestClient) -> None:
     }
     """
     oldval = r.run("config", "get", "client-output-buffer-limit")[1]
-    e = None
     try:
         e = r.run("config", "set", "client-output-buffer-limit", "wrong number")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*Wrong*arguments*")
-    e = None
     try:
         e = r.run("config", "set", "client-output-buffer-limit", "invalid_class 10mb 10mb 60")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*Invalid*client*class*")
-    e = None
     try:
         e = r.run("config", "set", "client-output-buffer-limit", "master 10mb 10mb 60")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*Invalid*client*class*")
-    e = None
     try:
         e = r.run("config", "set", "client-output-buffer-limit", "normal 10mbs 10mb 60")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*Error*hard*")
-    e = None
     try:
         e = r.run("config", "set", "client-output-buffer-limit", "replica 10mb 10mbs 60")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*Error*soft*")
-    e = None
     try:
         e = r.run("config", "set", "client-output-buffer-limit", "pubsub 10mb 10mb 60s")
     except Exception as _catch_err:
@@ -341,7 +335,6 @@ def test_no_response_for_multi_commands_in_pipeline_if_client_output_buffer_limi
     assert "" == rd2.run("rawread")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_execute_transactions_completely_even_if_client_output_buffer_limit_is_enforced(r: ValkeyTestClient) -> None:
     """
     test {Execute transactions completely even if client output buffer limit is enforced} {
@@ -387,8 +380,11 @@ def test_execute_transactions_completely_even_if_client_output_buffer_limit_is_e
     r.run("lrange", "mylist2", 0, -1)
     r.run("set", "k3", "v3")
     r.run("del", "k1")
-    catch("[r exec]", "e")
-    # TODO: assert_match "*I/O error*" e
+    try:
+        e = r.run("exec")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*I/O error*")
     reconnect()
     clients = r.run("client", "list")
     assert_no_match("*name=transactionclient*", clients)
@@ -409,7 +405,6 @@ def test_obuf_limit_hrandfield_with_huge_count_stopped_mid_run(r: ValkeyTestClie
     """
     r.run("config", "set", "client-output-buffer-limit", "normal 1000000 0 0")
     r.run("hset", "myhash", "a", "b")
-    e = None
     try:
         e = r.run("hrandfield", "myhash", -999999999)
     except Exception as _catch_err:
@@ -432,7 +427,6 @@ def test_obuf_limit_keys_stopped_mid_run(r: ValkeyTestClient) -> None:
     populate(
         1000, "long-key-name-prefix-of-100-chars-------------------------------------------------------------------"
     )
-    e = None
     try:
         e = r.run("keys", "*")
     except Exception as _catch_err:
@@ -450,10 +444,6 @@ def append(*args):
 
 def assert_no_match(*args):
     raise NotImplementedError("assert_no_match")
-
-
-def catch(*args):
-    raise NotImplementedError("catch")
 
 
 def clock(*args):

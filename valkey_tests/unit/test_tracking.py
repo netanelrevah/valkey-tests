@@ -248,7 +248,7 @@ def test_adding_prefixes_to_bcast_mode_works(r: ValkeyTestClient) -> None:
 
 
 @pytest.mark.xfail(reason="not implemented")
-def test_tracking_noloop_mode_in_standard_mode_works(r: ValkeyTestClient) -> None:
+def test_tracking_noloop_mode_in_standard_mode_works(r: ValkeyTestClient, rd_sg) -> None:
     """
     test {Tracking NOLOOP mode in standard mode works} {
         r CLIENT TRACKING off
@@ -268,9 +268,9 @@ def test_tracking_noloop_mode_in_standard_mode_works(r: ValkeyTestClient) -> Non
     r.run("CLIENT", "TRACKING", "off")
     # TODO: r CLIENT TRACKING on REDIRECT redir_id NOLOOP
     r.run("MGET", "otherkey1{t}", "loopkey{t}", "otherkey2{t}")
-    # TODO: $rd_sg SET otherkey1{t} 1
+    rd_sg.run("SET", "otherkey1{t}", 1)
     r.run("SET", "loopkey{t}", 1)
-    # TODO: $rd_sg SET otherkey2{t} 1
+    rd_sg.run("SET", "otherkey2{t}", 1)
     # TODO: set keys1 lsort [lindex [$rd_redirection read] 2]
     # TODO: set keys2 lsort [lindex [$rd_redirection read] 2]
     # TODO: set keys lsort [list {*}$keys1 {*}$keys2]
@@ -278,7 +278,7 @@ def test_tracking_noloop_mode_in_standard_mode_works(r: ValkeyTestClient) -> Non
 
 
 @pytest.mark.xfail(reason="not implemented")
-def test_tracking_noloop_mode_in_bcast_mode_works(r: ValkeyTestClient) -> None:
+def test_tracking_noloop_mode_in_bcast_mode_works(r: ValkeyTestClient, rd_sg) -> None:
     """
     test {Tracking NOLOOP mode in BCAST mode works} {
         r CLIENT TRACKING off
@@ -296,9 +296,9 @@ def test_tracking_noloop_mode_in_bcast_mode_works(r: ValkeyTestClient) -> None:
     """
     r.run("CLIENT", "TRACKING", "off")
     # TODO: r CLIENT TRACKING on BCAST REDIRECT redir_id NOLOOP
-    # TODO: $rd_sg SET otherkey1 1
+    rd_sg.run("SET", "otherkey1", 1)
     r.run("SET", "loopkey", 1)
-    # TODO: $rd_sg SET otherkey2 1
+    rd_sg.run("SET", "otherkey2", 1)
     # TODO: set keys1 lsort [lindex [$rd_redirection read] 2]
     # TODO: set keys2 lsort [lindex [$rd_redirection read] 2]
     # TODO: set keys lsort [list {*}$keys1 {*}$keys2]
@@ -369,8 +369,7 @@ def test_hello_3_reply_is_correct(r: ValkeyTestClient) -> None:
     assert reply["proto"] == 3
 
 
-@pytest.mark.xfail(reason="not implemented")
-def test_resp3_based_basic_invalidation(r: ValkeyTestClient) -> None:
+def test_resp3_based_basic_invalidation(r: ValkeyTestClient, rd_sg) -> None:
     """
     test {RESP3 based basic invalidation} {
         r CLIENT TRACKING off
@@ -383,14 +382,14 @@ def test_resp3_based_basic_invalidation(r: ValkeyTestClient) -> None:
     """
     r.run("CLIENT", "TRACKING", "off")
     r.run("CLIENT", "TRACKING", "on")
-    # TODO: $rd_sg SET key1 1
+    rd_sg.run("SET", "key1", 1)
     r.run("GET", "key1")
-    # TODO: $rd_sg SET key1 2
+    rd_sg.run("SET", "key1", 2)
     assert r.run("read") == "invalidate key1"
 
 
 @pytest.mark.xfail(reason="not implemented")
-def test_resp3_tracking_redirection(r: ValkeyTestClient) -> None:
+def test_resp3_tracking_redirection(r: ValkeyTestClient, rd_sg) -> None:
     """
     test {RESP3 tracking redirection} {
         r CLIENT TRACKING off
@@ -404,15 +403,15 @@ def test_resp3_tracking_redirection(r: ValkeyTestClient) -> None:
     """
     r.run("CLIENT", "TRACKING", "off")
     # TODO: r CLIENT TRACKING on REDIRECT redir_id
-    # TODO: $rd_sg SET key1 1
+    rd_sg.run("SET", "key1", 1)
     r.run("GET", "key1")
-    # TODO: $rd_sg SET key1 2
+    rd_sg.run("SET", "key1", 2)
     # TODO: set res lindex [$rd_redirection read] 2
     assert_("$res eq {key1}")
 
 
 @pytest.mark.xfail(reason="not implemented")
-def test_invalidations_of_previous_keys_can_be_redirected_after_switching_to_resp3(r: ValkeyTestClient) -> None:
+def test_invalidations_of_previous_keys_can_be_redirected_after_switching_to_resp3(r: ValkeyTestClient, rd_sg) -> None:
     """
     test {Invalidations of previous keys can be redirected after switching to RESP3} {
         r HELLO 2
@@ -425,16 +424,16 @@ def test_invalidations_of_previous_keys_can_be_redirected_after_switching_to_res
     }
     """
     r.run("HELLO", 2)
-    # TODO: $rd_sg SET key1 1
+    rd_sg.run("SET", "key1", 1)
     r.run("GET", "key1")
     r.run("HELLO", 3)
-    # TODO: $rd_sg SET key1 2
+    rd_sg.run("SET", "key1", 2)
     # TODO: set res lindex [$rd_redirection read] 2
     assert_("$res eq {key1}")
 
 
 @pytest.mark.xfail(reason="not implemented")
-def test_invalidations_of_new_keys_can_be_redirected_after_switching_to_resp3(r: ValkeyTestClient) -> None:
+def test_invalidations_of_new_keys_can_be_redirected_after_switching_to_resp3(r: ValkeyTestClient, rd_sg) -> None:
     """
     test {Invalidations of new keys can be redirected after switching to RESP3} {
         r HELLO 3
@@ -446,15 +445,14 @@ def test_invalidations_of_new_keys_can_be_redirected_after_switching_to_resp3(r:
     }
     """
     r.run("HELLO", 3)
-    # TODO: $rd_sg SET key1 1
+    rd_sg.run("SET", "key1", 1)
     r.run("GET", "key1")
-    # TODO: $rd_sg SET key1 2
+    rd_sg.run("SET", "key1", 2)
     # TODO: set res lindex [$rd_redirection read] 2
     assert_("$res eq {key1}")
 
 
-@pytest.mark.xfail(reason="not implemented")
-def test_invalid_keys_should_not_be_tracked_for_scripts_in_noloop_mode(r: ValkeyTestClient) -> None:
+def test_invalid_keys_should_not_be_tracked_for_scripts_in_noloop_mode(r: ValkeyTestClient, rd_sg) -> None:
     """
     test {Invalid keys should not be tracked for scripts in NOLOOP mode} {
         $rd_sg CLIENT TRACKING off
@@ -469,18 +467,17 @@ def test_invalid_keys_should_not_be_tracked_for_scripts_in_noloop_mode(r: Valkey
         $rd_sg CLIENT TRACKING off
     }
     """
-    # TODO: $rd_sg CLIENT TRACKING off
-    # TODO: $rd_sg CLIENT TRACKING on NOLOOP
-    # TODO: $rd_sg HELLO 3
-    # TODO: $rd_sg SET key1 1
-    # TODO: assert_equal "1" $rd_sg GET key1
-    # TODO: $rd_sg eval "return redis.call('set', 'key1', '2')" 1 key1
-    # TODO: assert_equal "2" $rd_sg GET key1
-    # TODO: $rd_sg CLIENT TRACKING off
+    rd_sg.run("CLIENT", "TRACKING", "off")
+    rd_sg.run("CLIENT", "TRACKING", "on", "NOLOOP")
+    rd_sg.run("HELLO", 3)
+    rd_sg.run("SET", "key1", 1)
+    assert "1" == rd_sg.run("GET", "key1")
+    rd_sg.run("eval", "return redis.call('set', 'key1', '2')", 1, "key1")
+    assert "2" == rd_sg.run("GET", "key1")
+    rd_sg.run("CLIENT", "TRACKING", "off")
 
 
-@pytest.mark.xfail(reason="not implemented")
-def test_tracking_only_occurs_for_scripts_when_a_command_calls_a_read_only_command(r: ValkeyTestClient) -> None:
+def test_tracking_only_occurs_for_scripts_when_a_command_calls_a_read_only_command(r: ValkeyTestClient, rd_sg) -> None:
     """
     test {Tracking only occurs for scripts when a command calls a read-only command} {
         r CLIENT TRACKING off
@@ -514,26 +511,26 @@ def test_tracking_only_occurs_for_scripts_when_a_command_calls_a_read_only_comma
     """
     r.run("CLIENT", "TRACKING", "off")
     r.run("CLIENT", "TRACKING", "on")
-    # TODO: $rd_sg MSET key2{t} 1 key2{t} 1
+    rd_sg.run("MSET", "key2{t}", 1, "key2{t}", 1)
     r.run("EVAL", "redis.call('set', 'key3{t}', 'bar')", 2, "key1{t}", "key2{t}")
-    # TODO: $rd_sg MSET key2{t} 2 key1{t} 2
+    rd_sg.run("MSET", "key2{t}", 2, "key1{t}", 2)
     assert "PONG" == r.run("ping")
     r.run("EVAL", "redis.call('get', 'key2{t}')", 2, "key1{t}", "key2{t}")
-    # TODO: $rd_sg MSET key2{t} 2 key3{t} 2
+    rd_sg.run("MSET", "key2{t}", 2, "key3{t}", 2)
     assert "invalidate key2{t}" == r.run("read")
     assert "PONG" == r.run("ping")
     r.run("EVAL_RO", "redis.call('ping')", 2, "key1{t}", "key2{t}")
-    # TODO: $rd_sg MSET key2{t} 2 key1{t} 2
+    rd_sg.run("MSET", "key2{t}", 2, "key1{t}", 2)
     assert "PONG" == r.run("ping")
     r.run("EVAL_RO", "redis.call('get', 'key2{t}')", 2, "key1{t}", "key2{t}")
-    # TODO: $rd_sg MSET key2{t} 2 key3{t} 2
+    rd_sg.run("MSET", "key2{t}", 2, "key3{t}", 2)
     assert "invalidate key2{t}" == r.run("read")
     assert "PONG" == r.run("ping")
 
 
 @pytest.mark.xfail(reason="not implemented")
 def test_resp3_client_gets_tracking_redir_broken_push_message_after_cached_key_changed_when_rediretion_client_is_terminated(
-    r: ValkeyTestClient,
+    r: ValkeyTestClient, rd_sg
 ) -> None:
     """
     test {RESP3 Client gets tracking-redir-broken push message after cached key changed when rediretion client is terminated} {
@@ -569,12 +566,12 @@ def test_resp3_client_gets_tracking_redir_broken_push_message_after_cached_key_c
     r.run("HELLO", 3)
     # TODO: r CLIENT TRACKING on REDIRECT redir_id
     # TODO: set redir_error "tracking-redir-broken $redir_id"
-    # TODO: $rd_sg SET key1 1
+    rd_sg.run("SET", "key1", 1)
     r.run("GET", "key1")
     # TODO: $rd_redirection QUIT
     # TODO: assert_equal OK $rd_redirection read
     # TODO: $rd_redirection close
-    # TODO: $rd_sg SET key1 2
+    rd_sg.run("SET", "key1", 2)
     rd_redirection = ValkeyTestClient.create_from(r)
     rd_redirection.run("CLIENT", "ID")
     redir_id = rd_redirection.run("read")
@@ -588,7 +585,7 @@ def test_resp3_client_gets_tracking_redir_broken_push_message_after_cached_key_c
 
 
 @pytest.mark.xfail(reason="not implemented")
-def test_different_clients_can_redirect_to_the_same_connection(r: ValkeyTestClient, rd) -> None:
+def test_different_clients_can_redirect_to_the_same_connection(r: ValkeyTestClient, rd, rd_sg) -> None:
     """
     test {Different clients can redirect to the same connection} {
         r CLIENT TRACKING on REDIRECT $redir_id
@@ -609,12 +606,12 @@ def test_different_clients_can_redirect_to_the_same_connection(r: ValkeyTestClie
     # TODO: r CLIENT TRACKING on REDIRECT redir_id
     # TODO: $rd CLIENT TRACKING on REDIRECT redir_id
     assert "OK" == rd.run("read")
-    # TODO: $rd_sg MSET key1{t} 1 key2{t} 1
+    rd_sg.run("MSET", "key1{t}", 1, "key2{t}", 1)
     r.run("GET", "key1{t}")
     rd.run("GET", "key2{t}")
     assert 1 == rd.run("read")
-    # TODO: $rd_sg INCR key1{t}
-    # TODO: $rd_sg INCR key2{t}
+    rd_sg.run("INCR", "key1{t}")
+    rd_sg.run("INCR", "key2{t}")
     # TODO: set res1 lindex [$rd_redirection read] 2
     # TODO: set res2 lindex [$rd_redirection read] 2
     assert_("$res1 eq {key1{t}}")
@@ -622,7 +619,7 @@ def test_different_clients_can_redirect_to_the_same_connection(r: ValkeyTestClie
 
 
 @pytest.mark.xfail(reason="not implemented")
-def test_different_clients_using_different_protocols_can_track_the_same_key(r: ValkeyTestClient, rd) -> None:
+def test_different_clients_using_different_protocols_can_track_the_same_key(r: ValkeyTestClient, rd, rd_sg) -> None:
     """
     test {Different clients using different protocols can track the same key} {
         $rd HELLO 3
@@ -648,11 +645,11 @@ def test_different_clients_using_different_protocols_can_track_the_same_key(r: V
     assert 3 == reply["proto"]
     rd.run("CLIENT", "TRACKING", "on")
     assert "OK" == rd.run("read")
-    # TODO: $rd_sg set key1 1
+    rd_sg.run("set", "key1", 1)
     r.run("GET", "key1")
     rd.run("GET", "key1")
     assert 1 == rd.run("read")
-    # TODO: $rd_sg INCR key1
+    rd_sg.run("INCR", "key1")
     # TODO: set res1 lindex [$rd_redirection read] 2
     rd.run("PING")
     res2 = split(rd.run("read"), " ")[1]
@@ -662,7 +659,7 @@ def test_different_clients_using_different_protocols_can_track_the_same_key(r: V
 
 
 @pytest.mark.xfail(reason="not implemented")
-def test_no_invalidation_message_when_using_optin_option(r: ValkeyTestClient) -> None:
+def test_no_invalidation_message_when_using_optin_option(r: ValkeyTestClient, rd_sg) -> None:
     """
     test {No invalidation message when using OPTIN option} {
         r CLIENT TRACKING on OPTIN REDIRECT $redir_id
@@ -680,20 +677,20 @@ def test_no_invalidation_message_when_using_optin_option(r: ValkeyTestClient) ->
     }
     """
     # TODO: r CLIENT TRACKING on OPTIN REDIRECT redir_id
-    # TODO: $rd_sg SET key1 1
+    rd_sg.run("SET", "key1", 1)
     r.run("GET", "key1")
-    # TODO: $rd_sg SET key1 2
+    rd_sg.run("SET", "key1", 2)
     r.run("CLIENT", "TRACKING", "off")
     # TODO: r CLIENT TRACKING on REDIRECT redir_id
-    # TODO: $rd_sg SET key2 1
+    rd_sg.run("SET", "key2", 1)
     r.run("GET", "key2")
-    # TODO: $rd_sg SET key2 2
+    rd_sg.run("SET", "key2", 2)
     # TODO: set res lindex [$rd_redirection read] 2
     assert_("$res eq {key2}")
 
 
 @pytest.mark.xfail(reason="not implemented")
-def test_invalidation_message_sent_when_using_optin_option_with_client_caching_yes(r: ValkeyTestClient) -> None:
+def test_invalidation_message_sent_when_using_optin_option_with_client_caching_yes(r: ValkeyTestClient, rd_sg) -> None:
     """
     test {Invalidation message sent when using OPTIN option with CLIENT CACHING yes} {
         r CLIENT TRACKING on OPTIN REDIRECT $redir_id
@@ -706,16 +703,16 @@ def test_invalidation_message_sent_when_using_optin_option_with_client_caching_y
     }
     """
     # TODO: r CLIENT TRACKING on OPTIN REDIRECT redir_id
-    # TODO: $rd_sg SET key1 3
+    rd_sg.run("SET", "key1", 3)
     r.run("CLIENT", "CACHING", "yes")
     r.run("GET", "key1")
-    # TODO: $rd_sg SET key1 4
+    rd_sg.run("SET", "key1", 4)
     # TODO: set res lindex [$rd_redirection read] 2
     assert_("$res eq {key1}")
 
 
 @pytest.mark.xfail(reason="not implemented")
-def test_invalidation_message_sent_when_using_optout_option(r: ValkeyTestClient) -> None:
+def test_invalidation_message_sent_when_using_optout_option(r: ValkeyTestClient, rd_sg) -> None:
     """
     test {Invalidation message sent when using OPTOUT option} {
         r CLIENT TRACKING off
@@ -729,15 +726,15 @@ def test_invalidation_message_sent_when_using_optout_option(r: ValkeyTestClient)
     """
     r.run("CLIENT", "TRACKING", "off")
     # TODO: r CLIENT TRACKING on OPTOUT REDIRECT redir_id
-    # TODO: $rd_sg SET key1 1
+    rd_sg.run("SET", "key1", 1)
     r.run("GET", "key1")
-    # TODO: $rd_sg SET key1 2
+    rd_sg.run("SET", "key1", 2)
     # TODO: set res lindex [$rd_redirection read] 2
     assert_("$res eq {key1}")
 
 
 @pytest.mark.xfail(reason="not implemented")
-def test_no_invalidation_message_when_using_optout_option_with_client_caching_no(r: ValkeyTestClient) -> None:
+def test_no_invalidation_message_when_using_optout_option_with_client_caching_no(r: ValkeyTestClient, rd_sg) -> None:
     """
     test {No invalidation message when using OPTOUT option with CLIENT CACHING no} {
         $rd_sg SET key1 1
@@ -752,19 +749,19 @@ def test_no_invalidation_message_when_using_optout_option_with_client_caching_no
         assert {$res eq {key2}}
     }
     """
-    # TODO: $rd_sg SET key1 1
+    rd_sg.run("SET", "key1", 1)
     r.run("CLIENT", "CACHING", "no")
     r.run("GET", "key1")
-    # TODO: $rd_sg SET key1 2
-    # TODO: $rd_sg SET key2 1
+    rd_sg.run("SET", "key1", 2)
+    rd_sg.run("SET", "key2", 1)
     r.run("GET", "key2")
-    # TODO: $rd_sg SET key2 2
+    rd_sg.run("SET", "key2", 2)
     # TODO: set res lindex [$rd_redirection read] 2
     assert_("$res eq {key2}")
 
 
 @pytest.mark.xfail(reason="not implemented")
-def test_able_to_redirect_to_a_resp3_client(r: ValkeyTestClient) -> None:
+def test_able_to_redirect_to_a_resp3_client(r: ValkeyTestClient, rd_redirection, rd_sg) -> None:
     """
     test {Able to redirect to a RESP3 client} {
         $rd_redirection UNSUBSCRIBE __redis__:invalidate ; # Need to unsub first before we can do HELLO 3
@@ -787,29 +784,28 @@ def test_able_to_redirect_to_a_resp3_client(r: ValkeyTestClient) -> None:
         assert_equal [dict get $res proto] 2
     }
     """
-    # TODO: $rd_redirection UNSUBSCRIBE __redis__:invalidate
-    # TODO: set res $rd_redirection read
-    # TODO: assert_equal {__redis__:invalidate} lindex $res 1
-    # TODO: $rd_redirection HELLO 3
-    # TODO: set res $rd_redirection read
+    rd_redirection.run("UNSUBSCRIBE", "__redis__:invalidate")
+    res = rd_redirection.run("read")
+    assert "__redis__:invalidate" == res[1]
+    rd_redirection.run("HELLO", 3)
+    res = rd_redirection.run("read")
     # TODO: assert_equal dict get $reply proto 3
-    # TODO: $rd_redirection SUBSCRIBE __redis__:invalidate
-    # TODO: set res $rd_redirection read
-    # TODO: assert_equal {__redis__:invalidate} lindex $res 1
+    rd_redirection.run("SUBSCRIBE", "__redis__:invalidate")
+    res = rd_redirection.run("read")
+    assert "__redis__:invalidate" == res[1]
     # TODO: r CLIENT TRACKING on REDIRECT redir_id
-    # TODO: $rd_sg SET key1 1
+    rd_sg.run("SET", "key1", 1)
     r.run("GET", "key1")
-    # TODO: $rd_sg INCR key1
-    # TODO: set res lindex [$rd_redirection read] 1
-    assert_("$res eq {key1}")
-    # TODO: $rd_redirection HELLO 2
-    # TODO: set res $rd_redirection read
-    # TODO: assert_equal dict get $res proto 2
+    rd_sg.run("INCR", "key1")
+    res = rd_redirection.run("read")[1]
+    assert res == "key1"
+    rd_redirection.run("HELLO", 2)
+    res = rd_redirection.run("read")
+    assert res["proto"] == 2
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_after_switching_from_normal_tracking_to_bcast_mode_no_invalidation_message_is_produced_for_pre_bcast_keys(
-    r: ValkeyTestClient,
+    r: ValkeyTestClient, rd_sg
 ) -> None:
     """
     test {After switching from normal tracking to BCAST mode, no invalidation message is produced for pre-BCAST keys} {
@@ -830,11 +826,11 @@ def test_after_switching_from_normal_tracking_to_bcast_mode_no_invalidation_mess
     r.run("CLIENT", "TRACKING", "off")
     r.run("HELLO", 3)
     r.run("CLIENT", "TRACKING", "on")
-    # TODO: $rd_sg SET key1 1
+    rd_sg.run("SET", "key1", 1)
     r.run("GET", "key1")
     r.run("CLIENT", "TRACKING", "off")
     r.run("CLIENT", "TRACKING", "on", "BCAST")
-    # TODO: $rd_sg INCR key1
+    rd_sg.run("INCR", "key1")
     inv_msg = r.run("PING")
     ping_reply = r.run("read")
     assert inv_msg == "invalidate key1"
@@ -862,26 +858,22 @@ def test_bcast_with_prefix_collisions_throw_errors(r: ValkeyTestClient) -> None:
     }
     """
     r = ValkeyTestClient.create_from(r)
-    output = None
     try:
         output = r.run("CLIENT", "TRACKING", "ON", "BCAST", "PREFIX", "FOOBAR", "PREFIX", "FOO")
     except Exception as _catch_err:
         output = str(_catch_err)
     assert fnmatch(str(output), "ERR Prefix 'FOOBAR'*'FOO'*")
-    output = None
     try:
         output = r.run("CLIENT", "TRACKING", "ON", "BCAST", "PREFIX", "FOO", "PREFIX", "FOOBAR")
     except Exception as _catch_err:
         output = str(_catch_err)
     assert fnmatch(str(output), "ERR Prefix 'FOO'*'FOOBAR'*")
     r.run("CLIENT", "TRACKING", "ON", "BCAST", "PREFIX", "FOO", "PREFIX", "BAR")
-    output = None
     try:
         output = r.run("CLIENT", "TRACKING", "ON", "BCAST", "PREFIX", "FO")
     except Exception as _catch_err:
         output = str(_catch_err)
     assert fnmatch(str(output), "ERR Prefix 'FO'*'FOO'*")
-    output = None
     try:
         output = r.run("CLIENT", "TRACKING", "ON", "BCAST", "PREFIX", "BARB")
     except Exception as _catch_err:
@@ -1113,7 +1105,7 @@ def test_tracking_gets_notification_on_tracking_table_key_eviction(r: ValkeyTest
 
 
 @pytest.mark.xfail(reason="not implemented")
-def test_invalidation_message_received_for_flushall(r: ValkeyTestClient) -> None:
+def test_invalidation_message_received_for_flushall(r: ValkeyTestClient, rd_sg) -> None:
     """
     test {Invalidation message received for flushall} {
         clean_all
@@ -1127,15 +1119,15 @@ def test_invalidation_message_received_for_flushall(r: ValkeyTestClient) -> None
     """
     clean_all()
     # TODO: r CLIENT TRACKING on REDIRECT redir_id
-    # TODO: $rd_sg SET key1 1
+    rd_sg.run("SET", "key1", 1)
     r.run("GET", "key1")
-    # TODO: $rd_sg FLUSHALL
+    rd_sg.run("FLUSHALL")
     # TODO: set msg $rd_redirection read
     assert "msg"[2] == ""
 
 
 @pytest.mark.xfail(reason="not implemented")
-def test_invalidation_message_received_for_flushdb(r: ValkeyTestClient) -> None:
+def test_invalidation_message_received_for_flushdb(r: ValkeyTestClient, rd_sg) -> None:
     """
     test {Invalidation message received for flushdb} {
         clean_all
@@ -1149,15 +1141,15 @@ def test_invalidation_message_received_for_flushdb(r: ValkeyTestClient) -> None:
     """
     clean_all()
     # TODO: r CLIENT TRACKING on REDIRECT redir_id
-    # TODO: $rd_sg SET key1 1
+    rd_sg.run("SET", "key1", 1)
     r.run("GET", "key1")
-    # TODO: $rd_sg FLUSHDB
+    rd_sg.run("FLUSHDB")
     # TODO: set msg $rd_redirection read
     assert "msg"[2] == ""
 
 
 @pytest.mark.xfail(reason="not implemented")
-def test_test_async_flushall(r: ValkeyTestClient) -> None:
+def test_test_async_flushall(r: ValkeyTestClient, rd_sg) -> None:
     """
     test {Test ASYNC flushall} {
         clean_all
@@ -1175,7 +1167,7 @@ def test_test_async_flushall(r: ValkeyTestClient) -> None:
     r.run("GET", "key1")
     r.run("GET", "key2")
     assert s(0, "tracking_total_keys") == 2
-    # TODO: $rd_sg FLUSHALL ASYNC
+    rd_sg.run("FLUSHALL", "ASYNC")
     assert s(0, "tracking_total_keys") == 0
     # TODO: assert_equal lindex [$rd_redirection read] 2 {}
 
@@ -1212,7 +1204,7 @@ def test_flushdb_tracking_invalidation_message_is_not_interleaved_with_transacti
 
 @pytest.mark.xfail(reason="not implemented")
 def test_server_is_able_to_evacuate_enough_keys_when_num_of_keys_surpasses_limit_by_more_than_defined_initial_effort(
-    r: ValkeyTestClient,
+    r: ValkeyTestClient, rd_redirection, rd_sg
 ) -> None:
     """
     test {Server is able to evacuate enough keys when num of keys surpasses limit by more than defined initial effort} {
@@ -1240,25 +1232,22 @@ def test_server_is_able_to_evacuate_enough_keys_when_num_of_keys_surpasses_limit
     NUM_OF_KEYS_TO_TEST = 250
     TRACKING_TABLE_MAX_KEYS = 1
     # TODO: r CLIENT TRACKING on REDIRECT redir_id
-    for_(
-        "set i 0",
-        "$i < $NUM_OF_KEYS_TO_TEST",
-        "incr i",
-        "            $rd_sg SET key$i $i\n            r GET key$i\n        ",
-    )
+    i = 0
+    while i < NUM_OF_KEYS_TO_TEST:
+        rd_sg.run("SET", "key$i", i)
+        r.run("GET", "key$i")
+        i += 1
     r.run("config", "set", "tracking-table-max-keys", TRACKING_TABLE_MAX_KEYS)
-    for_(
-        "set i 0",
-        "$i < $NUM_OF_KEYS_TO_TEST - $TRACKING_TABLE_MAX_KEYS",
-        "incr i",
-        "            $rd_redirection read\n        ",
-    )
-    # TODO: $rd_redirection PING
-    assert_("[$rd_redirection read] eq {pong {}}")
+    i = 0
+    while i < (NUM_OF_KEYS_TO_TEST - TRACKING_TABLE_MAX_KEYS):
+        rd_redirection.run("read")
+        i += 1
+    rd_redirection.run("PING")
+    assert rd_redirection.run("read") == "pong {}"
 
 
 @pytest.mark.xfail(reason="not implemented")
-def test_tracking_info_is_correct(r: ValkeyTestClient, rd) -> None:
+def test_tracking_info_is_correct(r: ValkeyTestClient, rd, rd_sg) -> None:
     """
     test {Tracking info is correct} {
         clean_all
@@ -1284,14 +1273,14 @@ def test_tracking_info_is_correct(r: ValkeyTestClient, rd) -> None:
     """
     clean_all()
     # TODO: r CLIENT TRACKING on REDIRECT redir_id
-    # TODO: $rd_sg SET key1 1
-    # TODO: $rd_sg SET key2 2
+    rd_sg.run("SET", "key1", 1)
+    rd_sg.run("SET", "key2", 2)
     r.run("GET", "key1")
     r.run("GET", "key2")
     rd.run("CLIENT", "TRACKING", "on", "BCAST", "PREFIX", "prefix:")
     assert_(string("match", "*OK*", rd.run("read")))
-    # TODO: $rd_sg SET prefix:key1 1
-    # TODO: $rd_sg SET prefix:key2 2
+    rd_sg.run("SET", "prefix:key1", 1)
+    rd_sg.run("SET", "prefix:key2", 2)
     info = r.run("info")
     regexp("\r\ntracking_total_items:(.*?)\r\n", info, "_", "total_items")
     regexp("\r\ntracking_total_keys:(.*?)\r\n", info, "_", "total_keys")
@@ -1502,7 +1491,9 @@ def test_client_trackinginfo_provides_reasonable_results_when_tracking_bcast_mod
 
 
 @pytest.mark.xfail(reason="not implemented")
-def test_client_trackinginfo_provides_reasonable_results_when_tracking_redir_broken(r: ValkeyTestClient) -> None:
+def test_client_trackinginfo_provides_reasonable_results_when_tracking_redir_broken(
+    r: ValkeyTestClient, rd_redirection, rd_sg
+) -> None:
     """
     test {CLIENT TRACKINGINFO provides reasonable results when tracking redir broken} {
         clean_all
@@ -1527,11 +1518,11 @@ def test_client_trackinginfo_provides_reasonable_results_when_tracking_redir_bro
     clean_all()
     r.run("HELLO", 3)
     # TODO: r CLIENT TRACKING on REDIRECT redir_id
-    # TODO: $rd_sg SET key1 1
+    rd_sg.run("SET", "key1", 1)
     r.run("GET", "key1")
-    # TODO: $rd_redirection QUIT
-    # TODO: assert_equal OK $rd_redirection read
-    # TODO: $rd_sg SET key1 2
+    rd_redirection.run("QUIT")
+    assert "OK" == rd_redirection.run("read")
+    rd_sg.run("SET", "key1", 2)
     res = lsearch("-exact", r.run("read"), "tracking-redir-broken")
     assert res >= 0
     res = r.run("client", "trackinginfo")
@@ -1603,9 +1594,8 @@ def test_regression_test_for_11715(r: ValkeyTestClient, rd) -> None:
     assert r.run("debug", "pause-cron", 0) == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["resp"], [(3), (2)])
-def test_resp_resp_based_basic_invalidation_with_client_reply_off(r: ValkeyTestClient, resp, rd) -> None:
+def test_resp_resp_based_basic_invalidation_with_client_reply_off(r: ValkeyTestClient, resp, rd, rd_sg) -> None:
     """
     test "RESP$resp based basic invalidation with client reply off" {
         # This entire test is mostly irrelevant for RESP2, but we run it anyway just for some extra coverage.
@@ -1640,11 +1630,11 @@ def test_resp_resp_based_basic_invalidation_with_client_reply_off(r: ValkeyTestC
     rd.run("read")
     rd.run("client", "tracking", "on")
     rd.run("read")
-    # TODO: $rd_sg set foo bar
+    rd_sg.run("set", "foo", "bar")
     rd.run("get", "foo")
     rd.run("read")
     rd.run("client", "reply", "off")
-    # TODO: $rd_sg set foo bar2
+    rd_sg.run("set", "foo", "bar2")
     if_(
         "$resp == 3",
         "                assert_equal {invalidate foo} [$rd read]\n            ",
@@ -1658,8 +1648,7 @@ def test_resp_resp_based_basic_invalidation_with_client_reply_off(r: ValkeyTestC
     assert "PONG" == rd.run("read")
 
 
-@pytest.mark.xfail(reason="not implemented")
-def test_resp3_based_basic_redirect_invalidation_with_client_reply_off(r: ValkeyTestClient, rd) -> None:
+def test_resp3_based_basic_redirect_invalidation_with_client_reply_off(r: ValkeyTestClient, rd, rd_sg) -> None:
     """
     test {RESP3 based basic redirect invalidation with client reply off} {
         clean_all
@@ -1700,11 +1689,11 @@ def test_resp3_based_basic_redirect_invalidation_with_client_reply_off(r: Valkey
     rd_redir_id = rd_redir.run("read")
     rd.run("client", "tracking", "on", "redirect", rd_redir_id)
     rd.run("read")
-    # TODO: $rd_sg set foo bar
+    rd_sg.run("set", "foo", "bar")
     rd.run("get", "foo")
     rd.run("read")
     rd_redir.run("client", "reply", "off")
-    # TODO: $rd_sg set foo bar2
+    rd_sg.run("set", "foo", "bar2")
     assert "invalidate foo" == rd_redir.run("read")
     rd_redir.run("client", "reply", "on")
     assert "OK" == rd_redir.run("read")
@@ -1714,7 +1703,9 @@ def test_resp3_based_basic_redirect_invalidation_with_client_reply_off(r: Valkey
 
 
 @pytest.mark.xfail(reason="not implemented")
-def test_resp3_based_basic_tracking_redir_broken_with_client_reply_off(r: ValkeyTestClient, rd) -> None:
+def test_resp3_based_basic_tracking_redir_broken_with_client_reply_off(
+    r: ValkeyTestClient, rd, rd_redirection, rd_sg
+) -> None:
     """
     test {RESP3 based basic tracking-redir-broken with client reply off} {
         clean_all
@@ -1750,15 +1741,15 @@ def test_resp3_based_basic_tracking_redir_broken_with_client_reply_off(r: Valkey
     rd.run("read")
     # TODO: $rd client tracking on redirect redir_id
     rd.run("read")
-    # TODO: $rd_sg set foo bar
+    rd_sg.run("set", "foo", "bar")
     rd.run("get", "foo")
     rd.run("read")
     rd.run("client", "reply", "off")
-    # TODO: $rd_redirection quit
-    # TODO: $rd_redirection read
-    # TODO: $rd_sg set foo bar2
+    rd_redirection.run("quit")
+    rd_redirection.run("read")
+    rd_sg.run("set", "foo", "bar2")
     res = lsearch("-exact", rd.run("read"), "tracking-redir-broken")
-    assert_morethan_equal(res, 0)
+    assert res >= 0
     rd.run("client", "reply", "on")
     assert "OK" == rd.run("read")
     rd.run("ping")
@@ -1856,10 +1847,6 @@ def assert_(*args):
     raise NotImplementedError("assert_")
 
 
-def assert_morethan_equal(*args):
-    raise NotImplementedError("assert_morethan_equal")
-
-
 def clean_all(*args):
     raise NotImplementedError("clean_all")
 
@@ -1870,10 +1857,6 @@ def expr(*args):
 
 def fail(*args):
     raise NotImplementedError("fail")
-
-
-def for_(*args):
-    raise NotImplementedError("for_")
 
 
 def get_field_in_client_info(*args):

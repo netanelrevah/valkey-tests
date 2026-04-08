@@ -109,7 +109,6 @@ def test_setex_wrong_time_parameter(r: ValkeyTestClient) -> None:
         set _ $e
     } {*invalid expire*}
     """
-    e = None
     try:
         e = r.run("setex", "z", -10, "foo")
     except Exception as _catch_err:
@@ -178,7 +177,8 @@ def test_expire_precision_is_now_the_millisecond(r: ValkeyTestClient) -> None:
         if b == "":
             break_()
         j += 1
-    if_("$::verbose", '            puts "millisecond expire test attempts: $j"\n        ')
+    if False:
+        pass
     # TODO: assert_equal a {somevalue}
     # TODO: assert_equal b {}
 
@@ -212,7 +212,8 @@ def test_psetex_can_set_sub_second_expires(r: ValkeyTestClient) -> None:
         if (a == "somevalue") and (b == ""):
             break_()
         j += 1
-    if_("$::verbose", ' puts "PSETEX sub-second expire test attempts: $j" ')
+    if False:
+        pass
     # TODO: list a b
     assert False
 
@@ -246,7 +247,8 @@ def test_pexpire_can_set_sub_second_expires(r: ValkeyTestClient) -> None:
         if (c == "somevalue") and (d == ""):
             break_()
         j += 1
-    if_("$::verbose", ' puts "PEXPIRE sub-second expire test attempts: $j" ')
+    if False:
+        pass
     # TODO: list c d
     assert False
 
@@ -282,7 +284,8 @@ def test_pexpireat_can_set_sub_second_expires(r: ValkeyTestClient) -> None:
         if (e == "somevalue") and (f == ""):
             break_()
         j += 1
-    if_("$::verbose", ' puts "PEXPIREAT sub-second expire test attempts: $j" ')
+    if False:
+        pass
     # TODO: list e f
     assert False
 
@@ -533,7 +536,6 @@ def test_expire_with_empty_string_as_ttl_should_report_an_error(r: ValkeyTestCli
     } {*not an integer*}
     """
     r.run("set", "foo", "bar")
-    e = None
     try:
         e = r.run("expire", "foo", "")
     except Exception as _catch_err:
@@ -548,7 +550,6 @@ def test_set_with_ex_with_big_integer_should_report_an_error(r: ValkeyTestClient
         set e
     } {ERR invalid expire time in 'set' command}
     """
-    e = None
     try:
         e = r.run("set", "foo", "bar", "EX", 10000000000000000)
     except Exception as _catch_err:
@@ -563,7 +564,6 @@ def test_set_with_ex_with_smallest_integer_should_report_an_error(r: ValkeyTestC
         set e
     } {ERR invalid expire time in 'set' command}
     """
-    e = None
     try:
         e = r.run("SET", "foo", "bar", "EX", -9999999999999999)
     except Exception as _catch_err:
@@ -580,7 +580,6 @@ def test_getex_with_big_integer_should_report_an_error(r: ValkeyTestClient) -> N
     } {ERR invalid expire time in 'getex' command}
     """
     r.run("set", "foo", "bar")
-    e = None
     try:
         e = r.run("GETEX", "foo", "EX", 10000000000000000)
     except Exception as _catch_err:
@@ -597,7 +596,6 @@ def test_getex_with_smallest_integer_should_report_an_error(r: ValkeyTestClient)
     } {ERR invalid expire time in 'getex' command}
     """
     r.run("set", "foo", "bar")
-    e = None
     try:
         e = r.run("GETEX", "foo", "EX", -9999999999999999)
     except Exception as _catch_err:
@@ -668,7 +666,6 @@ def test_pexpire_with_big_integer_overflow_when_basetime_is_added(r: ValkeyTestC
     } {ERR invalid expire time in 'pexpire' command}
     """
     r.run("set", "foo", "bar")
-    e = None
     try:
         e = r.run("PEXPIRE", "foo", 9223372036854770000)
     except Exception as _catch_err:
@@ -1318,7 +1315,6 @@ def test_expire_with_conflicting_options_lt_gt(r: ValkeyTestClient) -> None:
         set e
     } {ERR GT and LT options at the same time are not compatible}
     """
-    e = None
     try:
         e = r.run("EXPIRE", "foo", 200, "LT", "GT")
     except Exception as _catch_err:
@@ -1333,7 +1329,6 @@ def test_expire_with_conflicting_options_nx_gt(r: ValkeyTestClient) -> None:
         set e
     } {ERR NX and XX, GT or LT options at the same time are not compatible}
     """
-    e = None
     try:
         e = r.run("EXPIRE", "foo", 200, "NX", "GT")
     except Exception as _catch_err:
@@ -1348,7 +1343,6 @@ def test_expire_with_conflicting_options_nx_lt(r: ValkeyTestClient) -> None:
         set e
     } {ERR NX and XX, GT or LT options at the same time are not compatible}
     """
-    e = None
     try:
         e = r.run("EXPIRE", "foo", 200, "NX", "LT")
     except Exception as _catch_err:
@@ -1363,7 +1357,6 @@ def test_expire_with_conflicting_options_nx_xx(r: ValkeyTestClient) -> None:
         set e
     } {ERR NX and XX, GT or LT options at the same time are not compatible}
     """
-    e = None
     try:
         e = r.run("EXPIRE", "foo", 200, "NX", "XX")
     except Exception as _catch_err:
@@ -1378,7 +1371,6 @@ def test_expire_with_unsupported_options(r: ValkeyTestClient) -> None:
         set e
     } {ERR Unsupported option AB}
     """
-    e = None
     try:
         e = r.run("EXPIRE", "foo", 200, "AB")
     except Exception as _catch_err:
@@ -1393,7 +1385,6 @@ def test_expire_with_unsupported_options_1(r: ValkeyTestClient) -> None:
         set e
     } {ERR Unsupported option AB}
     """
-    e = None
     try:
         e = r.run("EXPIRE", "foo", 200, "XX", "AB")
     except Exception as _catch_err:
@@ -1992,10 +1983,6 @@ def expr(*args):
 
 def fail(*args):
     raise NotImplementedError("fail")
-
-
-def if_(*args):
-    raise NotImplementedError("if_")
 
 
 def main_hash_table_size(*args):

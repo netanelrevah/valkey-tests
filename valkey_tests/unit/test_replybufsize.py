@@ -33,7 +33,6 @@ r config set min-string-size-avoid-copy-reply-threaded 0
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_verify_reply_buffer_limits(r: ValkeyTestClient) -> None:
     """
     test {verify reply buffer limits} {
@@ -71,8 +70,8 @@ def test_verify_reply_buffer_limits(r: ValkeyTestClient) -> None:
     } {0} {needs:debug}
     """
     r.run("debug", "replybuffer", "peak-reset-time", 100)
-    variable("tc", ValkeyTestClient.create_from(r))
-    # TODO: $tc client setname test_client
+    tc = ValkeyTestClient.create_from(r)
+    tc.run("client", "setname", "test_client")
     wait_for_condition(
         10,
         100,
@@ -88,8 +87,7 @@ def test_verify_reply_buffer_limits(r: ValkeyTestClient) -> None:
         '            set rbs [get_reply_buffer_size test_client]\n            fail "reply buffer of busy client is $rbs after 1 seconds"\n        ',
     )
     r.run("debug", "replybuffer", "peak-reset-time", "reset")
-    # TODO: $tc close
-    assert False
+    tc.run("close")
 
 
 # --- stubs for unimplemented TCL helpers ---
@@ -105,10 +103,6 @@ def get_reply_buffer_size(*args):
 
 def string(*args):
     raise NotImplementedError("string")
-
-
-def variable(*args):
-    raise NotImplementedError("variable")
 
 
 def wait_for_condition(*args):

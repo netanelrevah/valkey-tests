@@ -37,39 +37,33 @@ def test_test_basic_multiple_selectors(r: ValkeyTestClient, r2) -> None:
     """
     r.run("ACL", "SETUSER", "selector-1", "on", "-@all", "resetkeys", "nopass")
     r2.run("auth", "selector-1", "password")
-    err = None
     try:
         err = r2.run("ping")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*NOPERM*command*")
-    err = None
     try:
         err = r2.run("set", "write::foo", "bar")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*NOPERM*command*")
-    err = None
     try:
         err = r2.run("get", "read::foo")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*NOPERM*command*")
     r.run("ACL", "SETUSER", "selector-1", "(+@write", "~write::*)", "(+@read", "~read::*)")
-    err = None
     try:
         err = r2.run("ping")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert "OK" == r2.run("set", "write::foo", "bar")
     assert "" == r2.run("get", "read::foo")
-    err = None
     try:
         err = r2.run("get", "write::foo")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*NOPERM*key*")
-    err = None
     try:
         err = r2.run("set", "read::foo", "bar")
     except Exception as _catch_err:
@@ -139,31 +133,26 @@ def test_test_selector_syntax_error_reports_the_error_in_the_selector_context(r:
         assert_equal "" [r ACL GETUSER selector-syntax]
     }
     """
-    e = None
     try:
         e = r.run("ACL", "SETUSER", "selector-syntax", "on", "(this-is-invalid)")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "ERR Error in ACL SETUSER modifier '(*)*Syntax*")
-    e = None
     try:
         e = r.run("ACL", "SETUSER", "selector-syntax", "on", "(&*", "&fail)")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "ERR Error in ACL SETUSER modifier '(*)*Adding a pattern after the*")
-    e = None
     try:
         e = r.run("ACL", "SETUSER", "selector-syntax", "on", "(+PING", "(+SELECT", "(+DEL")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "ERR Unmatched parenthesis in acl selector*")
-    e = None
     try:
         e = r.run("ACL", "SETUSER", "selector-syntax", "on", "(+PING", "(+SELECT", "(+DEL", ")", ")", ")")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "ERR Error in ACL SETUSER modifier*")
-    e = None
     try:
         e = r.run("ACL", "SETUSER", "selector-syntax", "on", "(+PING", "(+SELECT", "(+DEL", ")")
     except Exception as _catch_err:
@@ -224,19 +213,16 @@ def test_test_flexible_selector_definition(r: ValkeyTestClient) -> None:
     assert "~key6" == user["selectors"][5]["keys"]
     assert "~key7" == user["selectors"][6]["keys"]
     assert "~key8" == user["selectors"][7]["keys"]
-    err = None
     try:
         err = r.run("ACL", "SETUSER", "invalid-selector", " () ")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "ERR*Syntax error*")
-    err = None
     try:
         err = r.run("ACL", "SETUSER", "invalid-selector", "(")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "ERR*Unmatched parenthesis*")
-    err = None
     try:
         err = r.run("ACL", "SETUSER", "invalid-selector", ")")
     except Exception as _catch_err:
@@ -263,13 +249,11 @@ def test_test_separate_read_permission(r: ValkeyTestClient, r2) -> None:
     assert "PONG" == r2.run("PING")
     r.run("set", "readstr", "bar")
     assert "bar" == r2.run("get", "readstr")
-    err = None
     try:
         err = r2.run("set", "readstr", "bar")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*NOPERM*key*")
-    err = None
     try:
         err = r2.run("get", "notread")
     except Exception as _catch_err:
@@ -295,13 +279,11 @@ def test_test_separate_write_permission(r: ValkeyTestClient, r2) -> None:
     r2.run("auth", "key-permission-W", "password")
     assert "PONG" == r2.run("PING")
     r2.run("LPUSH", "writelist", 10)
-    err = None
     try:
         err = r2.run("GET", "writestr")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*NOPERM*key*")
-    err = None
     try:
         err = r2.run("LPUSH", "notwrite", 10)
     except Exception as _catch_err:
@@ -326,7 +308,6 @@ def test_test_separate_read_and_write_permissions(r: ValkeyTestClient, r2) -> No
     assert "PONG" == r2.run("PING")
     r.run("set", "read", "bar")
     r2.run("copy", "read", "write")
-    err = None
     try:
         err = r2.run("copy", "write", "read")
     except Exception as _catch_err:
@@ -413,13 +394,11 @@ def test_test_separate_read_and_write_permissions_on_different_selectors_are_not
     r2.run("auth", "key-permission-RW-selector", "password")
     assert "PONG" == r2.run("PING")
     r2.run("LPUSH", "writelist", 10)
-    err = None
     try:
         err = r2.run("GET", "writestr")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*NOPERM*key*")
-    err = None
     try:
         err = r2.run("LPUSH", "notwrite", 10)
     except Exception as _catch_err:
@@ -427,25 +406,21 @@ def test_test_separate_read_and_write_permissions_on_different_selectors_are_not
     assert fnmatch(str(err), "*NOPERM*key*")
     r.run("set", "readstr", "bar")
     assert "bar" == r2.run("get", "readstr")
-    err = None
     try:
         err = r2.run("set", "readstr", "bar")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*NOPERM*key*")
-    err = None
     try:
         err = r2.run("get", "notread")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*NOPERM*key*")
-    err = None
     try:
         err = r2.run("copy", "read", "write")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*NOPERM*key*")
-    err = None
     try:
         err = r2.run("copy", "write", "read")
     except Exception as _catch_err:
@@ -664,7 +639,6 @@ def test_test_acl_log_correctly_identifies_the_relevant_item_when_selectors_are_
     r.run("ACL", "SETUSER", "acl-log-test-selector", "+mget", "~key", "(+mget", "~key", "~otherkey)")
     r2.run("auth", "acl-log-test-selector", "password")
     r.run("ACL", "LOG", "RESET")
-    err = None
     try:
         err = r2.run("GET", "key")
     except Exception as _catch_err:
@@ -676,7 +650,6 @@ def test_test_acl_log_correctly_identifies_the_relevant_item_when_selectors_are_
     assert entry["reason"] == "command"
     assert entry["object"] == "get"
     r.run("ACL", "LOG", "RESET")
-    err = None
     try:
         err = r2.run("MGET", "otherkey", "someotherkey")
     except Exception as _catch_err:
@@ -688,7 +661,6 @@ def test_test_acl_log_correctly_identifies_the_relevant_item_when_selectors_are_
     assert entry["reason"] == "key"
     assert entry["object"] == "someotherkey"
     r.run("ACL", "LOG", "RESET")
-    err = None
     try:
         err = r2.run("MGET", "key", "otherkey", "someotherkey")
     except Exception as _catch_err:
@@ -930,13 +902,11 @@ def test_test_basic_dry_run_functionality(r: ValkeyTestClient) -> None:
     """
     r.run("ACL", "setuser", "command-test", "+@all", "%R~read*", "%W~write*", "%RW~rw*")
     assert "OK" == r.run("ACL", "DRYRUN", "command-test", "GET", "read")
-    e = None
     try:
         e = r.run("ACL", "DRYRUN", "not-a-user", "GET", "read")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert "ERR User 'not-a-user' not found" == e
-    e = None
     try:
         e = r.run("ACL", "DRYRUN", "command-test", "not-a-command", "read")
     except Exception as _catch_err:
@@ -1540,39 +1510,33 @@ def test_test_sort_with_acl_permissions(r: ValkeyTestClient, r2) -> None:
     r.run("lpush", "mylist", 1)
     r.run("ACL", "setuser", "test-sort-acl", "on", "nopass", "(+sort", "~mylist)")
     r2.run("auth", "test-sort-acl", "nopass")
-    e = None
     try:
         e = r2.run("sort", "mylist", "by", "v*")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert "ERR BY option of SORT denied due to insufficient ACL permissions." == e
-    e = None
     try:
         e = r2.run("sort", "mylist", "get", "v*")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert "ERR GET option of SORT denied due to insufficient ACL permissions." == e
     r.run("ACL", "setuser", "test-sort-acl", "(+sort", "~mylist", "~v*)")
-    e = None
     try:
         e = r2.run("sort", "mylist", "by", "v*")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert "ERR BY option of SORT denied due to insufficient ACL permissions." == e
-    e = None
     try:
         e = r2.run("sort", "mylist", "get", "v*")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert "ERR GET option of SORT denied due to insufficient ACL permissions." == e
     r.run("ACL", "setuser", "test-sort-acl", "(+sort", "~mylist", "%W~*)")
-    e = None
     try:
         e = r2.run("sort", "mylist", "by", "v*")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert "ERR BY option of SORT denied due to insufficient ACL permissions." == e
-    e = None
     try:
         e = r2.run("sort", "mylist", "get", "v*")
     except Exception as _catch_err:
@@ -1600,13 +1564,11 @@ def test_test_dryrun_with_wrong_number_of_arguments(r: ValkeyTestClient) -> None
     """
     r.run("ACL", "setuser", "test-dry-run", "+@all", "~v*")
     assert "OK" == r.run("ACL", "DRYRUN", "test-dry-run", "SET", "v", "v")
-    e = None
     try:
         e = r.run("ACL", "DRYRUN", "test-dry-run", "SET", "v")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert "ERR wrong number of arguments for 'set' command" == e
-    e = None
     try:
         e = r.run("ACL", "DRYRUN", "test-dry-run", "SET")
     except Exception as _catch_err:
@@ -1699,7 +1661,6 @@ def test_test_basic_database_level_acl_functionality(r: ValkeyTestClient, r2) ->
     assert "OK" == r2.run("set", "key1", "value1")
     assert "OK" == r2.run("select", 1)
     assert "OK" == r2.run("set", "key2", "value2")
-    err = None
     try:
         err = r2.run("select", 2)
     except Exception as _catch_err:
@@ -1755,7 +1716,6 @@ def test_test_database_permissions_with_selectors(r: ValkeyTestClient, r2) -> No
     r2.run("auth", "db-selector", "password")
     assert "OK" == r2.run("select", 0)
     assert "OK" == r2.run("set", "writekey", "value")
-    err = None
     try:
         err = r2.run("get", "writekey")
     except Exception as _catch_err:
@@ -1764,7 +1724,6 @@ def test_test_database_permissions_with_selectors(r: ValkeyTestClient, r2) -> No
     assert "OK" == r2.run("select", 1)
     assert "OK" == r2.run("set", "writekey", "value")
     assert "OK" == r2.run("select", 2)
-    err = None
     try:
         err = r2.run("set", "write:key", "value")
     except Exception as _catch_err:
@@ -1777,7 +1736,6 @@ def test_test_database_permissions_with_selectors(r: ValkeyTestClient, r2) -> No
     r.run("select", 3)
     r.run("set", "readstr", "bar")
     assert r2.run("get", "readstr") == "bar"
-    err = None
     try:
         err = r2.run("select", 4)
     except Exception as _catch_err:
@@ -1813,26 +1771,22 @@ def test_test_alldbs_and_resetdbs_commands(r: ValkeyTestClient, r2) -> None:
     r.run("ACL", "SETUSER", "db-reset-user", "on", "+@all", "~*", "nopass", "db=0")
     r2.run("auth", "db-reset-user", "password")
     assert "OK" == r2.run("select", 0)
-    err = None
     try:
         err = r2.run("select", 1)
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*NOPERM*database*")
     r.run("ACL", "SETUSER", "db-reset-user", "resetdbs")
-    err = None
     try:
         err = r2.run("select", 0)
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*NOPERM*database*")
-    err = None
     try:
         err = r2.run("select", 1)
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*NOPERM*database*")
-    err = None
     try:
         err = r2.run("select", 2)
     except Exception as _catch_err:
@@ -1898,13 +1852,11 @@ def test_test_transaction_with_database_switching(r: ValkeyTestClient, r2) -> No
     assert "OK" == r2.run("select", 0)
     assert "OK" == r2.run("multi")
     assert "QUEUED" == r2.run("set", "key1", "value1")
-    err = None
     try:
         err = r2.run("select", 4)
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*NOPERM*command*")
-    err = None
     try:
         err = r2.run("exec")
     except Exception as _catch_err:
@@ -1954,14 +1906,12 @@ def test_test_transaction_with_command_permissions_in_different_dbs(r: ValkeyTes
     )
     r2.run("auth", "db-cmd-user", "password")
     assert "OK" == r2.run("select", 0)
-    err = None
     try:
         err = r2.run("get", "key")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*NOPERM*command*")
     assert "OK" == r2.run("select", 2)
-    err = None
     try:
         err = r2.run("set", "key", "value")
     except Exception as _catch_err:
@@ -2013,19 +1963,16 @@ def test_test_edge_cases_with_database_ids_check_new_errmsg(r: ValkeyTestClient)
         assert_equal "" $user_line
     }
     """
-    err = None
     try:
         err = r.run("ACL", "SETUSER", "db-edge-user", "db=-1")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*Error in ACL SETUSER modifier 'db=-1': The provided database ID is out of range*")
-    err = None
     try:
         err = r.run("ACL", "SETUSER", "db-edge-user", "db=abc")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*Error in ACL SETUSER modifier 'db=abc': Syntax error*")
-    err = None
     try:
         err = r.run("ACL", "SETUSER", "db-edge-user", "db=12345678987654321")
     except Exception as _catch_err:
@@ -2033,7 +1980,6 @@ def test_test_edge_cases_with_database_ids_check_new_errmsg(r: ValkeyTestClient)
     assert fnmatch(
         str(err), "*Error in ACL SETUSER modifier 'db=12345678987654321': The provided database ID is out of range*"
     )
-    err = None
     try:
         err = r.run("ACL", "SETUSER", "db-edge-user", "db=non-numeric1,non-numeric2")
     except Exception as _catch_err:
@@ -2100,7 +2046,6 @@ def test_test_flushall_with_database_permissions(r: ValkeyTestClient, r2) -> Non
     r2.run("auth", "flushall-user", "password")
     r2.run("select", 0)
     r2.run("set", "key", "value")
-    e = None
     try:
         e = r2.run("flushall")
     except Exception as _catch_err:
@@ -2124,7 +2069,6 @@ def test_test_swapdb_with_database_permissions(r: ValkeyTestClient, r2) -> None:
     r.run("ACL", "SETUSER", "swapdb-user", "on", "nopass", "+@all", "~*", "db=0,1")
     r2.run("auth", "swapdb-user", "password")
     assert "OK" == r2.run("swapdb", 0, 1)
-    e = None
     try:
         e = r2.run("swapdb", 0, 2)
     except Exception as _catch_err:
@@ -2148,7 +2092,6 @@ def test_test_move_with_database_permissions(r: ValkeyTestClient, r2) -> None:
     r2.run("auth", "move-user", "password")
     r2.run("set", "move-key", "value")
     assert "1" == r2.run("move", "move-key", 1)
-    e = None
     try:
         e = r2.run("move", "move-key", 2)
     except Exception as _catch_err:
@@ -2189,7 +2132,6 @@ def test_test_copy_with_database_permissions(r: ValkeyTestClient, r2) -> None:
     r2.run("select", 1)
     assert "value" == r2.run("get", "copy-key-dest")
     r2.run("select", 0)
-    e = None
     try:
         e = r2.run("copy", "copy-key", "copy-key-dest2", "DB", 2)
     except Exception as _catch_err:
@@ -2223,7 +2165,6 @@ def test_test_duplicate_database_ids_in_db_are_handled_correctly(r: ValkeyTestCl
     r2.run("auth", "db-dup-user", "password")
     assert "OK" == r2.run("select", 0)
     assert "OK" == r2.run("select", 1)
-    err = None
     try:
         err = r2.run("select", 2)
     except Exception as _catch_err:
@@ -2284,7 +2225,6 @@ def test_test_multiple_selectors_with_overlapping_database_permissions(r: Valkey
     r2.run("auth", "db-overlap", "password")
     assert "OK" == r2.run("select", 0)
     assert "OK" == r2.run("set", "writekey", "value")
-    err = None
     try:
         err = r2.run("get", "readkey")
     except Exception as _catch_err:
@@ -2292,7 +2232,6 @@ def test_test_multiple_selectors_with_overlapping_database_permissions(r: Valkey
     assert fnmatch(str(err), "*NOPERM*command*")
     assert "OK" == r2.run("select", 1)
     assert "OK" == r2.run("set", "writekey", "value")
-    err = None
     try:
         err = r2.run("set", "readkey", "bar")
     except Exception as _catch_err:
@@ -2300,20 +2239,17 @@ def test_test_multiple_selectors_with_overlapping_database_permissions(r: Valkey
     assert fnmatch(str(err), "*NOPERM*key*")
     assert "" == r2.run("get", "readkey")
     assert "OK" == r2.run("select", 2)
-    err = None
     try:
         err = r2.run("set", "writekey", "value")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*NOPERM*command*")
-    err = None
     try:
         err = r2.run("set", "readkey", "bar")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*NOPERM*command*")
     assert "" == r2.run("get", "readkey")
-    err = None
     try:
         err = r2.run("select", 3)
     except Exception as _catch_err:
@@ -2334,19 +2270,16 @@ def test_test_db_with_leading_or_trailing_commas(r: ValkeyTestClient) -> None:
         assert_match "*Error*" $err
     }
     """
-    err = None
     try:
         err = r.run("ACL", "SETUSER", "db-comma-start", "db=,0,1")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*Error*")
-    err = None
     try:
         err = r.run("ACL", "SETUSER", "db-comma-end", "db=0,1,")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*Error*")
-    err = None
     try:
         err = r.run("ACL", "SETUSER", "db-comma-double", "db=0,,1")
     except Exception as _catch_err:
@@ -2379,13 +2312,11 @@ def test_test_resetdbs_clears_explicit_db_list(r: ValkeyTestClient, r2) -> None:
     assert "OK" == r2.run("select", 0)
     assert "OK" == r2.run("select", 1)
     r.run("ACL", "SETUSER", "db-reset-test", "resetdbs")
-    err = None
     try:
         err = r2.run("select", 0)
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*NOPERM*database*")
-    err = None
     try:
         err = r2.run("select", 1)
     except Exception as _catch_err:
@@ -2416,7 +2347,6 @@ def test_test_clearselectors_removes_db_restrictions_from_selectors_but_not_root
     r.run("ACL", "SETUSER", "db-clear", "clearselectors")
     assert "OK" == r2.run("select", 0)
     assert "OK" == r2.run("select", 1)
-    err = None
     try:
         err = r2.run("select", 2)
     except Exception as _catch_err:
@@ -2473,7 +2403,6 @@ def test_test_db_with_maximum_database_id(r: ValkeyTestClient, r2) -> None:
     r.run("ACL", "SETUSER", "db-max", "on", "nopass", "+@all", "~*", "db=$max_db")
     r2.run("auth", "db-max", "password")
     assert "OK" == r2.run("select", max_db)
-    err = None
     try:
         err = r2.run("select", expr("$max_db + 1"))
     except Exception as _catch_err:
@@ -2514,20 +2443,17 @@ def test_test_consecutive_database_permissions_only_last_one_should_persist(r: V
     """
     r.run("ACL", "SETUSER", "db-consec", "on", "nopass", "+@all", "~*", "db=0", "db=1", "db=2")
     r2.run("auth", "db-consec", "password")
-    err = None
     try:
         err = r2.run("select", 0)
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*NOPERM*database*")
-    err = None
     try:
         err = r2.run("select", 1)
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*NOPERM*database*")
     assert "OK" == r2.run("select", 2)
-    err = None
     try:
         err = r2.run("select", 3)
     except Exception as _catch_err:
@@ -2536,14 +2462,12 @@ def test_test_consecutive_database_permissions_only_last_one_should_persist(r: V
     r.run("ACL", "SETUSER", "db-consec-2", "on", "nopass", "+@all", "~*", "db=0")
     r.run("ACL", "SETUSER", "db-consec-2", "db=1")
     r2.run("auth", "db-consec-2", "password")
-    err = None
     try:
         err = r2.run("select", 0)
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*NOPERM*database*")
     assert "OK" == r2.run("select", 1)
-    err = None
     try:
         err = r2.run("select", 2)
     except Exception as _catch_err:
@@ -2620,7 +2544,6 @@ def test_test_commands_without_key_or_metadata_access_work_in_restricted_databas
     assert len(ping_result) > 0
     ping_msg_result = r2.run("ping", "hello")
     assert len(ping_msg_result) > 0
-    err = None
     try:
         err = r2.run("acl", "getuser")
     except Exception as _catch_err:
@@ -2632,43 +2555,36 @@ def test_test_commands_without_key_or_metadata_access_work_in_restricted_databas
     assert len(log_result) >= 0
     info_result = r2.run("info", "server")
     assert len(info_result) > 0
-    err = None
     try:
         err = r2.run("select", 2)
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*NOPERM*database*")
-    err = None
     try:
         err = r2.run("get", "key")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*NOPERM*database*")
-    err = None
     try:
         err = r2.run("getdel", "key")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*NOPERM*database*")
-    err = None
     try:
         err = r2.run("set", "key", "value")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*NOPERM*database*")
-    err = None
     try:
         err = r2.run("del", "key")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*NOPERM*database*")
-    err = None
     try:
         err = r2.run("exists", "key")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*NOPERM*database*")
-    err = None
     try:
         err = r2.run("flushdb")
     except Exception as _catch_err:
@@ -2680,7 +2596,6 @@ def test_test_commands_without_key_or_metadata_access_work_in_restricted_databas
     assert len(set_result) > 0
     get_result = r2.run("get", "key")
     assert len(get_result) > 0
-    err = None
     try:
         err = r2.run("select", 0)
     except Exception as _catch_err:
@@ -2707,7 +2622,6 @@ def test_test_watch_command_with_no_database_access(r: ValkeyTestClient, r2) -> 
     """
     r.run("ACL", "SETUSER", "watch-nodb-user", "on", "nopass", "+@all", "~*", "db=1")
     r2.run("auth", "watch-nodb-user", "password")
-    err = None
     try:
         err = r2.run("watch", "somekey")
     except Exception as _catch_err:
@@ -2738,7 +2652,6 @@ def test_test_keyspace_command_with_no_database_access(r: ValkeyTestClient, r2) 
     """
     r.run("ACL", "SETUSER", "exists-nodb-user", "on", "nopass", "+@all", "~*", "db=1")
     r2.run("auth", "exists-nodb-user", "password")
-    err = None
     try:
         err = r2.run("exists", "somekey")
     except Exception as _catch_err:
@@ -2774,13 +2687,11 @@ def test_test_multi_with_select_to_invalid_database(r: ValkeyTestClient, r2) -> 
     assert "OK" == r2.run("select", 0)
     assert "OK" == r2.run("multi")
     assert "QUEUED" == r2.run("set", "key1", "value1")
-    err = None
     try:
         err = r2.run("select", 2)
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*NOPERM*database*")
-    err = None
     try:
         err = r2.run("exec")
     except Exception as _catch_err:
@@ -3039,7 +2950,6 @@ def test_test_multi_with_select_and_acl_permission_changes_between_queue_and_exe
     assert "QUEUED" == r2.run("select", 1)
     assert "QUEUED" == r2.run("set", "key2", "value2")
     r.run("ACL", "SETUSER", "db-acl-change", "db=0")
-    err = None
     try:
         err = r2.run("exec")
     except Exception as _catch_err:
@@ -3074,7 +2984,6 @@ def test_test_eval_with_database_permissions(r: ValkeyTestClient, r2) -> None:
     r2.run("auth", "eval-db-user", "password")
     assert "OK" == r2.run("select", 0)
     assert "OK" == r2.run("select", 1)
-    err = None
     try:
         err = r2.run("eval", "server.call('SELECT', '2')", 0)
     except Exception as _catch_err:
@@ -3117,7 +3026,6 @@ def test_test_evalsha_with_database_permissions(r: ValkeyTestClient, r2) -> None
     r2.run("auth", "evalsha-db-user", "password")
     assert "OK" == r2.run("select", 0)
     sha = r.run("script", "load", "server.call('SELECT', '2'); return 'OK'")
-    err = None
     try:
         err = r2.run("evalsha", sha, 0)
     except Exception as _catch_err:
@@ -3155,7 +3063,6 @@ def test_test_eval_ro_with_database_permissions(r: ValkeyTestClient, r2) -> None
     r2.run("auth", "eval-ro-db-user", "password")
     assert "OK" == r2.run("select", 0)
     r.run("set", "testkey", "testvalue")
-    err = None
     try:
         err = r2.run("eval_ro", "server.call('SELECT', '2')", 0)
     except Exception as _catch_err:
@@ -3194,7 +3101,6 @@ def test_test_evalsha_ro_with_database_permissions(r: ValkeyTestClient, r2) -> N
     assert "OK" == r2.run("select", 0)
     r.run("set", "rokey", "rovalue")
     sha = r.run("script", "load", "server.call('SELECT', '3'); return server.call('GET', 'rokey')")
-    err = None
     try:
         err = r2.run("evalsha_ro", sha, 0)
     except Exception as _catch_err:
@@ -3251,7 +3157,6 @@ def test_test_fcall_with_database_permissions(r: ValkeyTestClient, r2) -> None:
         "load",
         "#!lua name=dbtest\n            server.register_function('select_restricted', function(keys, args)\n                server.call('SELECT', '2')\n                return 'OK'\n            end)\n        ",
     )
-    err = None
     try:
         err = r2.run("fcall", "select_restricted", 0)
     except Exception as _catch_err:
@@ -3323,7 +3228,6 @@ def test_test_fcall_ro_with_database_permissions(r: ValkeyTestClient, r2) -> Non
         "load",
         "#!lua name=dbtestro\n            server.register_function{\n                function_name='read_restricted',\n                callback=function(keys, args)\n                    server.call('SELECT', '3')\n                    return server.call('GET', 'fcallrokey')\n                end,\n                flags={'no-writes'}\n            }\n        ",
     )
-    err = None
     try:
         err = r2.run("fcall_ro", "read_restricted", 0)
     except Exception as _catch_err:
@@ -3403,7 +3307,6 @@ def test_test_eval_with_multiple_database_switches_in_script(r: ValkeyTestClient
     r2.run("select", 2)
     assert "val2" == r2.run("get", "key2")
     r2.run("select", 0)
-    err = None
     try:
         err = r2.run(
             "eval",
@@ -3463,19 +3366,16 @@ def test_acl_stats_for_invalid_database_accesses(r: ValkeyTestClient, r2) -> Non
     current_invalid_db_accesses = s("acl_access_denied_db")
     r.run("ACL", "SETUSER", "invaliddbuser", "on", "nopass", "+@all", "~*", "db=0,1")
     r2.run("auth", "invaliddbuser", "password")
-    err = None
     try:
         err = r2.run("select", 2)
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*NOPERM*database*")
-    err = None
     try:
         err = r2.run("select", 3)
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*NOPERM*database*")
-    err = None
     try:
         err = r2.run("select", 4)
     except Exception as _catch_err:

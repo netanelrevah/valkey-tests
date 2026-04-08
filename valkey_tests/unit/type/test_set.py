@@ -1,4 +1,5 @@
 # ruff: noqa: PLR2004, F841, RUF043, ANN001, ANN002, ANN201
+
 from fnmatch import fnmatch
 
 import pytest
@@ -151,7 +152,6 @@ def test_smismember_requires_one_or_more_members(r: ValkeyTestClient) -> None:
     r.run("del", "zmscoretest")
     r.run("zadd", "zmscoretest", 10, "x")
     r.run("zadd", "zmscoretest", 20, "y")
-    e = None
     try:
         e = r.run("smismember", "zmscoretest")
     except Exception as _catch_err:
@@ -648,9 +648,9 @@ for {set i 1} {$i <= 5} {incr i} {
 
 
 @pytest.mark.parametrize(
-    ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
+    ["type", "bigenc", "smallenc"], [("regular", "hashtable", "listpack"), ("intset", "intset", "intset")]
 )
-def test_generated_sets_must_be_encoded_correctly_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
+def test_generated_sets_must_be_encoded_correctly_type(r: ValkeyTestClient, type, bigenc, smallenc) -> None:
     """
     test "Generated sets must be encoded correctly - $type" {
         for {set i 1} {$i <= 5} {incr i} {
@@ -668,9 +668,9 @@ def test_generated_sets_must_be_encoded_correctly_type(r: ValkeyTestClient, type
 
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(
-    ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
+    ["type", "bigenc", "smallenc"], [("regular", "hashtable", "listpack"), ("intset", "intset", "intset")]
 )
-def test_sinter_with_two_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
+def test_sinter_with_two_sets_type(r: ValkeyTestClient, type, bigenc, smallenc) -> None:
     """
     test "SINTER with two sets - $type" {
         assert_equal [list 195 196 197 198 199 $large] [lsort [r sinter set1{t} set2{t}]]
@@ -680,9 +680,9 @@ def test_sinter_with_two_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) 
 
 
 @pytest.mark.parametrize(
-    ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
+    ["type", "bigenc", "smallenc"], [("regular", "hashtable", "listpack"), ("intset", "intset", "intset")]
 )
-def test_sintercard_with_two_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
+def test_sintercard_with_two_sets_type(r: ValkeyTestClient, type, bigenc, smallenc) -> None:
     """
     test "SINTERCARD with two sets - $type" {
         assert_equal 6 [r sintercard 2 set1{t} set2{t}]
@@ -699,9 +699,9 @@ def test_sintercard_with_two_sets_type(r: ValkeyTestClient, type, smallenc, bige
 
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(
-    ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
+    ["type", "bigenc", "smallenc"], [("regular", "hashtable", "listpack"), ("intset", "intset", "intset")]
 )
-def test_sinterstore_with_two_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
+def test_sinterstore_with_two_sets_type(r: ValkeyTestClient, type, bigenc, smallenc) -> None:
     """
     test "SINTERSTORE with two sets - $type" {
         r sinterstore setres{t} set1{t} set2{t}
@@ -716,9 +716,9 @@ def test_sinterstore_with_two_sets_type(r: ValkeyTestClient, type, smallenc, big
 
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(
-    ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
+    ["type", "bigenc", "smallenc"], [("regular", "hashtable", "listpack"), ("intset", "intset", "intset")]
 )
-def test_sinterstore_with_two_sets_after_a_debug_reload_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
+def test_sinterstore_with_two_sets_after_a_debug_reload_type(r: ValkeyTestClient, type, bigenc, smallenc) -> None:
     """
     test "SINTERSTORE with two sets, after a DEBUG RELOAD - $type" {
         r debug reload
@@ -734,9 +734,9 @@ def test_sinterstore_with_two_sets_after_a_debug_reload_type(r: ValkeyTestClient
 
 
 @pytest.mark.parametrize(
-    ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
+    ["type", "bigenc", "smallenc"], [("regular", "hashtable", "listpack"), ("intset", "intset", "intset")]
 )
-def test_sunion_with_two_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
+def test_sunion_with_two_sets_type(r: ValkeyTestClient, type, bigenc, smallenc) -> None:
     """
     test "SUNION with two sets - $type" {
         set expected [lsort -uniq "[r smembers set1{t}] [r smembers set2{t}]"]
@@ -748,9 +748,9 @@ def test_sunion_with_two_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) 
 
 
 @pytest.mark.parametrize(
-    ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
+    ["type", "bigenc", "smallenc"], [("regular", "hashtable", "listpack"), ("intset", "intset", "intset")]
 )
-def test_sunionstore_with_two_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
+def test_sunionstore_with_two_sets_type(r: ValkeyTestClient, type, bigenc, smallenc) -> None:
     """
     test "SUNIONSTORE with two sets - $type" {
         r sunionstore setres{t} set1{t} set2{t}
@@ -767,9 +767,9 @@ def test_sunionstore_with_two_sets_type(r: ValkeyTestClient, type, smallenc, big
 
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(
-    ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
+    ["type", "bigenc", "smallenc"], [("regular", "hashtable", "listpack"), ("intset", "intset", "intset")]
 )
-def test_sinter_against_three_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
+def test_sinter_against_three_sets_type(r: ValkeyTestClient, type, bigenc, smallenc) -> None:
     """
     test "SINTER against three sets - $type" {
         assert_equal [list 195 199 $large] [lsort [r sinter set1{t} set2{t} set3{t}]]
@@ -779,9 +779,9 @@ def test_sinter_against_three_sets_type(r: ValkeyTestClient, type, smallenc, big
 
 
 @pytest.mark.parametrize(
-    ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
+    ["type", "bigenc", "smallenc"], [("regular", "hashtable", "listpack"), ("intset", "intset", "intset")]
 )
-def test_sintercard_against_three_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
+def test_sintercard_against_three_sets_type(r: ValkeyTestClient, type, bigenc, smallenc) -> None:
     """
     test "SINTERCARD against three sets - $type" {
         assert_equal 3 [r sintercard 3 set1{t} set2{t} set3{t}]
@@ -798,9 +798,9 @@ def test_sintercard_against_three_sets_type(r: ValkeyTestClient, type, smallenc,
 
 @pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(
-    ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
+    ["type", "bigenc", "smallenc"], [("regular", "hashtable", "listpack"), ("intset", "intset", "intset")]
 )
-def test_sinterstore_with_three_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
+def test_sinterstore_with_three_sets_type(r: ValkeyTestClient, type, bigenc, smallenc) -> None:
     """
     test "SINTERSTORE with three sets - $type" {
         r sinterstore setres{t} set1{t} set2{t} set3{t}
@@ -812,9 +812,9 @@ def test_sinterstore_with_three_sets_type(r: ValkeyTestClient, type, smallenc, b
 
 
 @pytest.mark.parametrize(
-    ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
+    ["type", "bigenc", "smallenc"], [("regular", "hashtable", "listpack"), ("intset", "intset", "intset")]
 )
-def test_sunion_with_non_existing_keys_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
+def test_sunion_with_non_existing_keys_type(r: ValkeyTestClient, type, bigenc, smallenc) -> None:
     """
     test "SUNION with non existing keys - $type" {
         set expected [lsort -uniq "[r smembers set1{t}] [r smembers set2{t}]"]
@@ -826,9 +826,9 @@ def test_sunion_with_non_existing_keys_type(r: ValkeyTestClient, type, smallenc,
 
 
 @pytest.mark.parametrize(
-    ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
+    ["type", "bigenc", "smallenc"], [("regular", "hashtable", "listpack"), ("intset", "intset", "intset")]
 )
-def test_sdiff_with_two_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
+def test_sdiff_with_two_sets_type(r: ValkeyTestClient, type, bigenc, smallenc) -> None:
     """
     test "SDIFF with two sets - $type" {
         assert_equal {0 1 2 3 4} [lsort [r sdiff set1{t} set4{t}]]
@@ -838,9 +838,9 @@ def test_sdiff_with_two_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -
 
 
 @pytest.mark.parametrize(
-    ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
+    ["type", "bigenc", "smallenc"], [("regular", "hashtable", "listpack"), ("intset", "intset", "intset")]
 )
-def test_sdiff_with_three_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
+def test_sdiff_with_three_sets_type(r: ValkeyTestClient, type, bigenc, smallenc) -> None:
     """
     test "SDIFF with three sets - $type" {
         assert_equal {1 2 3 4} [lsort [r sdiff set1{t} set4{t} set5{t}]]
@@ -850,9 +850,9 @@ def test_sdiff_with_three_sets_type(r: ValkeyTestClient, type, smallenc, bigenc)
 
 
 @pytest.mark.parametrize(
-    ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
+    ["type", "bigenc", "smallenc"], [("regular", "hashtable", "listpack"), ("intset", "intset", "intset")]
 )
-def test_sdiffstore_with_three_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
+def test_sdiffstore_with_three_sets_type(r: ValkeyTestClient, type, bigenc, smallenc) -> None:
     """
     test "SDIFFSTORE with three sets - $type" {
         r sdiffstore setres{t} set1{t} set4{t} set5{t}
@@ -870,9 +870,9 @@ def test_sdiffstore_with_three_sets_type(r: ValkeyTestClient, type, smallenc, bi
 
 
 @pytest.mark.parametrize(
-    ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
+    ["type", "bigenc", "smallenc"], [("regular", "hashtable", "listpack"), ("intset", "intset", "intset")]
 )
-def test_sinter_or_sunion_or_sdiff_with_three_same_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
+def test_sinter_or_sunion_or_sdiff_with_three_same_sets_type(r: ValkeyTestClient, type, bigenc, smallenc) -> None:
     """
     test "SINTER/SUNION/SDIFF with three same sets - $type" {
         set expected [lsort "[r smembers set1{t}]"]
@@ -2089,7 +2089,7 @@ def test_srandmember_histogram_distribution_type(r: ValkeyTestClient, type, cont
     array("set", "myset", "")
     foreach("ele", r.run("smembers", "myset"), "                set myset($ele) 1\n            ")
     res = r.run("srandmember", "myset", -1000)
-    assert_lessthan(chi_square_value(res), 40)
+    assert chi_square_value(res) < 40
     foreach(
         "size",
         "8 2",
@@ -2382,10 +2382,6 @@ def array(*args):
 
 def assert_encoding(*args):
     raise NotImplementedError("assert_encoding")
-
-
-def assert_lessthan(*args):
-    raise NotImplementedError("assert_lessthan")
 
 
 def assert_replication_stream(*args):

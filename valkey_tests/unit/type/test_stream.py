@@ -483,7 +483,6 @@ def test_xadd_with_id_0_0(r: ValkeyTestClient) -> None:
     }
     """
     r.run("DEL", "otherstream")
-    err = None
     try:
         err = r.run("XADD", "otherstream", "0-0", "k", "v")
     except Exception as _catch_err:
@@ -603,25 +602,21 @@ def test_xrange_exclusive_ranges(r: ValkeyTestClient) -> None:
     assert_("[llength [r xrange vipstream - ([lindex $ids $total-1]]] == $total-1")
     assert len(r.run("xrange", "vipstream", "(0-1", "(1-0")) == 1
     assert len(r.run("xrange", "vipstream", "(1-0", "(42-42")) == 1
-    e = None
     try:
         e = r.run("xrange", "vipstream", "(-", "+")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "ERR*")
-    e = None
     try:
         e = r.run("xrange", "vipstream", "-", "(+")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "ERR*")
-    e = None
     try:
         e = r.run("xrange", "vipstream", "(18446744073709551615-18446744073709551615", "+")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "ERR*")
-    e = None
     try:
         e = r.run("xrange", "vipstream", "-", "(0-0")
     except Exception as _catch_err:
@@ -1759,7 +1754,6 @@ def test_xsetid_cannot_setid_with_smaller_id(r: ValkeyTestClient) -> None:
     } {ERR *smaller*}
     """
     r.run("XADD", "mystream", "*", "a", "b")
-    err = None
     try:
         err = r.run("XSETID", "mystream", "1-1")
     except Exception as _catch_err:
@@ -1775,7 +1769,6 @@ def test_xsetid_cannot_setid_on_non_existent_key(r: ValkeyTestClient) -> None:
         set _ $err
     } {ERR no such key}
     """
-    err = None
     try:
         err = r.run("XSETID", "stream", "1-1")
     except Exception as _catch_err:
@@ -1790,7 +1783,6 @@ def test_xsetid_cannot_run_with_an_offset_but_without_a_maximal_tombstone(r: Val
         set _ $err
     } {ERR syntax error}
     """
-    err = None
     try:
         err = r.run("XSETID", "stream", "1-1", 0)
     except Exception as _catch_err:
@@ -1805,7 +1797,6 @@ def test_xsetid_cannot_run_with_a_maximal_tombstone_but_without_an_offset(r: Val
         set _ $err
     } {ERR syntax error}
     """
-    err = None
     try:
         err = r.run("XSETID", "stream", "1-1", "0-0")
     except Exception as _catch_err:
@@ -1820,7 +1811,6 @@ def test_xsetid_errors_on_negative_offset(r: ValkeyTestClient) -> None:
         set _ $err
     } {ERR *must be positive}
     """
-    err = None
     try:
         err = r.run("XSETID", "stream", "1-1", "ENTRIESADDED", -1, "MAXDELETEDID", "0-0")
     except Exception as _catch_err:
@@ -1841,7 +1831,6 @@ def test_xsetid_cannot_set_the_maximal_tombstone_with_larger_id(r: ValkeyTestCli
     """
     r.run("DEL", "x")
     r.run("XADD", "x", "1-0", "a", "b")
-    err = None
     try:
         err = r.run("XSETID", "x", "1-0", "ENTRIESADDED", 1, "MAXDELETEDID", "2-0")
     except Exception as _catch_err:
@@ -1863,7 +1852,6 @@ def test_xsetid_cannot_set_the_offset_to_less_than_the_length(r: ValkeyTestClien
     """
     r.run("DEL", "x")
     r.run("XADD", "x", "1-0", "a", "b")
-    err = None
     try:
         err = r.run("XSETID", "x", "1-0", "ENTRIESADDED", 0, "MAXDELETEDID", "0-0")
     except Exception as _catch_err:
@@ -1895,7 +1883,6 @@ def test_xsetid_cannot_set_smaller_id_than_current_maxdeletedid(r: ValkeyTestCli
     r.run("XDEL", "x", "1-3")
     reply = r.run("XINFO", "stream", "x")
     assert reply["max-deleted-entry-id"] == "1-3"
-    err = None
     try:
         err = r.run("XSETID", "x", "1-2")
     except Exception as _catch_err:
@@ -2087,7 +2074,6 @@ def test_xgroup_help_should_not_have_unexpected_options(r: ValkeyTestClient) -> 
         assert_match "*wrong number of arguments for 'xgroup|help' command" $e
     }
     """
-    e = None
     try:
         e = r.run("XGROUP", "help", "xxx")
     except Exception as _catch_err:
@@ -2102,7 +2088,6 @@ def test_xinfo_help_should_not_have_unexpected_options(r: ValkeyTestClient) -> N
         assert_match "*wrong number of arguments for 'xinfo|help' command" $e
     }
     """
-    e = None
     try:
         e = r.run("XINFO", "help", "xxx")
     except Exception as _catch_err:

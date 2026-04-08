@@ -23,8 +23,7 @@ def test_tls_not_accepting_non_tls_connections_on_a_tls_port(r: ValkeyTestClient
         set e
     } {*I/O error*}
     """
-    s = valkey(srv(0, "host"), srv(0, "port"))
-    e = None
+    s = ValkeyTestClient.create_from(r)
     try:
         e = s.run("PING")
     except Exception as _catch_err:
@@ -64,36 +63,32 @@ def test_tls_verify_tls_auth_clients_behaves_as_expected(r: ValkeyTestClient) ->
         assert_match {*error*} $e
     }
     """
-    s = valkey(srv(0, "host"), srv(0, "port"))
+    s = ValkeyTestClient.create_from(r)
     # TODO: ::tls::import $s channel
-    e = None
     try:
         e = s.run("PING")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*error*")
     r.run("CONFIG", "SET", "tls-auth-clients", "no")
-    s = valkey(srv(0, "host"), srv(0, "port"))
+    s = ValkeyTestClient.create_from(r)
     # TODO: ::tls::import $s channel
-    e = None
     try:
         e = s.run("PING")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "PONG")
     r.run("CONFIG", "SET", "tls-auth-clients", "optional")
-    s = valkey(srv(0, "host"), srv(0, "port"))
+    s = ValkeyTestClient.create_from(r)
     # TODO: ::tls::import $s channel
-    e = None
     try:
         e = s.run("PING")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "PONG")
     r.run("CONFIG", "SET", "tls-auth-clients", "yes")
-    s = valkey(srv(0, "host"), srv(0, "port"))
+    s = ValkeyTestClient.create_from(r)
     # TODO: ::tls::import $s channel
-    e = None
     try:
         e = s.run("PING")
     except Exception as _catch_err:
@@ -119,15 +114,13 @@ def test_tls_verify_tls_protocols_behaves_as_expected(r: ValkeyTestClient) -> No
     }
     """
     r.run("CONFIG", "SET", "tls-protocols", "TLSv1.2")
-    s = valkey(srv(0, "host"), srv(0, "port"), 0, 1, "-tls1.2 0")
-    e = None
+    s = ValkeyTestClient.create_from(r)
     try:
         e = s.run("PING")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*I/O error*")
-    s = valkey(srv(0, "host"), srv(0, "port"), 0, 1, "-tls1.2 1")
-    e = None
+    s = ValkeyTestClient.create_from(r)
     try:
         e = s.run("PING")
     except Exception as _catch_err:
@@ -163,23 +156,20 @@ def test_tls_verify_tls_ciphers_behaves_as_expected(r: ValkeyTestClient) -> None
     """
     r.run("CONFIG", "SET", "tls-protocols", "TLSv1.2")
     r.run("CONFIG", "SET", "tls-ciphers", "DEFAULT:-AES128-SHA256")
-    s = valkey(srv(0, "host"), srv(0, "port"), 0, 1, '-cipher "-ALL:AES128-SHA256"')
-    e = None
+    s = ValkeyTestClient.create_from(r)
     try:
         e = s.run("PING")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*I/O error*")
-    s = valkey(srv(0, "host"), srv(0, "port"), 0, 1, '-cipher "-ALL:AES256-SHA256"')
-    e = None
+    s = ValkeyTestClient.create_from(r)
     try:
         e = s.run("PING")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "PONG")
     r.run("CONFIG", "SET", "tls-ciphers", "DEFAULT")
-    s = valkey(srv(0, "host"), srv(0, "port"), 0, 1, '-cipher "-ALL:AES128-SHA256"')
-    e = None
+    s = ValkeyTestClient.create_from(r)
     try:
         e = s.run("PING")
     except Exception as _catch_err:
@@ -217,8 +207,7 @@ def test_tls_verify_tls_prefer_server_ciphers_behaves_as_expected(r: ValkeyTestC
     """
     r.run("CONFIG", "SET", "tls-protocols", "TLSv1.2")
     r.run("CONFIG", "SET", "tls-ciphers", "AES128-SHA256:AES256-SHA256")
-    s = valkey(srv(0, "host"), srv(0, "port"), 0, 1, '-cipher "AES256-SHA256:AES128-SHA256"')
-    e = None
+    s = ValkeyTestClient.create_from(r)
     try:
         e = s.run("PING")
     except Exception as _catch_err:
@@ -226,8 +215,7 @@ def test_tls_verify_tls_prefer_server_ciphers_behaves_as_expected(r: ValkeyTestC
     assert fnmatch(str(e), "PONG")
     # TODO: assert_equal "AES256-SHA256" dict get [::tls::status [$s channel]] cipher
     r.run("CONFIG", "SET", "tls-prefer-server-ciphers", "yes")
-    s = valkey(srv(0, "host"), srv(0, "port"), 0, 1, '-cipher "AES256-SHA256:AES128-SHA256"')
-    e = None
+    s = ValkeyTestClient.create_from(r)
     try:
         e = s.run("PING")
     except Exception as _catch_err:
@@ -262,9 +250,9 @@ def test_tls_verify_tls_cert_file_is_also_used_as_a_client_cert_if_none_specifie
         }
     }
     """
-    master = srv(0, "client")
-    master_host = srv(0, "host")
-    master_port = srv(0, "port")
+    master = ValkeyTestClient.create_from(r)
+    master_host = r.host
+    master_port = r.port
     valkey_crt = format_("%s/tests/tls/valkey.crt", pwd())
     valkey_key = format_("%s/tests/tls/valkey.key", pwd())
     start_server(
@@ -306,18 +294,18 @@ def test_tls_switch_between_tcp_and_tls_ports(r: ValkeyTestClient) -> None:
         $rd close
     }
     """
-    srv_port = srv(0, "port")
-    rd = valkey(srv(0, "host"), srv_port, 0, 1)
+    srv_port = r.port
+    rd = ValkeyTestClient.create_from(r)
     rd.run("PING")
     rd.run("CONFIG", "SET", "tls-port", 0)
     rd.run("CONFIG", "SET", "port", srv_port)
     rd.run("close")
-    rd = valkey(srv(0, "host"), srv_port, 0, 0)
+    rd = ValkeyTestClient.create_from(r)
     rd.run("PING")
     rd.run("CONFIG", "SET", "port", 0)
     rd.run("CONFIG", "SET", "tls-port", srv_port)
     rd.run("close")
-    rd = valkey(srv(0, "host"), srv_port, 0, 1)
+    rd = ValkeyTestClient.create_from(r)
     rd.run("PING")
     rd.run("close")
 
@@ -355,7 +343,6 @@ def test_tls_working_with_an_encrypted_keyfile(r: ValkeyTestClient) -> None:
         "pass:1234",
         "2>/dev/null",
     )
-    e = None
     try:
         e = r.run("config", "set", "tls-key-file", keyfile_encrypted)
     except Exception as _catch_err:
@@ -483,10 +470,8 @@ def test_tls_auto_reload_detects_changes(r: ValkeyTestClient) -> None:
         }
     }
     """
-    if_(
-        "$::tls_module",
-        '                # Auto-reload requires built-in TLS\n                skip "Not supported with TLS built as a module"\n            ',
-    )
+    if False:
+        skip("Not supported with TLS built as a module")
     orig_server_crt = r.run("config", "get", "tls-cert-file")[1]
     orig_server_key = r.run("config", "get", "tls-key-file")[1]
     temp_crt = f"{orig_server_crt}.temp"
@@ -528,10 +513,8 @@ def test_tls_auto_reload_skips_unchanged_materials(r: ValkeyTestClient) -> None:
         }
     }
     """
-    if_(
-        "$::tls_module",
-        '                # Auto-reload requires built-in TLS\n                skip "Not supported with TLS built as a module"\n            ',
-    )
+    if False:
+        skip("Not supported with TLS built as a module")
     orig_loglevel = r.run("config", "get", "loglevel")[1]
     try_(
         '                # Enable auto-reload with 1 second interval\n                r CONFIG SET loglevel debug\n                r CONFIG SET tls-auto-reload-interval 1\n\n                # Wait for at least one cron cycle to ensure reload check happens\n                after 1100\n\n                # Wait for at least one reload check cycle\n                # Use generous timeout for slow/busy CI systems\n                wait_for_log_messages 0 {"*materials unchanged*"} 0 150 100\n            ',
@@ -563,10 +546,8 @@ def test_tls_auto_reload_interval_validation(r: ValkeyTestClient) -> None:
         }
     }
     """
-    if_(
-        "$::tls_module",
-        '                # Auto-reload requires built-in TLS\n                skip "Not supported with TLS built as a module"\n            ',
-    )
+    if False:
+        skip("Not supported with TLS built as a module")
     try_(
         "                # Valid intervals\n                r CONFIG SET tls-auto-reload-interval 0\n                r CONFIG SET tls-auto-reload-interval 5\n                r CONFIG SET tls-auto-reload-interval 3600\n\n                # Invalid intervals should fail\n                catch {r CONFIG SET tls-auto-reload-interval -1} e\n                assert_match {*ERR CONFIG SET failed*} $e\n            ",
         "finally",
@@ -614,10 +595,8 @@ def test_tls_auto_reload_with_ca_cert_directory(r: ValkeyTestClient) -> None:
         }
     }
     """
-    if_(
-        "$::tls_module",
-        '                # Auto-reload requires built-in TLS\n                skip "Not supported with TLS built as a module"\n            ',
-    )
+    if False:
+        skip("Not supported with TLS built as a module")
     ca_cert_dir = r.run("config", "get", "tls-ca-cert-dir")[1]
     if_(
         '$ca_cert_dir ne ""',
@@ -788,7 +767,8 @@ def test_info_tls_reports_empty_values_when_tls_disabled(r: ValkeyTestClient) ->
         }
     }
     """
-    if_("$::tls", '            skip "TLS enabled"\n        ')
+    if False:
+        skip("TLS enabled")
     info = r.run("info", "tls")
     foreach(
         "field",
@@ -881,7 +861,7 @@ def test_tls_info_tls_reports_decreasing_expiration_countdown(r: ValkeyTestClien
     )
     # TODO: assert_morethan expire1 expire2
     delta = expr("$expire1 - $expire2")
-    assert_morethan_equal(delta, 1)
+    assert delta >= 1
 
 
 @pytest.mark.skipif("", reason="{$::tls}")
@@ -1096,12 +1076,12 @@ def test_tls_info_tls_clears_expiration_countdown_when_tls_disabled(r: ValkeyTes
         $plain_client close
     }
     """
-    host = srv(0, "host")
-    tls_port = srv(0, "port")
+    host = r.host
+    tls_port = r.port
     plain_port = srv(0, "pport")
     if plain_port == 0:
         fail("Plaintext port not available for TLS test harness")
-    plain_client = valkey(host, plain_port, 0, 0)
+    plain_client = ValkeyTestClient.create_from(r)
     plain_client.run("CONFIG", "SET", "port", plain_port)
     plain_client.run("CONFIG", "SET", "tls-port", tls_port)
     plain_client.run("CONFIG", "SET", "tls-replication", "yes")
@@ -1237,12 +1217,12 @@ def test_tls_info_tls_shows_expiration_countdown_when_tls_re_enabled(r: ValkeyTe
         $plain_client close
     }
     """
-    host = srv(0, "host")
-    tls_port = srv(0, "port")
+    host = r.host
+    tls_port = r.port
     plain_port = srv(0, "pport")
     if plain_port == 0:
         fail("Plaintext port not available for TLS test harness")
-    plain_client = valkey(host, plain_port, 0, 0)
+    plain_client = ValkeyTestClient.create_from(r)
     plain_client.run("CONFIG", "SET", "port", plain_port)
     plain_client.run("CONFIG", "SET", "tls-replication", "no")
     plain_client.run("CONFIG", "SET", "tls-cluster", "no")
@@ -1303,10 +1283,6 @@ def assert_(*args):
     raise NotImplementedError("assert_")
 
 
-def assert_morethan_equal(*args):
-    raise NotImplementedError("assert_morethan_equal")
-
-
 def assert_not_equal(*args):
     raise NotImplementedError("assert_not_equal")
 
@@ -1355,6 +1331,10 @@ def regexp(*args):
     raise NotImplementedError("regexp")
 
 
+def skip(*args):
+    raise NotImplementedError("skip")
+
+
 def srv(*args):
     raise NotImplementedError("srv")
 
@@ -1373,10 +1353,6 @@ def test_tls_cert_rejection_runtime(*args):
 
 def try_(*args):
     raise NotImplementedError("try_")
-
-
-def valkey(*args):
-    raise NotImplementedError("valkey")
 
 
 def wait_for_condition(*args):

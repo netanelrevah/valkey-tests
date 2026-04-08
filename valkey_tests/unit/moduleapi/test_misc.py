@@ -296,7 +296,8 @@ def test_test_module_clientinfo_api(r: ValkeyTestClient) -> None:
     info = r.run("test.clientinfo")
     assert info["db"] == 9
     flags = parse_client_flags(info["flags"])
-    if_("$::tls", '            assert { "ssl" in $flags }\n        ')
+    if False:
+        assert_(' "ssl" in $flags ')
     assert_(' "authenticated" in $flags ')
     assert_(' "ever_authenticated" in $flags ')
     assert_(' "multi" ni $flags ')
@@ -427,14 +428,12 @@ def test_test_module_get_or_set_client_name_by_id_api(r: ValkeyTestClient) -> No
         assert_equal somebody [r client getname]
     }
     """
-    e = None
     try:
         e = r.run("test.getname")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert "-ERR No name" == e
     r.run("client", "setname", "nobody")
-    e = None
     try:
         e = r.run("test.setname", "name with spaces")
     except Exception as _catch_err:
@@ -459,7 +458,10 @@ def test_test_module_getclientcert_api(r: ValkeyTestClient) -> None:
     }
     """
     cert = r.run("test.getclientcert")
-    if_("$::tls", '            assert {$cert != ""}\n        ', "else", '            assert {$cert == ""}\n        ')
+    if False:
+        assert_('$cert != ""')
+    else:
+        assert_('$cert == ""')
 
 
 def test_test_detached_thread_safe_cnotext(r: ValkeyTestClient) -> None:
@@ -1079,7 +1081,6 @@ def test_test_dry_run_ok_oom_or_acl(r: ValkeyTestClient) -> None:
     """
     x = 5
     r.run("set", "x", x)
-    e = None
     try:
         e = r.run("test.rm_call_flags", "DMC", "set", "x", 10)
     except Exception as _catch_err:
@@ -1103,7 +1104,6 @@ def test_test_dry_run_fail_oom(r: ValkeyTestClient) -> None:
     x = 5
     r.run("set", "x", x)
     r.run("config", "set", "maxmemory", 1)
-    e = None
     try:
         e = r.run("test.rm_call_flags", "DM", "set", "x", 10)
     except Exception as _catch_err:
@@ -1130,7 +1130,6 @@ def test_test_dry_run_fail_acl(r: ValkeyTestClient) -> None:
     x = 5
     r.run("set", "x", x)
     r.run("acl", "setuser", "default", "resetkeys")
-    e = None
     try:
         e = r.run("test.rm_call_flags", "DC", "set", "x", 10)
     except Exception as _catch_err:
@@ -1200,10 +1199,6 @@ def exec_(*args):
 
 def get_child_pid(*args):
     raise NotImplementedError("get_child_pid")
-
-
-def if_(*args):
-    raise NotImplementedError("if_")
 
 
 def parse_client_flags(*args):

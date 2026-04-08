@@ -1,5 +1,6 @@
 # ruff: noqa: ANN001, ANN002, ANN201
 import time
+from fnmatch import fnmatch
 
 import pytest
 
@@ -335,7 +336,6 @@ def test_async_rm_call_inside_async_rm_call_callback(r: ValkeyTestClient) -> Non
     rd.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_become_replica_while_having_async_rm_call_running(r: ValkeyTestClient) -> None:
     """
     test {Become replica while having async RM_Call running} {
@@ -364,8 +364,11 @@ def test_become_replica_while_having_async_rm_call_running(r: ValkeyTestClient) 
     rd.run("do_rm_call_async", "blpop", "l", 0)
     wait_for_blocked_clients_count(1)
     r.run("replicaof", "localhost", 30000)
-    catch("[$rd read]", "e")
-    # TODO: assert_match {UNBLOCKED force unblock from blocking operation*} e
+    try:
+        e = rd.run("read")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "UNBLOCKED force unblock from blocking operation*")
     wait_for_blocked_clients_count(0)
     r.run("replicaof", "no", "one")
     r.run("lpush", "l", 1)
@@ -805,10 +808,6 @@ def assert_replication_stream(*args):
 
 def attach_to_replication_stream(*args):
     raise NotImplementedError("attach_to_replication_stream")
-
-
-def catch(*args):
-    raise NotImplementedError("catch")
 
 
 def close_replication_stream(*args):

@@ -72,7 +72,8 @@ def test_module_command_introspection_via_command_docs(r: ValkeyTestClient) -> N
     dict_("unset", "redis_reply", "group")
     dict_("unset", "module_reply", "group")
     dict_("unset", "module_reply", "module")
-    if_("$::log_req_res", "            dict unset redis_reply reply_schema\n        ")
+    if False:
+        dict_("unset", "redis_reply", "reply_schema")
     assert redis_reply == module_reply
 
 

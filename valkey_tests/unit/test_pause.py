@@ -118,7 +118,7 @@ def test_test_old_pause_all_takes_precedence_over_new_pause_write_less_restricti
     time.sleep(50 / 1000)
     rd.run("get", "FOO")
     elapsed = expr("[clock milliseconds]-$test_start_time")
-    assert_lessthan(200, elapsed)
+    assert 200 < elapsed
 
 
 def test_test_new_pause_time_is_smaller_than_old_one_then_old_time_preserved(r: ValkeyTestClient) -> None:
@@ -521,7 +521,6 @@ def test_test_clients_with_syntax_errors_will_get_responses_immediately(r: Valke
     }
     """
     r.run("client", "PAUSE", 100000, "WRITE")
-    err = None
     try:
         err = r.run("set", "FOO")
     except Exception as _catch_err:
@@ -863,10 +862,6 @@ start_cluster 1 1 {tags {"external:skip cluster pause network"}} {
 
 def assert_error(*args):
     raise NotImplementedError("assert_error")
-
-
-def assert_lessthan(*args):
-    raise NotImplementedError("assert_lessthan")
 
 
 def clock(*args):

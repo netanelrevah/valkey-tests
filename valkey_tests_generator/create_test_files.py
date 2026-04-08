@@ -24,7 +24,23 @@ from valkey_tests_generator.statement_translators import TCLBodyTranslator, _ext
 
 _TEST_NAME_TRANSLATE_TABLE = str.maketrans({"/": "_or_", **{c: "_" for c in "{}\",#: -()<>=$'.,*&@!?|+~^%"}})
 
-_KNOWN_FIXTURE_VARS = frozenset({"rd", "rd1", "rd2", "rd3", "rr", "r2", "rd_trk", "plain_client", "db"})
+_KNOWN_FIXTURE_VARS = frozenset(
+    {
+        "rd",
+        "rd1",
+        "rd2",
+        "rd3",
+        "rr",
+        "r2",
+        "rd_trk",
+        "plain_client",
+        "db",
+        "rd_sg",
+        "rd_redirection",
+        "primary",
+        "tc",
+    }
+)
 
 
 _VAR_REF_RE = re.compile(r"\$\{?([A-Za-z0-9_]+)\}?")
@@ -35,7 +51,7 @@ def _collect_fixture_refs(body: TCLScript) -> set[str]:
     refs: set[str] = set()
     locally_set: set[str] = set()
     for command in body.commands:
-        if command.name == "set" and command.args and isinstance(command.args[0], TCLWord):
+        if command.name in ("set", "variable") and command.args and isinstance(command.args[0], TCLWord):
             locally_set.add(command.args[0].value)
         # $var used as a command name: "$rd close"
         if command.name.startswith("$"):

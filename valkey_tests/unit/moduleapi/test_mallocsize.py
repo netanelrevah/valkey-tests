@@ -1,4 +1,4 @@
-# ruff: noqa: ANN002, ANN201
+# ruff: noqa: PLR2004
 
 import pytest
 
@@ -24,7 +24,7 @@ def test_mallocsize_of_raw_bytes(r: ValkeyTestClient) -> None:
     }
     """
     assert r.run("mallocsize.setraw", "key", 40) == "OK"
-    assert_morethan(r.run("memory", "usage", "key"), 40)
+    assert r.run("memory", "usage", "key") > 40
 
 
 def test_mallocsize_of_string(r: ValkeyTestClient) -> None:
@@ -35,7 +35,7 @@ def test_mallocsize_of_string(r: ValkeyTestClient) -> None:
     }
     """
     assert r.run("mallocsize.setstr", "key", "abcdefg") == "OK"
-    assert_morethan(r.run("memory", "usage", "key"), 7)
+    assert r.run("memory", "usage", "key") > 7
 
 
 def test_mallocsize_of_dict(r: ValkeyTestClient) -> None:
@@ -46,11 +46,4 @@ def test_mallocsize_of_dict(r: ValkeyTestClient) -> None:
     }
     """
     assert r.run("mallocsize.setdict", "key", "f1", "v1", "f2", "v2") == "OK"
-    assert_morethan(r.run("memory", "usage", "key"), 8)
-
-
-# --- stubs for unimplemented TCL helpers ---
-
-
-def assert_morethan(*args):
-    raise NotImplementedError("assert_morethan")
+    assert r.run("memory", "usage", "key") > 8

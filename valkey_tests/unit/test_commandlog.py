@@ -1,4 +1,5 @@
 # ruff: noqa: PLR2004, ANN001, ANN002, ANN201
+
 from fnmatch import fnmatch
 
 import pytest
@@ -21,10 +22,10 @@ def test_commandlog_check_that_it_starts_with_an_empty_log(r: ValkeyTestClient) 
         assert_equal [r commandlog len large-reply] 0
     }
     """
-    if_(
-        "$::external",
-        "            r commandlog reset slow\n            r commandlog reset large-request\n            r commandlog reset large-reply\n        ",
-    )
+    if False:
+        r.run("commandlog", "reset", "slow")
+        r.run("commandlog", "reset", "large-request")
+        r.run("commandlog", "reset", "large-reply")
     assert r.run("commandlog", "len", "slow") == 0
     assert r.run("commandlog", "len", "large-request") == 0
     assert r.run("commandlog", "len", "large-reply") == 0
@@ -331,7 +332,6 @@ def test_commandlog_slow_certain_commands_are_omitted_that_contain_sensitive_inf
     r.run("config", "set", "commandlog-slow-execution-max-len", 100)
     r.run("config", "set", "commandlog-execution-slower-than", 0)
     r.run("commandlog", "reset", "slow")
-    _ = None
     try:
         _ = r.run("acl", "setuser", "slowlog test user", "+get", "+set")
     except Exception as _catch_err:
@@ -381,9 +381,9 @@ def test_commandlog_slow_some_commands_can_redact_sensitive_fields(r: ValkeyTest
     """
     r.run("config", "set", "commandlog-execution-slower-than", 0)
     r.run("commandlog", "reset", "slow")
-    r.run("migrate", srv(0, "host"), srv(0, "port"), "key", 9, 5000)
-    r.run("migrate", srv(0, "host"), srv(0, "port"), "key", 9, 5000, "AUTH", "user")
-    r.run("migrate", srv(0, "host"), srv(0, "port"), "key", 9, 5000, "AUTH2", "user", "password")
+    r.run("migrate", r.host, r.port, "key", 9, 5000)
+    r.run("migrate", r.host, r.port, "key", 9, 5000, "AUTH", "user")
+    r.run("migrate", r.host, r.port, "key", 9, 5000, "AUTH2", "user", "password")
     r.run("config", "set", "commandlog-execution-slower-than", -1)
     slowlog_resp = r.run("commandlog", "get", -1, "slow")
     assert 4 == len(slowlog_resp)
@@ -835,10 +835,6 @@ def if_(*args):
 
 def regexp(*args):
     raise NotImplementedError("regexp")
-
-
-def srv(*args):
-    raise NotImplementedError("srv")
 
 
 def string(*args):

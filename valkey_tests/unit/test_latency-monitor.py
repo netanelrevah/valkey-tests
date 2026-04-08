@@ -1,5 +1,4 @@
 # ruff: noqa: PLR2004, ANN002, ANN201
-
 from fnmatch import fnmatch
 
 import pytest
@@ -157,7 +156,6 @@ def test_latency_histogram_with_wrong_command_name_skips_the_invalid_one(r: Valk
     assert len(r.run("latency", "histogram", "blabla", "set", "get")) > 0
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_latency_of_expire_events_are_correctly_collected(r: ValkeyTestClient) -> None:
     """
     test {LATENCY of expire events are correctly collected} {
@@ -191,14 +189,17 @@ def test_latency_of_expire_events_are_correctly_collected(r: ValkeyTestClient) -
     r.run("config", "set", "latency-monitor-threshold", 1)
     r.run("config", "set", "lazyfree-lazy-expire", "no")
     r.run("flushdb")
-    if_("$::valgrind", "set count 100000", "else", "set count 1000000")
-    # TODO: r eval {
-    #       local i = 0
-    #       while (i < tonumber(ARGV[1])) do
-    #           redis.call('sadd',KEYS[1],i)
-    #           i = i+1
-    #        end
-    #   } 1 mybigkey count
+    if False:
+        count = 100000
+    else:
+        count = 1000000
+    r.run(
+        "eval",
+        "            local i = 0\n            while (i < tonumber(ARGV[1])) do\n                redis.call('sadd',KEYS[1],i)\n                i = i+1\n             end\n        ",
+        1,
+        "mybigkey",
+        count,
+    )
     r.run("pexpire", "mybigkey", 50)
     wait_for_condition(5, 100, lambda: r.run("dbsize") == 0, lambda: fail("key wasn't expired"))
     assert fnmatch(str(r.run("latency", "latest")), "*expire-cycle*")
@@ -248,7 +249,6 @@ def test_latency_help_should_not_have_unexpected_options(r: ValkeyTestClient) ->
         assert_match "*wrong number of arguments for 'latency|help' command" $e
     }
     """
-    e = None
     try:
         e = r.run("LATENCY", "help", "xxx")
     except Exception as _catch_err:
@@ -280,10 +280,6 @@ def dict_(*args):
 
 def fail(*args):
     raise NotImplementedError("fail")
-
-
-def if_(*args):
-    raise NotImplementedError("if_")
 
 
 def test(*args):

@@ -1,4 +1,5 @@
 # ruff: noqa: F841, N806, ANN002, ANN201
+
 from fnmatch import fnmatch
 
 import pytest
@@ -15,7 +16,6 @@ def test_auth_fails_if_there_is_no_password_configured_server_side(r: ValkeyTest
         set _ $err
     } {ERR *any password*}
     """
-    err = None
     try:
         err = r.run("auth", "foo")
     except Exception as _catch_err:
@@ -30,7 +30,6 @@ def test_arity_check_for_auth_command(r: ValkeyTestClient) -> None:
         set _ $err
     } {*syntax error*}
     """
-    err = None
     try:
         err = r.run("auth", "a", "b", "c")
     except Exception as _catch_err:
@@ -48,7 +47,6 @@ def test_auth_fails_when_a_wrong_password_is_given(r: ValkeyTestClient) -> None:
         set _ $err
     } {WRONGPASS*}
     """
-    err = None
     try:
         err = r.run("auth", "wrong!")
     except Exception as _catch_err:
@@ -63,7 +61,6 @@ def test_arbitrary_command_gives_an_error_when_auth_is_required(r: ValkeyTestCli
         set _ $err
     } {NOAUTH*}
     """
-    err = None
     try:
         err = r.run("set", "foo", "bar")
     except Exception as _catch_err:
@@ -91,7 +88,6 @@ def test_once_auth_succeeded_we_can_actually_send_commands_to_the_server(r: Valk
     assert r.run("incr", "foo") == "101"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_for_unauthenticated_clients_multibulk_and_bulk_length_are_limited(r: ValkeyTestClient) -> None:
     """
     test {For unauthenticated clients multibulk and bulk length are limited} {
@@ -110,21 +106,26 @@ def test_for_unauthenticated_clients_multibulk_and_bulk_length_are_limited(r: Va
         $rr close
     }
     """
-    # TODO: set rr valkey [srv "host"] [srv "port"] 0 $::tls
-    # TODO: $rr write "*100\r\n"
-    # TODO: $rr flush
-    catch("[$rr read]", "e")
-    # TODO: assert_match {*unauthenticated multibulk length*} e
-    # TODO: $rr close
-    # TODO: set rr valkey [srv "host"] [srv "port"] 0 $::tls
-    # TODO: $rr write "*1\r\n\$100000000\r\n"
-    # TODO: $rr flush
-    catch("[$rr read]", "e")
-    # TODO: assert_match {*unauthenticated bulk length*} e
-    # TODO: $rr close
+    rr = ValkeyTestClient.create_from(r)
+    rr.run("write", "*100\r\n")
+    rr.run("flush")
+    try:
+        e = rr.run("read")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*unauthenticated multibulk length*")
+    rr.run("close")
+    rr = ValkeyTestClient.create_from(r)
+    rr.run("write", "*1\r\n$100000000\r\n")
+    rr.run("flush")
+    try:
+        e = rr.run("read")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*unauthenticated bulk length*")
+    rr.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_for_unauthenticated_clients_output_buffer_is_limited(r: ValkeyTestClient) -> None:
     """
     test {For unauthenticated clients output buffer is limited} {
@@ -149,18 +150,23 @@ def test_for_unauthenticated_clients_output_buffer_is_limited(r: ValkeyTestClien
         assert_match "OK" [r debug client-enforce-reply-list 0]
     }
     """
-    # TODO: set rr valkey [srv "host"] [srv "port"] 1 $::tls
-    # TODO: $rr SET x 5
-    catch("[$rr read]", "e")
-    # TODO: assert_match {*NOAUTH Authentication required*} e
+    rr = ValkeyTestClient.create_from(r)
+    rr.run("SET", "x", 5)
+    try:
+        e = rr.run("read")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*NOAUTH Authentication required*")
     assert fnmatch(str(r.run("debug", "client-enforce-reply-list", 1)), "OK")
-    # TODO: $rr SET x 5
-    catch("[$rr read]", "e")
-    # TODO: assert_match {I/O error reading reply} e
+    rr.run("SET", "x", 5)
+    try:
+        e = rr.run("read")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "I/O error reading reply")
     assert fnmatch(str(r.run("debug", "client-enforce-reply-list", 0)), "OK")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_for_once_authenticated_clients_output_buffer_is_not_limited(r: ValkeyTestClient) -> None:
     """
     test {For once authenticated clients output buffer is NOT limited} {
@@ -194,22 +200,27 @@ def test_for_once_authenticated_clients_output_buffer_is_not_limited(r: ValkeyTe
         assert_match "OK" [r debug client-enforce-reply-list 0]
     }
     """
-    # TODO: set rr valkey [srv "host"] [srv "port"] 1 $::tls
-    # TODO: $rr auth foobar
-    # TODO: assert_equal {OK} $rr read
-    # TODO: $rr reset
-    # TODO: assert_equal {RESET} $rr read
-    # TODO: $rr SET x 5
-    catch("[$rr read]", "e")
-    # TODO: assert_match {*NOAUTH Authentication required*} e
+    rr = ValkeyTestClient.create_from(r)
+    rr.run("auth", "foobar")
+    assert "OK" == rr.run("read")
+    rr.run("reset")
+    assert "RESET" == rr.run("read")
+    rr.run("SET", "x", 5)
+    try:
+        e = rr.run("read")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*NOAUTH Authentication required*")
     assert fnmatch(str(r.run("debug", "client-enforce-reply-list", 1)), "OK")
-    # TODO: $rr SET x 5
-    catch("[$rr read]", "e")
-    # TODO: assert_match {*NOAUTH Authentication required*} e
+    rr.run("SET", "x", 5)
+    try:
+        e = rr.run("read")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*NOAUTH Authentication required*")
     assert fnmatch(str(r.run("debug", "client-enforce-reply-list", 0)), "OK")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_unauthenticated_multibulk_limit_works_in_pipeline_after_auth(r: ValkeyTestClient) -> None:
     """
     test {Unauthenticated multibulk limit works in pipeline after AUTH} {
@@ -246,13 +257,13 @@ def test_unauthenticated_multibulk_limit_works_in_pipeline_after_auth(r: ValkeyT
     A = "$1\r\nA\r\n"
     mget_proto = f"*11\r\n$4\r\nMGET\r\n{A}{A}{A}{A}{A}{A}{A}{A}{A}{A}"
     proto = f"{auth_proto}{set_proto}{mget_proto}"
-    # TODO: set rd valkey [srv "host"] [srv "port"] 1 $::tls
-    # TODO: set fd $rd channel
-    # TODO: flush fd
-    # TODO: assert_equal OK $rd read
-    # TODO: assert_equal OK $rd read
-    # TODO: assert_equal {X X X X X X X X X X} $rd read
-    # TODO: $rd close
+    rd = ValkeyTestClient.create_from(r)
+    fd = rd.run("channel")
+    flush(fd)
+    assert "OK" == rd.run("read")
+    assert "OK" == rd.run("read")
+    assert "X X X X X X X X X X" == rd.run("read")
+    rd.run("close")
 
 
 """
@@ -305,9 +316,5 @@ foreach dualchannel {yes no} {
 # --- stubs for unimplemented TCL helpers ---
 
 
-def catch(*args):
-    raise NotImplementedError("catch")
-
-
-def srv(*args):
-    raise NotImplementedError("srv")
+def flush(*args):
+    raise NotImplementedError("flush")

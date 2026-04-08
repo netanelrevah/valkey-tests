@@ -137,7 +137,6 @@ def test_exec_fails_if_there_are_errors_while_queueing_commands_1(r: ValkeyTestC
     except Exception:
         pass
     r.run("set", "foo2{t}", "bar2")
-    e = None
     try:
         e = r.run("exec")
     except Exception as _catch_err:
@@ -178,7 +177,6 @@ def test_exec_fails_if_there_are_errors_while_queueing_commands_2(r: ValkeyTestC
     rd.run("config", "set", "maxmemory", 0)
     assert rd.run("read") == "OK"
     r.run("set", "foo2{t}", "bar2")
-    e = None
     try:
         e = r.run("exec")
     except Exception as _catch_err:
@@ -209,7 +207,6 @@ def test_if_exec_aborts_the_client_multi_state_is_cleared(r: ValkeyTestClient) -
     except Exception:
         pass
     r.run("set", "foo2{t}", "bar2")
-    e = None
     try:
         e = r.run("exec")
     except Exception as _catch_err:
@@ -330,7 +327,8 @@ def test_exec_fail_on_lazy_expired_watched_key(r: ValkeyTestClient) -> None:
         if res == "":
             break_()
         j += 1
-    if_("$::verbose", ' puts "EXEC fail on lazy expired WATCHed key attempts: $j" ')
+    if False:
+        pass
     r.run("debug", "set-active-expire", 1)
     # TODO: set _ res
 
@@ -1063,7 +1061,6 @@ def test_multi_or_exec_with_replicaof(r: ValkeyTestClient) -> None:
     r.run("replicaof", "localhost", 9999)
     r.run("set", "foo3", "bar")
     r.run("exec")
-    e = None
     try:
         e = r.run("set", "foo4", "bar")
     except Exception as _catch_err:
@@ -1094,7 +1091,6 @@ def test_discard_should_not_fail_during_oom(r: ValkeyTestClient) -> None:
     rd.run("config", "set", "maxmemory", 1)
     assert rd.run("read") == "OK"
     r.run("multi")
-    e = None
     try:
         e = r.run("set", "x", 1)
     except Exception as _catch_err:
@@ -1140,24 +1136,20 @@ def test_multi_and_script_timeout(r: ValkeyTestClient) -> None:
     r.run("set", "xx", 1)
     rd1.run("eval", "while true do end", 0)
     time.sleep(200 / 1000)
-    e = None
     try:
         e = r2.run("multi")
     except Exception as _catch_err:
         e = str(_catch_err)
-    e = None
     try:
         e = r2.run("incr", "xx")
     except Exception as _catch_err:
         e = str(_catch_err)
     r.run("script", "kill")
     time.sleep(200 / 1000)
-    e = None
     try:
         e = r2.run("incr", "xx")
     except Exception as _catch_err:
         e = str(_catch_err)
-    e = None
     try:
         e = r2.run("exec")
     except Exception as _catch_err:
@@ -1202,24 +1194,20 @@ def test_exec_and_script_timeout(r: ValkeyTestClient) -> None:
     r2 = ValkeyTestClient.create_from(r)
     r.run("config", "set", "lua-time-limit", 10)
     r.run("set", "xx", 1)
-    e = None
     try:
         e = r2.run("multi")
     except Exception as _catch_err:
         e = str(_catch_err)
-    e = None
     try:
         e = r2.run("incr", "xx")
     except Exception as _catch_err:
         e = str(_catch_err)
     rd1.run("eval", "while true do end", 0)
     time.sleep(200 / 1000)
-    e = None
     try:
         e = r2.run("incr", "xx")
     except Exception as _catch_err:
         e = str(_catch_err)
-    e = None
     try:
         e = r2.run("exec")
     except Exception as _catch_err:
@@ -1266,26 +1254,22 @@ def test_multi_exec_body_and_script_timeout(r: ValkeyTestClient) -> None:
     r2 = ValkeyTestClient.create_from(r)
     r.run("config", "set", "lua-time-limit", 10)
     r.run("set", "xx", 1)
-    e = None
     try:
         e = r2.run("multi")
     except Exception as _catch_err:
         e = str(_catch_err)
-    e = None
     try:
         e = r2.run("incr", "xx")
     except Exception as _catch_err:
         e = str(_catch_err)
     rd1.run("eval", "while true do end", 0)
     time.sleep(200 / 1000)
-    e = None
     try:
         e = r2.run("incr", "xx")
     except Exception as _catch_err:
         e = str(_catch_err)
     r.run("script", "kill")
     time.sleep(200 / 1000)
-    e = None
     try:
         e = r2.run("exec")
     except Exception as _catch_err:
@@ -1329,19 +1313,16 @@ def test_just_exec_and_script_timeout(r: ValkeyTestClient) -> None:
     r2 = ValkeyTestClient.create_from(r)
     r.run("config", "set", "lua-time-limit", 10)
     r.run("set", "xx", 1)
-    e = None
     try:
         e = r2.run("multi")
     except Exception as _catch_err:
         e = str(_catch_err)
-    e = None
     try:
         e = r2.run("incr", "xx")
     except Exception as _catch_err:
         e = str(_catch_err)
     rd1.run("eval", "while true do end", 0)
     time.sleep(200 / 1000)
-    e = None
     try:
         e = r2.run("exec")
     except Exception as _catch_err:
@@ -1380,7 +1361,6 @@ def test_exec_with_write_commands_and_state_change(r: ValkeyTestClient) -> None:
     r.run("multi")
     r.run("incr", "xx")
     r1.run("config", "set", "min-replicas-to-write", 2)
-    e = None
     try:
         e = r.run("exec")
     except Exception as _catch_err:
@@ -1433,7 +1413,6 @@ def test_exec_with_read_commands_and_stale_replica_state_change(r: ValkeyTestCli
     r.run("multi")
     r.run("get", "xx")
     r1.run("replicaof", "localhost_", 0)
-    e = None
     try:
         e = r.run("exec")
     except Exception as _catch_err:
@@ -1443,7 +1422,6 @@ def test_exec_with_read_commands_and_stale_replica_state_change(r: ValkeyTestCli
     r.run("multi")
     r.run("ping")
     r1.run("replicaof", "localhost_", 0)
-    e = None
     try:
         e = r.run("exec")
     except Exception as _catch_err:
@@ -1515,7 +1493,6 @@ def test_exec_with_at_least_one_use_memory_command_should_fail(r: ValkeyTestClie
     r.run("set", "x", 1)
     r.run("get", "x")
     r2.run("config", "set", "maxmemory", 1)
-    e = None
     try:
         e = r.run("exec")
     except Exception as _catch_err:
@@ -2018,10 +1995,6 @@ def fail(*args):
 
 def get_last_incr_aof_path(*args):
     raise NotImplementedError("get_last_incr_aof_path")
-
-
-def if_(*args):
-    raise NotImplementedError("if_")
 
 
 def s(*args):

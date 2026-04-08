@@ -364,7 +364,7 @@ def test_hrandfield_with_count_type(r: ValkeyTestClient, type, contents) -> None
     res = r.run("hrandfield", "myhash", -1001, "withvalues")
     assert len(res) == 2002
     res = r.run("hrandfield", "myhash", -1000)
-    assert_lessthan(chi_square_value(res), 40)
+    assert chi_square_value(res) < 40
     foreach("key val", res, "                assert {[dict exists $mydict $key]}\n            ")
     unset("-nocomplain", "auxset")
     iterations = 1000
@@ -1241,12 +1241,10 @@ def test_hincrby_fails_against_hash_value_with_spaces_left(r: ValkeyTestClient) 
     """
     r.run("hset", "smallhash", "str", " 11")
     r.run("hset", "bighash", "str", " 11")
-    smallerr = None
     try:
         smallerr = r.run("hincrby", "smallhash", "str", 1)
     except Exception as _catch_err:
         smallerr = str(_catch_err)
-    bigerr = None
     try:
         bigerr = r.run("hincrby", "bighash", "str", 1)
     except Exception as _catch_err:
@@ -1270,12 +1268,10 @@ def test_hincrby_fails_against_hash_value_with_spaces_right(r: ValkeyTestClient)
     """
     r.run("hset", "smallhash", "str", "11 ")
     r.run("hset", "bighash", "str", "11 ")
-    smallerr = None
     try:
         smallerr = r.run("hincrby", "smallhash", "str", 1)
     except Exception as _catch_err:
         smallerr = str(_catch_err)
-    bigerr = None
     try:
         bigerr = r.run("hincrby", "bighash", "str", 1)
     except Exception as _catch_err:
@@ -1298,7 +1294,6 @@ def test_hincrby_can_detect_overflows(r: ValkeyTestClient) -> None:
     e = ""
     r.run("hset", "hash", "n", -9223372036854775484)
     assert r.run("hincrby", "hash", "n", -1) == -9223372036854775485
-    e = None
     try:
         e = r.run("hincrby", "hash", "n", -10000)
     except Exception as _catch_err:
@@ -1420,12 +1415,10 @@ def test_hincrbyfloat_fails_against_hash_value_with_spaces_left(r: ValkeyTestCli
     """
     r.run("hset", "smallhash", "str", " 11")
     r.run("hset", "bighash", "str", " 11")
-    smallerr = None
     try:
         smallerr = r.run("hincrbyfloat", "smallhash", "str", 1)
     except Exception as _catch_err:
         smallerr = str(_catch_err)
-    bigerr = None
     try:
         bigerr = r.run("hincrbyfloat", "bighash", "str", 1)
     except Exception as _catch_err:
@@ -1449,12 +1442,10 @@ def test_hincrbyfloat_fails_against_hash_value_with_spaces_right(r: ValkeyTestCl
     """
     r.run("hset", "smallhash", "str", "11 ")
     r.run("hset", "bighash", "str", "11 ")
-    smallerr = None
     try:
         smallerr = r.run("hincrbyfloat", "smallhash", "str", 1)
     except Exception as _catch_err:
         smallerr = str(_catch_err)
-    bigerr = None
     try:
         bigerr = r.run("hincrbyfloat", "bighash", "str", 1)
     except Exception as _catch_err:
@@ -1476,7 +1467,6 @@ def test_hincrbyfloat_fails_against_hash_value_that_contains_a_null_terminator_i
     } {1}
     """
     r.run("hset", "h", "f", "1\x002")
-    err = None
     try:
         err = r.run("hincrbyfloat", "h", "f", 1)
     except Exception as _catch_err:
@@ -1920,10 +1910,6 @@ def array(*args):
 
 def assert_encoding(*args):
     raise NotImplementedError("assert_encoding")
-
-
-def assert_lessthan(*args):
-    raise NotImplementedError("assert_lessthan")
 
 
 def break_(*args):

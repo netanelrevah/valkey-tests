@@ -115,12 +115,30 @@ class ExpressionTranslator:
         return translator.get_expression(command.args, defined_vars)
 
 
+_TCL_GLOBAL_VARS: dict[str, str] = {
+    "::tls": "False",
+    "::tls_module": "False",
+    "::verbose": "False",
+    "::no_latency": "False",
+    "::force_resp3": "False",
+    "::external": "False",
+    "::singledb": "False",
+    "::accurate": "False",
+    "::valgrind": "False",
+    "::log_req_res": "False",
+    "::ignoredigest": "False",
+}
+
+
 @ArgumentTranslator.register(TCLVariableSubstitutionWord)
 class VariableSubstitutionArgumentTranslator(ArgumentTranslator):
     def get_translation(self, argument: TCLCommandArguments, defined_vars: set[str]) -> str | None:
         assert isinstance(argument, TCLVariableSubstitutionWord)
         if argument.variable_name == "":
             return "'$'"  # standalone $ — stream "last entry" ID
+        global_val = _TCL_GLOBAL_VARS.get(argument.variable_name)
+        if global_val is not None:
+            return global_val
         if "::" in argument.variable_name or argument.variable_name not in defined_vars:
             return None
         return _safe_var_name(argument.variable_name)
@@ -195,9 +213,14 @@ def _translate_double_quoted(raw: str, defined_vars: set[str]) -> str | None:
                     j += 1
                 var_name = raw[i:j]
                 i = j
-            if not var_name or "::" in var_name:
+            if not var_name:
                 return None
-            if var_name not in defined_vars:
+            global_val = _TCL_GLOBAL_VARS.get(var_name)
+            if global_val is not None:
+                segments.append((global_val, True))
+                has_sub = True
+                continue
+            if "::" in var_name or var_name not in defined_vars:
                 return None
             segments.append((_safe_var_name(var_name), True))
             has_sub = True
@@ -302,9 +325,26 @@ class RExpressionTranslator(ExpressionTranslator):
 
 @ExpressionTranslator.register("valkey_deferring_client")
 @ExpressionTranslator.register("valkey_client")
+@ExpressionTranslator.register("valkey")
 class ValkeyClientExpressionTranslator(ExpressionTranslator):
     def get_expression(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> str | None:
         return "ValkeyTestClient.create_from(r)"
+
+
+@ExpressionTranslator.register("srv")
+class SrvExpressionTranslator(ExpressionTranslator):
+    _PROP_MAP: ClassVar[dict[str, str]] = {
+        "host": "r.host",
+        "port": "r.port",
+        "client": "ValkeyTestClient.create_from(r)",
+    }
+
+    def get_expression(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> str | None:
+        words = [a.value for a in arguments if isinstance(a, (TCLWord, TCLDoubleQuotedWord))]
+        prop = next((w for w in words if w in self._PROP_MAP), None)
+        if prop is None:
+            return None
+        return self._PROP_MAP[prop]
 
 
 @ExpressionTranslator.register("list")

@@ -74,18 +74,18 @@ def test_memoryusage_of_string(r: ValkeyTestClient) -> None:
     key = "key"
     value = "value"
     r.run("set", key, value)
-    assert_lessthan_equal(expr(len(key), "+", len(value)), r.run("memory", "usage", "key"))
+    assert expr(len(key), "+", len(value)) <= r.run("memory", "usage", "key")
     key = "key"
     value = string("repeat", "A", 100000)
     r.run("set", key, value)
-    assert_lessthan_equal(expr(len(key), "+", len(value)), r.run("memory", "usage", "key"))
+    assert expr(len(key), "+", len(value)) <= r.run("memory", "usage", "key")
     key = string("repeat", "A", 100000)
     value = "value"
     r.run("set", key, value)
-    assert_lessthan_equal(expr(len(key), "+", len(value)), r.run("memory", "usage", "key"))
+    assert expr(len(key), "+", len(value)) <= r.run("memory", "usage", "key")
     key = string("repeat", "B", 100000)
     r.run("incr", key)
-    assert_lessthan_equal(len(key), r.run("memory", "usage", key))
+    assert len(key) <= r.run("memory", "usage", key)
 
 
 def test_setnx_target_key_missing(r: ValkeyTestClient) -> None:
@@ -267,7 +267,6 @@ def test_getex_syntax_errors(r: ValkeyTestClient) -> None:
     } {*syntax*}
     """
     ex = ""
-    ex = None
     try:
         ex = r.run("getex", "foo", "non-existent-option")
     except Exception as _catch_err:
@@ -301,7 +300,6 @@ def test_getex_no_arguments(r: ValkeyTestClient) -> None:
     } {*wrong number of arguments for 'getex' command}
     """
     ex = ""
-    ex = None
     try:
         ex = r.run("getex")
     except Exception as _catch_err:
@@ -1032,7 +1030,6 @@ def test_extended_set_can_detect_syntax_errors(r: ValkeyTestClient) -> None:
     } {*syntax*}
     """
     e = ""
-    e = None
     try:
         e = r.run("set", "foo", "bar", "non-existing-option")
     except Exception as _catch_err:
@@ -1180,7 +1177,6 @@ def test_extended_set_get_with_incorrect_type_should_result_in_wrong_type_error(
     """
     r.run("del", "foo")
     r.run("rpush", "foo", "waffle")
-    err1 = None
     try:
         err1 = r.run("set", "foo", "bar", "GET")
     except Exception as _catch_err:
@@ -1669,7 +1665,7 @@ def test_memory_usage_of_embedded_string_value(r: ValkeyTestClient) -> None:
     } {} {needs:debug}
     """
     r.run("set", "quux", "xyzzy")
-    assert_lessthan_equal(r.run("memory", "usage", "quux"), 24)
+    assert r.run("memory", "usage", "quux") <= 24
     info_server = r.run("info", "server")
     regexp("arch_bits:(\\d+)", info_server, "_", "arch_bits")
     pointer_size = expr("$arch_bits / 8")
@@ -1688,10 +1684,6 @@ def test_memory_usage_of_embedded_string_value(r: ValkeyTestClient) -> None:
 
 def assert_encoding(*args):
     raise NotImplementedError("assert_encoding")
-
-
-def assert_lessthan_equal(*args):
-    raise NotImplementedError("assert_lessthan_equal")
 
 
 def assert_range(*args):

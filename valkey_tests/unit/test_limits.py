@@ -34,7 +34,6 @@ def test_check_if_maxclients_works_refusing_connections(r: ValkeyTestClient) -> 
     } expected_code
     """
     c = 0
-    e = None
     try:
         e = while_(
             "$c < 50",

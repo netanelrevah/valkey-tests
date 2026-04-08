@@ -1,5 +1,4 @@
-# ruff: noqa: PLR2004, ANN001, ANN002, ANN201
-
+# ruff: noqa: PLR2004, F841, ANN001, ANN002, ANN201
 from fnmatch import fnmatch
 
 import pytest
@@ -312,7 +311,6 @@ def test_geoadd_update_with_xx_nx_option_will_return_syntax_error(r: ValkeyTestC
         set err
     } {ERR *syntax*}
     """
-    err = None
     try:
         err = r.run("geoadd", "nyc", "xx", "nx", -73.9454966, 40.747533, "lic market")
     except Exception as _catch_err:
@@ -329,7 +327,6 @@ def test_geoadd_update_with_invalid_option(r: ValkeyTestClient) -> None:
         set err
     } {ERR *syntax*}
     """
-    err = None
     try:
         err = r.run("geoadd", "nyc", "ch", "xx", "foo", -73.9454966, 40.747533, "lic market")
     except Exception as _catch_err:
@@ -347,7 +344,6 @@ def test_geoadd_invalid_coordinates(r: ValkeyTestClient) -> None:
         set err
     } {*valid*}
     """
-    err = None
     try:
         err = r.run("geoadd", "nyc", -73.9454966, 40.747533, "lic market", "foo", "bar", "luck market")
     except Exception as _catch_err:
@@ -442,7 +438,6 @@ def test_geosearch_fromlonlat_and_frommember_cannot_exist_at_the_same_time(r: Va
         set e
     } {ERR *syntax*}
     """
-    e = None
     try:
         e = r.run(
             "geosearch", "nyc", "fromlonlat", -73.9798091, 40.7598464, "frommember", "xxx", "bybox", 6, 6, "km", "asc"
@@ -459,7 +454,6 @@ def test_geosearch_fromlonlat_and_frommember_one_must_exist(r: ValkeyTestClient)
         set e
     } {ERR *exactly one of FROMMEMBER or FROMLONLAT*}
     """
-    e = None
     try:
         e = r.run("geosearch", "nyc", "bybox", 3, 3, "km", "asc", "desc", "withhash", "withdist", "withcoord")
     except Exception as _catch_err:
@@ -474,7 +468,6 @@ def test_geosearch_byradius_and_bybox_cannot_exist_at_the_same_time(r: ValkeyTes
         set e
     } {ERR *syntax*}
     """
-    e = None
     try:
         e = r.run(
             "geosearch", "nyc", "fromlonlat", -73.9798091, 40.7598464, "byradius", 3, "km", "bybox", 3, 3, "km", "asc"
@@ -491,7 +484,6 @@ def test_geosearch_byradius_and_bybox_one_must_exist(r: ValkeyTestClient) -> Non
         set e
     } {ERR *exactly one of BYRADIUS, BYBOX and BYPOLYGON*}
     """
-    e = None
     try:
         e = r.run(
             "geosearch",
@@ -517,7 +509,6 @@ def test_geosearch_with_storedist_option(r: ValkeyTestClient) -> None:
         set e
     } {ERR *syntax*}
     """
-    e = None
     try:
         e = r.run("geosearch", "nyc", "fromlonlat", -73.9798091, 40.7598464, "bybox", 6, 6, "km", "asc", "storedist")
     except Exception as _catch_err:
@@ -618,7 +609,6 @@ def test_georadius_with_any_but_no_count(r: ValkeyTestClient) -> None:
         set e
     } {ERR *ANY*requires*COUNT*}
     """
-    e = None
     try:
         e = r.run("georadius", "nyc", -73.9798091, 40.7598464, 10, "km", "ANY", "ASC")
     except Exception as _catch_err:
@@ -633,7 +623,6 @@ def test_georadius_with_count_but_missing_integer_argument(r: ValkeyTestClient) 
         set e
     } {ERR *syntax*}
     """
-    e = None
     try:
         e = r.run("georadius", "nyc", -73.9798091, 40.7598464, 10, "km", "COUNT")
     except Exception as _catch_err:
@@ -1029,7 +1018,6 @@ def test_georadius_store_option_syntax_error(r: ValkeyTestClient) -> None:
     """
     r.run("del", "points{t}")
     r.run("geoadd", "points{t}", 13.361389, 38.115556, "Palermo", 15.087269, 37.502669, "Catania")
-    e = None
     try:
         e = r.run("georadius", "points{t}", 13.361389, 38.115556, 50, "km", "store")
     except Exception as _catch_err:
@@ -1044,7 +1032,6 @@ def test_geosearchstore_store_option_syntax_error(r: ValkeyTestClient) -> None:
         set e
     } {*ERR*syntax*}
     """
-    e = None
     try:
         e = r.run(
             "geosearchstore",
@@ -1080,19 +1067,16 @@ def test_georange_store_option_incompatible_options(r: ValkeyTestClient) -> None
     """
     r.run("del", "points{t}")
     r.run("geoadd", "points{t}", 13.361389, 38.115556, "Palermo", 15.087269, 37.502669, "Catania")
-    e = None
     try:
         e = r.run("georadius", "points{t}", 13.361389, 38.115556, 50, "km", "store", "points2{t}", "withdist")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*ERR*")
-    e = None
     try:
         e = r.run("georadius", "points{t}", 13.361389, 38.115556, 50, "km", "store", "points2{t}", "withhash")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*ERR*")
-    e = None
     try:
         e = r.run("georadius", "points{t}", 13.361389, 38.115556, 50, "km", "store", "points2{t}", "withcoords")
     except Exception as _catch_err:
@@ -1352,7 +1336,6 @@ def test_geosearch_bypolygon_standard_operations(r: ValkeyTestClient) -> None:
         -33.874838625143106,
         "The Reg Bartley Oval, Waratah Street, Rushcutters Bay, Sydney, Council of the City of Sydney, New South Wales, 2011, Australia",
     )
-    e = None
     try:
         e = r.run(
             "GEOSEARCH",
@@ -1367,7 +1350,6 @@ def test_geosearch_bypolygon_standard_operations(r: ValkeyTestClient) -> None:
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*ERR GEOSEARCH BYPOLYGON must have at least 3 vertices*")
-    e = None
     try:
         e = r.run(
             "GEOSEARCH",
@@ -1382,7 +1364,6 @@ def test_geosearch_bypolygon_standard_operations(r: ValkeyTestClient) -> None:
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*ERR GEOSEARCH BYPOLYGON must have at least 3 vertices*")
-    e = None
     try:
         e = r.run(
             "GEOSEARCH",
@@ -1403,7 +1384,6 @@ def test_geosearch_bypolygon_standard_operations(r: ValkeyTestClient) -> None:
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*ERR syntax error*")
-    e = None
     try:
         e = r.run(
             "GEOSEARCH",
@@ -1424,7 +1404,6 @@ def test_geosearch_bypolygon_standard_operations(r: ValkeyTestClient) -> None:
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*ERR syntax error*")
-    e = None
     try:
         e = r.run(
             "GEOSEARCH",
@@ -1444,7 +1423,6 @@ def test_geosearch_bypolygon_standard_operations(r: ValkeyTestClient) -> None:
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*ERR syntax error*")
-    e = None
     try:
         e = r.run(
             "GEOSEARCH",
@@ -1464,7 +1442,6 @@ def test_geosearch_bypolygon_standard_operations(r: ValkeyTestClient) -> None:
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*ERR syntax error*")
-    e = None
     try:
         e = r.run(
             "GEOSEARCH",
@@ -2080,7 +2057,10 @@ def test_geosearch_fuzzy_test_type(r: ValkeyTestClient, type) -> None:
         set test_result
     } {OK}
     """
-    if_("$::accurate", " set attempt 300 ", "else", " set attempt 30 ")
+    if False:
+        attempt = 300
+    else:
+        attempt = 30
     while_(
         "[incr attempt -1]",
         '            set rv [lindex $regression_vectors $rv_idx]\n            incr rv_idx\n\n            set radius_km 0; set width_km 0; set height_km 0\n            unset -nocomplain debuginfo\n            set srand_seed [clock milliseconds]\n            if {$rv ne {}} {set srand_seed [lindex $rv 0]}\n            lappend debuginfo "srand_seed is $srand_seed"\n            expr {srand($srand_seed)} ; # If you need a reproducible run\n            r del mypoints\n\n            if {[randomInt 10] == 0} {\n                # From time to time use very big radiuses\n                if {$type == "byradius"} {\n                    set radius_km [expr {[randomInt 5000]+10}]\n                } elseif {$type == "bybox"} {\n                    set width_km [expr {[randomInt 5000]+10}]\n                    set height_km [expr {[randomInt 5000]+10}]\n                }\n            } else {\n                # Normally use a few - ~200km radiuses to stress\n                # test the code the most in edge cases.\n                if {$type == "byradius"} {\n                    set radius_km [expr {[randomInt 200]+10}]\n                } elseif {$type == "bybox"} {\n                    set width_km [expr {[randomInt 200]+10}]\n                    set height_km [expr {[randomInt 200]+10}]\n                }\n            }\n            if {$rv ne {}} {\n                set radius_km [lindex $rv 1]\n                set width_km [lindex $rv 1]\n                set height_km [lindex $rv 1]\n            }\n            geo_random_point search_lon search_lat\n            if {$rv ne {}} {\n                set search_lon [lindex $rv 2]\n                set search_lat [lindex $rv 3]\n            }\n            lappend debuginfo "Search area: $search_lon,$search_lat $radius_km $width_km $height_km km"\n            set tcl_result {}\n            set argv {}\n            for {set j 0} {$j < 20000} {incr j} {\n                geo_random_point lon lat\n                lappend argv $lon $lat "place:$j"\n                if {$type == "byradius"} {\n                    if {[pointInCircle $radius_km $lon $lat $search_lon $search_lat]} {\n                        lappend tcl_result "place:$j"\n                    }\n                } elseif {$type == "bybox"} {\n                    if {[pointInRectangle $width_km $height_km $lon $lat $search_lon $search_lat 1]} {\n                        lappend tcl_result "place:$j"\n                    }\n                }\n                lappend debuginfo "place:$j $lon $lat"\n            }\n            r geoadd mypoints {*}$argv\n            if {$type == "byradius"} {\n                set res [lsort [r geosearch mypoints fromlonlat $search_lon $search_lat byradius $radius_km km]]\n            } elseif {$type == "bybox"} {\n                set res [lsort [r geosearch mypoints fromlonlat $search_lon $search_lat bybox $width_km $height_km km]]\n            }\n            set res2 [lsort $tcl_result]\n            set test_result OK\n\n            if {$res != $res2} {\n                set rounding_errors 0\n                set diff [compare_lists $res $res2]\n                foreach place $diff {\n                    lassign [lindex [r geopos mypoints $place] 0] lon lat\n                    set mydist [geo_distance $lon $lat $search_lon $search_lat]\n                    set mydist [expr $mydist/1000]\n                    if {$type == "byradius"} {\n                        if {($mydist / $radius_km) > 0.999} {\n                            incr rounding_errors\n                            continue\n                        }\n                        if {$mydist < [expr {$radius_km*1000}]} {\n                            # This is a false positive for the server since given the\n                            # same points the higher precision calculation provided\n                            # by TCL shows the point within range\n                            incr rounding_errors\n                            continue\n                        }\n                    } elseif {$type == "bybox"} {\n                        # we add 0.1% error for floating point calculation error\n                        if {[pointInRectangle $width_km $height_km $lon $lat $search_lon $search_lat 1.001]} {\n                            incr rounding_errors\n                            continue\n                        }\n                    }\n                }\n\n                # Make sure this is a real error and not a rounidng issue.\n                if {[llength $diff] == $rounding_errors} {\n                    set res $res2; # Error silenced\n                }\n            }\n\n            if {$res != $res2} {\n                set diff [compare_lists $res $res2]\n                puts "*** Possible problem in GEO radius query ***"\n                puts "Valkey: $res"\n                puts "Tcl  : $res2"\n                puts "Diff : $diff"\n                puts [join $debuginfo "\\n"]\n                foreach place $diff {\n                    if {[lsearch -exact $res2 $place] != -1} {\n                        set where "(only in Tcl)"\n                    } else {\n                        set where "(only in Valkey)"\n                    }\n                    lassign [lindex [r geopos mypoints $place] 0] lon lat\n                    set mydist [geo_distance $lon $lat $search_lon $search_lat]\n                    set mydist [expr $mydist/1000]\n                    puts "$place -> [r geopos mypoints $place] $mydist $where"\n                }\n                set test_result FAIL\n            }\n            unset -nocomplain debuginfo\n            if {$test_result ne {OK}} break\n        ',
@@ -2176,7 +2156,10 @@ def test_geosearch_box_edges_fuzzy_test(r: ValkeyTestClient) -> None:
         }
     }
     """
-    if_("$::accurate", " set attempt 300 ", "else", " set attempt 30 ")
+    if False:
+        attempt = 300
+    else:
+        attempt = 30
     while_(
         "[incr attempt -1]",
         '            unset -nocomplain debuginfo\n            set srand_seed [clock milliseconds]\n            lappend debuginfo "srand_seed is $srand_seed"\n            expr {srand($srand_seed)} ; # If you need a reproducible run\n            r del mypoints\n\n            geo_random_point search_lon search_lat\n            set width_m [expr {[randomInt 10000]+10}]\n            set height_m [expr {[randomInt 10000]+10}]\n            set lat_delta [geo_raddeg [expr {$height_m/2/6372797.560856}]]\n            set long_delta_top [geo_raddeg [expr {$width_m/2/6372797.560856/cos([geo_degrad [expr {$search_lat+$lat_delta}]])}]]\n            set long_delta_middle [geo_raddeg [expr {$width_m/2/6372797.560856/cos([geo_degrad $search_lat])}]]\n            set long_delta_bottom [geo_raddeg [expr {$width_m/2/6372797.560856/cos([geo_degrad [expr {$search_lat-$lat_delta}]])}]]\n\n            # Total of 8 points are generated, which are located at each vertex and the center of each side\n            set points(north) [list $search_lon [expr {$search_lat+$lat_delta}]]\n            set points(south) [list $search_lon [expr {$search_lat-$lat_delta}]]\n            set points(east) [list [expr {$search_lon+$long_delta_middle}] $search_lat]\n            set points(west) [list [expr {$search_lon-$long_delta_middle}] $search_lat]\n            set points(north_east) [list [expr {$search_lon+$long_delta_top}] [expr {$search_lat+$lat_delta}]]\n            set points(north_west) [list [expr {$search_lon-$long_delta_top}] [expr {$search_lat+$lat_delta}]]\n            set points(south_east) [list [expr {$search_lon+$long_delta_bottom}] [expr {$search_lat-$lat_delta}]]\n            set points(south_west) [list [expr {$search_lon-$long_delta_bottom}] [expr {$search_lat-$lat_delta}]]\n\n            lappend debuginfo "Search area: geosearch mypoints fromlonlat $search_lon $search_lat bybox $width_m $height_m m"\n            set tcl_result {}\n            foreach name [array names points] {\n                set x [lindex $points($name) 0]\n                set y [lindex $points($name) 1]\n                # If longitude crosses -180° or 180°, we need to convert it.\n                # latitude doesn\'t have this problem, because it\'s scope is -70~70, see geo_random_point\n                if {$x > 180} {\n                    set x [expr {$x-360}]\n                } elseif {$x < -180} {\n                    set x [expr {$x+360}]\n                }\n                r geoadd mypoints $x $y place:$name\n                lappend tcl_result "place:$name"\n                lappend debuginfo "geoadd mypoints $x $y place:$name"\n            }\n\n            set res2 [lsort $tcl_result]\n\n            # make the box larger by two meter in each direction to put the coordinate slightly inside the box.\n            set height_new [expr {$height_m+4}]\n            set width_new [expr {$width_m+4}]\n            set res [lsort [r geosearch mypoints fromlonlat $search_lon $search_lat bybox $width_new $height_new m]]\n            if {$res != $res2} {\n                set diff [compare_lists $res $res2]\n                lappend debuginfo "res: $res, res2: $res2, diff: $diff"\n                fail "place should be found, debuginfo: $debuginfo, height_new: $height_new width_new: $width_new"\n            }\n\n            # The width decreases and the height increases. Only north and south are found\n            set width_new [expr {$width_m-4}]\n            set height_new [expr {$height_m+4}]\n            set res [lsort [r geosearch mypoints fromlonlat $search_lon $search_lat bybox $width_new $height_new m]]\n            if {$res != {place:north place:south}} {\n                lappend debuginfo "res: $res"\n                fail "place should not be found, debuginfo: $debuginfo, height_new: $height_new width_new: $width_new"\n            }\n\n            # The width increases and the height decreases. Only ease and west are found\n            set width_new [expr {$width_m+4}]\n            set height_new [expr {$height_m-4}]\n            set res [lsort [r geosearch mypoints fromlonlat $search_lon $search_lat bybox $width_new $height_new m]]\n            if {$res != {place:east place:west}} {\n                lappend debuginfo "res: $res"\n                fail "place should not be found, debuginfo: $debuginfo, height_new: $height_new width_new: $width_new"\n            }\n\n            # make the box smaller by two meter in each direction to put the coordinate slightly outside the box.\n            set height_new [expr {$height_m-4}]\n            set width_new [expr {$width_m-4}]\n            set res [r geosearch mypoints fromlonlat $search_lon $search_lat bybox $width_new $height_new m]\n            if {$res != ""} {\n                lappend debuginfo "res: $res"\n                fail "place should not be found, debuginfo: $debuginfo, height_new: $height_new width_new: $width_new"\n            }\n            unset -nocomplain debuginfo\n        ',
@@ -2188,10 +2171,6 @@ def test_geosearch_box_edges_fuzzy_test(r: ValkeyTestClient) -> None:
 
 def assert_(*args):
     raise NotImplementedError("assert_")
-
-
-def if_(*args):
-    raise NotImplementedError("if_")
 
 
 def lassign(*args):

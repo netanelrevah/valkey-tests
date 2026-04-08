@@ -127,7 +127,6 @@ def test_monitor_disallow_inside_rm_call(r: ValkeyTestClient) -> None:
     } {*ERR*DENY BLOCKING*}
     """
     e = ""
-    e = None
     try:
         e = r.run("do_rm_call", "monitor")
     except Exception as _catch_err:
@@ -146,7 +145,6 @@ def test_subscribe_disallow_inside_rm_call(r: ValkeyTestClient) -> None:
     } {*ERR*DENY BLOCKING*}
     """
     e = ""
-    e = None
     try:
         e = r.run("do_rm_call", "subscribe", "x")
     except Exception as _catch_err:
@@ -309,7 +307,7 @@ def test_busy_module_command_call_type(r: ValkeyTestClient, call_type) -> None:
     time.sleep(100 / 1000)
     with pytest.raises(Exception, match=".*BUSY\\ Slow\\ module\\ operation.*"):
         r.run("ping")
-    assert_morethan_equal(expr(clock("clicks", "-milliseconds"), "-$start"), busy_time_limit)
+    assert expr(clock("clicks", "-milliseconds"), "-$start") >= busy_time_limit
     r.run("stop_slow_fg_command")
     wait_for_condition(
         50, 100, lambda: catch("r ping", "e") == 0, lambda: fail("Failed waiting for busy command to end")
@@ -326,7 +324,7 @@ def test_busy_module_command_call_type(r: ValkeyTestClient, call_type) -> None:
     rd.run("flush")
     time.sleep(10 / 1000)
     r.run("ping")
-    assert_morethan_equal(expr(clock("clicks", "-milliseconds"), "-$start"), 200)
+    assert expr(clock("clicks", "-milliseconds"), "-$start") >= 200
     rd.run("read")
     rd.run("close")
     r.run("config", "set", "busy-reply-threshold", old_time_limit)
@@ -394,7 +392,7 @@ def test_rm_call_from_blocked_client_1(r: ValkeyTestClient) -> None:
     )
     with pytest.raises(Exception, match=".*BUSY\\ Slow\\ module\\ operation.*"):
         r.run("ping")
-    assert_morethan_equal(expr(clock("clicks", "-milliseconds"), "-$start"), busy_time_limit)
+    assert expr(clock("clicks", "-milliseconds"), "-$start") >= busy_time_limit
     r.run("set_slow_bg_operation", 0)
     wait_for_condition(
         50,
@@ -429,7 +427,6 @@ def test_blocked_client_reaches_client_output_buffer_limit(r: ValkeyTestClient) 
     r.run("hset", "hash", "boom", string("repeat", "x", 50000))
     r.run("config", "set", "client-output-buffer-limit", "normal 100000 0 0")
     r.run("client", "setname", "myclient")
-    e = None
     try:
         e = r.run("do_bg_rm_call", "hgetall", "hash")
     except Exception as _catch_err:
@@ -591,10 +588,6 @@ def test_unload_the_module_blockedclient(r: ValkeyTestClient) -> None:
 
 
 # --- stubs for unimplemented TCL helpers ---
-
-
-def assert_morethan_equal(*args):
-    raise NotImplementedError("assert_morethan_equal")
 
 
 def assert_no_match(*args):

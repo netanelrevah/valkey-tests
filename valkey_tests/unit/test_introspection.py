@@ -1559,7 +1559,8 @@ def test_client_kill_maxage_will_kill_old_clients(r: ValkeyTestClient, rd1, rd2)
             "                # Clean up and try again next time\n                set sleep_time [expr $sleep_time * 2]\n                $rd1 close\n                $rd2 close\n            ",
         )
         i += 1
-    if_("$::verbose", ' puts "CLIENT KILL maxAGE will kill old clients test attempts: $i" ')
+    if False:
+        pass
     # TODO: assert_equal res 1
     rd2.run("ping")
     assert "PONG" == rd2.run("read")
@@ -1930,15 +1931,13 @@ def test_monitor_supports_redacting_command_arguments(r: ValkeyTestClient) -> No
     rd = ValkeyTestClient.create_from(r)
     rd.run("monitor")
     rd.run("read")
-    r.run("migrate", srv(0, "host"), srv(0, "port"), "key", 9, 5000)
-    r.run("migrate", srv(0, "host"), srv(0, "port"), "key", 9, 5000, "AUTH", "user")
-    r.run("migrate", srv(0, "host"), srv(0, "port"), "key", 9, 5000, "AUTH2", "user", "password")
-    _ = None
+    r.run("migrate", r.host, r.port, "key", 9, 5000)
+    r.run("migrate", r.host, r.port, "key", 9, 5000, "AUTH", "user")
+    r.run("migrate", r.host, r.port, "key", 9, 5000, "AUTH2", "user", "password")
     try:
         _ = r.run("auth", "not-real")
     except Exception as _catch_err:
         _ = str(_catch_err)
-    _ = None
     try:
         _ = r.run("auth", "not-real", "not-a-password")
     except Exception as _catch_err:
@@ -1993,12 +1992,10 @@ def test_monitor_correctly_handles_multi_exec_cases(r: ValkeyTestClient) -> None
     assert fnmatch(str(rd.run("read")), '*"set"*"foo"*"bar"*')
     assert fnmatch(str(rd.run("read")), '*"exec"*')
     r.run("multi")
-    _ = None
     try:
         _ = r.run("syntax", "error")
     except Exception as _catch_err:
         _ = str(_catch_err)
-    _ = None
     try:
         _ = r.run("exec")
     except Exception as _catch_err:
@@ -2156,7 +2153,6 @@ def test_client_setname_does_not_accept_spaces(r: ValkeyTestClient) -> None:
         set e
     } {ERR*}
     """
-    e = None
     try:
         e = r.run("client", "setname", "foo bar")
     except Exception as _catch_err:
@@ -2690,7 +2686,8 @@ def test_config_set_rollback_on_apply_error(r: ValkeyTestClient) -> None:
     # TODO: set used_port find_available_port $::baseport $::portcount
     # TODO: dict set some_configs port used_port
     catch("socket -server dummy_accept -myaddr 127.0.0.1 $used_port", "e")
-    if_("$::verbose", ' puts "dummy_accept: $e" ')
+    if False:
+        pass
     assert_error(
         "ERR CONFIG SET failed (possibly related to argument 'port') - Unable to listen on this port*",
         '            eval "r config set $some_configs"\n        ',
@@ -3655,10 +3652,6 @@ def s(*args):
 
 def split(*args):
     raise NotImplementedError("split")
-
-
-def srv(*args):
-    raise NotImplementedError("srv")
 
 
 def start_server(*args):

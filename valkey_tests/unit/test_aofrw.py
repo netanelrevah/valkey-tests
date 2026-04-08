@@ -85,9 +85,9 @@ def test_aof_rewrite_during_write_load_rdb_preamble_rdbpre(r: ValkeyTestClient, 
     }
     """
     r.run("flushall")
-    master = srv(0, "client")
-    master_host = srv(0, "host")
-    master_port = srv(0, "port")
+    master = ValkeyTestClient.create_from(r)
+    master_host = r.host
+    master_port = r.port
     load_handle0 = start_write_load(master_host, master_port, 10)
     load_handle1 = start_write_load(master_host, master_port, 10)
     load_handle2 = start_write_load(master_host, master_port, 10)
@@ -348,7 +348,6 @@ def test_bgrewriteaof_is_refused_if_already_in_progress(r: ValkeyTestClient) -> 
     """
     r.run("config", "set", "aof-use-rdb-preamble", "yes")
     r.run("config", "set", "rdb-key-save-delay", 10000000)
-    e = None
     try:
         r.run("bgrewriteaof")
         e = r.run("bgrewriteaof")

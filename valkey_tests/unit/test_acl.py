@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841, RUF043, ANN002, ANN201
+# ruff: noqa: PLR2004, F841, RUF043, ANN001, ANN002, ANN201
 import time
 from fnmatch import fnmatch
 
@@ -43,7 +43,6 @@ def test_usernames_can_not_contain_spaces_or_null_characters(r: ValkeyTestClient
         set err
     } {*Usernames can't contain spaces or null characters*}
     """
-    err = None
     try:
         err = r.run("ACL", "setuser", "a a")
     except Exception as _catch_err:
@@ -60,7 +59,6 @@ def test_new_users_start_disabled(r: ValkeyTestClient) -> None:
     } {*WRONGPASS*}
     """
     r.run("ACL", "setuser", "newuser", ">passwd1")
-    err = None
     try:
         err = r.run("AUTH", "newuser", "passwd1")
     except Exception as _catch_err:
@@ -94,19 +92,16 @@ def test_only_the_set_of_correct_passwords_work(r: ValkeyTestClient) -> None:
     } {*WRONGPASS*}
     """
     r.run("ACL", "setuser", "newuser", ">passwd2")
-    e = None
     try:
         e = r.run("AUTH", "newuser", "passwd1")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert e == "OK"
-    e = None
     try:
         e = r.run("AUTH", "newuser", "passwd2")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert e == "OK"
-    e = None
     try:
         e = r.run("AUTH", "newuser", "passwd3")
     except Exception as _catch_err:
@@ -123,7 +118,6 @@ def test_it_is_possible_to_remove_passwords_from_the_set_of_valid_ones(r: Valkey
     } {*WRONGPASS*}
     """
     r.run("ACL", "setuser", "newuser", "<passwd1")
-    e = None
     try:
         e = r.run("AUTH", "newuser", "passwd1")
     except Exception as _catch_err:
@@ -140,7 +134,6 @@ def test_test_password_hashes_can_be_added(r: ValkeyTestClient) -> None:
     }
     """
     r.run("ACL", "setuser", "newuser", "#34344e4d60c2b6d639b7bd22e18f2b0b91bc34bf0ac5f9952744435093cfb4e6")
-    e = None
     try:
         e = r.run("AUTH", "newuser", "passwd4")
     except Exception as _catch_err:
@@ -158,12 +151,10 @@ def test_test_password_hashes_validate_input(r: ValkeyTestClient) -> None:
         set e
     } {*Error in ACL SETUSER modifier*}
     """
-    e = None
     try:
         e = r.run("ACL", "setuser", "newuser", "#34344e4d60c2b6d639b7bd22e18f2b0b91bc34bf0ac5f9952744435093cfb4e")
     except Exception as _catch_err:
         e = str(_catch_err)
-    e = None
     try:
         e = r.run("ACL", "setuser", "newuser", "#34344e4d60c2b6d639b7bd22e18f2b0b91bc34bf0ac5f9952744435093cfb4eq")
     except Exception as _catch_err:
@@ -204,7 +195,6 @@ def test_by_default_users_are_not_able_to_access_any_command(r: ValkeyTestClient
         set e
     } {*NOPERM*set*}
     """
-    e = None
     try:
         e = r.run("SET", "foo", "bar")
     except Exception as _catch_err:
@@ -221,7 +211,6 @@ def test_by_default_users_are_not_able_to_access_any_key(r: ValkeyTestClient) ->
     } {*NOPERM*key*}
     """
     r.run("ACL", "setuser", "newuser", "+set")
-    e = None
     try:
         e = r.run("SET", "foo", "bar")
     except Exception as _catch_err:
@@ -243,7 +232,6 @@ def test_it_s_possible_to_allow_the_access_of_a_subset_of_keys(r: ValkeyTestClie
     r.run("ACL", "setuser", "newuser", "allcommands", "~foo:*", "~bar:*")
     r.run("SET", "foo:1", "a")
     r.run("SET", "bar:2", "b")
-    e = None
     try:
         e = r.run("SET", "zap:3", "c")
     except Exception as _catch_err:
@@ -267,7 +255,6 @@ def test_by_default_only_default_user_is_able_to_publish_to_any_channel(r: Valke
     r.run("PUBLISH", "foo", "bar")
     r.run("ACL", "setuser", "psuser", "on", ">pspass", "+acl", "+client", "+@pubsub")
     r.run("AUTH", "psuser", "pspass")
-    e = None
     try:
         e = r.run("PUBLISH", "foo", "bar")
     except Exception as _catch_err:
@@ -288,7 +275,6 @@ def test_by_default_only_default_user_is_not_able_to_publish_to_any_shard_channe
     r.run("AUTH", "default", "pwd")
     r.run("SPUBLISH", "foo", "bar")
     r.run("AUTH", "psuser", "pspass")
-    e = None
     try:
         e = r.run("SPUBLISH", "foo", "bar")
     except Exception as _catch_err:
@@ -324,7 +310,6 @@ def test_by_default_only_default_user_is_able_to_subscribe_to_any_channel(r: Val
     rd.run("AUTH", "psuser", "pspass")
     rd.run("read")
     rd.run("SUBSCRIBE", "foo")
-    e = None
     try:
         e = rd.run("read")
     except Exception as _catch_err:
@@ -361,7 +346,6 @@ def test_by_default_only_default_user_is_able_to_subscribe_to_any_shard_channel(
     rd.run("AUTH", "psuser", "pspass")
     rd.run("read")
     rd.run("SSUBSCRIBE", "foo")
-    e = None
     try:
         e = rd.run("read")
     except Exception as _catch_err:
@@ -398,7 +382,6 @@ def test_by_default_only_default_user_is_able_to_subscribe_to_any_pattern(r: Val
     rd.run("AUTH", "psuser", "pspass")
     rd.run("read")
     rd.run("PSUBSCRIBE", "bar*")
-    e = None
     try:
         e = rd.run("read")
     except Exception as _catch_err:
@@ -420,7 +403,6 @@ def test_it_s_possible_to_allow_publishing_to_a_subset_of_channels(r: ValkeyTest
     r.run("ACL", "setuser", "psuser", "resetchannels", "&foo:1", "&bar:*")
     assert "0" == r.run("PUBLISH", "foo:1", "somemessage")
     assert "0" == r.run("PUBLISH", "bar:2", "anothermessage")
-    e = None
     try:
         e = r.run("PUBLISH", "zap:3", "nosuchmessage")
     except Exception as _catch_err:
@@ -441,7 +423,6 @@ def test_it_s_possible_to_allow_publishing_to_a_subset_of_shard_channels(r: Valk
     r.run("ACL", "setuser", "psuser", "resetchannels", "&foo:1", "&bar:*")
     assert "0" == r.run("SPUBLISH", "foo:1", "somemessage")
     assert "0" == r.run("SPUBLISH", "bar:2", "anothermessage")
-    e = None
     try:
         e = r.run("SPUBLISH", "zap:3", "nosuchmessage")
     except Exception as _catch_err:
@@ -485,7 +466,6 @@ def test_validate_subset_of_channels_is_prefixed_with_resetchannels_flag(r: Valk
     )
     r.run("AUTH", "hpuser", "pass")
     assert "0" == r.run("PUBLISH", "foo", "bar")
-    e = None
     try:
         e = r.run("PUBLISH", "bar", "game")
     except Exception as _catch_err:
@@ -550,7 +530,6 @@ def test_it_s_possible_to_allow_subscribing_to_a_subset_of_channels(r: ValkeyTes
     rd.run("SUBSCRIBE", "bar:2")
     assert fnmatch(str(rd.run("read")), "subscribe bar:2 2")
     rd.run("SUBSCRIBE", "zap:3")
-    e = None
     try:
         e = rd.run("read")
     except Exception as _catch_err:
@@ -581,7 +560,6 @@ def test_it_s_possible_to_allow_subscribing_to_a_subset_of_shard_channels(r: Val
     rd.run("SSUBSCRIBE", "bar:2")
     assert fnmatch(str(rd.run("read")), "ssubscribe bar:2 2")
     rd.run("SSUBSCRIBE", "zap:3")
-    e = None
     try:
         e = rd.run("read")
     except Exception as _catch_err:
@@ -612,7 +590,6 @@ def test_it_s_possible_to_allow_subscribing_to_a_subset_of_channel_patterns(r: V
     rd.run("PSUBSCRIBE", "bar:*")
     assert fnmatch(str(rd.run("read")), "psubscribe bar:\\* 2")
     rd.run("PSUBSCRIBE", "bar:baz")
-    e = None
     try:
         e = rd.run("read")
     except Exception as _catch_err:
@@ -836,7 +813,6 @@ def test_acls_can_exclude_single_commands(r: ValkeyTestClient) -> None:
     """
     r.run("ACL", "setuser", "newuser", "-ping")
     r.run("INCR", "mycounter")
-    e = None
     try:
         e = r.run("PING")
     except Exception as _catch_err:
@@ -861,7 +837,6 @@ def test_acls_can_include_or_exclude_whole_classes_of_commands(r: ValkeyTestClie
     r.run("SADD", "myset", "a", "b", "c")
     r.run("ACL", "setuser", "newuser", "+@all", "-@string")
     r.run("SADD", "myset", "a", "b", "c")
-    e = None
     try:
         e = r.run("SET", "foo", "bar")
     except Exception as _catch_err:
@@ -891,7 +866,6 @@ def test_acls_can_include_single_subcommands(r: ValkeyTestClient) -> None:
     assert fnmatch(str(cmdstr), "+@all*-client*+client|setname*")
     r.run("CLIENT", "ID")
     r.run("CLIENT", "SETNAME", "foo")
-    e = None
     try:
         e = r.run("CLIENT", "KILL", "type", "master")
     except Exception as _catch_err:
@@ -916,7 +890,6 @@ def test_acls_can_exclude_single_subcommands_case_1(r: ValkeyTestClient) -> None
     assert "+@all -client|kill" == cmdstr
     r.run("CLIENT", "ID")
     r.run("CLIENT", "SETNAME", "foo")
-    e = None
     try:
         e = r.run("CLIENT", "KILL", "type", "master")
     except Exception as _catch_err:
@@ -941,7 +914,6 @@ def test_acls_can_exclude_single_subcommands_case_2(r: ValkeyTestClient) -> None
     assert fnmatch(str(cmdstr), "*+config*")
     assert fnmatch(str(cmdstr), "*-config|set*")
     r.run("CONFIG", "GET", "loglevel")
-    e = None
     try:
         e = r.run("CONFIG", "SET", "loglevel", "debug")
     except Exception as _catch_err:
@@ -958,7 +930,6 @@ def test_acls_cannot_include_a_subcommand_with_a_specific_arg(r: ValkeyTestClien
     } {*Allowing first-arg of a subcommand is not supported*}
     """
     r.run("ACL", "setuser", "newuser", "+@all", "-config|get")
-    e = None
     try:
         e = r.run("ACL", "setuser", "newuser", "+config|get|appendonly")
     except Exception as _catch_err:
@@ -977,13 +948,11 @@ def test_acls_cannot_exclude_or_include_a_container_commands_with_a_specific_arg
     } {}
     """
     r.run("ACL", "setuser", "newuser", "+@all", "+config|get")
-    e = None
     try:
         e = r.run("ACL", "setuser", "newuser", "+@all", "+config|asdf")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*Unknown command or category name in ACL*")
-    e = None
     try:
         e = r.run("ACL", "setuser", "newuser", "+@all", "-config|asdf")
     except Exception as _catch_err:
@@ -1002,13 +971,11 @@ def test_acls_cannot_exclude_or_include_a_container_command_with_two_args(r: Val
     } {}
     """
     r.run("ACL", "setuser", "newuser", "+@all", "+config|get")
-    e = None
     try:
         e = r.run("ACL", "setuser", "newuser", "+@all", "+get|key1|key2")
     except Exception as _catch_err:
         e = str(_catch_err)
     assert fnmatch(str(e), "*Unknown command or category name in ACL*")
-    e = None
     try:
         e = r.run("ACL", "setuser", "newuser", "+@all", "-get|key1|key2")
     except Exception as _catch_err:
@@ -1046,7 +1013,6 @@ def test_acls_can_block_select_of_all_but_a_specific_db(r: ValkeyTestClient) -> 
     cmdstr = r.run("ACL", "getuser", "newuser")["commands"]
     assert fnmatch(str(cmdstr), "*+select|0*")
     r.run("SELECT", 0)
-    e = None
     try:
         e = r.run("SELECT", 1)
     except Exception as _catch_err:
@@ -1073,7 +1039,6 @@ def test_acls_can_block_all_debug_subcommands_except_one(r: ValkeyTestClient) ->
     assert fnmatch(str(cmdstr), "*+debug|object*")
     r.run("INCR", "key")
     r.run("DEBUG", "OBJECT", "key")
-    e = None
     try:
         e = r.run("DEBUG", "SEGFAULT")
     except Exception as _catch_err:
@@ -1950,7 +1915,6 @@ def test_when_default_user_is_off_new_connections_are_not_authenticated(r: Valke
     } {*NOAUTH*}
     """
     r.run("ACL", "setuser", "default", "off")
-    e = None
     try:
         e = rd1 = ValkeyTestClient.create_from(r)
     except Exception as _catch_err:
@@ -1996,7 +1960,6 @@ def test_when_an_authentication_chain_is_used_in_the_hello_cmd_the_last_auth_cmd
     r.run("ACL", "setuser", "secure-user2", ">supass", "on", "+@all")
     r.run("HELLO", 2, "AUTH", "secure-user", "pass", "AUTH", "secure-user2", "supass", "AUTH", "secure-user1", "supass")
     assert r.run("ACL", "whoami") == "secure-user1"
-    e = None
     try:
         e = r.run(
             "HELLO", 2, "AUTH", "secure-user", "supass", "AUTH", "secure-user2", "supass", "AUTH", "secure-user", "pass"
@@ -2019,7 +1982,6 @@ def test_when_a_setname_chain_is_used_in_the_hello_cmd_the_last_setname_cmd_has_
     """
     r.run("HELLO", 2, "setname", "client1", "setname", "client2", "setname", "client3", "setname", "client4")
     assert r.run("client", "getname") == "client4"
-    e = None
     try:
         e = r.run("HELLO", 2, "setname", "client5", "setname", "client6", "setname", "client name")
     except Exception as _catch_err:
@@ -2040,7 +2002,6 @@ def test_when_authentication_fails_in_the_hello_cmd_the_client_setname_should_no
     }
     """
     r.run("client", "setname", "client0")
-    e = None
     try:
         e = r.run("HELLO", 2, "AUTH", "user", "pass", "setname", "client1")
     except Exception as _catch_err:
@@ -2056,7 +2017,6 @@ def test_acl_help_should_not_have_unexpected_options(r: ValkeyTestClient) -> Non
         assert_match "*wrong number of arguments for 'acl|help' command" $e
     }
     """
-    e = None
     try:
         e = r.run("ACL", "help", "xxx")
     except Exception as _catch_err:
@@ -2078,7 +2038,6 @@ def test_delete_a_user_that_the_client_doesn_t_use(r: ValkeyTestClient) -> None:
     assert r.run("ping") == "PONG"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_delete_a_user_that_the_client_is_using(r: ValkeyTestClient) -> None:
     """
     test {Delete a user that the client is using} {
@@ -2094,8 +2053,11 @@ def test_delete_a_user_that_the_client_is_using(r: ValkeyTestClient) -> None:
     r.run("ACL", "setuser", "using", "on", "+acl", ">passwd")
     r.run("AUTH", "using", "passwd")
     assert r.run("ACL", "deluser", "using") == 1
-    catch("[r ping]", "e")
-    # TODO: assert_match "*I/O error*" e
+    try:
+        e = r.run("ping")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*I/O error*")
 
 
 def test_acl_genpass_command_failed_test(r: ValkeyTestClient) -> None:
@@ -2107,12 +2069,10 @@ def test_acl_genpass_command_failed_test(r: ValkeyTestClient) -> None:
         assert_match "*ACL GENPASS argument must be the number*" $err2
     }
     """
-    err1 = None
     try:
         err1 = r.run("ACL", "genpass", -236)
     except Exception as _catch_err:
         err1 = str(_catch_err)
-    err2 = None
     try:
         err2 = r.run("ACL", "genpass", 5000)
     except Exception as _catch_err:
@@ -2128,7 +2088,6 @@ def test_default_user_can_not_be_removed(r: ValkeyTestClient) -> None:
         set err
     } {ERR The 'default' user cannot be removed}
     """
-    err = None
     try:
         err = r.run("ACL", "deluser", "default")
     except Exception as _catch_err:
@@ -2143,7 +2102,6 @@ def test_acl_load_non_existing_configured_acl_file(r: ValkeyTestClient) -> None:
         set err
     } {*instance is not configured to use an ACL file*}
     """
-    err = None
     try:
         err = r.run("ACL", "load")
     except Exception as _catch_err:
@@ -2381,7 +2339,6 @@ def test_bob_just_execute_set_and_acl_command(r: ValkeyTestClient) -> None:
     r.run("AUTH", "bob", "bob")
     assert "bob" == r.run("acl", "whoami")
     assert "3" == r.run("sadd", "set", 1, 2, 3)
-    e = None
     try:
         e = r.run("SET", "key", "value")
     except Exception as _catch_err:
@@ -2437,7 +2394,6 @@ def test_acl_load_only_disconnects_affected_clients(r: ValkeyTestClient) -> None
     r.run("ACL", "LOAD")
     r.run("PUBLISH", "test1", "test-message")
     assert fnmatch(str(rd1.run("read")), "*test-message*")
-    e = None
     try:
         e = rd2.run("read")
     except Exception as _catch_err:
@@ -2495,7 +2451,6 @@ def test_acl_load_disconnects_clients_of_deleted_users(r: ValkeyTestClient) -> N
     r.run("ACL", "LOAD")
     r.run("PUBLISH", "test", "test-message")
     assert fnmatch(str(rd1.run("read")), "*test-message*")
-    e = None
     try:
         e = rd2.run("read")
     except Exception as _catch_err:
@@ -2530,7 +2485,6 @@ def test_acl_load_and_save(r: ValkeyTestClient) -> None:
     r.run("SET", "key", "value")
     r.run("AUTH", "eve", "eve")
     r.run("GET", "key")
-    e = None
     try:
         e = r.run("SET", "key", "value")
     except Exception as _catch_err:
@@ -2562,7 +2516,6 @@ def test_acl_load_and_save_with_restricted_channels(r: ValkeyTestClient) -> None
     r.run("ACL", "load")
     r.run("AUTH", "harry", "anything")
     r.run("publish", "test", "bar")
-    e = None
     try:
         e = r.run("publish", "test1", "bar")
     except Exception as _catch_err:
@@ -2651,7 +2604,6 @@ def test_single_channel_is_not_valid_with_allchannels(r: ValkeyTestClient) -> No
     } {*start with an empty list of channels*}
     """
     r.run("CONFIG", "set", "acl-pubsub-default", "allchannels")
-    err = None
     try:
         err = r.run("ACL", "setuser", "onechannel", "&test")
     except Exception as _catch_err:
@@ -2702,7 +2654,6 @@ def test_default_load_from_config_file_without_channel_permission_default_user_c
         set e
     } {*NOPERM*channel*}
     """
-    e = None
     try:
         e = r.run("SUBSCRIBE", "foo")
     except Exception as _catch_err:
@@ -2769,7 +2720,6 @@ def test_test_loading_an_acl_file_with_duplicate_users(r: ValkeyTestClient) -> N
     # TODO: exec cp -f tests/assets/user.acl server_path
     corruption = "\nuser alice on nopass ~* -@all"
     # TODO: exec echo corruption >> server_path /user.acl
-    err = None
     try:
         err = r.run("ACL", "LOAD")
     except Exception as _catch_err:
@@ -2805,7 +2755,6 @@ def test_test_loading_an_acl_file_with_duplicate_default_user(r: ValkeyTestClien
     # TODO: exec cp -f tests/assets/user.acl server_path
     corruption = "\nuser default on nopass ~* -@all"
     # TODO: exec echo corruption >> server_path /user.acl
-    err = None
     try:
         err = r.run("ACL", "LOAD")
     except Exception as _catch_err:
@@ -2946,7 +2895,7 @@ set primary_port srv 0 port
 
 
 @pytest.mark.xfail(reason="not implemented")
-def test_test_acl_load_works_on_primary(r: ValkeyTestClient) -> None:
+def test_test_acl_load_works_on_primary(r: ValkeyTestClient, primary) -> None:
     """
     test "Test ACL LOAD works on primary" {
         exec cp -f tests/assets/user.acl $server_path
@@ -2957,10 +2906,10 @@ def test_test_acl_load_works_on_primary(r: ValkeyTestClient) -> None:
     }
     """
     # TODO: exec cp -f tests/assets/user.acl server_path
-    # TODO: $primary ACL setuser harry on nopass resetchannels &test +@all ~*
-    # TODO: $primary ACL save
-    # TODO: $primary ACL load
-    # TODO: $primary AUTH harry anything
+    primary.run("ACL", "setuser", "harry", "on", "nopass", "resetchannels", "&test", "+@all", "~*")
+    primary.run("ACL", "save")
+    primary.run("ACL", "load")
+    primary.run("AUTH", "harry", "anything")
 
 
 """

@@ -755,7 +755,8 @@ def test_client_tracking_don_t_cause_eviction_feedback_loop(r: ValkeyTestClient,
     limit = expr("$used - 40000")
     r.run("config", "set", "maxmemory", limit)
     evicted = s("evicted_keys")
-    if_("$::verbose", ' puts "evicted: $evicted" ')
+    if False:
+        pass
     assert_range(r.run("dbsize"), 200, 300)
     assert_range(evicted, 10, 50)
     foreach(
@@ -764,7 +765,8 @@ def test_client_tracking_don_t_cause_eviction_feedback_loop(r: ValkeyTestClient,
         "            $rd read ;# make sure we have some invalidation message waiting\n            $rd close\n        ",
     )
     evicted = s("evicted_keys")
-    if_("$::verbose", ' puts "evicted: $evicted" ')
+    if False:
+        pass
 
 
 pytestmark = [pytest.mark.maxmemory, pytest.mark.external_skip]

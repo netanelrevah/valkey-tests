@@ -1,4 +1,5 @@
 # ruff: noqa: F841, ANN002, ANN201
+from fnmatch import fnmatch
 
 import pytest
 
@@ -140,7 +141,6 @@ def test_config_set_commands_enum_flags(r: ValkeyTestClient) -> None:
     assert r.run("config", "get", "moduleconfigs.flags") == "moduleconfigs.flags {five two}"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_immutable_flag_works_properly_and_rejected_strings_dont_leak(r: ValkeyTestClient) -> None:
     """
     test {Immutable flag works properly and rejected strings dont leak} {
@@ -151,13 +151,18 @@ def test_immutable_flag_works_properly_and_rejected_strings_dont_leak(r: ValkeyT
         assert_match {*Cannot set string to 'rejectisfreed'*} $e
     }
     """
-    catch("[r config set moduleconfigs.immutable_bool yes]", "e")
-    # TODO: assert_match {*can't set immutable config*} e
-    catch("[r config set moduleconfigs.string rejectisfreed]", "e")
-    # TODO: assert_match {*Cannot set string to 'rejectisfreed'*} e
+    try:
+        e = r.run("config", "set", "moduleconfigs.immutable_bool", "yes")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*can't set immutable config*")
+    try:
+        e = r.run("config", "set", "moduleconfigs.string", "rejectisfreed")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*Cannot set string to 'rejectisfreed'*")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_numeric_limits_work_properly(r: ValkeyTestClient) -> None:
     """
     test {Numeric limits work properly} {
@@ -170,15 +175,23 @@ def test_numeric_limits_work_properly(r: ValkeyTestClient) -> None:
         assert_match {*argument must be between*} $e
     }
     """
-    catch("[r config set moduleconfigs.memory_numeric 200gb]", "e")
-    # TODO: assert_match {*argument must be between*} e
-    catch("[r config set moduleconfigs.memory_numeric -5]", "e")
-    # TODO: assert_match {*argument must be a memory value*} e
-    catch("[r config set moduleconfigs.numeric -10]", "e")
-    # TODO: assert_match {*argument must be between*} e
+    try:
+        e = r.run("config", "set", "moduleconfigs.memory_numeric", "200gb")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*argument must be between*")
+    try:
+        e = r.run("config", "set", "moduleconfigs.memory_numeric", -5)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*argument must be a memory value*")
+    try:
+        e = r.run("config", "set", "moduleconfigs.numeric", -10)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*argument must be between*")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_enums_only_able_to_be_set_to_passed_in_values(r: ValkeyTestClient) -> None:
     """
     test {Enums only able to be set to passed in values} {
@@ -187,8 +200,11 @@ def test_enums_only_able_to_be_set_to_passed_in_values(r: ValkeyTestClient) -> N
         assert_match {*must be one of the following*} $e
     }
     """
-    catch("[r config set moduleconfigs.enum asdf]", "e")
-    # TODO: assert_match {*must be one of the following*} e
+    try:
+        e = r.run("config", "set", "moduleconfigs.enum", "asdf")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*must be one of the following*")
 
 
 def test_test_blocking_of_config_registration_and_load_outside_of_onload(r: ValkeyTestClient) -> None:
@@ -258,7 +274,6 @@ def test_test_loadex_functionality(r: ValkeyTestClient) -> None:
     assert r.run("config", "get", "moduleconfigs.numeric") == "moduleconfigs.numeric -1"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_apply_function_works(r: ValkeyTestClient) -> None:
     """
     test {apply function works} {
@@ -272,11 +287,17 @@ def test_apply_function_works(r: ValkeyTestClient) -> None:
         r module unload moduleconfigs
     }
     """
-    catch("[r config set moduleconfigs.mutable_bool yes]", "e")
-    # TODO: assert_match {*Bool configs*} e
+    try:
+        e = r.run("config", "set", "moduleconfigs.mutable_bool", "yes")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*Bool configs*")
     assert r.run("config", "get", "moduleconfigs.mutable_bool") == "moduleconfigs.mutable_bool no"
-    catch("[r config set moduleconfigs.memory_numeric 1000 moduleconfigs.numeric 1000]", "e")
-    # TODO: assert_match {*cannot equal*} e
+    try:
+        e = r.run("config", "set", "moduleconfigs.memory_numeric", 1000, "moduleconfigs.numeric", 1000)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*cannot equal*")
     assert r.run("config", "get", "moduleconfigs.memory_numeric") == "moduleconfigs.memory_numeric 2097152"
     assert r.run("config", "get", "moduleconfigs.numeric") == "moduleconfigs.numeric -1"
     r.run("module", "unload", "moduleconfigs")

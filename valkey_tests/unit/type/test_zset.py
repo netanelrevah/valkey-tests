@@ -1,5 +1,4 @@
 # ruff: noqa: PLR2004, F841, RUF043, ANN001, ANN002, ANN201
-
 from fnmatch import fnmatch
 
 import pytest
@@ -1949,7 +1948,6 @@ def test_zmscore_retrieve_requires_one_or_more_members(r: ValkeyTestClient) -> N
     r.run("del", "zmscoretest")
     r.run("zadd", "zmscoretest", 10, "x")
     r.run("zadd", "zmscoretest", 20, "y")
-    e = None
     try:
         e = r.run("zmscore", "zmscoretest")
     except Exception as _catch_err:
@@ -3027,13 +3025,11 @@ def test_zrangestore_invalid_syntax(r: ValkeyTestClient) -> None:
         assert_match "*syntax*" $err
     }
     """
-    err = None
     try:
         err = r.run("zrangestore", "z2{t}", "z1{t}", 0, -1, "limit", 1, 2)
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*syntax*")
-    err = None
     try:
         err = r.run("zrangestore", "z2{t}", "z1{t}", 0, -1, "WITHSCORES")
     except Exception as _catch_err:
@@ -3102,25 +3098,21 @@ def test_zrange_invalid_syntax(r: ValkeyTestClient) -> None:
         assert_match "*syntax*" $err
     }
     """
-    err = None
     try:
         err = r.run("zrange", "z1{t}", 0, -1, "limit", 1, 2)
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*syntax*")
-    err = None
     try:
         err = r.run("zrange", "z1{t}", 0, -1, "BYLEX", "WITHSCORES")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*syntax*")
-    err = None
     try:
         err = r.run("zrevrange", "z1{t}", 0, -1, "BYSCORE")
     except Exception as _catch_err:
         err = str(_catch_err)
     assert fnmatch(str(err), "*syntax*")
-    err = None
     try:
         err = r.run("zrangebyscore", "z1{t}", 0, -1, "REV")
     except Exception as _catch_err:
@@ -3454,7 +3446,7 @@ def test_zrandmember_with_count_type(r: ValkeyTestClient, type, contents) -> Non
     assert len(res) == 2002
     check_member_and_score(mydict, res)
     res = r.run("zrandmember", "myzset", -1000)
-    assert_lessthan(chi_square_value(res), 40)
+    assert chi_square_value(res) < 40
     check_member(mydict, res)
     unset("-nocomplain", "auxset")
     iterations = 1000
@@ -3729,10 +3721,6 @@ def array(*args):
 
 def assert_encoding(*args):
     raise NotImplementedError("assert_encoding")
-
-
-def assert_lessthan(*args):
-    raise NotImplementedError("assert_lessthan")
 
 
 def assert_replication_stream(*args):

@@ -1,5 +1,4 @@
 # ruff: noqa: PLR2004, ANN001, ANN002, ANN201
-
 from fnmatch import fnmatch
 
 import pytest
@@ -18,7 +17,8 @@ def test_slowlog_check_that_it_starts_with_an_empty_log(r: ValkeyTestClient) -> 
         r slowlog len
     } {0}
     """
-    if_("$::external", "            r slowlog reset\n        ")
+    if False:
+        r.run("slowlog", "reset")
     assert r.run("slowlog", "len") == "0"
 
 
@@ -170,7 +170,6 @@ def test_slowlog_certain_commands_are_omitted_that_contain_sensitive_information
     r.run("config", "set", "slowlog-max-len", 100)
     r.run("config", "set", "slowlog-log-slower-than", 0)
     r.run("slowlog", "reset")
-    _ = None
     try:
         _ = r.run("acl", "setuser", "slowlog test user", "+get", "+set")
     except Exception as _catch_err:
@@ -220,9 +219,9 @@ def test_slowlog_some_commands_can_redact_sensitive_fields(r: ValkeyTestClient) 
     """
     r.run("config", "set", "slowlog-log-slower-than", 0)
     r.run("slowlog", "reset")
-    r.run("migrate", srv(0, "host"), srv(0, "port"), "key", 9, 5000)
-    r.run("migrate", srv(0, "host"), srv(0, "port"), "key", 9, 5000, "AUTH", "user")
-    r.run("migrate", srv(0, "host"), srv(0, "port"), "key", 9, 5000, "AUTH2", "user", "password")
+    r.run("migrate", r.host, r.port, "key", 9, 5000)
+    r.run("migrate", r.host, r.port, "key", 9, 5000, "AUTH", "user")
+    r.run("migrate", r.host, r.port, "key", 9, 5000, "AUTH2", "user", "password")
     r.run("config", "set", "slowlog-log-slower-than", -1)
     slowlog_resp = r.run("slowlog", "get")
     assert 4 == len(slowlog_resp)
@@ -619,10 +618,6 @@ def if_(*args):
 
 def regexp(*args):
     raise NotImplementedError("regexp")
-
-
-def srv(*args):
-    raise NotImplementedError("srv")
 
 
 def string(*args):

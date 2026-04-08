@@ -153,7 +153,6 @@ def test_select_an_out_of_range_db(r: ValkeyTestClient) -> None:
         set _ $err
     } {*index is out of range*} {cluster:skip}
     """
-    err = None
     try:
         err = r.run("select", 1000000)
     except Exception as _catch_err:
@@ -354,12 +353,16 @@ def test_flushdb(r: ValkeyTestClient) -> None:
     } {0 0}
     """
     aux = []
-    if_(
-        "$::singledb",
-        "            r flushdb\n            lappend aux 0 [r dbsize]\n        ",
-        "else",
-        "            r select 9\n            r flushdb\n            lappend aux [r dbsize]\n            r select 10\n            r flushdb\n            lappend aux [r dbsize]\n        ",
-    )
+    if False:
+        r.run("flushdb")
+        lappend("aux", 0, r.run("dbsize"))
+    else:
+        r.run("select", 9)
+        r.run("flushdb")
+        lappend("aux", r.run("dbsize"))
+        r.run("select", 10)
+        r.run("flushdb")
+        lappend("aux", r.run("dbsize"))
 
 
 def test_perform_a_final_save_to_leave_a_clean_db_on_disk(r: ValkeyTestClient) -> None:
@@ -430,7 +433,6 @@ def test_reset_clears_and_discards_multi_state(r: ValkeyTestClient) -> None:
     r.run("multi")
     r.run("set", "key-a", "a")
     r.run("reset")
-    err = None
     try:
         err = r.run("exec")
     except Exception as _catch_err:
@@ -909,6 +911,10 @@ def get_child_pid(*args):
 
 def if_(*args):
     raise NotImplementedError("if_")
+
+
+def lappend(*args):
+    raise NotImplementedError("lappend")
 
 
 def main_hash_table_keys_before_rehashing_starts(*args):

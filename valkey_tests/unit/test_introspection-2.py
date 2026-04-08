@@ -40,8 +40,8 @@ def test_the_microsecond_part_of_the_time_command_will_not_overflow(r: ValkeyTes
     """
     now = r.run("time")
     microseconds = now[1]
-    assert_morethan_equal(microseconds, 0)
-    assert_lessthan(microseconds, 1000000)
+    assert microseconds >= 0
+    assert microseconds < 1000000
 
 
 def test_ttl_type_and_exists_do_not_alter_the_last_access_time_of_a_key(r: ValkeyTestClient) -> None:
@@ -124,7 +124,7 @@ def test_operations_in_no_touch_mode_do_not_alter_the_last_access_time_of_a_key(
     r.run("client", "no-touch", "off")
     r.run("get", "foo")
     newlru = getlru("foo")
-    assert_morethan(newlru, oldlru)
+    assert newlru > oldlru
 
 
 def test_touch_returns_the_number_of_existing_keys_specified(r: ValkeyTestClient) -> None:
@@ -277,7 +277,7 @@ def test_command_count_get_total_number_of_commands(r: ValkeyTestClient) -> None
         assert_morethan [r command count] 0
     }
     """
-    assert_morethan(r.run("command", "count"), 0)
+    assert r.run("command", "count") > 0
 
 
 def test_command_getkeys_get(r: ValkeyTestClient) -> None:
@@ -539,18 +539,6 @@ def test_cmd_command_is_marked_with_movablekeys(r: ValkeyTestClient, cmd) -> Non
 
 
 # --- stubs for unimplemented TCL helpers ---
-
-
-def assert_lessthan(*args):
-    raise NotImplementedError("assert_lessthan")
-
-
-def assert_morethan(*args):
-    raise NotImplementedError("assert_morethan")
-
-
-def assert_morethan_equal(*args):
-    raise NotImplementedError("assert_morethan_equal")
 
 
 def assert_no_match(*args):

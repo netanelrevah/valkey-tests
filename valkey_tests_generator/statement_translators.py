@@ -55,6 +55,7 @@ class RStatementTranslator(StatementTranslator):
         return None if expr is None else [expr]
 
 
+@StatementTranslator.register("variable")
 @StatementTranslator.register("set")
 class SetStatementTranslator(StatementTranslator):
     def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
@@ -85,6 +86,46 @@ class AssertMatchStatementTranslator(StatementTranslator):
         pat = ArgumentTranslator.translate(arguments[0], defined_vars)
         val = ArgumentTranslator.translate(arguments[1], defined_vars)
         return None if pat is None or val is None else [f"assert fnmatch(str({val}), str({pat}))"]
+
+
+@StatementTranslator.register("assert_morethan")
+class AssertMoreThanStatementTranslator(StatementTranslator):
+    def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
+        if not arguments[1:]:
+            return None
+        a = ArgumentTranslator.translate(arguments[0], defined_vars)
+        b = ArgumentTranslator.translate(arguments[1], defined_vars)
+        return None if a is None or b is None else [f"assert {a} > {b}"]
+
+
+@StatementTranslator.register("assert_lessthan")
+class AssertLessThanStatementTranslator(StatementTranslator):
+    def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
+        if not arguments[1:]:
+            return None
+        a = ArgumentTranslator.translate(arguments[0], defined_vars)
+        b = ArgumentTranslator.translate(arguments[1], defined_vars)
+        return None if a is None or b is None else [f"assert {a} < {b}"]
+
+
+@StatementTranslator.register("assert_morethan_equal")
+class AssertMoreThanEqualStatementTranslator(StatementTranslator):
+    def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
+        if not arguments[1:]:
+            return None
+        a = ArgumentTranslator.translate(arguments[0], defined_vars)
+        b = ArgumentTranslator.translate(arguments[1], defined_vars)
+        return None if a is None or b is None else [f"assert {a} >= {b}"]
+
+
+@StatementTranslator.register("assert_lessthan_equal")
+class AssertLessThanEqualStatementTranslator(StatementTranslator):
+    def get_statement(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> list[str] | None:
+        if not arguments[1:]:
+            return None
+        a = ArgumentTranslator.translate(arguments[0], defined_vars)
+        b = ArgumentTranslator.translate(arguments[1], defined_vars)
+        return None if a is None or b is None else [f"assert {a} <= {b}"]
 
 
 @StatementTranslator.register("assert")
@@ -334,7 +375,7 @@ class TCLBodyTranslator:
 
     @classmethod
     def _update_scope_after_statement(cls, command: TCLCommandWord, defined_vars: set[str]) -> None:
-        if command.name == "set" and isinstance(command.args[0], TCLWord):
+        if command.name in ("set", "variable") and isinstance(command.args[0], TCLWord):
             defined_vars.add(command.args[0].value)
         elif command.name == "catch" and len(command.args) > 1 and isinstance(command.args[1], TCLWord):
             defined_vars.add(command.args[1].value)
@@ -450,28 +491,43 @@ class CatchStatementTranslator(StatementTranslator):
         except ValueError:
             return None
         var_name = catch_command.var_name
-        body_lines = TCLBodyTranslator().translate(catch_command.body, None, initial_vars=defined_vars)
+        body_lines = self._translate_body(arguments[0], catch_command, defined_vars)
+        if body_lines is None:
+            return None
         if _has_todos(body_lines) or not body_lines:
             return None
         if var_name is None:
             return ["try:", *[f"    {line}" for line in body_lines], "except Exception:", "    pass"]
         safe_var = _safe_var_name(var_name)
         *preceding, last = body_lines
-        # Assign last body result to var in try branch (mirrors TCL catch semantics:
-        # var receives the body result on success, error message on exception).
-        # Only wrap as assignment when last line is an expression, not a statement keyword.
         _stmt_prefixes = ("assert ", "if ", "for ", "while ", "try:", "with ", "return ", "pass")
-        if not any(last.startswith(p) for p in _stmt_prefixes):
-            try_body = [*preceding, f"{safe_var} = {last}"]
-        else:
-            try_body = body_lines
+        assigns_var = not any(last.startswith(p) for p in _stmt_prefixes)
+        try_body = [*preceding, f"{safe_var} = {last}"] if assigns_var else body_lines
+        init = [] if assigns_var else [f"{safe_var} = None"]
         return [
-            f"{safe_var} = None",
+            *init,
             "try:",
             *[f"    {line}" for line in try_body],
             "except Exception as _catch_err:",
             f"    {safe_var} = str(_catch_err)",
         ]
+
+    @classmethod
+    def _translate_body(
+        cls,
+        body_arg: TCLCommandArguments,
+        catch_command: TCLCommandCatch,
+        defined_vars: set[str],
+    ) -> list[str] | None:
+        if isinstance(body_arg, TCLBracesWord):
+            stripped = body_arg.value.strip()
+            if stripped.startswith("[") and stripped.endswith("]"):
+                inner_script = TCLScript.read(iter(stripped[1:-1]))
+                bracket = TCLBracketWord(script=inner_script)
+                expr = ArgumentTranslator.translate(bracket, defined_vars)
+                return [expr] if expr is not None else None
+        lines = TCLBodyTranslator().translate(catch_command.body, None, initial_vars=defined_vars)
+        return None if _has_todos(lines) or not lines else lines
 
 
 @StatementTranslator.register("if")

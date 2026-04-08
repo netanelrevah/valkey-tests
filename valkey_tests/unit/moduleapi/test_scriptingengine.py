@@ -724,7 +724,6 @@ def test_test_function_kill(r: ValkeyTestClient) -> None:
     r.run("function", "load", "REPLACE", "#!hello name=mylib\nFUNCTION wait\nARGS 0\nSLEEP\nARGS 0\nRETURN")
     rd.run("fcall", "wait", 0, 100)
     time.sleep(1000 / 1000)
-    e = None
     try:
         e = r.run("ping")
     except Exception as _catch_err:

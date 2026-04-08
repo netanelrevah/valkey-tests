@@ -27,7 +27,6 @@ r module load testmodule log-key 0
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_reading_info(r: ValkeyTestClient) -> None:
     """
     test {module reading info} {
@@ -65,11 +64,14 @@ def test_module_reading_info(r: ValkeyTestClient) -> None:
     assert r.run("info.geti", "infotest_italian", "infotest_due") == 2
     tre = r.run("info.getd", "infotest_italian", "infotest_tre")
     assert (tre > 3.2) and (tre < 3.4)
-    catch(" [r info.gets badname redis_version] ", "e")
-    # TODO: assert_match {*not found*} e
+    try:
+        e = r.run("info.gets", "badname", "redis_version")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*not found*")
     assert string("match", "*usec_per_call*", r.run("info.gets", "all", "cmdstat_info.gets"))
     catch(" [r info.gets default cmdstat_info.gets] ] ", "e")
-    # TODO: assert_match {*not found*} e
+    assert fnmatch(str(e), "*not found*")
 
 
 def test_module_info_all(r: ValkeyTestClient) -> None:

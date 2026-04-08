@@ -2400,8 +2400,11 @@ def test_linsert_raise_error_on_bad_syntax(r: ValkeyTestClient) -> None:
         set e
     } {*ERR*syntax*error*}
     """
-    catch("[r linsert xlist aft3r aa 42]", "e")
-    set_("e")
+    try:
+        e = r.run("linsert", "xlist", "aft3r", "aa", 42)
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert fnmatch(str(e), "*ERR*syntax*error*")
 
 
 def test_linsert_against_non_list_value_error(r: ValkeyTestClient) -> None:
@@ -3243,7 +3246,6 @@ def test_blpop_or_blmove_should_increase_dirty(r: ValkeyTestClient) -> None:
     rd.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["pop"], [("BLPOP"), ("BLMPOP_RIGHT")])
 def test_client_unblock_tests(r: ValkeyTestClient, pop) -> None:
     """
@@ -3304,13 +3306,19 @@ def test_client_unblock_tests(r: ValkeyTestClient, pop) -> None:
     bpop_command(rd, pop, "l", 0)
     wait_for_blocked_client()
     r.run("client", "unblock", id, "ERROR")
-    catch("[$rd read]", "e")
-    # TODO: assert_equal e "UNBLOCKED client unblocked via CLIENT UNBLOCK"
-    catch("[r client unblock asd]", "e")
-    # TODO: assert_equal e "ERR value is not an integer or out of range"
+    try:
+        e = rd.run("read")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "UNBLOCKED client unblocked via CLIENT UNBLOCK"
+    try:
+        e = r.run("client", "unblock", "asd")
+    except Exception as _catch_err:
+        e = str(_catch_err)
+    assert e == "ERR value is not an integer or out of range"
     myid = r.run("client", "id")
     catch("[r client unblock $myid]", "e")
-    # TODO: assert_equal e {invalid command name "0"}
+    assert e == 'invalid command name "0"'
     bpop_command(rd, pop, "l", 0)
     wait_for_blocked_client()
     r.run("lpush", "l", "foo")
@@ -3554,7 +3562,7 @@ def test_list_of_various_encodings(r: ValkeyTestClient) -> None:
     assert_encoding("quicklist", "k")
     k = r.run("lrange", "k", 0, -1)
     dump = r.run("dump", "k")
-    assert_morethan(memory_usage("k"), 0)
+    assert memory_usage("k") > 0
     config_set("sanitize-dump-payload", "no", "mayfail")
     r.run("restore", "kk", 0, dump, "replace")
     assert_encoding("quicklist", "kk")
@@ -3966,10 +3974,6 @@ def assert_error(*args):
     raise NotImplementedError("assert_error")
 
 
-def assert_morethan(*args):
-    raise NotImplementedError("assert_morethan")
-
-
 def assert_range(*args):
     raise NotImplementedError("assert_range")
 
@@ -4048,10 +4052,6 @@ def memory_usage(*args):
 
 def s(*args):
     raise NotImplementedError("s")
-
-
-def set_(*args):
-    raise NotImplementedError("set_")
 
 
 def split(*args):

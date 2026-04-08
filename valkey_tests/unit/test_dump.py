@@ -117,7 +117,6 @@ def test_restore_with_absttl_in_the_past(r: ValkeyTestClient) -> None:
     now = clock("milliseconds")
     r.run("debug", "set-active-expire", 0)
     r.run("restore", "foo", expr(now, -3000), encoded, "absttl", "REPLACE")
-    e = None
     try:
         e = r.run("debug", "object", "foo")
     except Exception as _catch_err:
@@ -189,7 +188,6 @@ def test_restore_returns_an_error_of_the_key_already_exists(r: ValkeyTestClient)
     """
     r.run("set", "foo", "bar")
     e = ""
-    e = None
     try:
         e = r.run("restore", "foo", 0, "...")
     except Exception as _catch_err:
@@ -227,7 +225,6 @@ def test_restore_can_detect_a_syntax_error_for_unrecognized_options(r: ValkeyTes
         set e
     } {*syntax*}
     """
-    e = None
     try:
         e = r.run("restore", "foo", 0, "...", "invalid-option")
     except Exception as _catch_err:
@@ -411,7 +408,7 @@ def test_migrate_is_caching_connections(r: ValkeyTestClient, db) -> None:
         }
     } {} {external:skip}
     """
-    first = srv(0, "client")
+    first = ValkeyTestClient.create_from(r)
     r.run("set", "key", "Some Value")
     start_server(
         'tags {"repl"}',
@@ -451,7 +448,7 @@ def test_migrate_is_able_to_migrate_a_key_between_two_instances(r: ValkeyTestCli
         }
     } {} {external:skip}
     """
-    first = srv(0, "client")
+    first = ValkeyTestClient.create_from(r)
     r.run("set", "key", "Some Value")
     start_server(
         'tags {"repl"}',
@@ -480,7 +477,7 @@ def test_migrate_is_able_to_copy_a_key_between_two_instances(r: ValkeyTestClient
         }
     } {} {external:skip}
     """
-    first = srv(0, "client")
+    first = ValkeyTestClient.create_from(r)
     r.run("del", "list")
     r.run("lpush", "list", "a", "b", "c", "d")
     start_server(
@@ -513,7 +510,7 @@ def test_migrate_will_not_overwrite_existing_keys_unless_replace_is_used(r: Valk
         }
     } {} {external:skip}
     """
-    first = srv(0, "client")
+    first = ValkeyTestClient.create_from(r)
     r.run("del", "list")
     r.run("lpush", "list", "a", "b", "c", "d")
     start_server(
@@ -544,7 +541,7 @@ def test_migrate_propagates_ttl_correctly(r: ValkeyTestClient) -> None:
         }
     } {} {external:skip}
     """
-    first = srv(0, "client")
+    first = ValkeyTestClient.create_from(r)
     r.run("set", "key", "Some Value")
     start_server(
         'tags {"repl"}',
@@ -579,7 +576,7 @@ def test_migrate_can_correctly_transfer_large_values(r: ValkeyTestClient) -> Non
         }
     } {} {external:skip}
     """
-    first = srv(0, "client")
+    first = ValkeyTestClient.create_from(r)
     r.run("del", "key")
     j = 0
     while j < 40000:
@@ -628,7 +625,7 @@ def test_migrate_can_correctly_transfer_hashes(r: ValkeyTestClient) -> None:
         }
     } {} {external:skip}
     """
-    first = srv(0, "client")
+    first = ValkeyTestClient.create_from(r)
     r.run("del", "key")
     r.run(
         "hmset",
@@ -674,7 +671,7 @@ def test_migrate_timeout_actually_works(r: ValkeyTestClient, db) -> None:
         }
     } {} {external:skip}
     """
-    first = srv(0, "client")
+    first = ValkeyTestClient.create_from(r)
     r.run("set", "key", "Some Value")
     start_server(
         'tags {"repl"}',
@@ -707,7 +704,7 @@ def test_migrate_can_migrate_multiple_keys_at_once(r: ValkeyTestClient) -> None:
         }
     } {} {external:skip}
     """
-    first = srv(0, "client")
+    first = ValkeyTestClient.create_from(r)
     r.run("set", "key1", "v1")
     r.run("set", "key2", "v2")
     r.run("set", "key3", "v3")
@@ -724,7 +721,6 @@ def test_migrate_with_multiple_keys_must_have_empty_key_arg(r: ValkeyTestClient,
         set e
     } {*empty string*} {external:skip}
     """
-    e = None
     try:
         e = r.run("MIGRATE", "127.0.0.1", 6379, "NotEmpty", db, 5000, "keys", "a", "b", "c")
     except Exception as _catch_err:
@@ -760,7 +756,7 @@ def test_migrate_with_multiple_keys_migrate_just_existing_ones(r: ValkeyTestClie
         }
     } {} {external:skip}
     """
-    first = srv(0, "client")
+    first = ValkeyTestClient.create_from(r)
     r.run("set", "key1", "v1")
     r.run("set", "key2", "v2")
     r.run("set", "key3", "v3")
@@ -788,7 +784,7 @@ def test_migrate_with_multiple_keys_stress_command_rewriting(r: ValkeyTestClient
         }
     } {} {external:skip}
     """
-    first = srv(0, "client")
+    first = ValkeyTestClient.create_from(r)
     r.run("flushdb")
     r.run(
         "mset",
@@ -853,7 +849,7 @@ def test_migrate_with_multiple_keys_delete_just_ack_keys(r: ValkeyTestClient, db
         }
     } {} {external:skip}
     """
-    first = srv(0, "client")
+    first = ValkeyTestClient.create_from(r)
     r.run("flushdb")
     r.run(
         "mset",
@@ -923,7 +919,7 @@ def test_migrate_auth_correct_and_wrong_password_cases(r: ValkeyTestClient, db) 
         }
     } {} {external:skip}
     """
-    first = srv(0, "client")
+    first = ValkeyTestClient.create_from(r)
     r.run("del", "list")
     r.run("lpush", "list", "a", "b", "c", "d")
     start_server(
@@ -961,10 +957,6 @@ def close_replication_stream(*args):
 
 def expr(*args):
     raise NotImplementedError("expr")
-
-
-def srv(*args):
-    raise NotImplementedError("srv")
 
 
 def start_server(*args):

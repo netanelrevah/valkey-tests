@@ -57,7 +57,6 @@ def test_temp_rdb_will_be_deleted_if_we_use_bg_unlink_when_shutdown(r: ValkeyTes
         r.run("shutdown", "nosave")
     except Exception:
         pass
-    e = None
     try:
         e = rd = ValkeyTestClient.create_from(r)
     except Exception as _catch_err:
@@ -192,7 +191,6 @@ def test_shutdown_will_abort_if_rdb_save_failed_on_signal(r: ValkeyTestClient) -
     wait_for_log_messages(0, '"*Error trying to save the DB, can\'t exit*"', 0, 100, 10)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_shutdown_will_abort_if_rdb_save_failed_on_shutdown_command(r: ValkeyTestClient) -> None:
     """
     test {SHUTDOWN will abort if rdb save failed on shutdown command} {
@@ -202,8 +200,11 @@ def test_shutdown_will_abort_if_rdb_save_failed_on_shutdown_command(r: ValkeyTes
         assert_equal [r ping] {PONG}
     }
     """
-    catch("[r shutdown]", "err")
-    # TODO: assert_match {*Errors trying to SHUTDOWN*} err
+    try:
+        err = r.run("shutdown")
+    except Exception as _catch_err:
+        err = str(_catch_err)
+    assert fnmatch(str(err), "*Errors trying to SHUTDOWN*")
     assert r.run("ping") == "PONG"
 
 
@@ -214,7 +215,10 @@ def test_shutdown_can_proceed_if_shutdown_command_was_with_nosave(r: ValkeyTestC
         wait_for_log_messages 0 {"*ready to exit, bye bye*"} 0 100 10
     }
     """
-    catch("[r shutdown nosave]")
+    try:
+        r.run("shutdown", "nosave")
+    except Exception:
+        pass
     wait_for_log_messages(0, '"*ready to exit, bye bye*"', 0, 100, 10)
 
 
@@ -275,10 +279,6 @@ def test_shutdown_sigterm_will_abort_if_there_s_an_initial_aofrw_default(r: Valk
 
 def assert_(*args):
     raise NotImplementedError("assert_")
-
-
-def catch(*args):
-    raise NotImplementedError("catch")
 
 
 def exec_(*args):

@@ -85,6 +85,14 @@ class ValkeyTestClient:
         self._sock = sock
         self._reader = _SocketReader(sock)
 
+    @property
+    def host(self) -> str:
+        return self._sock.getpeername()[0]
+
+    @property
+    def port(self) -> int:
+        return self._sock.getpeername()[1]
+
     def run(self, *args):
         self._sock.sendall(_encode_command(*args))
         return _read_response(self._reader)
