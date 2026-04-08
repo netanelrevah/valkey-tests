@@ -93,7 +93,7 @@ def test_bitfield_idx_form(r: ValkeyTestClient) -> None:
     } {ABC}
     """
     r.run("del", "bits")
-    results = ""
+    results = []
     r.run("bitfield", "bits", "set", "u8", "#0", 65)
     r.run("bitfield", "bits", "set", "u8", "#1", 66)
     r.run("bitfield", "bits", "set", "u8", "#2", 67)

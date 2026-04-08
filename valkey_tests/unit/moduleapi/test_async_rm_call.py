@@ -23,11 +23,6 @@ set testmodule3 file normalize tests/modules/blockonkeys.so
 pytestmark = [pytest.mark.modules]
 
 
-"""
-r module load testmodule
-"""
-
-
 def test_locked_gil_acquisition_from_async_rm_call(r: ValkeyTestClient) -> None:
     """
     test {Locked GIL acquisition from async RM_Call} {
@@ -453,11 +448,6 @@ def test_blocking_rm_call_abort(r: ValkeyTestClient) -> None:
 pytestmark = [pytest.mark.modules]
 
 
-"""
-r module load testmodule
-"""
-
-
 def test_test_basic_replication_stream_on_unblock_handler(r: ValkeyTestClient) -> None:
     """
     test {Test basic replication stream on unblock handler} {
@@ -581,16 +571,6 @@ def test_test_no_propagation_of_blocking_command(r: ValkeyTestClient) -> None:
 
 
 pytestmark = [pytest.mark.modules]
-
-
-"""
-r module load testmodule
-"""
-
-
-"""
-r module load testmodule2
-"""
 
 
 def test_test_unblock_handler_are_executed_as_a_unit_with_key_space_notifications(r: ValkeyTestClient) -> None:
@@ -750,16 +730,6 @@ def test_test_unblock_handler_are_executed_as_a_unit_with_lazy_expire(r: ValkeyT
 
 
 pytestmark = [pytest.mark.modules]
-
-
-"""
-r module load testmodule
-"""
-
-
-"""
-r module load testmodule3
-"""
 
 
 def test_test_unblock_handler_on_module_blocked_on_keys(r: ValkeyTestClient) -> None:

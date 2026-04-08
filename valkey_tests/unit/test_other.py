@@ -105,24 +105,6 @@ def test_save_make_sure_there_are_all_the_types_as_values(r: ValkeyTestClient) -
     assert r.run("save") == "OK"
 
 
-"""
-start_server {overrides {save ""} tags {external:skip}} {
-    test {FLUSHALL should not reset the dirty counter if we disable save} {
-        r set key value
-        r flushall
-        assert_morethan [s rdb_changes_since_last_save] 0
-    }
-
-    test {FLUSHALL should reset the dirty counter to 0 if we enable save} {
-        r config set save "3600 1 300 100 60 10000"
-        r set key value
-        r flushall
-        assert_equal [s rdb_changes_since_last_save] 0
-    }
-}
-"""
-
-
 def test_bgsave(r: ValkeyTestClient) -> None:
     """
     test {BGSAVE} {
@@ -137,6 +119,10 @@ def test_bgsave(r: ValkeyTestClient) -> None:
         r get x
     } {10} {needs:debug needs:save}
     """
+    start_server(
+        'overrides {save ""} tags {external:skip}',
+        '        test {FLUSHALL should not reset the dirty counter if we disable save} {\n            r set key value\n            r flushall\n            assert_morethan [s rdb_changes_since_last_save] 0\n        }\n\n        test {FLUSHALL should reset the dirty counter to 0 if we enable save} {\n            r config set save "3600 1 300 100 60 10000"\n            r set key value\n            r flushall\n            assert_equal [s rdb_changes_since_last_save] 0\n        }\n    ',
+    )
     r.run("flushall")
     r.run("save")
     r.run("set", "x", 10)
@@ -153,6 +139,10 @@ def test_select_an_out_of_range_db(r: ValkeyTestClient) -> None:
         set _ $err
     } {*index is out of range*} {cluster:skip}
     """
+    start_server(
+        'overrides {save ""} tags {external:skip}',
+        '        test {FLUSHALL should not reset the dirty counter if we disable save} {\n            r set key value\n            r flushall\n            assert_morethan [s rdb_changes_since_last_save] 0\n        }\n\n        test {FLUSHALL should reset the dirty counter to 0 if we enable save} {\n            r config set save "3600 1 300 100 60 10000"\n            r set key value\n            r flushall\n            assert_equal [s rdb_changes_since_last_save] 0\n        }\n    ',
+    )
     try:
         err = r.run("select", 1000000)
     except Exception as _catch_err:
@@ -326,7 +316,7 @@ def test_append_fuzzing(r: ValkeyTestClient) -> None:
         set _ $err
     } {}
     """
-    err = ""
+    err = []
     foreach(
         "type",
         "binary alpha compr",
@@ -931,6 +921,10 @@ def populate(*args):
 
 def s(*args):
     raise NotImplementedError("s")
+
+
+def start_server(*args):
+    raise NotImplementedError("start_server")
 
 
 def string(*args):

@@ -434,23 +434,6 @@ def test_xtrim_with_minid_option_big_delta_from_master_record(r: ValkeyTestClien
     assert r.run("XRANGE", "mystream", "-", "+") == "{1641544570597-0 {f v}} {1641544570597-1 {f v}}"
 
 
-"""
-proc insert_into_stream_key {key {count 10000}} {
-    r multi
-    for {set j 0} {$j < $count} {incr j} {
-        # From time to time insert a field with a different set
-        # of fields in order to stress the stream compression code.
-        if {rand() < 0.9} {
-            r XADD $key * item $j
-        } else {
-            r XADD $key * item $j otherfield foo
-        }
-    }
-    r exec
-}
-"""
-
-
 def test_xadd_mass_insertion_and_xlen(r: ValkeyTestClient) -> None:
     """
     test {XADD mass insertion and XLEN} {
@@ -464,6 +447,11 @@ def test_xadd_mass_insertion_and_xlen(r: ValkeyTestClient) -> None:
         assert {[r xlen mystream] == $j}
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     r.run("DEL", "mystream")
     insert_into_stream_key("mystream")
     items = r.run("XRANGE", "mystream", "-", "+")
@@ -471,7 +459,7 @@ def test_xadd_mass_insertion_and_xlen(r: ValkeyTestClient) -> None:
     while j < 10000:
         assert lrange(lindex(items, j, 1), 0, 1) == ["item", j]
         j += 1
-    assert_("[r xlen mystream] == $j")
+    assert r.run("xlen", "mystream") == j
 
 
 def test_xadd_with_id_0_0(r: ValkeyTestClient) -> None:
@@ -482,6 +470,11 @@ def test_xadd_with_id_0_0(r: ValkeyTestClient) -> None:
         assert {[r EXISTS otherstream] == 0}
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     r.run("DEL", "otherstream")
     try:
         err = r.run("XADD", "otherstream", "0-0", "k", "v")
@@ -501,6 +494,11 @@ def test_xadd_with_limit_delete_entries_no_more_than_limit(r: ValkeyTestClient) 
         assert {[r XLEN yourstream] == 4}
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     r.run("del", "yourstream")
     j = 0
     while j < 3:
@@ -516,6 +514,11 @@ def test_xrange_count_works_as_expected(r: ValkeyTestClient) -> None:
         assert {[llength [r xrange mystream - + COUNT 10]] == 10}
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     assert len(r.run("xrange", "mystream", "-", "+", "COUNT", 10)) == 10
 
 
@@ -525,6 +528,11 @@ def test_xrevrange_count_works_as_expected(r: ValkeyTestClient) -> None:
         assert {[llength [r xrevrange mystream + - COUNT 10]] == 10}
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     assert len(r.run("xrevrange", "mystream", "+", "-", "COUNT", 10)) == 10
 
 
@@ -545,6 +553,11 @@ def test_xrange_can_be_used_to_iterate_the_whole_stream(r: ValkeyTestClient) -> 
         assert {$j == 10000}
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     last_id = "-"
     j = 0
     while_(
@@ -560,6 +573,11 @@ def test_xrevrange_returns_the_reverse_of_xrange(r: ValkeyTestClient) -> None:
         assert {[r xrange mystream - +] == [lreverse [r xrevrange mystream + -]]}
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     assert r.run("xrange", "mystream", "-", "+") == lreverse(r.run("xrevrange", "mystream", "+", "-"))
 
 
@@ -591,6 +609,11 @@ def test_xrange_exclusive_ranges(r: ValkeyTestClient) -> None:
         assert_match {ERR*} $e
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     ids = "0-1 0-18446744073709551615 1-0 42-0 42-42\n                 18446744073709551615-18446744073709551614\n                 18446744073709551615-18446744073709551615"
     total = len(ids)
     r.run("multi")
@@ -631,6 +654,11 @@ def test_xread_with_non_empty_stream(r: ValkeyTestClient) -> None:
         assert {[lrange [lindex $res 0 1 0 1] 0 1] eq {item 0}}
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     res = r.run("XREAD", "COUNT", 1, "STREAMS", "mystream", "0-0")
     assert lrange(lindex(res, 0, 1, 0, 1), 0, 1) == "item 0"
 
@@ -642,6 +670,11 @@ def test_non_blocking_xread_with_empty_streams(r: ValkeyTestClient) -> None:
         assert {$res eq {}}
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     res = r.run("XREAD", "STREAMS", "s1{t}", "s2{t}", "0-0", "0-0")
     assert res == ""
 
@@ -655,6 +688,11 @@ def test_xread_with_non_empty_second_stream(r: ValkeyTestClient) -> None:
         assert {[lrange [lindex $res 0 1 0 1] 0 1] eq {item 0}}
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     insert_into_stream_key("mystream{t}")
     res = r.run("XREAD", "COUNT", 1, "STREAMS", "nostream{t}", "mystream{t}", "0-0", "0-0")
     assert lindex(res, 0, 0) == "mystream{t}"
@@ -675,6 +713,11 @@ def test_blocking_xread_waiting_new_data(r: ValkeyTestClient) -> None:
         $rd close
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     r.run("XADD", "s2{t}", "*", "old", "abcd1234")
     rd = ValkeyTestClient.create_from(r)
     rd.run("XREAD", "BLOCK", 20000, "STREAMS", "s1{t}", "s2{t}", "s3{t}", "$", "$", "$")
@@ -698,6 +741,11 @@ def test_blocking_xread_waiting_old_data(r: ValkeyTestClient) -> None:
         $rd close
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     rd = ValkeyTestClient.create_from(r)
     rd.run("XREAD", "BLOCK", 20000, "STREAMS", "s1{t}", "s2{t}", "s3{t}", "$", "0-0", "$")
     r.run("XADD", "s2{t}", "*", "foo", "abcd1234")
@@ -721,6 +769,11 @@ def test_blocking_xread_will_not_reply_with_an_empty_array(r: ValkeyTestClient) 
         $rd close
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     r.run("del", "s1")
     r.run("XADD", "s1", 666, "f", "v")
     r.run("XADD", "s1", 667, "f2", "v2")
@@ -759,6 +812,11 @@ def test_blocking_xread_for_stream_that_ran_dry_issue_5299(r: ValkeyTestClient) 
         $rd close
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     rd = ValkeyTestClient.create_from(r)
     r.run("DEL", "mystream")
     r.run("XADD", "mystream", 666, "key", "value")
@@ -804,6 +862,11 @@ def test_xread_last_element_from_non_empty_stream(r: ValkeyTestClient) -> None:
         assert_equal $res {{lestream {{3-18446744073709551615 {k5 v5}}}}}
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     r.run("DEL", "lestream")
     r.run("XADD", "lestream", "1-0", "k1", "v1")
     r.run("XADD", "lestream", "2-0", "k2", "v2")
@@ -835,6 +898,11 @@ def test_xread_last_element_from_empty_stream(r: ValkeyTestClient) -> None:
         assert_equal [r XREAD STREAMS lestream +] {}
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     r.run("DEL", "lestream")
     assert r.run("XREAD", "STREAMS", "lestream", "+") == ""
     r.run("XADD", "lestream", "1-0", "k1", "v1")
@@ -864,6 +932,11 @@ def test_xread_last_element_blocking_from_empty_stream(r: ValkeyTestClient) -> N
         $rd close
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     r.run("DEL", "lestream")
     rd = ValkeyTestClient.create_from(r)
     rd.run("XREAD", "BLOCK", 20000, "STREAMS", "lestream", "+")
@@ -892,6 +965,11 @@ def test_xread_last_element_blocking_from_non_empty_stream(r: ValkeyTestClient) 
         assert_equal $res {{lestream {{3-0 {k3 v3}}}}}
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     r.run("DEL", "lestream")
     r.run("XADD", "lestream", "1-0", "k1", "v1")
     r.run("XADD", "lestream", "2-0", "k2", "v2")
@@ -923,6 +1001,11 @@ def test_xread_last_element_from_multiple_streams(r: ValkeyTestClient) -> None:
         assert_equal $res {{{{lestream}1} {{3-0 {k3 v3}}}} {{{lestream}2} {{3-0 {k3 v6}}}}}
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     r.run("DEL", "{lestream}1")
     r.run("XADD", "{lestream}1", "1-0", "k1", "v1")
     r.run("XADD", "{lestream}1", "2-0", "k2", "v2")
@@ -953,6 +1036,11 @@ def test_xread_last_element_with_count_1(r: ValkeyTestClient) -> None:
         assert_equal $res {{lestream {{3-0 {k3 v3}}}}}
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     r.run("DEL", "lestream")
     r.run("XADD", "lestream", "1-0", "k1", "v1")
     r.run("XADD", "lestream", "2-0", "k2", "v2")
@@ -979,6 +1067,11 @@ def test_xread_xadd_del_should_not_awake_client(r: ValkeyTestClient) -> None:
         $rd close
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     rd = ValkeyTestClient.create_from(r)
     r.run("del", "s1")
     rd.run("XREAD", "BLOCK", 20000, "STREAMS", "s1", "$")
@@ -1014,6 +1107,11 @@ def test_xread_xadd_del_lpush_should_not_awake_client(r: ValkeyTestClient) -> No
         $rd close
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     rd = ValkeyTestClient.create_from(r)
     r.run("del", "s1")
     rd.run("XREAD", "BLOCK", 20000, "STREAMS", "s1", "$")
@@ -1045,6 +1143,11 @@ def test_xread_with_same_stream_name_multiple_times_should_work(r: ValkeyTestCli
         $rd close
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     r.run("XADD", "s2", "*", "old", "abcd1234")
     rd = ValkeyTestClient.create_from(r)
     rd.run("XREAD", "BLOCK", 20000, "STREAMS", "s2", "s2", "s2", "$", "$", "$")
@@ -1075,6 +1178,11 @@ def test_xread_multiple_xadd_inside_transaction(r: ValkeyTestClient) -> None:
         $rd close
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     r.run("XADD", "s2", "*", "old", "abcd1234")
     rd = ValkeyTestClient.create_from(r)
     rd.run("XREAD", "BLOCK", 20000, "STREAMS", "s2", "s2", "s2", "$", "$", "$")
@@ -1105,6 +1213,11 @@ def test_xdel_basic_test(r: ValkeyTestClient) -> None:
         assert {[lindex $result 1 1 1] eq {value2}}
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     r.run("del", "somestream")
     r.run("xadd", "somestream", "*", "foo", "value0")
     id = r.run("xadd", "somestream", "*", "foo", "value1")
@@ -1133,6 +1246,11 @@ def test_xdel_multiply_id_test(r: ValkeyTestClient) -> None:
         assert {[dict get [lindex $result 1 1] c] eq {3}}
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     r.run("del", "somestream")
     r.run("xadd", "somestream", "1-1", "a", 1)
     r.run("xadd", "somestream", "1-2", "b", 2)
@@ -1182,6 +1300,11 @@ def test_xdel_fuzz_test(r: ValkeyTestClient) -> None:
         }
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     r.run("del", "somestream")
     ids = []
     x = 0
@@ -1221,6 +1344,11 @@ def test_xrange_fuzzing(r: ValkeyTestClient) -> None:
         }
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     items = r.run("XRANGE", "mystream{t}", "-", "+")
     low_id = lindex(items, 0, 0)
     high_id = lindex(items, "end", 0)
@@ -1253,6 +1381,11 @@ def test_xrevrange_regression_test_for_issue_5006(r: ValkeyTestClient) -> None:
         assert_equal [r xrevrange teststream2 1234567891245 -] {{1234567891240-0 {key1 value2}} {1234567891230-0 {key1 value1}}}
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     r.run("xadd", "teststream", 1234567891230, "key1", "value1")
     r.run("xadd", "teststream", 1234567891240, "key2", "value2")
     r.run("xadd", "teststream", 1234567891250, "key3", "value3")
@@ -1280,6 +1413,11 @@ def test_xread_streamid_edge_no_blocking(r: ValkeyTestClient) -> None:
         assert {[lindex $res 0 1 0] == {2-1 {f v}}}
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     r.run("del", "x")
     r.run("XADD", "x", "1-1", "f", "v")
     r.run("XADD", "x", "1-18446744073709551615", "f", "v")
@@ -1303,6 +1441,11 @@ def test_xread_streamid_edge_blocking(r: ValkeyTestClient) -> None:
         $rd close
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     r.run("del", "x")
     rd = ValkeyTestClient.create_from(r)
     rd.run("XREAD", "BLOCK", 0, "STREAMS", "x", "1-18446744073709551615")
@@ -1324,6 +1467,11 @@ def test_xadd_streamid_edge(r: ValkeyTestClient) -> None:
         assert_equal [r XRANGE x - +] {{2577343934890-18446744073709551615 {f v}} {2577343934891-0 {f2 v2}}}
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     r.run("del", "x")
     r.run("XADD", "x", "2577343934890-18446744073709551615", "f", "v")
     r.run("XADD", "x", "*", "f2", "v2")
@@ -1351,6 +1499,11 @@ def test_xtrim_with_maxlen_option_basic_test(r: ValkeyTestClient) -> None:
         assert {[r XLEN mystream] == 400}
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     r.run("DEL", "mystream")
     j = 0
     while j < 1000:
@@ -1386,6 +1539,11 @@ def test_xadd_with_limit_consecutive_calls(r: ValkeyTestClient) -> None:
         r config set stream-node-max-entries 100
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     r.run("del", "mystream")
     r.run("config", "set", "stream-node-max-entries", 10)
     j = 0
@@ -1412,6 +1570,11 @@ def test_xtrim_with_is_limited(r: ValkeyTestClient) -> None:
         r config set stream-node-max-entries 100
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     r.run("del", "mystream")
     r.run("config", "set", "stream-node-max-entries", 1)
     j = 0
@@ -1436,6 +1599,11 @@ def test_xtrim_without_is_not_limited(r: ValkeyTestClient) -> None:
         r config set stream-node-max-entries 100
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     r.run("del", "mystream")
     r.run("config", "set", "stream-node-max-entries", 1)
     j = 0
@@ -1458,6 +1626,11 @@ def test_xtrim_without_and_with_limit(r: ValkeyTestClient) -> None:
         assert_error ERR* {r XTRIM mystream MAXLEN 1 LIMIT 30}
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     r.run("del", "mystream")
     r.run("config", "set", "stream-node-max-entries", 1)
     j = 0
@@ -1480,6 +1653,11 @@ def test_xtrim_with_limit_delete_entries_no_more_than_limit(r: ValkeyTestClient)
         assert {[r XTRIM mystream MAXLEN ~ 0 LIMIT 2] == 2}
     }
     """
+    proc(
+        "insert_into_stream_key",
+        "key {count 10000}",
+        "        r multi\n        for {set j 0} {$j < $count} {incr j} {\n            # From time to time insert a field with a different set\n            # of fields in order to stress the stream compression code.\n            if {rand() < 0.9} {\n                r XADD $key * item $j\n            } else {\n                r XADD $key * item $j otherfield foo\n            }\n        }\n        r exec\n    ",
+    )
     r.run("del", "mystream")
     r.run("config", "set", "stream-node-max-entries", 2)
     j = 0
@@ -1513,12 +1691,12 @@ def test_xadd_with_maxlen_xlen_can_propagate_correctly(r: ValkeyTestClient) -> N
         r.run("XADD", "mystream", "*", "xitem", "v")
         j += 1
     r.run("XADD", "mystream", "MAXLEN", 200, "*", "xitem", "v")
-    incr("j")
-    assert_("[r xlen mystream] == $j")
+    j += 1
+    assert r.run("xlen", "mystream") == j
     r.run("debug", "loadaof")
     r.run("XADD", "mystream", "*", "xitem", "v")
-    incr("j")
-    assert_("[r xlen mystream] == $j")
+    j += 1
+    assert r.run("xlen", "mystream") == j
 
 
 pytestmark = [pytest.mark.stream_needs_debug]
@@ -1546,18 +1724,17 @@ def test_xadd_with_minid_lastid_can_propagate_correctly(r: ValkeyTestClient) -> 
         r.run("XADD", "mystream", id, "xitem", "v")
         j += 1
     r.run("XADD", "mystream", "MINID", 1, "*", "xitem", "v")
-    incr("j")
-    assert_("[r xlen mystream] == $j")
+    j += 1
+    assert r.run("xlen", "mystream") == j
     r.run("debug", "loadaof")
     r.run("XADD", "mystream", "*", "xitem", "v")
-    incr("j")
-    assert_("[r xlen mystream] == $j")
+    j += 1
+    assert r.run("xlen", "mystream") == j
 
 
 pytestmark = [pytest.mark.stream_needs_debug]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_xadd_with_maxlen_can_propagate_correctly(r: ValkeyTestClient) -> None:
     """
     test {XADD with ~ MAXLEN can propagate correctly} {
@@ -1578,14 +1755,14 @@ def test_xadd_with_maxlen_can_propagate_correctly(r: ValkeyTestClient) -> None:
     while j < 100:
         r.run("XADD", "mystream", "*", "xitem", "v")
         j += 1
-    # TODO: r XADD mystream MAXLEN ~ j * xitem v
-    incr("j")
-    assert_("[r xlen mystream] == $j")
+    r.run("XADD", "mystream", "MAXLEN", "~", j, "*", "xitem", "v")
+    j += 1
+    assert r.run("xlen", "mystream") == j
     r.run("config", "set", "stream-node-max-entries", 1)
     r.run("debug", "loadaof")
     r.run("XADD", "mystream", "*", "xitem", "v")
-    incr("j")
-    assert_("[r xlen mystream] == $j")
+    j += 1
+    assert r.run("xlen", "mystream") == j
 
 
 pytestmark = [pytest.mark.stream_needs_debug]
@@ -1620,7 +1797,6 @@ def test_xadd_with_maxlen_and_limit_can_propagate_correctly(r: ValkeyTestClient)
 pytestmark = [pytest.mark.stream_needs_debug]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_xadd_with_minid_can_propagate_correctly(r: ValkeyTestClient) -> None:
     """
     test {XADD with ~ MINID can propagate correctly} {
@@ -1643,14 +1819,14 @@ def test_xadd_with_minid_can_propagate_correctly(r: ValkeyTestClient) -> None:
         id = expr("$j+1")
         r.run("XADD", "mystream", id, "xitem", "v")
         j += 1
-    # TODO: r XADD mystream MINID ~ j * xitem v
-    incr("j")
-    assert_("[r xlen mystream] == $j")
+    r.run("XADD", "mystream", "MINID", "~", j, "*", "xitem", "v")
+    j += 1
+    assert r.run("xlen", "mystream") == j
     r.run("config", "set", "stream-node-max-entries", 1)
     r.run("debug", "loadaof")
     r.run("XADD", "mystream", "*", "xitem", "v")
-    incr("j")
-    assert_("[r xlen mystream] == $j")
+    j += 1
+    assert r.run("xlen", "mystream") == j
 
 
 pytestmark = [pytest.mark.stream_needs_debug]
@@ -1711,7 +1887,7 @@ def test_xtrim_with_maxlen_can_propagate_correctly(r: ValkeyTestClient) -> None:
     r.run("config", "set", "stream-node-max-entries", 1)
     r.run("debug", "loadaof")
     r.run("XADD", "mystream", "*", "xitem", "v")
-    incr("j")
+    j += 1
     assert r.run("xlen", "mystream") == 91
 
 
@@ -2118,10 +2294,6 @@ def if_(*args):
     raise NotImplementedError("if_")
 
 
-def incr(*args):
-    raise NotImplementedError("incr")
-
-
 def insert_into_stream_key(*args):
     raise NotImplementedError("insert_into_stream_key")
 
@@ -2144,6 +2316,10 @@ def lreverse(*args):
 
 def lshuffle(*args):
     raise NotImplementedError("lshuffle")
+
+
+def proc(*args):
+    raise NotImplementedError("proc")
 
 
 def split(*args):

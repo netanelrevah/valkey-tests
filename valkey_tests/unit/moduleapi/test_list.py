@@ -20,11 +20,6 @@ proc verify_list_edit_reply {reply argv} {
 pytestmark = [pytest.mark.modules]
 
 
-"""
-r module load testmodule
-"""
-
-
 def test_module_list_set_get_insert_delete(r: ValkeyTestClient) -> None:
     """
     test {Module list set, get, insert, delete} {

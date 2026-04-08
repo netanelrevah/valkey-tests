@@ -26,11 +26,6 @@ return 1"
 pytestmark = [pytest.mark.modules_usercall_network]
 
 
-"""
-r module load testmodule
-"""
-
-
 def test_test_module_check_regular_valkey_command_without_user_or_acl(r: ValkeyTestClient) -> None:
     """
     test {test module check regular valkey command without user/acl} {

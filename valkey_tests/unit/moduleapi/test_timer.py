@@ -13,11 +13,6 @@ set testmodule file normalize tests/modules/timer.so
 pytestmark = [pytest.mark.modules]
 
 
-"""
-r module load testmodule
-"""
-
-
 def test_rm_createtimer_a_sequence_of_timers_work(r: ValkeyTestClient) -> None:
     """
     test {RM_CreateTimer: a sequence of timers work} {

@@ -47,11 +47,6 @@ proc activate_io_threads_and_wait {} {
 pytestmark = [pytest.mark.external_skip, pytest.mark.valgrind_skip]
 
 
-"""
-assert_equal {io-threads 5} r config get io-threads
-"""
-
-
 def test_force_the_use_of_io_threads_and_assert_active_io_thread_usage(r: ValkeyTestClient) -> None:
     """
     test {Force the use of IO threads and assert active IO thread usage} {
@@ -115,6 +110,7 @@ def test_force_the_use_of_io_threads_and_assert_active_io_thread_usage(r: Valkey
         }
     }
     """
+    assert "io-threads 5" == r.run("config", "get", "io-threads")
     activate_io_threads_and_wait()
     info = r.run("info")
     io_threads_count = r.run("config", "get", "io-threads")["io-threads"]

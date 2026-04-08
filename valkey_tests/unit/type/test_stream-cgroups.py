@@ -1908,57 +1908,6 @@ def test_xgroup_createconsumer_group_must_exist(r: ValkeyTestClient) -> None:
         r.run("XGROUP", "CREATECONSUMER", "mystream", "mygroup", "consumer")
 
 
-"""
-start_server {tags {"stream needs:debug"} overrides {appendonly yes aof-use-rdb-preamble no appendfsync always}} {
-    test {XREADGROUP with NOACK creates consumer} {
-        r del mystream
-        r XGROUP CREATE mystream mygroup $ MKSTREAM
-        r XADD mystream * f1 v1
-        r XREADGROUP GROUP mygroup Alice NOACK STREAMS mystream ">"
-        set rd [valkey_deferring_client]
-        $rd XREADGROUP GROUP mygroup Bob BLOCK 0 NOACK STREAMS mystream ">"
-        wait_for_blocked_clients_count 1
-        r XADD mystream * f2 v2
-        set grpinfo [r xinfo groups mystream]
-
-        r debug loadaof
-        assert_equal [r xinfo groups mystream] $grpinfo
-        set reply [r xinfo consumers mystream mygroup]
-        set consumer_info [lindex $reply 0]
-        assert_equal [lindex $consumer_info 1] "Alice" ;# consumer name
-        set consumer_info [lindex $reply 1]
-        assert_equal [lindex $consumer_info 1] "Bob" ;# consumer name
-        $rd close
-    }
-
-    test {Consumer without PEL is present in AOF after AOFRW} {
-        r del mystream
-        r XGROUP CREATE mystream mygroup $ MKSTREAM
-        r XADD mystream * f v
-        r XREADGROUP GROUP mygroup Alice NOACK STREAMS mystream ">"
-        set rd [valkey_deferring_client]
-        $rd XREADGROUP GROUP mygroup Bob BLOCK 0 NOACK STREAMS mystream ">"
-        wait_for_blocked_clients_count 1
-        r XGROUP CREATECONSUMER mystream mygroup Charlie
-        set grpinfo [lindex [r xinfo groups mystream] 0]
-
-        r bgrewriteaof
-        waitForBgrewriteaof r
-        r debug loadaof
-
-        set curr_grpinfo [lindex [r xinfo groups mystream] 0]
-        assert {$curr_grpinfo == $grpinfo}
-        set n_consumers [lindex $grpinfo 3]
-
-        # All consumers are created via XREADGROUP, regardless of whether they managed
-        # to read any entries or not
-        assert_equal $n_consumers 3
-        $rd close
-    }
-}
-"""
-
-
 def test_consumer_group_read_counter_and_lag_in_empty_streams(r: ValkeyTestClient) -> None:
     """
     test {Consumer group read counter and lag in empty streams} {
@@ -1983,6 +1932,10 @@ def test_consumer_group_read_counter_and_lag_in_empty_streams(r: ValkeyTestClien
         assert_equal [dict get $group lag] 0
     }
     """
+    start_server(
+        'tags {"stream needs:debug"} overrides {appendonly yes aof-use-rdb-preamble no appendfsync always}',
+        '        test {XREADGROUP with NOACK creates consumer} {\n            r del mystream\n            r XGROUP CREATE mystream mygroup $ MKSTREAM\n            r XADD mystream * f1 v1\n            r XREADGROUP GROUP mygroup Alice NOACK STREAMS mystream ">"\n            set rd [valkey_deferring_client]\n            $rd XREADGROUP GROUP mygroup Bob BLOCK 0 NOACK STREAMS mystream ">"\n            wait_for_blocked_clients_count 1\n            r XADD mystream * f2 v2\n            set grpinfo [r xinfo groups mystream]\n\n            r debug loadaof\n            assert_equal [r xinfo groups mystream] $grpinfo\n            set reply [r xinfo consumers mystream mygroup]\n            set consumer_info [lindex $reply 0]\n            assert_equal [lindex $consumer_info 1] "Alice" ;# consumer name\n            set consumer_info [lindex $reply 1]\n            assert_equal [lindex $consumer_info 1] "Bob" ;# consumer name\n            $rd close\n        }\n\n        test {Consumer without PEL is present in AOF after AOFRW} {\n            r del mystream\n            r XGROUP CREATE mystream mygroup $ MKSTREAM\n            r XADD mystream * f v\n            r XREADGROUP GROUP mygroup Alice NOACK STREAMS mystream ">"\n            set rd [valkey_deferring_client]\n            $rd XREADGROUP GROUP mygroup Bob BLOCK 0 NOACK STREAMS mystream ">"\n            wait_for_blocked_clients_count 1\n            r XGROUP CREATECONSUMER mystream mygroup Charlie\n            set grpinfo [lindex [r xinfo groups mystream] 0]\n\n            r bgrewriteaof\n            waitForBgrewriteaof r\n            r debug loadaof\n\n            set curr_grpinfo [lindex [r xinfo groups mystream] 0]\n            assert {$curr_grpinfo == $grpinfo}\n            set n_consumers [lindex $grpinfo 3]\n\n            # All consumers are created via XREADGROUP, regardless of whether they managed\n            # to read any entries or not\n            assert_equal $n_consumers 3\n            $rd close\n        }\n    ',
+    )
     r.run("DEL", "x")
     r.run("XGROUP", "CREATE", "x", "g1", 0, "MKSTREAM")
     reply = r.run("XINFO", "STREAM", "x", "FULL")
@@ -2055,6 +2008,10 @@ def test_consumer_group_read_counter_and_lag_sanity(r: ValkeyTestClient) -> None
         assert_equal [dict get $group lag] 0
     }
     """
+    start_server(
+        'tags {"stream needs:debug"} overrides {appendonly yes aof-use-rdb-preamble no appendfsync always}',
+        '        test {XREADGROUP with NOACK creates consumer} {\n            r del mystream\n            r XGROUP CREATE mystream mygroup $ MKSTREAM\n            r XADD mystream * f1 v1\n            r XREADGROUP GROUP mygroup Alice NOACK STREAMS mystream ">"\n            set rd [valkey_deferring_client]\n            $rd XREADGROUP GROUP mygroup Bob BLOCK 0 NOACK STREAMS mystream ">"\n            wait_for_blocked_clients_count 1\n            r XADD mystream * f2 v2\n            set grpinfo [r xinfo groups mystream]\n\n            r debug loadaof\n            assert_equal [r xinfo groups mystream] $grpinfo\n            set reply [r xinfo consumers mystream mygroup]\n            set consumer_info [lindex $reply 0]\n            assert_equal [lindex $consumer_info 1] "Alice" ;# consumer name\n            set consumer_info [lindex $reply 1]\n            assert_equal [lindex $consumer_info 1] "Bob" ;# consumer name\n            $rd close\n        }\n\n        test {Consumer without PEL is present in AOF after AOFRW} {\n            r del mystream\n            r XGROUP CREATE mystream mygroup $ MKSTREAM\n            r XADD mystream * f v\n            r XREADGROUP GROUP mygroup Alice NOACK STREAMS mystream ">"\n            set rd [valkey_deferring_client]\n            $rd XREADGROUP GROUP mygroup Bob BLOCK 0 NOACK STREAMS mystream ">"\n            wait_for_blocked_clients_count 1\n            r XGROUP CREATECONSUMER mystream mygroup Charlie\n            set grpinfo [lindex [r xinfo groups mystream] 0]\n\n            r bgrewriteaof\n            waitForBgrewriteaof r\n            r debug loadaof\n\n            set curr_grpinfo [lindex [r xinfo groups mystream] 0]\n            assert {$curr_grpinfo == $grpinfo}\n            set n_consumers [lindex $grpinfo 3]\n\n            # All consumers are created via XREADGROUP, regardless of whether they managed\n            # to read any entries or not\n            assert_equal $n_consumers 3\n            $rd close\n        }\n    ',
+    )
     r.run("DEL", "x")
     r.run("XADD", "x", "1-0", "data", "a")
     r.run("XADD", "x", "2-0", "data", "b")
@@ -2165,6 +2122,10 @@ def test_consumer_group_lag_with_xdels(r: ValkeyTestClient) -> None:
         assert_equal [dict get $group lag] 2
     }
     """
+    start_server(
+        'tags {"stream needs:debug"} overrides {appendonly yes aof-use-rdb-preamble no appendfsync always}',
+        '        test {XREADGROUP with NOACK creates consumer} {\n            r del mystream\n            r XGROUP CREATE mystream mygroup $ MKSTREAM\n            r XADD mystream * f1 v1\n            r XREADGROUP GROUP mygroup Alice NOACK STREAMS mystream ">"\n            set rd [valkey_deferring_client]\n            $rd XREADGROUP GROUP mygroup Bob BLOCK 0 NOACK STREAMS mystream ">"\n            wait_for_blocked_clients_count 1\n            r XADD mystream * f2 v2\n            set grpinfo [r xinfo groups mystream]\n\n            r debug loadaof\n            assert_equal [r xinfo groups mystream] $grpinfo\n            set reply [r xinfo consumers mystream mygroup]\n            set consumer_info [lindex $reply 0]\n            assert_equal [lindex $consumer_info 1] "Alice" ;# consumer name\n            set consumer_info [lindex $reply 1]\n            assert_equal [lindex $consumer_info 1] "Bob" ;# consumer name\n            $rd close\n        }\n\n        test {Consumer without PEL is present in AOF after AOFRW} {\n            r del mystream\n            r XGROUP CREATE mystream mygroup $ MKSTREAM\n            r XADD mystream * f v\n            r XREADGROUP GROUP mygroup Alice NOACK STREAMS mystream ">"\n            set rd [valkey_deferring_client]\n            $rd XREADGROUP GROUP mygroup Bob BLOCK 0 NOACK STREAMS mystream ">"\n            wait_for_blocked_clients_count 1\n            r XGROUP CREATECONSUMER mystream mygroup Charlie\n            set grpinfo [lindex [r xinfo groups mystream] 0]\n\n            r bgrewriteaof\n            waitForBgrewriteaof r\n            r debug loadaof\n\n            set curr_grpinfo [lindex [r xinfo groups mystream] 0]\n            assert {$curr_grpinfo == $grpinfo}\n            set n_consumers [lindex $grpinfo 3]\n\n            # All consumers are created via XREADGROUP, regardless of whether they managed\n            # to read any entries or not\n            assert_equal $n_consumers 3\n            $rd close\n        }\n    ',
+    )
     r.run("DEL", "x")
     r.run("XADD", "x", "1-0", "data", "a")
     r.run("XADD", "x", "2-0", "data", "b")
@@ -2286,6 +2247,10 @@ def test_consumer_group_lag_with_xtrim(r: ValkeyTestClient) -> None:
         assert_equal [dict get $group lag] 0
     }
     """
+    start_server(
+        'tags {"stream needs:debug"} overrides {appendonly yes aof-use-rdb-preamble no appendfsync always}',
+        '        test {XREADGROUP with NOACK creates consumer} {\n            r del mystream\n            r XGROUP CREATE mystream mygroup $ MKSTREAM\n            r XADD mystream * f1 v1\n            r XREADGROUP GROUP mygroup Alice NOACK STREAMS mystream ">"\n            set rd [valkey_deferring_client]\n            $rd XREADGROUP GROUP mygroup Bob BLOCK 0 NOACK STREAMS mystream ">"\n            wait_for_blocked_clients_count 1\n            r XADD mystream * f2 v2\n            set grpinfo [r xinfo groups mystream]\n\n            r debug loadaof\n            assert_equal [r xinfo groups mystream] $grpinfo\n            set reply [r xinfo consumers mystream mygroup]\n            set consumer_info [lindex $reply 0]\n            assert_equal [lindex $consumer_info 1] "Alice" ;# consumer name\n            set consumer_info [lindex $reply 1]\n            assert_equal [lindex $consumer_info 1] "Bob" ;# consumer name\n            $rd close\n        }\n\n        test {Consumer without PEL is present in AOF after AOFRW} {\n            r del mystream\n            r XGROUP CREATE mystream mygroup $ MKSTREAM\n            r XADD mystream * f v\n            r XREADGROUP GROUP mygroup Alice NOACK STREAMS mystream ">"\n            set rd [valkey_deferring_client]\n            $rd XREADGROUP GROUP mygroup Bob BLOCK 0 NOACK STREAMS mystream ">"\n            wait_for_blocked_clients_count 1\n            r XGROUP CREATECONSUMER mystream mygroup Charlie\n            set grpinfo [lindex [r xinfo groups mystream] 0]\n\n            r bgrewriteaof\n            waitForBgrewriteaof r\n            r debug loadaof\n\n            set curr_grpinfo [lindex [r xinfo groups mystream] 0]\n            assert {$curr_grpinfo == $grpinfo}\n            set n_consumers [lindex $grpinfo 3]\n\n            # All consumers are created via XREADGROUP, regardless of whether they managed\n            # to read any entries or not\n            assert_equal $n_consumers 3\n            $rd close\n        }\n    ',
+    )
     r.run("DEL", "x")
     r.run("XADD", "x", "1-0", "data", "a")
     r.run("XADD", "x", "2-0", "data", "b")
@@ -2405,6 +2370,10 @@ def test_consumer_group_lag_with_xadd_trimming(r: ValkeyTestClient) -> None:
         assert_equal [dict get $group lag] 0
     }
     """
+    start_server(
+        'tags {"stream needs:debug"} overrides {appendonly yes aof-use-rdb-preamble no appendfsync always}',
+        '        test {XREADGROUP with NOACK creates consumer} {\n            r del mystream\n            r XGROUP CREATE mystream mygroup $ MKSTREAM\n            r XADD mystream * f1 v1\n            r XREADGROUP GROUP mygroup Alice NOACK STREAMS mystream ">"\n            set rd [valkey_deferring_client]\n            $rd XREADGROUP GROUP mygroup Bob BLOCK 0 NOACK STREAMS mystream ">"\n            wait_for_blocked_clients_count 1\n            r XADD mystream * f2 v2\n            set grpinfo [r xinfo groups mystream]\n\n            r debug loadaof\n            assert_equal [r xinfo groups mystream] $grpinfo\n            set reply [r xinfo consumers mystream mygroup]\n            set consumer_info [lindex $reply 0]\n            assert_equal [lindex $consumer_info 1] "Alice" ;# consumer name\n            set consumer_info [lindex $reply 1]\n            assert_equal [lindex $consumer_info 1] "Bob" ;# consumer name\n            $rd close\n        }\n\n        test {Consumer without PEL is present in AOF after AOFRW} {\n            r del mystream\n            r XGROUP CREATE mystream mygroup $ MKSTREAM\n            r XADD mystream * f v\n            r XREADGROUP GROUP mygroup Alice NOACK STREAMS mystream ">"\n            set rd [valkey_deferring_client]\n            $rd XREADGROUP GROUP mygroup Bob BLOCK 0 NOACK STREAMS mystream ">"\n            wait_for_blocked_clients_count 1\n            r XGROUP CREATECONSUMER mystream mygroup Charlie\n            set grpinfo [lindex [r xinfo groups mystream] 0]\n\n            r bgrewriteaof\n            waitForBgrewriteaof r\n            r debug loadaof\n\n            set curr_grpinfo [lindex [r xinfo groups mystream] 0]\n            assert {$curr_grpinfo == $grpinfo}\n            set n_consumers [lindex $grpinfo 3]\n\n            # All consumers are created via XREADGROUP, regardless of whether they managed\n            # to read any entries or not\n            assert_equal $n_consumers 3\n            $rd close\n        }\n    ',
+    )
     r.run("DEL", "x")
     r.run("XADD", "x", "1-0", "data", "a")
     r.run("XADD", "x", "2-0", "data", "b")
@@ -2489,6 +2458,10 @@ def test_loading_from_legacy_redis_v6_2_x_rdb_ver_10_persistence(r: ValkeyTestCl
         assert_equal [dict get $group lag] 2
     }
     """
+    start_server(
+        'tags {"stream needs:debug"} overrides {appendonly yes aof-use-rdb-preamble no appendfsync always}',
+        '        test {XREADGROUP with NOACK creates consumer} {\n            r del mystream\n            r XGROUP CREATE mystream mygroup $ MKSTREAM\n            r XADD mystream * f1 v1\n            r XREADGROUP GROUP mygroup Alice NOACK STREAMS mystream ">"\n            set rd [valkey_deferring_client]\n            $rd XREADGROUP GROUP mygroup Bob BLOCK 0 NOACK STREAMS mystream ">"\n            wait_for_blocked_clients_count 1\n            r XADD mystream * f2 v2\n            set grpinfo [r xinfo groups mystream]\n\n            r debug loadaof\n            assert_equal [r xinfo groups mystream] $grpinfo\n            set reply [r xinfo consumers mystream mygroup]\n            set consumer_info [lindex $reply 0]\n            assert_equal [lindex $consumer_info 1] "Alice" ;# consumer name\n            set consumer_info [lindex $reply 1]\n            assert_equal [lindex $consumer_info 1] "Bob" ;# consumer name\n            $rd close\n        }\n\n        test {Consumer without PEL is present in AOF after AOFRW} {\n            r del mystream\n            r XGROUP CREATE mystream mygroup $ MKSTREAM\n            r XADD mystream * f v\n            r XREADGROUP GROUP mygroup Alice NOACK STREAMS mystream ">"\n            set rd [valkey_deferring_client]\n            $rd XREADGROUP GROUP mygroup Bob BLOCK 0 NOACK STREAMS mystream ">"\n            wait_for_blocked_clients_count 1\n            r XGROUP CREATECONSUMER mystream mygroup Charlie\n            set grpinfo [lindex [r xinfo groups mystream] 0]\n\n            r bgrewriteaof\n            waitForBgrewriteaof r\n            r debug loadaof\n\n            set curr_grpinfo [lindex [r xinfo groups mystream] 0]\n            assert {$curr_grpinfo == $grpinfo}\n            set n_consumers [lindex $grpinfo 3]\n\n            # All consumers are created via XREADGROUP, regardless of whether they managed\n            # to read any entries or not\n            assert_equal $n_consumers 3\n            $rd close\n        }\n    ',
+    )
     r.run("DEL", "x")
     r.run(
         "RESTORE",
@@ -2523,6 +2496,10 @@ def test_loading_from_legacy_redis_v7_0_x_rdb_ver_11_persistence(r: ValkeyTestCl
         assert_equal [dict get $consumer seen-time] [dict get $consumer active-time]
     }
     """
+    start_server(
+        'tags {"stream needs:debug"} overrides {appendonly yes aof-use-rdb-preamble no appendfsync always}',
+        '        test {XREADGROUP with NOACK creates consumer} {\n            r del mystream\n            r XGROUP CREATE mystream mygroup $ MKSTREAM\n            r XADD mystream * f1 v1\n            r XREADGROUP GROUP mygroup Alice NOACK STREAMS mystream ">"\n            set rd [valkey_deferring_client]\n            $rd XREADGROUP GROUP mygroup Bob BLOCK 0 NOACK STREAMS mystream ">"\n            wait_for_blocked_clients_count 1\n            r XADD mystream * f2 v2\n            set grpinfo [r xinfo groups mystream]\n\n            r debug loadaof\n            assert_equal [r xinfo groups mystream] $grpinfo\n            set reply [r xinfo consumers mystream mygroup]\n            set consumer_info [lindex $reply 0]\n            assert_equal [lindex $consumer_info 1] "Alice" ;# consumer name\n            set consumer_info [lindex $reply 1]\n            assert_equal [lindex $consumer_info 1] "Bob" ;# consumer name\n            $rd close\n        }\n\n        test {Consumer without PEL is present in AOF after AOFRW} {\n            r del mystream\n            r XGROUP CREATE mystream mygroup $ MKSTREAM\n            r XADD mystream * f v\n            r XREADGROUP GROUP mygroup Alice NOACK STREAMS mystream ">"\n            set rd [valkey_deferring_client]\n            $rd XREADGROUP GROUP mygroup Bob BLOCK 0 NOACK STREAMS mystream ">"\n            wait_for_blocked_clients_count 1\n            r XGROUP CREATECONSUMER mystream mygroup Charlie\n            set grpinfo [lindex [r xinfo groups mystream] 0]\n\n            r bgrewriteaof\n            waitForBgrewriteaof r\n            r debug loadaof\n\n            set curr_grpinfo [lindex [r xinfo groups mystream] 0]\n            assert {$curr_grpinfo == $grpinfo}\n            set n_consumers [lindex $grpinfo 3]\n\n            # All consumers are created via XREADGROUP, regardless of whether they managed\n            # to read any entries or not\n            assert_equal $n_consumers 3\n            $rd close\n        }\n    ',
+    )
     r.run("DEL", "x")
     r.run(
         "RESTORE",
@@ -2718,6 +2695,10 @@ def lindex(*args):
 
 def s(*args):
     raise NotImplementedError("s")
+
+
+def start_server(*args):
+    raise NotImplementedError("start_server")
 
 
 def wait_for_blocked_clients_count(*args):

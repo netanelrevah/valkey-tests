@@ -11,11 +11,6 @@ set testmodule file normalize tests/modules/cmdintrospection.so
 pytestmark = [pytest.mark.modules]
 
 
-"""
-r module load testmodule
-"""
-
-
 def test_module_command_introspection_via_command_info(r: ValkeyTestClient) -> None:
     """
     test "Module command introspection via COMMAND INFO" {

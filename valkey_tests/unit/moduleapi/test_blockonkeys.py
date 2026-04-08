@@ -11,11 +11,6 @@ set testmodule file normalize tests/modules/blockonkeys.so
 pytestmark = [pytest.mark.modules]
 
 
-"""
-r module load testmodule
-"""
-
-
 def test_module_client_blocked_on_keys_circular_bpoppush(r: ValkeyTestClient) -> None:
     """
     test "Module client blocked on keys: Circular BPOPPUSH" {

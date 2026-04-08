@@ -11,11 +11,6 @@ set testmodule file normalize tests/modules/datatype2.so
 pytestmark = [pytest.mark.modules]
 
 
-"""
-r module load testmodule
-"""
-
-
 def test_datatype2_test_mem_alloc_and_free(r: ValkeyTestClient) -> None:
     """
     test "datatype2: test mem alloc and free" {

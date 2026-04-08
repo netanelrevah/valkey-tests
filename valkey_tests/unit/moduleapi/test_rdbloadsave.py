@@ -11,11 +11,6 @@ set testmodule file normalize tests/modules/rdbloadsave.so
 pytestmark = [pytest.mark.modules]
 
 
-"""
-r module load testmodule
-"""
-
-
 def test_module_rdbloadsave_sanity(r: ValkeyTestClient) -> None:
     """
     test "Module rdbloadsave sanity" {

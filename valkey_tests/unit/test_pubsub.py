@@ -16,32 +16,8 @@ if {$::singledb} {
 """
 
 
-"""
-set rd1 valkey_deferring_client
-"""
-
-
-"""
-if {[lsearch $::denytags "resp3"] >= 0} {
-    if {$resp == 3} {continue}
-} elseif {$::force_resp3} {
-    if {$resp == 2} {continue}
-}
-"""
-
-
-"""
-$rd1 hello resp
-"""
-
-
-"""
-$rd1 read
-"""
-
-
 @pytest.mark.parametrize(["resp"], [(2), (3)])
-def test_pub_or_sub_ping_on_resp_resp(r: ValkeyTestClient, resp, rd1) -> None:
+def test_pub_or_sub_ping_on_resp_resp(r: ValkeyTestClient, resp) -> None:
     """
     test "Pub/Sub PING on RESP$resp" {
         subscribe $rd1 somechannel
@@ -65,6 +41,16 @@ def test_pub_or_sub_ping_on_resp_resp(r: ValkeyTestClient, resp, rd1) -> None:
         assert_equal {PONG} [$rd1 read]
     }
     """
+    rd1 = ValkeyTestClient.create_from(r)
+    if_(
+        '[lsearch $::denytags "resp3"] >= 0',
+        "            if {$resp == 3} {continue}\n        ",
+        "elseif",
+        "$::force_resp3",
+        "            if {$resp == 2} {continue}\n        ",
+    )
+    rd1.run("hello", resp)
+    rd1.run("read")
     subscribe(rd1, "somechannel")
     rd1.run("ping")
     rd1.run("ping", "foo")

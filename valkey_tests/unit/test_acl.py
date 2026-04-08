@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841, RUF043, ANN001, ANN002, ANN201
+# ruff: noqa: PLR2004, F841, RUF043, ANN002, ANN201
 import time
 from fnmatch import fnmatch
 
@@ -2879,23 +2879,8 @@ exec cp -f tests/assets/user.acl server_path
 """
 
 
-"""
-set primary srv 0 client
-"""
-
-
-"""
-set primary_host srv 0 host
-"""
-
-
-"""
-set primary_port srv 0 port
-"""
-
-
 @pytest.mark.xfail(reason="not implemented")
-def test_test_acl_load_works_on_primary(r: ValkeyTestClient, primary) -> None:
+def test_test_acl_load_works_on_primary(r: ValkeyTestClient) -> None:
     """
     test "Test ACL LOAD works on primary" {
         exec cp -f tests/assets/user.acl $server_path
@@ -2905,6 +2890,9 @@ def test_test_acl_load_works_on_primary(r: ValkeyTestClient, primary) -> None:
         $primary AUTH harry anything
     }
     """
+    primary = ValkeyTestClient.create_from(r)
+    primary_host = r.host
+    primary_port = r.port
     # TODO: exec cp -f tests/assets/user.acl server_path
     primary.run("ACL", "setuser", "harry", "on", "nopass", "resetchannels", "&test", "+@all", "~*")
     primary.run("ACL", "save")

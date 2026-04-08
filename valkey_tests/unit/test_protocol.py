@@ -482,11 +482,6 @@ def test_raw_protocol_response(r: ValkeyTestClient) -> None:
     r.run("srandmember", "nonexisting_key")
 
 
-"""
-r deferred 1
-"""
-
-
 def test_raw_protocol_response_deferred(r: ValkeyTestClient) -> None:
     """
     test "raw protocol response - deferred" {
@@ -494,6 +489,7 @@ def test_raw_protocol_response_deferred(r: ValkeyTestClient) -> None:
         r read
     } "$nullres"
     """
+    r.run("deferred", 1)
     r.run("srandmember", "nonexisting_key")
     r.run("read")
 
@@ -509,27 +505,13 @@ def test_raw_protocol_response_multiline(r: ValkeyTestClient) -> None:
         assert_equal [r read] {a}
     }
     """
+    r.run("deferred", 1)
     r.run("sadd", "ss", "a")
     assert r.run("read") == ":1"
     r.run("srandmember", "ss", 100)
     assert r.run("read") == "*1"
     assert r.run("read") == "$1"
     assert r.run("read") == "a"
-
-
-"""
-r readraw 0
-"""
-
-
-"""
-r deferred 0
-"""
-
-
-"""
-assert_equal r ping {PONG}
-"""
 
 
 def test_resp3_attributes(r: ValkeyTestClient) -> None:
@@ -548,6 +530,9 @@ def test_resp3_attributes(r: ValkeyTestClient) -> None:
         set _ ""
     } {} {needs:debug resp3}
     """
+    r.run("readraw", 0)
+    r.run("deferred", 0)
+    assert r.run("ping") == "PONG"
     r.run("hello", 3)
     assert "Some real reply following the attribute" == r.run("debug", "protocol", "attrib")
     assert "key-popularity {key:123 90}" == r.run("attributes")
@@ -583,6 +568,9 @@ def test_resp3_attributes_readraw(r: ValkeyTestClient) -> None:
         set _ {}
     } {} {needs:debug resp3}
     """
+    r.run("readraw", 0)
+    r.run("deferred", 0)
+    assert r.run("ping") == "PONG"
     r.run("hello", 3)
     r.run("readraw", 1)
     r.run("deferred", 1)
@@ -599,7 +587,7 @@ def test_resp3_attributes_readraw(r: ValkeyTestClient) -> None:
     r.run("readraw", 0)
     r.run("deferred", 0)
     r.run("hello", 2)
-    _ = ""
+    _ = []
 
 
 def test_resp3_attributes_on_resp2(r: ValkeyTestClient) -> None:
@@ -610,6 +598,9 @@ def test_resp3_attributes_on_resp2(r: ValkeyTestClient) -> None:
         set _ $res
     } {Some real reply following the attribute} {needs:debug}
     """
+    r.run("readraw", 0)
+    r.run("deferred", 0)
+    assert r.run("ping") == "PONG"
     r.run("hello", 2)
     res = r.run("debug", "protocol", "attrib")
     assert res == "Some real reply following the attribute"
@@ -622,6 +613,9 @@ def test_test_big_number_parsing(r: ValkeyTestClient) -> None:
         r debug protocol bignum
     } {1234567999999999999999999999999999999} {needs:debug resp3}
     """
+    r.run("readraw", 0)
+    r.run("deferred", 0)
+    assert r.run("ping") == "PONG"
     r.run("hello", 3)
     assert r.run("debug", "protocol", "bignum") == "1234567999999999999999999999999999999"
 
@@ -638,13 +632,16 @@ def test_test_bool_parsing(r: ValkeyTestClient) -> None:
         set _ {}
     } {} {needs:debug resp3}
     """
+    r.run("readraw", 0)
+    r.run("deferred", 0)
+    assert r.run("ping") == "PONG"
     r.run("hello", 3)
     assert r.run("debug", "protocol", "true") == 1
     assert r.run("debug", "protocol", "false") == 0
     r.run("hello", 2)
     assert r.run("debug", "protocol", "true") == 1
     assert r.run("debug", "protocol", "false") == 0
-    _ = ""
+    _ = []
 
 
 def test_test_verbatim_str_parsing(r: ValkeyTestClient) -> None:
@@ -654,6 +651,9 @@ def test_test_verbatim_str_parsing(r: ValkeyTestClient) -> None:
         r debug protocol verbatim
     } "This is a verbatim\nstring" {needs:debug resp3}
     """
+    r.run("readraw", 0)
+    r.run("deferred", 0)
+    assert r.run("ping") == "PONG"
     r.run("hello", 3)
     r.run("debug", "protocol", "verbatim")
 
@@ -668,6 +668,9 @@ def test_test_large_number_of_args(r: ValkeyTestClient) -> None:
         assert_equal [r get "{k}2"] v2
     }
     """
+    r.run("readraw", 0)
+    r.run("deferred", 0)
+    assert r.run("ping") == "PONG"
     r.run("flushdb")
     args = split(string("trim", string("repeat", "k v ", 10000)))
     args.append("{k}2")
@@ -695,6 +698,9 @@ def test_test_argument_rewriting_issue_9598(r: ValkeyTestClient) -> None:
         assert_equal [r exec] 2
     }
     """
+    r.run("readraw", 0)
+    r.run("deferred", 0)
+    assert r.run("ping") == "PONG"
     r.run("flushdb")
     r.run("set", "k", 0)
     assert r.run("incrbyfloat", "k", 1.0) == 1
@@ -788,7 +794,7 @@ def test_regression_for_a_crash_with_blocking_ops_and_pipelining(r: ValkeyTestCl
     fd = r.run("channel")
     proto = "*3\r\n$5\r\nBLPOP\r\n$6\r\nnolist\r\n$1\r\n0\r\n"
     flush(fd)
-    res = ""
+    res = []
     rd.run("rpush", "nolist", "a")
     rd.run("read")
     rd.run("rpush", "nolist", "a")

@@ -24,11 +24,6 @@ proc latency_percentiles_usec {cmd} {
 pytestmark = [pytest.mark.modules]
 
 
-"""
-r module load testmodule
-"""
-
-
 def test_blocked_clients_time_tracking_check_blocked_command_that_uses_redismodule_blockedclientmeasuretimestart_is_tracking_background_time(
     r: ValkeyTestClient,
 ) -> None:

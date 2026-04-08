@@ -277,7 +277,7 @@ def test_corrupted_sparse_hyperloglogs_are_detected_additional_at_tail(r: Valkey
     r.run("del", "hll")
     r.run("pfadd", "hll", "a", "b", "c")
     r.run("append", "hll", "hello")
-    e = ""
+    e = []
     try:
         e = r.run("pfcount", "hll")
     except Exception as _catch_err:
@@ -299,7 +299,7 @@ def test_corrupted_sparse_hyperloglogs_are_detected_broken_magic(r: ValkeyTestCl
     r.run("del", "hll")
     r.run("pfadd", "hll", "a", "b", "c")
     r.run("setrange", "hll", 0, "0123")
-    e = ""
+    e = []
     try:
         e = r.run("pfcount", "hll")
     except Exception as _catch_err:
@@ -321,7 +321,7 @@ def test_corrupted_sparse_hyperloglogs_are_detected_invalid_encoding(r: ValkeyTe
     r.run("del", "hll")
     r.run("pfadd", "hll", "a", "b", "c")
     r.run("setrange", "hll", 4, "x")
-    e = ""
+    e = []
     try:
         e = r.run("pfcount", "hll")
     except Exception as _catch_err:
@@ -343,7 +343,7 @@ def test_corrupted_dense_hyperloglogs_are_detected_wrong_length(r: ValkeyTestCli
     r.run("del", "hll")
     r.run("pfadd", "hll", "a", "b", "c")
     r.run("setrange", "hll", 4, "\x00")
-    e = ""
+    e = []
     try:
         e = r.run("pfcount", "hll")
     except Exception as _catch_err:

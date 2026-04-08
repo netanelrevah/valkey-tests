@@ -148,7 +148,7 @@ def test_exists(r: ValkeyTestClient) -> None:
         append res [r exists newkey]
     } {10}
     """
-    res = ""
+    res = []
     r.run("set", "newkey", "test")
     append("res", r.run("exists", "newkey"))
     r.run("del", "newkey")
@@ -187,7 +187,7 @@ def test_commands_pipelining(r: ValkeyTestClient) -> None:
     """
     fd = r.run("channel")
     flush(fd)
-    res = ""
+    res = []
     append("res", string("match", "OK*", r.run("read")))
     append("res", r.run("read"))
     append("res", string("match", "PONG*", r.run("read")))

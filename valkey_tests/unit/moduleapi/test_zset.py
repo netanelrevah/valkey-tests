@@ -11,11 +11,6 @@ set testmodule file normalize tests/modules/zset.so
 pytestmark = [pytest.mark.modules]
 
 
-"""
-r module load testmodule
-"""
-
-
 def test_module_zset_rem(r: ValkeyTestClient) -> None:
     """
     test {Module zset rem} {

@@ -11,11 +11,6 @@ set testmodule file normalize tests/modules/mallocsize.so
 pytestmark = [pytest.mark.modules]
 
 
-"""
-r module load testmodule
-"""
-
-
 def test_mallocsize_of_raw_bytes(r: ValkeyTestClient) -> None:
     """
     test {MallocSize of raw bytes} {

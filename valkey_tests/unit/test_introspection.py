@@ -453,24 +453,6 @@ def test_client_list_with_ip_filter(r: ValkeyTestClient) -> None:
     # TODO: assert_match *client-ip* filtered
 
 
-"""
-start_server {tags {"ipv6"} overrides {bind {127.0.0.1 ::1}}} {
-    test {CLIENT LIST with IPv6 filter} {
-        set c [valkey ::1 [srv 0 port] 0 $::tls]
-        $c client setname "client-ipv6"
-
-        set client_info [$c client info]
-
-        regexp {addr=\[([a-fA-F0-9:]+)\]:\d+} $client_info -> ipv6only
-        set filtered [$c client list ip $ipv6only]
-        assert_match *client-ipv6* $filtered
-
-        $c close
-    }
-}
-"""
-
-
 def test_client_list_with_capa_filter(r: ValkeyTestClient) -> None:
     """
     test {CLIENT LIST with CAPA filter} {
@@ -483,6 +465,10 @@ def test_client_list_with_capa_filter(r: ValkeyTestClient) -> None:
         catch {$c1 close}
     }
     """
+    start_server(
+        'tags {"ipv6"} overrides {bind {127.0.0.1 ::1}}',
+        '        test {CLIENT LIST with IPv6 filter} {\n            set c [valkey ::1 [srv 0 port] 0 $::tls]\n            $c client setname "client-ipv6"\n\n            set client_info [$c client info]\n\n            regexp {addr=\\[([a-fA-F0-9:]+)\\]:\\d+} $client_info -> ipv6only\n            set filtered [$c client list ip $ipv6only]\n            assert_match *client-ipv6* $filtered\n\n            $c close\n        }\n    ',
+    )
     c1 = ValkeyTestClient.create_from(r)
     c1.run("client", "setname", "client-with-r")
     c1.run("client", "capa", "redirect")
@@ -511,6 +497,10 @@ def test_client_kill_with_ip_filter(r: ValkeyTestClient) -> None:
         assert_error "*I/O error*" {$c1 ping}
     } {}
     """
+    start_server(
+        'tags {"ipv6"} overrides {bind {127.0.0.1 ::1}}',
+        '        test {CLIENT LIST with IPv6 filter} {\n            set c [valkey ::1 [srv 0 port] 0 $::tls]\n            $c client setname "client-ipv6"\n\n            set client_info [$c client info]\n\n            regexp {addr=\\[([a-fA-F0-9:]+)\\]:\\d+} $client_info -> ipv6only\n            set filtered [$c client list ip $ipv6only]\n            assert_match *client-ipv6* $filtered\n\n            $c close\n        }\n    ',
+    )
     c1 = ValkeyTestClient.create_from(r)
     c1.run("client", "setname", "killme-ip")
     r.run("client", "setname", "client-normal")
@@ -518,25 +508,6 @@ def test_client_kill_with_ip_filter(r: ValkeyTestClient) -> None:
     regexp("addr=([^:]+):", client_info, "->", "iponly")
     # TODO: r client kill ip iponly skipme yes
     assert_error("*I/O error*", "$c1 ping")
-
-
-"""
-start_server {tags {"ipv6"} overrides {bind {127.0.0.1 ::1}}} {
-    test {CLIENT KILL with IPv6 filter} {
-        set c [valkey ::1 [srv 0 port] 0 $::tls]
-        $c client setname "client-ipv6"
-
-        set client_info [$c client info]
-
-        regexp {addr=\[([a-fA-F0-9:]+)\]:\d+} $client_info -> ipv6only
-        set filtered [r client kill ip $ipv6only]
-
-        assert_error "*I/O error*" {$c ping}
-
-        $c close
-    }
-}
-"""
 
 
 def test_client_kill_with_capa_filter(r: ValkeyTestClient) -> None:
@@ -552,6 +523,10 @@ def test_client_kill_with_capa_filter(r: ValkeyTestClient) -> None:
         assert_error "*I/O error*" {$c1 ping}
     } {}
     """
+    start_server(
+        'tags {"ipv6"} overrides {bind {127.0.0.1 ::1}}',
+        '        test {CLIENT KILL with IPv6 filter} {\n            set c [valkey ::1 [srv 0 port] 0 $::tls]\n            $c client setname "client-ipv6"\n\n            set client_info [$c client info]\n\n            regexp {addr=\\[([a-fA-F0-9:]+)\\]:\\d+} $client_info -> ipv6only\n            set filtered [r client kill ip $ipv6only]\n\n            assert_error "*I/O error*" {$c ping}\n\n            $c close\n        }\n    ',
+    )
     c1 = ValkeyTestClient.create_from(r)
     c1.run("client", "setname", "killme-capa")
     c1.run("client", "capa", "redirect")
@@ -576,6 +551,10 @@ def test_client_kill_with_name_filter(r: ValkeyTestClient) -> None:
         catch {$c1 close}
     }
     """
+    start_server(
+        'tags {"ipv6"} overrides {bind {127.0.0.1 ::1}}',
+        '        test {CLIENT KILL with IPv6 filter} {\n            set c [valkey ::1 [srv 0 port] 0 $::tls]\n            $c client setname "client-ipv6"\n\n            set client_info [$c client info]\n\n            regexp {addr=\\[([a-fA-F0-9:]+)\\]:\\d+} $client_info -> ipv6only\n            set filtered [r client kill ip $ipv6only]\n\n            assert_error "*I/O error*" {$c ping}\n\n            $c close\n        }\n    ',
+    )
     c1 = ValkeyTestClient.create_from(r)
     c1.run("client", "setname", "mytestclient")
     r.run("client", "kill", "name", "myclient", "name", "mytestclient")
@@ -603,6 +582,10 @@ def test_client_kill_with_flags_filter(r: ValkeyTestClient) -> None:
         catch {$c1 close}
     }
     """
+    start_server(
+        'tags {"ipv6"} overrides {bind {127.0.0.1 ::1}}',
+        '        test {CLIENT KILL with IPv6 filter} {\n            set c [valkey ::1 [srv 0 port] 0 $::tls]\n            $c client setname "client-ipv6"\n\n            set client_info [$c client info]\n\n            regexp {addr=\\[([a-fA-F0-9:]+)\\]:\\d+} $client_info -> ipv6only\n            set filtered [r client kill ip $ipv6only]\n\n            assert_error "*I/O error*" {$c ping}\n\n            $c close\n        }\n    ',
+    )
     c1 = ValkeyTestClient.create_from(r)
     c1.run("client", "setname", "mytestclient")
     r.run("client", "kill", "flags", "O", "flags", "N")
@@ -629,6 +612,10 @@ def test_client_kill_with_type_filter(r: ValkeyTestClient) -> None:
         catch {$c1 close}
     }
     """
+    start_server(
+        'tags {"ipv6"} overrides {bind {127.0.0.1 ::1}}',
+        '        test {CLIENT KILL with IPv6 filter} {\n            set c [valkey ::1 [srv 0 port] 0 $::tls]\n            $c client setname "client-ipv6"\n\n            set client_info [$c client info]\n\n            regexp {addr=\\[([a-fA-F0-9:]+)\\]:\\d+} $client_info -> ipv6only\n            set filtered [r client kill ip $ipv6only]\n\n            assert_error "*I/O error*" {$c ping}\n\n            $c close\n        }\n    ',
+    )
     c1 = ValkeyTestClient.create_from(r)
     r.run("client", "kill", "type", "replica", "type", "normal")
     assert_error("*I/O error*", "$c1 ping")
@@ -662,6 +649,10 @@ def test_client_kill_with_multiple_filters(r: ValkeyTestClient) -> None:
         catch {$c2 close}
     }
     """
+    start_server(
+        'tags {"ipv6"} overrides {bind {127.0.0.1 ::1}}',
+        '        test {CLIENT KILL with IPv6 filter} {\n            set c [valkey ::1 [srv 0 port] 0 $::tls]\n            $c client setname "client-ipv6"\n\n            set client_info [$c client info]\n\n            regexp {addr=\\[([a-fA-F0-9:]+)\\]:\\d+} $client_info -> ipv6only\n            set filtered [r client kill ip $ipv6only]\n\n            assert_error "*I/O error*" {$c ping}\n\n            $c close\n        }\n    ',
+    )
     c1 = ValkeyTestClient.create_from(r)
     c2 = ValkeyTestClient.create_from(r)
     c1.run("client", "setname", "client1")
@@ -704,6 +695,10 @@ def test_client_kill_with_multiple_filters_including_idle_time(r: ValkeyTestClie
         catch {$c2 close}
     }
     """
+    start_server(
+        'tags {"ipv6"} overrides {bind {127.0.0.1 ::1}}',
+        '        test {CLIENT KILL with IPv6 filter} {\n            set c [valkey ::1 [srv 0 port] 0 $::tls]\n            $c client setname "client-ipv6"\n\n            set client_info [$c client info]\n\n            regexp {addr=\\[([a-fA-F0-9:]+)\\]:\\d+} $client_info -> ipv6only\n            set filtered [r client kill ip $ipv6only]\n\n            assert_error "*I/O error*" {$c ping}\n\n            $c close\n        }\n    ',
+    )
     c1 = ValkeyTestClient.create_from(r)
     c2 = ValkeyTestClient.create_from(r)
     c1.run("client", "setname", "client1")
@@ -732,6 +727,10 @@ def test_client_list_with_not_name_filter(r: ValkeyTestClient) -> None:
         catch {$c1 close}
     }
     """
+    start_server(
+        'tags {"ipv6"} overrides {bind {127.0.0.1 ::1}}',
+        '        test {CLIENT KILL with IPv6 filter} {\n            set c [valkey ::1 [srv 0 port] 0 $::tls]\n            $c client setname "client-ipv6"\n\n            set client_info [$c client info]\n\n            regexp {addr=\\[([a-fA-F0-9:]+)\\]:\\d+} $client_info -> ipv6only\n            set filtered [r client kill ip $ipv6only]\n\n            assert_error "*I/O error*" {$c ping}\n\n            $c close\n        }\n    ',
+    )
     r.run("client", "setname", "mytestclient")
     c1 = ValkeyTestClient.create_from(r)
     c1.run("client", "setname", "client1")
@@ -755,6 +754,10 @@ def test_client_list_with_not_flags_filter(r: ValkeyTestClient) -> None:
         catch {$c1 close}
     }
     """
+    start_server(
+        'tags {"ipv6"} overrides {bind {127.0.0.1 ::1}}',
+        '        test {CLIENT KILL with IPv6 filter} {\n            set c [valkey ::1 [srv 0 port] 0 $::tls]\n            $c client setname "client-ipv6"\n\n            set client_info [$c client info]\n\n            regexp {addr=\\[([a-fA-F0-9:]+)\\]:\\d+} $client_info -> ipv6only\n            set filtered [r client kill ip $ipv6only]\n\n            assert_error "*I/O error*" {$c ping}\n\n            $c close\n        }\n    ',
+    )
     c1 = ValkeyTestClient.create_from(r)
     c1.run("readonly")
     cl = r.run("client", "list", "not-flags", "r", "not-flags", "N")
@@ -779,6 +782,10 @@ def test_client_list_with_not_type_filter(r: ValkeyTestClient) -> None:
         catch {$c1 close}
     }
     """
+    start_server(
+        'tags {"ipv6"} overrides {bind {127.0.0.1 ::1}}',
+        '        test {CLIENT KILL with IPv6 filter} {\n            set c [valkey ::1 [srv 0 port] 0 $::tls]\n            $c client setname "client-ipv6"\n\n            set client_info [$c client info]\n\n            regexp {addr=\\[([a-fA-F0-9:]+)\\]:\\d+} $client_info -> ipv6only\n            set filtered [r client kill ip $ipv6only]\n\n            assert_error "*I/O error*" {$c ping}\n\n            $c close\n        }\n    ',
+    )
     r.run("client", "setname", "mytestclient")
     c1 = ValkeyTestClient.create_from(r)
     c1.run("client", "setname", "client1")
@@ -815,6 +822,10 @@ def test_client_list_with_multiple_negative_filters(r: ValkeyTestClient) -> None
         catch {$c1 close}
     }
     """
+    start_server(
+        'tags {"ipv6"} overrides {bind {127.0.0.1 ::1}}',
+        '        test {CLIENT KILL with IPv6 filter} {\n            set c [valkey ::1 [srv 0 port] 0 $::tls]\n            $c client setname "client-ipv6"\n\n            set client_info [$c client info]\n\n            regexp {addr=\\[([a-fA-F0-9:]+)\\]:\\d+} $client_info -> ipv6only\n            set filtered [r client kill ip $ipv6only]\n\n            assert_error "*I/O error*" {$c ping}\n\n            $c close\n        }\n    ',
+    )
     r.run("client", "setname", "mytestclient")
     client_info = r.run("client", "info")
     fields = split(client_info, " ")
@@ -857,6 +868,10 @@ def test_client_list_with_multiple_id_filters(r: ValkeyTestClient) -> None:
         catch {$c3 close}
     }
     """
+    start_server(
+        'tags {"ipv6"} overrides {bind {127.0.0.1 ::1}}',
+        '        test {CLIENT KILL with IPv6 filter} {\n            set c [valkey ::1 [srv 0 port] 0 $::tls]\n            $c client setname "client-ipv6"\n\n            set client_info [$c client info]\n\n            regexp {addr=\\[([a-fA-F0-9:]+)\\]:\\d+} $client_info -> ipv6only\n            set filtered [r client kill ip $ipv6only]\n\n            assert_error "*I/O error*" {$c ping}\n\n            $c close\n        }\n    ',
+    )
     c1 = ValkeyTestClient.create_from(r)
     c2 = ValkeyTestClient.create_from(r)
     c3 = ValkeyTestClient.create_from(r)
@@ -897,6 +912,10 @@ def test_client_kill_with_multiple_id_filters(r: ValkeyTestClient) -> None:
         assert_equal [r client kill id $id1 id $id2 id $id3] 3
     }
     """
+    start_server(
+        'tags {"ipv6"} overrides {bind {127.0.0.1 ::1}}',
+        '        test {CLIENT KILL with IPv6 filter} {\n            set c [valkey ::1 [srv 0 port] 0 $::tls]\n            $c client setname "client-ipv6"\n\n            set client_info [$c client info]\n\n            regexp {addr=\\[([a-fA-F0-9:]+)\\]:\\d+} $client_info -> ipv6only\n            set filtered [r client kill ip $ipv6only]\n\n            assert_error "*I/O error*" {$c ping}\n\n            $c close\n        }\n    ',
+    )
     c1 = ValkeyTestClient.create_from(r)
     c2 = ValkeyTestClient.create_from(r)
     c3 = ValkeyTestClient.create_from(r)
@@ -937,6 +956,10 @@ def test_client_list_with_multiple_negative_filters_1(r: ValkeyTestClient) -> No
         $c3 close
     }
     """
+    start_server(
+        'tags {"ipv6"} overrides {bind {127.0.0.1 ::1}}',
+        '        test {CLIENT KILL with IPv6 filter} {\n            set c [valkey ::1 [srv 0 port] 0 $::tls]\n            $c client setname "client-ipv6"\n\n            set client_info [$c client info]\n\n            regexp {addr=\\[([a-fA-F0-9:]+)\\]:\\d+} $client_info -> ipv6only\n            set filtered [r client kill ip $ipv6only]\n\n            assert_error "*I/O error*" {$c ping}\n\n            $c close\n        }\n    ',
+    )
     c1 = ValkeyTestClient.create_from(r)
     c2 = ValkeyTestClient.create_from(r)
     c3 = ValkeyTestClient.create_from(r)
@@ -969,28 +992,14 @@ def test_client_list_with_not_ip_filter(r: ValkeyTestClient) -> None:
         r client list not-ip $not_ip not-ip $not_ip
     } {}
     """
+    start_server(
+        'tags {"ipv6"} overrides {bind {127.0.0.1 ::1}}',
+        '        test {CLIENT KILL with IPv6 filter} {\n            set c [valkey ::1 [srv 0 port] 0 $::tls]\n            $c client setname "client-ipv6"\n\n            set client_info [$c client info]\n\n            regexp {addr=\\[([a-fA-F0-9:]+)\\]:\\d+} $client_info -> ipv6only\n            set filtered [r client kill ip $ipv6only]\n\n            assert_error "*I/O error*" {$c ping}\n\n            $c close\n        }\n    ',
+    )
     r.run("client", "setname", "not-ip")
     client_info = r.run("client", "info")
     regexp("addr=([^:]+):", client_info, "->", "not_ip")
     # TODO: r client list not-ip not_ip not-ip not_ip
-
-
-"""
-start_server {tags {"ipv6"} overrides {bind {127.0.0.1 ::1}}} {
-    test {CLIENT LIST with IPv6 negative filter} {
-        set c [valkey ::1 [srv 0 port] 0 $::tls]
-        $c client setname "client-ipv6"
-
-        set client_info [$c client info]
-
-        regexp {addr=\[([a-fA-F0-9:]+)\]:\d+} $client_info -> ipv6only
-        set filtered [$c client list not-ip "1.2.3.4" not-ip $ipv6only]
-        assert_no_match *client-ipv6* $filtered
-
-        $c close
-    }
-}
-"""
 
 
 def test_client_list_with_not_capa_filter(r: ValkeyTestClient) -> None:
@@ -1006,6 +1015,10 @@ def test_client_list_with_not_capa_filter(r: ValkeyTestClient) -> None:
         catch {$c1 close}
     }
     """
+    start_server(
+        'tags {"ipv6"} overrides {bind {127.0.0.1 ::1}}',
+        '        test {CLIENT LIST with IPv6 negative filter} {\n            set c [valkey ::1 [srv 0 port] 0 $::tls]\n            $c client setname "client-ipv6"\n\n            set client_info [$c client info]\n\n            regexp {addr=\\[([a-fA-F0-9:]+)\\]:\\d+} $client_info -> ipv6only\n            set filtered [$c client list not-ip "1.2.3.4" not-ip $ipv6only]\n            assert_no_match *client-ipv6* $filtered\n\n            $c close\n        }\n    ',
+    )
     r.run("client", "setname", "mytestclient")
     c1 = ValkeyTestClient.create_from(r)
     c1.run("client", "setname", "client-with-r")
@@ -1037,6 +1050,10 @@ def test_client_kill_with_not_ip_filter(r: ValkeyTestClient) -> None:
         assert_no_match "*name=killme-not-ip*" $list_reply
     }
     """
+    start_server(
+        'tags {"ipv6"} overrides {bind {127.0.0.1 ::1}}',
+        '        test {CLIENT LIST with IPv6 negative filter} {\n            set c [valkey ::1 [srv 0 port] 0 $::tls]\n            $c client setname "client-ipv6"\n\n            set client_info [$c client info]\n\n            regexp {addr=\\[([a-fA-F0-9:]+)\\]:\\d+} $client_info -> ipv6only\n            set filtered [$c client list not-ip "1.2.3.4" not-ip $ipv6only]\n            assert_no_match *client-ipv6* $filtered\n\n            $c close\n        }\n    ',
+    )
     c1 = ValkeyTestClient.create_from(r)
     c1.run("client", "setname", "killme-not-ip")
     r.run("client", "setname", "client-normal")
@@ -1069,6 +1086,10 @@ def test_client_kill_with_not_capa_filter(r: ValkeyTestClient) -> None:
         assert_no_match "*name=killme-not-capa*" $cl
     }
     """
+    start_server(
+        'tags {"ipv6"} overrides {bind {127.0.0.1 ::1}}',
+        '        test {CLIENT LIST with IPv6 negative filter} {\n            set c [valkey ::1 [srv 0 port] 0 $::tls]\n            $c client setname "client-ipv6"\n\n            set client_info [$c client info]\n\n            regexp {addr=\\[([a-fA-F0-9:]+)\\]:\\d+} $client_info -> ipv6only\n            set filtered [$c client list not-ip "1.2.3.4" not-ip $ipv6only]\n            assert_no_match *client-ipv6* $filtered\n\n            $c close\n        }\n    ',
+    )
     c1 = ValkeyTestClient.create_from(r)
     c1.run("client", "setname", "killme-not-capa")
     r.run("client", "setname", "client-normal")
@@ -1103,6 +1124,10 @@ def test_client_kill_with_not_name_filter(r: ValkeyTestClient) -> None:
         assert_no_match "*name=killme-not-name*" $cl
     }
     """
+    start_server(
+        'tags {"ipv6"} overrides {bind {127.0.0.1 ::1}}',
+        '        test {CLIENT LIST with IPv6 negative filter} {\n            set c [valkey ::1 [srv 0 port] 0 $::tls]\n            $c client setname "client-ipv6"\n\n            set client_info [$c client info]\n\n            regexp {addr=\\[([a-fA-F0-9:]+)\\]:\\d+} $client_info -> ipv6only\n            set filtered [$c client list not-ip "1.2.3.4" not-ip $ipv6only]\n            assert_no_match *client-ipv6* $filtered\n\n            $c close\n        }\n    ',
+    )
     r.run("client", "setname", "client-normal")
     c1 = ValkeyTestClient.create_from(r)
     c1.run("client", "setname", "killme-not-name")
@@ -1138,6 +1163,10 @@ def test_client_kill_with_not_flags_filter(r: ValkeyTestClient) -> None:
         assert_no_match "*name=killme-not-flags*" $cl
     }
     """
+    start_server(
+        'tags {"ipv6"} overrides {bind {127.0.0.1 ::1}}',
+        '        test {CLIENT LIST with IPv6 negative filter} {\n            set c [valkey ::1 [srv 0 port] 0 $::tls]\n            $c client setname "client-ipv6"\n\n            set client_info [$c client info]\n\n            regexp {addr=\\[([a-fA-F0-9:]+)\\]:\\d+} $client_info -> ipv6only\n            set filtered [$c client list not-ip "1.2.3.4" not-ip $ipv6only]\n            assert_no_match *client-ipv6* $filtered\n\n            $c close\n        }\n    ',
+    )
     r.run("client", "setname", "client-normal")
     c1 = ValkeyTestClient.create_from(r)
     c1.run("client", "setname", "killme-not-flags")
@@ -1174,6 +1203,10 @@ def test_client_kill_with_not_type_filter(r: ValkeyTestClient) -> None:
         assert_no_match "*name=killme-not-type*" $cl
     }
     """
+    start_server(
+        'tags {"ipv6"} overrides {bind {127.0.0.1 ::1}}',
+        '        test {CLIENT LIST with IPv6 negative filter} {\n            set c [valkey ::1 [srv 0 port] 0 $::tls]\n            $c client setname "client-ipv6"\n\n            set client_info [$c client info]\n\n            regexp {addr=\\[([a-fA-F0-9:]+)\\]:\\d+} $client_info -> ipv6only\n            set filtered [$c client list not-ip "1.2.3.4" not-ip $ipv6only]\n            assert_no_match *client-ipv6* $filtered\n\n            $c close\n        }\n    ',
+    )
     r.run("client", "setname", "client-normal")
     c1 = ValkeyTestClient.create_from(r)
     c1.run("client", "setname", "killme-not-type")
@@ -1213,6 +1246,10 @@ def test_client_kill_with_multiple_negative_filters(r: ValkeyTestClient) -> None
         catch {$c2 close}
     }
     """
+    start_server(
+        'tags {"ipv6"} overrides {bind {127.0.0.1 ::1}}',
+        '        test {CLIENT LIST with IPv6 negative filter} {\n            set c [valkey ::1 [srv 0 port] 0 $::tls]\n            $c client setname "client-ipv6"\n\n            set client_info [$c client info]\n\n            regexp {addr=\\[([a-fA-F0-9:]+)\\]:\\d+} $client_info -> ipv6only\n            set filtered [$c client list not-ip "1.2.3.4" not-ip $ipv6only]\n            assert_no_match *client-ipv6* $filtered\n\n            $c close\n        }\n    ',
+    )
     c1 = ValkeyTestClient.create_from(r)
     c2 = ValkeyTestClient.create_from(r)
     c1.run("client", "setname", "client1")
@@ -1255,6 +1292,10 @@ def test_client_kill_with_both_positive_and_negative_filters_including_idle_time
         catch {$c2 close}
     }
     """
+    start_server(
+        'tags {"ipv6"} overrides {bind {127.0.0.1 ::1}}',
+        '        test {CLIENT LIST with IPv6 negative filter} {\n            set c [valkey ::1 [srv 0 port] 0 $::tls]\n            $c client setname "client-ipv6"\n\n            set client_info [$c client info]\n\n            regexp {addr=\\[([a-fA-F0-9:]+)\\]:\\d+} $client_info -> ipv6only\n            set filtered [$c client list not-ip "1.2.3.4" not-ip $ipv6only]\n            assert_no_match *client-ipv6* $filtered\n\n            $c close\n        }\n    ',
+    )
     c1 = ValkeyTestClient.create_from(r)
     c2 = ValkeyTestClient.create_from(r)
     c1.run("client", "setname", "client1")
@@ -1301,6 +1342,10 @@ def test_client_list_with_illegal_arguments(r: ValkeyTestClient) -> None:
         assert_error "ERR No such user*" {r client list not-user wrong_user}
     }
     """
+    start_server(
+        'tags {"ipv6"} overrides {bind {127.0.0.1 ::1}}',
+        '        test {CLIENT LIST with IPv6 negative filter} {\n            set c [valkey ::1 [srv 0 port] 0 $::tls]\n            $c client setname "client-ipv6"\n\n            set client_info [$c client info]\n\n            regexp {addr=\\[([a-fA-F0-9:]+)\\]:\\d+} $client_info -> ipv6only\n            set filtered [$c client list not-ip "1.2.3.4" not-ip $ipv6only]\n            assert_no_match *client-ipv6* $filtered\n\n            $c close\n        }\n    ',
+    )
     with pytest.raises(Exception, match="ERR\\ syntax\\ error"):
         r.run("client", "list", "id", 10, "wrong_arg")
     with pytest.raises(Exception, match="ERR\\ syntax\\ error"):
@@ -1333,17 +1378,6 @@ def test_client_list_with_illegal_arguments(r: ValkeyTestClient) -> None:
         r.run("client", "list", "not-type", "wrong_type")
     with pytest.raises(Exception, match="ERR\\ No\\ such\\ user.*"):
         r.run("client", "list", "not-user", "wrong_user")
-
-
-"""
-proc get_client_tot_in_out_cmds {id} {
-    set info_list [r client list]
-    set in [get_field_in_client_list $id $info_list "tot-net-in"]
-    set out [get_field_in_client_list $id $info_list "tot-net-out"]
-    set cmds [get_field_in_client_list $id $info_list "tot-cmds"]
-    return [list $in $out $cmds]
-}
-"""
 
 
 def test_client_input_output_and_command_process_statistics(r: ValkeyTestClient) -> None:
@@ -1403,6 +1437,11 @@ def test_client_input_output_and_command_process_statistics(r: ValkeyTestClient)
         assert_equal [expr $cmd6+3] $cmd7
     }
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     info1 = r.run("client", "info")
     input1 = get_field_in_client_info(info1, "tot-net-in")
     output1 = get_field_in_client_info(info1, "tot-net-out")
@@ -1472,6 +1511,11 @@ def test_client_kill_with_illegal_arguments(r: ValkeyTestClient) -> None:
         assert_error "ERR *greater than 0*" {r client kill maxage -1}
     }
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     with pytest.raises(Exception, match="ERR\\ wrong\\ number\\ of\\ arguments\\ for\\ 'client\\|kill'\\ command"):
         r.run("client", "kill")
     with pytest.raises(Exception, match="ERR\\ syntax\\ error.*"):
@@ -1539,6 +1583,11 @@ def test_client_kill_maxage_will_kill_old_clients(r: ValkeyTestClient, rd1, rd2)
         $rd2 close
     } {0} {"needs:debug"}
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     sleep_time = 2
     i = 0
     while i < 3:
@@ -1597,6 +1646,11 @@ def test_client_kill_skipme_yes_or_no_will_kill_all_clients(r: ValkeyTestClient)
         $rd4 close
     }
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     rd1 = ValkeyTestClient.create_from(r)
     rd2 = ValkeyTestClient.create_from(r)
     connected_clients = s("connected_clients")
@@ -1643,6 +1697,11 @@ def test_client_command_unhappy_path_coverage(r: ValkeyTestClient) -> None:
         assert_error "ERR timeout is negative" {r client pause -1}
     }
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     with pytest.raises(Exception, match="ERR.*wrong\\ number\\ of\\ arguments.*"):
         r.run("client", "caching")
     with pytest.raises(Exception, match="ERR.*when\\ the\\ client\\ is\\ in\\ tracking\\ mode.*"):
@@ -1710,6 +1769,11 @@ def test_client_kill_close_the_client_connection_during_bgsave(r: ValkeyTestClie
         }
     } {} {needs:save}
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     r.run("flushall")
     r.run("set", "k", "v")
     r.run("config", "set", "rdb-key-save-delay", 10000000)
@@ -1743,6 +1807,11 @@ def test_client_reply_off_or_on_disable_all_commands_reply(r: ValkeyTestClient) 
         $rd close
     }
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     rd = ValkeyTestClient.create_from(r)
     rd.run("client", "reply", "off")
     rd.run("ping", "pong")
@@ -1769,6 +1838,11 @@ def test_client_reply_skip_skip_the_next_command_reply(r: ValkeyTestClient) -> N
         $rd close
     }
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     rd = ValkeyTestClient.create_from(r)
     rd.run("client", "reply", "skip")
     rd.run("ping", "pong")
@@ -1792,6 +1866,11 @@ def test_client_reply_on_unset_skip_flag(r: ValkeyTestClient) -> None:
         $rd close
     }
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     rd = ValkeyTestClient.create_from(r)
     rd.run("client", "reply", "skip")
     rd.run("client", "reply", "on")
@@ -1814,6 +1893,11 @@ def test_monitor_can_log_executed_commands(r: ValkeyTestClient) -> None:
         set _ $res
     } {*"set" "foo"*"get" "foo"*}
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     rd = ValkeyTestClient.create_from(r)
     rd.run("monitor")
     assert fnmatch(str(rd.run("read")), "*OK*")
@@ -1835,6 +1919,11 @@ def test_monitor_properly_escapes_special_characters_through_sdscatrepr(r: Valke
         $rd close
     }
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     rd = ValkeyTestClient.create_from(r)
     rd.run("monitor")
     assert fnmatch(str(rd.run("read")), "*OK*")
@@ -1858,6 +1947,11 @@ def test_monitor_can_log_commands_issued_by_the_scripting_engine(r: ValkeyTestCl
         $rd close
     }
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     rd = ValkeyTestClient.create_from(r)
     rd.run("monitor")
     rd.run("read")
@@ -1882,6 +1976,11 @@ def test_monitor_can_log_commands_issued_by_functions(r: ValkeyTestClient) -> No
         $rd close
     }
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     r.run(
         "function",
         "load",
@@ -1928,6 +2027,11 @@ def test_monitor_supports_redacting_command_arguments(r: ValkeyTestClient) -> No
         $rd close
     } {0} {needs:repl}
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     rd = ValkeyTestClient.create_from(r)
     rd.run("monitor")
     rd.run("read")
@@ -1982,6 +2086,11 @@ def test_monitor_correctly_handles_multi_exec_cases(r: ValkeyTestClient) -> None
         $rd close
     }
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     rd = ValkeyTestClient.create_from(r)
     rd.run("monitor")
     rd.run("read")
@@ -2029,6 +2138,11 @@ def test_monitor_correctly_records_set_ex_in_multi_exec(r: ValkeyTestClient) -> 
         $rd close
     }
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     rd = ValkeyTestClient.create_from(r)
     rd.run("monitor")
     rd.run("read")
@@ -2093,6 +2207,11 @@ def test_monitor_log_blocked_command_only_once(r: ValkeyTestClient) -> None:
         $bc close
     }
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     reconnect()
     rd = ValkeyTestClient.create_from(r)
     bc = ValkeyTestClient.create_from(r)
@@ -2123,6 +2242,11 @@ def test_client_getname_should_return_nil_if_name_is_not_assigned(r: ValkeyTestC
         r client getname
     } {}
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     r.run("client", "getname")
 
 
@@ -2133,6 +2257,11 @@ def test_client_getname_check_if_name_set_correctly(r: ValkeyTestClient) -> None
         r client getName
     } {testName}
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     r.run("client", "setname", "testName")
     assert r.run("client", "getName") == "testName"
 
@@ -2143,6 +2272,11 @@ def test_client_list_shows_empty_fields_for_unassigned_names(r: ValkeyTestClient
         r client list
     } {*name= *}
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     assert fnmatch(str(r.run("client", "list")), "*name= *")
 
 
@@ -2153,6 +2287,11 @@ def test_client_setname_does_not_accept_spaces(r: ValkeyTestClient) -> None:
         set e
     } {ERR*}
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     try:
         e = r.run("client", "setname", "foo bar")
     except Exception as _catch_err:
@@ -2167,6 +2306,11 @@ def test_client_setname_can_assign_a_name_to_this_connection(r: ValkeyTestClient
         r client list
     } {*name=myname*}
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     assert r.run("client", "setname", "myname") == "OK"
     assert fnmatch(str(r.run("client", "list")), "*name=myname*")
 
@@ -2178,6 +2322,11 @@ def test_client_setname_can_change_the_name_of_an_existing_connection(r: ValkeyT
         r client list
     } {*name=someothername*}
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     assert r.run("client", "setname", "someothername") == "OK"
     assert fnmatch(str(r.run("client", "list")), "*name=someothername*")
 
@@ -2198,6 +2347,11 @@ def test_after_client_setname_connection_can_still_be_closed(r: ValkeyTestClient
         }
     }
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     rd = ValkeyTestClient.create_from(r)
     rd.run("client", "setname", "foobar")
     assert rd.run("read") == "OK"
@@ -2219,6 +2373,11 @@ def test_client_setinfo_can_set_a_library_name_to_this_connection(r: ValkeyTestC
         r client info
     } {*lib-name=redis.py lib-ver=1.2.3*}
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     r.run("CLIENT", "SETINFO", "lib-name", "redis.py")
     r.run("CLIENT", "SETINFO", "lib-ver", "1.2.3")
     assert fnmatch(str(r.run("client", "info")), "*lib-name=redis.py lib-ver=1.2.3*")
@@ -2235,6 +2394,11 @@ def test_client_setinfo_invalid_args(r: ValkeyTestClient) -> None:
         r client info
     } {*lib-name=redis.py lib-ver=1.2.3*}
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     with pytest.raises(Exception, match=".*wrong\\ number\\ of\\ arguments.*"):
         r.run("CLIENT", "SETINFO", "lib-name")
     with pytest.raises(Exception, match=".*cannot\\ contain\\ spaces.*"):
@@ -2253,6 +2417,11 @@ def test_reset_does_not_clean_library_name(r: ValkeyTestClient) -> None:
         r client info
     } {*lib-name=redis.py*} {needs:reset}
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     r.run("reset")
     assert fnmatch(str(r.run("client", "info")), "*lib-name=redis.py*")
 
@@ -2264,6 +2433,11 @@ def test_client_setinfo_can_clear_library_name(r: ValkeyTestClient) -> None:
         r client info
     } {*lib-name= *}
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     r.run("CLIENT", "SETINFO", "lib-name", "")
     assert fnmatch(str(r.run("client", "info")), "*lib-name= *")
 
@@ -2279,6 +2453,11 @@ def test_config_get_should_return_sorted_output(r: ValkeyTestClient) -> None:
         assert_equal [lsort $keys] $keys
     }
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     config = r.run("config", "get", "*")
     keys = []
     foreach("key value", config, "            lappend keys $key\n        ")
@@ -2310,6 +2489,11 @@ def test_config_save_params_special_case_handled_properly(r: ValkeyTestClient) -
         }
     } {} {external:skip}
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     start_server(
         'config "minimal.conf"',
         "            assert_match [r config get save] {save {3600 1 300 100 60 10000}}\n        ",
@@ -2437,18 +2621,23 @@ def test_config_sanity(r: ValkeyTestClient) -> None:
         }
     }
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     skip_configs = "            rdbchecksum\n            daemonize\n            tcp-backlog\n            mptcp\n            repl-mptcp\n            always-show-logo\n            syslog-enabled\n            cluster-enabled\n            disable-thp\n            aclfile\n            unixsocket\n            hash-seed\n            pidfile\n            syslog-ident\n            appendfilename\n            appenddirname\n            supervised\n            syslog-facility\n            databases\n            cluster-databases\n            io-threads\n            logfile\n            unixsocketperm\n            unixsocketgroup\n            replicaof\n            slaveof\n            requirepass\n            server-cpulist\n            bio-cpulist\n            aof-rewrite-cpulist\n            bgsave-cpulist\n            server_cpulist\n            bio_cpulist\n            aof_rewrite_cpulist\n            bgsave_cpulist\n            set-proc-title\n            cluster-config-file\n            cluster-port\n            oom-score-adj\n            oom-score-adj-values\n            enable-protected-configs\n            enable-debug-command\n            enable-module-command\n            dbfilename\n            logfile\n            dir\n            socket-mark-id\n            req-res-logfile\n            client-default-resp\n            dual-channel-replication-enabled\n            rdma-completion-vector\n            rdma-rx-size\n            rdma-bind\n            rdma-port\n        "
     if_(
         "!$::tls",
         "            append skip_configs {\n                tls-prefer-server-ciphers\n                tls-session-cache-timeout\n                tls-session-cache-size\n                tls-session-caching\n                tls-cert-file\n                tls-key-file\n                tls-client-cert-file\n                tls-client-key-file\n                tls-dh-params-file\n                tls-ca-cert-file\n                tls-ca-cert-dir\n                tls-protocols\n                tls-ciphers\n                tls-ciphersuites\n                tls-port\n            }\n        ",
     )
-    configs = ""
+    configs = []
     foreach(
         "k v",
         r.run("config", "get", "*"),
         "            if {[lsearch $skip_configs $k] != -1} {\n                continue\n            }\n            dict set configs $k $v\n            # try to set the config to the same value it already has\n            r config set $k $v\n        ",
     )
-    newconfigs = ""
+    newconfigs = []
     foreach(
         "k v",
         r.run("config", "get", "*"),
@@ -2483,7 +2672,12 @@ def test_config_rewrite_sanity(r: ValkeyTestClient) -> None:
         }
     } {} {external:skip}
     """
-    configs = ""
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
+    configs = []
     foreach("k v", r.run("config", "get", "*"), "            dict set configs $k $v\n        ")
     assert r.run("debug", "config-rewrite-force-all") == "OK"
     restart_server(0, "true", "false")
@@ -2519,6 +2713,11 @@ def test_config_rewrite_handles_save_and_shutdown_properly(r: ValkeyTestClient) 
         }
     } {} {external:skip}
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     r.run("config", "set", "save", "3600 1 300 100 60 10000")
     r.run("config", "set", "shutdown-on-sigterm", "nosave now")
     r.run("config", "set", "shutdown-on-sigint", "save")
@@ -2560,6 +2759,11 @@ def test_config_set_with_multiple_args(r: ValkeyTestClient) -> None:
         assert_equal [eval "r config set $backups"] "OK"
     }
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     some_configs = "maxmemory 10000001 repl-backlog-size 10000002 save {3000 5}"
     backups = []
     foreach("c", dict_("keys", some_configs), "            lappend backups $c [lindex [r config get $c] 1]\n        ")
@@ -2593,6 +2797,11 @@ def test_config_set_rollback_on_set_error(r: ValkeyTestClient) -> None:
         assert_equal [r config set maxmemory $mm_backup] "OK"
     }
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     mm_backup = r.run("config", "get", "maxmemory")[1]
     mmc_backup = r.run("config", "get", "maxmemory-clients")[1]
     qbl_backup = r.run("config", "get", "client-query-buffer-limit")[1]
@@ -2674,6 +2883,11 @@ def test_config_set_rollback_on_apply_error(r: ValkeyTestClient) -> None:
         $r1 close
     }
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     proc("dummy_accept", "chan addr port", "")
     some_configs = "maxmemory 10000001 port 0 client-query-buffer-limit 10m"
     oom_adj_avail = expr('!$::external && [exec uname] == "Linux"')
@@ -2705,6 +2919,11 @@ def test_config_set_duplicate_configs(r: ValkeyTestClient) -> None:
         assert_error "ERR *duplicate*" {r config set maxmemory 10000001 maxmemory 10000002}
     }
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     with pytest.raises(Exception, match="ERR\\ .*duplicate.*"):
         r.run("config", "set", "maxmemory", 10000001, "maxmemory", 10000002)
 
@@ -2715,6 +2934,11 @@ def test_config_set_set_immutable(r: ValkeyTestClient) -> None:
         assert_error "ERR *immutable*" {r config set daemonize yes}
     }
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     with pytest.raises(Exception, match="ERR\\ .*immutable.*"):
         r.run("config", "set", "daemonize", "yes")
 
@@ -2731,6 +2955,11 @@ def test_config_get_hidden_configs(r: ValkeyTestClient) -> None:
         assert {[dict exists [r config get $hidden_config] "$hidden_config"]}
     }
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     hidden_config = "key-load-delay"
     assert_("![dict exists [r config get *] $hidden_config]")
     assert dict_("exists", r.run("config", "get", hidden_config), f"{hidden_config}")
@@ -2754,6 +2983,11 @@ def test_config_get_multiple_args(r: ValkeyTestClient) -> None:
         assert {[dict exists $res bind]}
     }
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     res = r.run("config", "get", "maxmemory", "maxmemory*", "bind", "*of")
     assert expr(len(dict_("keys", res)), "*2") == len(res)
     assert dict_("exists", res, "slaveof") and dict_("exists", res, "replicaof")
@@ -2809,6 +3043,11 @@ def test_valkey_server_command_line_arguments_error_cases(r: ValkeyTestClient) -
         assert_match {*'replicaof "--127.0.0.1"'*wrong number of arguments*} $err
     } {} {external:skip}
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     catch("exec $::VALKEY_SERVER_BIN --invalid", "err")
     # TODO: assert_match {*Bad directive or wrong number of arguments*} err
     catch("exec $::VALKEY_SERVER_BIN --port", "err")
@@ -2888,6 +3127,11 @@ def test_tot_net_out_for_replica_client(r: ValkeyTestClient) -> None:
         }
     } {} {external:skip}
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     start_server(
         "",
         '            start_server {} {\n                set primary [srv -1 client]\n                set primary_host [srv -1 host]\n                set primary_port [srv -1 port]\n                set primary_pid [srv -1 pid]\n                set replica [srv 0 client]\n                set replica_pid [srv 0 pid]\n\n                $replica replicaof $primary_host $primary_port\n\n                # Wait for replica to be connected before proceeding.\n                wait_replica_online $primary\n\n                # Avoid PINGs to make sure tot-net-out is stable.\n                $primary config set repl-ping-replica-period 3600\n\n                # Increase repl timeout to avoid replica disconnecting\n                $primary config set repl-timeout 3600\n                $replica config set repl-timeout 3600\n\n                # Get the tot-net-out of the replica before sending the command.\n                set info_list [$primary client list]\n                foreach info [split $info_list "\\r\\n"] {\n                    if {[string match "* flags=S *" $info]} {\n                        set out_before [get_field_in_client_info $info "tot-net-out"]\n                        break\n                    }\n                }\n\n                # Send a command to the primary.\n                set value_size 10000\n                $primary set foo [string repeat "a" $value_size]\n\n                # Get the tot-net-out of the replica after sending the command.\n                set info_list [$primary client list]\n                foreach info [split $info_list "\\r\\n"] {\n                    if {[string match "* flags=S *" $info]} {\n                        set out_after [get_field_in_client_info $info "tot-net-out"]\n                        break\n                    }\n                }\n\n                assert_morethan $out_before 0\n                assert_morethan $out_after 0\n                assert_lessthan $out_after [expr $out_before + $value_size + 1000] ; # + 1000 to account for protocol overhead etc\n            }\n        ',
@@ -2906,6 +3150,11 @@ def test_client_list_can_filter_by_lib_name(r: ValkeyTestClient) -> None:
         catch {$c1 close}
     }
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     c1 = ValkeyTestClient.create_from(r)
     c1.run("client", "setinfo", "lib-name", "test-lib")
     r.run("CLIENT", "SETINFO", "lib-name", "mylib")
@@ -2930,6 +3179,11 @@ def test_client_list_can_filter_by_lib_ver(r: ValkeyTestClient) -> None:
         catch {$c1 close}
     }
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     c1 = ValkeyTestClient.create_from(r)
     c1.run("client", "setinfo", "lib-ver", "3.2.1")
     r.run("CLIENT", "SETINFO", "lib-ver", "1.2.3")
@@ -2954,6 +3208,11 @@ def test_client_list_can_filter_by_db_number(r: ValkeyTestClient) -> None:
         catch {$c1 close}
     }
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     c1 = ValkeyTestClient.create_from(r)
     c1.run("select", 0)
     r.run("select", 2)
@@ -2982,6 +3241,11 @@ def test_client_kill_can_filter_by_db(r: ValkeyTestClient) -> None:
         catch {$c1 close}
     }
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     c1 = ValkeyTestClient.create_from(r)
     c1.run("select", 2)
     r.run("select", 0)
@@ -3013,6 +3277,11 @@ def test_client_kill_can_filter_by_lib_name(r: ValkeyTestClient) -> None:
         catch {$c2 close}
     }
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     r.run("client", "setinfo", "lib-name", "")
     r.run("client", "setinfo", "lib-ver", "")
     c1 = ValkeyTestClient.create_from(r)
@@ -3045,6 +3314,11 @@ def test_client_kill_can_filter_by_lib_ver(r: ValkeyTestClient) -> None:
         catch {$c2 close}
     }
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     c1 = ValkeyTestClient.create_from(r)
     c2 = ValkeyTestClient.create_from(r)
     c1.run("client", "setinfo", "lib-ver", "1.2.3")
@@ -3075,6 +3349,11 @@ def test_client_list_can_filter_by_not_lib_name(r: ValkeyTestClient) -> None:
         catch {$c1 close}
     }
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     c1 = ValkeyTestClient.create_from(r)
     c1.run("CLIENT", "SETINFO", "lib-name", "testlib")
     r.run("CLIENT", "SETINFO", "lib-name", "mylib")
@@ -3099,6 +3378,11 @@ def test_client_list_can_filter_by_not_lib_ver(r: ValkeyTestClient) -> None:
         catch {$c1 close}
     }
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     c1 = ValkeyTestClient.create_from(r)
     c1.run("CLIENT", "SETINFO", "lib-ver", "3.2.1")
     r.run("CLIENT", "SETINFO", "lib-ver", "1.2.3")
@@ -3123,6 +3407,11 @@ def test_client_list_can_filter_by_not_db_number(r: ValkeyTestClient) -> None:
         catch {$c1 close}
     }
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     c1 = ValkeyTestClient.create_from(r)
     c1.run("select", 0)
     r.run("select", 2)
@@ -3150,6 +3439,11 @@ def test_client_kill_can_filter_by_not_db(r: ValkeyTestClient) -> None:
         assert_match {*db=0*} $result
     }
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     c1 = ValkeyTestClient.create_from(r)
     c1.run("select", 2)
     r.run("select", 0)
@@ -3177,6 +3471,11 @@ def test_client_kill_can_filter_by_not_lib_name(r: ValkeyTestClient) -> None:
         catch {$c2 close}
     }
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     c1 = ValkeyTestClient.create_from(r)
     c2 = ValkeyTestClient.create_from(r)
     c1.run("client", "setinfo", "lib-name", "mylib")
@@ -3206,6 +3505,11 @@ def test_client_kill_can_filter_by_not_lib_ver(r: ValkeyTestClient) -> None:
         catch {$c2 close}
     }
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     c1 = ValkeyTestClient.create_from(r)
     c2 = ValkeyTestClient.create_from(r)
     c1.run("client", "setinfo", "lib-ver", "1.2.3")
@@ -3229,6 +3533,11 @@ def test_valkey_server_command_line_arguments_allow_passing_option_name_and_opti
         }
     } {} {external:skip}
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     start_server(
         'config "default.conf" args {"--maxmemory 700mb" "--maxmemory-policy volatile-lru"}',
         "            assert_match [r config get maxmemory] {maxmemory 734003200}\n            assert_match [r config get maxmemory-policy] {maxmemory-policy volatile-lru}\n        ",
@@ -3245,6 +3554,11 @@ def test_valkey_server_command_line_arguments_wrong_usage_that_we_support_anyway
         }
     } {} {external:skip}
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     start_server(
         'config "default.conf" args {loglevel verbose "--maxmemory \'700mb\'" "--maxmemory-policy \'volatile-lru\'"}',
         "            assert_match [r config get loglevel] {loglevel verbose}\n            assert_match [r config get maxmemory] {maxmemory 734003200}\n            assert_match [r config get maxmemory-policy] {maxmemory-policy volatile-lru}\n        ",
@@ -3260,6 +3574,11 @@ def test_valkey_server_command_line_arguments_allow_option_value_to_use_the_pref
         }
     } {} {external:skip}
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     start_server(
         'config "default.conf" args {--proc-title-template --my--title--template --loglevel verbose}',
         "            assert_match [r config get proc-title-template] {proc-title-template --my--title--template}\n            assert_match [r config get loglevel] {loglevel verbose}\n        ",
@@ -3277,6 +3596,11 @@ def test_valkey_server_command_line_arguments_option_name_and_option_value_in_th
         }
     } {} {external:skip}
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     start_server(
         'config "default.conf" args {"--proc-title-template --my--title--template" "--loglevel verbose"}',
         "            assert_match [r config get proc-title-template] {proc-title-template --my--title--template}\n            assert_match [r config get loglevel] {loglevel verbose}\n        ",
@@ -3313,6 +3637,11 @@ def test_valkey_server_command_line_arguments_save_with_empty_input(r: ValkeyTes
         }
     } {} {external:skip}
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     start_server(
         'config "default.conf" args {--save --loglevel verbose}',
         "            assert_match [r config get save] {save {}}\n            assert_match [r config get loglevel] {loglevel verbose}\n        ",
@@ -3346,6 +3675,11 @@ def test_valkey_server_command_line_arguments_take_one_bulk_string_with_spaces_f
         }
     } {} {external:skip}
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     start_server(
         'config "default.conf" args {--shutdown-on-sigint nosave force now --shutdown-on-sigterm "nosave force"}',
         "            assert_match [r config get shutdown-on-sigint] {shutdown-on-sigint {nosave now force}}\n            assert_match [r config get shutdown-on-sigterm] {shutdown-on-sigterm {nosave force}}\n        ",
@@ -3361,6 +3695,11 @@ def test_valkey_server_command_line_arguments_dir_multiple_times(r: ValkeyTestCl
         }
     } {} {external:skip}
     """
+    proc(
+        "get_client_tot_in_out_cmds",
+        "id",
+        '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
+    )
     start_server(
         'config "default.conf" args {--dir "./" --dir "./"}',
         "            r config get dir\n            assert_equal {PONG} [r ping]\n        ",

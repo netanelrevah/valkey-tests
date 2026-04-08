@@ -662,60 +662,6 @@ def test_test_that_client_pause_starts_at_the_end_of_a_transaction(r: ValkeyTest
     rd.run("close")
 
 
-"""
-start_server {tags {needs:repl external:skip}} {
-    set master [srv -1 client]
-    set master_host [srv -1 host]
-    set master_port [srv -1 port]
-
-    # Avoid PINGs
-    $master config set repl-ping-replica-period 3600
-    r replicaof $master_host $master_port
-
-    wait_for_condition 50 100 {
-        [s master_link_status] eq {up}
-    } else {
-        fail "Replication not started."
-    }
-
-    test "Test when replica paused, offset would not grow" {
-        $master set foo bar
-        set old_master_offset [status $master master_repl_offset]
-
-        wait_for_condition 50 100 {
-            [s slave_repl_offset] == [status $master master_repl_offset]
-        } else {
-            fail "Replication offset not matched."
-        }
-
-        r client pause 100000 write
-        $master set foo2 bar2
-
-        # Make sure replica received data from master
-        wait_for_condition 50 100 {
-            [s slave_read_repl_offset] == [status $master master_repl_offset]
-        } else {
-            fail "Replication not work."
-        }
-
-        # Replica would not apply the write command
-        assert {[s slave_repl_offset] == $old_master_offset}
-        r get foo2
-    } {}
-
-    test "Test replica offset would grow after unpause" {
-        r client unpause
-        wait_for_condition 50 100 {
-            [s slave_repl_offset] == [status $master master_repl_offset]
-        } else {
-            fail "Replication not continue."
-        }
-        r get foo2
-    } {bar2}
-}
-"""
-
-
 def test_test_the_randomkey_command_will_not_cause_the_server_to_get_into_an_infinite_loop_during_the_client_pause_write(
     r: ValkeyTestClient,
 ) -> None:
@@ -744,6 +690,10 @@ def test_test_the_randomkey_command_will_not_cause_the_server_to_get_into_an_inf
         assert_equal [r randomkey] {}
     }
     """
+    start_server(
+        "tags {needs:repl external:skip}",
+        '        set master [srv -1 client]\n        set master_host [srv -1 host]\n        set master_port [srv -1 port]\n\n        # Avoid PINGs\n        $master config set repl-ping-replica-period 3600\n        r replicaof $master_host $master_port\n\n        wait_for_condition 50 100 {\n            [s master_link_status] eq {up}\n        } else {\n            fail "Replication not started."\n        }\n\n        test "Test when replica paused, offset would not grow" {\n            $master set foo bar\n            set old_master_offset [status $master master_repl_offset]\n\n            wait_for_condition 50 100 {\n                [s slave_repl_offset] == [status $master master_repl_offset]\n            } else {\n                fail "Replication offset not matched."\n            }\n\n            r client pause 100000 write\n            $master set foo2 bar2\n\n            # Make sure replica received data from master\n            wait_for_condition 50 100 {\n                [s slave_read_repl_offset] == [status $master master_repl_offset]\n            } else {\n                fail "Replication not work."\n            }\n\n            # Replica would not apply the write command\n            assert {[s slave_repl_offset] == $old_master_offset}\n            r get foo2\n        } {}\n\n        test "Test replica offset would grow after unpause" {\n            r client unpause\n            wait_for_condition 50 100 {\n                [s slave_repl_offset] == [status $master master_repl_offset]\n            } else {\n                fail "Replication not continue."\n            }\n            r get foo2\n        } {bar2}\n    ',
+    )
     r.run("flushall")
     r.run("multi")
     r.run("set", "key", "value", "px", 3)
@@ -792,6 +742,10 @@ def test_client_unblock_is_not_allow_to_unblock_client_blocked_by_client_pause(r
         $rd2 close
     }
     """
+    start_server(
+        "tags {needs:repl external:skip}",
+        '        set master [srv -1 client]\n        set master_host [srv -1 host]\n        set master_port [srv -1 port]\n\n        # Avoid PINGs\n        $master config set repl-ping-replica-period 3600\n        r replicaof $master_host $master_port\n\n        wait_for_condition 50 100 {\n            [s master_link_status] eq {up}\n        } else {\n            fail "Replication not started."\n        }\n\n        test "Test when replica paused, offset would not grow" {\n            $master set foo bar\n            set old_master_offset [status $master master_repl_offset]\n\n            wait_for_condition 50 100 {\n                [s slave_repl_offset] == [status $master master_repl_offset]\n            } else {\n                fail "Replication offset not matched."\n            }\n\n            r client pause 100000 write\n            $master set foo2 bar2\n\n            # Make sure replica received data from master\n            wait_for_condition 50 100 {\n                [s slave_read_repl_offset] == [status $master master_repl_offset]\n            } else {\n                fail "Replication not work."\n            }\n\n            # Replica would not apply the write command\n            assert {[s slave_repl_offset] == $old_master_offset}\n            r get foo2\n        } {}\n\n        test "Test replica offset would grow after unpause" {\n            r client unpause\n            wait_for_condition 50 100 {\n                [s slave_repl_offset] == [status $master master_repl_offset]\n            } else {\n                fail "Replication not continue."\n            }\n            r get foo2\n        } {bar2}\n    ',
+    )
     rd1 = ValkeyTestClient.create_from(r)
     rd2 = ValkeyTestClient.create_from(r)
     rd1.run("client", "id")
@@ -882,6 +836,10 @@ def foreach(*args):
 
 def s(*args):
     raise NotImplementedError("s")
+
+
+def start_server(*args):
+    raise NotImplementedError("start_server")
 
 
 def wait_for_blocked_clients_count(*args):

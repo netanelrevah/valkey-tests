@@ -5394,17 +5394,7 @@ def test_hsetex_keyspace_notifications_include_del_event_when_hash_key_removed(r
     rd.run("close")
 
 
-"""
-set rd valkey_deferring_client
-"""
-
-
-"""
-assert_equal {1} psubscribe $rd __keyevent@*
-"""
-
-
-def test_active_expiry_deletes_entire_key_when_only_field_expires(r: ValkeyTestClient, rd) -> None:
+def test_active_expiry_deletes_entire_key_when_only_field_expires(r: ValkeyTestClient) -> None:
     """
     test {Active expiry deletes entire key when only field expires} {
         r FLUSHALL
@@ -5424,6 +5414,8 @@ def test_active_expiry_deletes_entire_key_when_only_field_expires(r: ValkeyTestC
         assert_keyevent_patterns $rd myhash hset hexpire hexpired del
     }
     """
+    rd = ValkeyTestClient.create_from(r)
+    assert "1" == psubscribe(rd, "__keyevent@*")
     r.run("FLUSHALL")
     initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "myhash", "f1", "v1")
@@ -5439,7 +5431,7 @@ def test_active_expiry_deletes_entire_key_when_only_field_expires(r: ValkeyTestC
     assert_keyevent_patterns(rd, "myhash", "hset", "hexpire", "hexpired", "del")
 
 
-def test_active_expiry_removes_only_expired_field_while_preserving_others(r: ValkeyTestClient, rd) -> None:
+def test_active_expiry_removes_only_expired_field_while_preserving_others(r: ValkeyTestClient) -> None:
     """
     test {Active expiry removes only expired field while preserving others} {
         r FLUSHALL
@@ -5463,6 +5455,8 @@ def test_active_expiry_removes_only_expired_field_while_preserving_others(r: Val
         assert_equal 0 [get_keys_with_volatile_items r]
     }
     """
+    rd = ValkeyTestClient.create_from(r)
+    assert "1" == psubscribe(rd, "__keyevent@*")
     r.run("FLUSHALL")
     initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "myhash", "f1", "v1", "f2", "v2", "f3", "v3")
@@ -5482,9 +5476,7 @@ def test_active_expiry_removes_only_expired_field_while_preserving_others(r: Val
 
 
 @pytest.mark.xfail(reason="not implemented")
-def test_active_expiry_reclaims_memory_correctly_with_large_hash_containing_many_fields(
-    r: ValkeyTestClient, rd
-) -> None:
+def test_active_expiry_reclaims_memory_correctly_with_large_hash_containing_many_fields(r: ValkeyTestClient) -> None:
     """
     test {Active expiry reclaims memory correctly with large hash containing many fields} {
         r FLUSHALL
@@ -5537,6 +5529,8 @@ def test_active_expiry_reclaims_memory_correctly_with_large_hash_containing_many
         assert_equal 0 [get_keys_with_volatile_items r]
     }
     """
+    rd = ValkeyTestClient.create_from(r)
+    assert "1" == psubscribe(rd, "__keyevent@*")
     r.run("FLUSHALL")
     initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     value = string("repeat", "x", 1024)
@@ -5583,7 +5577,7 @@ def test_active_expiry_reclaims_memory_correctly_with_large_hash_containing_many
     assert 0 == get_keys_with_volatile_items("r")
 
 
-def test_active_expiry_handles_fields_with_different_ttl_values_correctly(r: ValkeyTestClient, rd) -> None:
+def test_active_expiry_handles_fields_with_different_ttl_values_correctly(r: ValkeyTestClient) -> None:
     """
     test {Active expiry handles fields with different TTL values correctly} {
         r FLUSHALL
@@ -5604,6 +5598,8 @@ def test_active_expiry_handles_fields_with_different_ttl_values_correctly(r: Val
         assert_keyevent_patterns $rd myhash hset hexpire hexpired hexpire
     }
     """
+    rd = ValkeyTestClient.create_from(r)
+    assert "1" == psubscribe(rd, "__keyevent@*")
     r.run("FLUSHALL")
     initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "myhash", "f1", "v1", "f2", "v2", "f3", "v3")
@@ -5638,6 +5634,8 @@ def test_active_expiry_removes_only_specified_fields_leaving_others_intact(r: Va
         assert_equal 1 [get_keys r]
     }
     """
+    rd = ValkeyTestClient.create_from(r)
+    assert "1" == psubscribe(rd, "__keyevent@*")
     r.run("FLUSHALL")
     initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "myhash", "f1", "v1", "f2", "v2", "f3", "v3", "f4", "v4", "f5", "v5")
@@ -5646,11 +5644,6 @@ def test_active_expiry_removes_only_specified_fields_leaving_others_intact(r: Va
     wait_for_active_expiry("r", "myhash", 3, initial_expired, 2)
     assert "{} v2 {} v4 v5" == r.run("HGETEX", "myhash", "FIELDS", 5, "f1", "f2", "f3", "f4", "f5")
     assert 1 == get_keys("r")
-
-
-"""
-$rd close
-"""
 
 
 def test_field_ttl_is_removed_when_field_value_is_overwritten_with_hset(r: ValkeyTestClient) -> None:
@@ -6329,22 +6322,9 @@ def test_command_active_expiry_reclaims_memory_efficiently_across_multiple_large
         assert expr("$total_mem_before - $total_mem_after") > 10000
 
 
-"""
-if {$cmd eq "HINCRBY"} {
-    set inc1 2
-    set inc2 3
-    set inc3 4
-} else {
-    set inc1 2.5
-    set inc2 3.5
-    set inc3 4.5
-}
-"""
-
-
-@pytest.mark.parametrize(["cmd", "inc2", "inc1", "inc3"], [("HINCRBY", 3, 2, 4), ("HINCRBYFLOAT", 3.5, 2.5, 4.5)])
+@pytest.mark.parametrize(["cmd", "inc1", "inc3", "inc2"], [("HINCRBY", 2, 4, 3), ("HINCRBYFLOAT", 2.5, 4.5, 3.5)])
 def test_cmd_recreates_field_with_correct_value_after_active_expiry_deletion(
-    r: ValkeyTestClient, cmd, inc2, inc1, inc3
+    r: ValkeyTestClient, cmd, inc1, inc3, inc2
 ) -> None:
     """
     test "$cmd recreates field with correct value after active expiry deletion" {
@@ -6365,6 +6345,14 @@ def test_cmd_recreates_field_with_correct_value_after_active_expiry_deletion(
         assert_equal $inc1 [r HGET myhash f1]
     }
     """
+    if cmd == "HINCRBY":
+        inc1 = 2
+        inc2 = 3
+        inc3 = 4
+    else:
+        inc1 = 2.5
+        inc2 = 3.5
+        inc3 = 4.5
     r.run("FLUSHALL")
     initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "myhash", "f1", 1)
@@ -6375,8 +6363,8 @@ def test_cmd_recreates_field_with_correct_value_after_active_expiry_deletion(
     assert inc1 == r.run("HGET", "myhash", "f1")
 
 
-@pytest.mark.parametrize(["cmd", "inc2", "inc1", "inc3"], [("HINCRBY", 3, 2, 4), ("HINCRBYFLOAT", 3.5, 2.5, 4.5)])
-def test_cmd_preserves_existing_ttl_when_incrementing_field_value(r: ValkeyTestClient, cmd, inc2, inc1, inc3) -> None:
+@pytest.mark.parametrize(["cmd", "inc1", "inc3", "inc2"], [("HINCRBY", 2, 4, 3), ("HINCRBYFLOAT", 2.5, 4.5, 3.5)])
+def test_cmd_preserves_existing_ttl_when_incrementing_field_value(r: ValkeyTestClient, cmd, inc1, inc3, inc2) -> None:
     """
     test "$cmd preserves existing TTL when incrementing field value" {
         r FLUSHALL
@@ -6396,6 +6384,14 @@ def test_cmd_preserves_existing_ttl_when_incrementing_field_value(r: ValkeyTestC
         assert_morethan [r HTTL myhash FIELDS 1 f1] 90000
     }
     """
+    if cmd == "HINCRBY":
+        inc1 = 2
+        inc2 = 3
+        inc3 = 4
+    else:
+        inc1 = 2.5
+        inc2 = 3.5
+        inc3 = 4.5
     r.run("FLUSHALL")
     initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "myhash", "f1", 1)
@@ -6406,9 +6402,9 @@ def test_cmd_preserves_existing_ttl_when_incrementing_field_value(r: ValkeyTestC
     assert r.run("HTTL", "myhash", "FIELDS", 1, "f1") > 90000
 
 
-@pytest.mark.parametrize(["cmd", "inc2", "inc1", "inc3"], [("HINCRBY", 3, 2, 4), ("HINCRBYFLOAT", 3.5, 2.5, 4.5)])
+@pytest.mark.parametrize(["cmd", "inc1", "inc3", "inc2"], [("HINCRBY", 2, 4, 3), ("HINCRBYFLOAT", 2.5, 4.5, 3.5)])
 def test_cmd_handles_mix_of_expired_and_existing_fields_during_increment_operations(
-    r: ValkeyTestClient, cmd, inc2, inc1, inc3
+    r: ValkeyTestClient, cmd, inc1, inc3, inc2
 ) -> None:
     """
     test "$cmd handles mix of expired and existing fields during increment operations" {
@@ -6433,6 +6429,14 @@ def test_cmd_handles_mix_of_expired_and_existing_fields_during_increment_operati
         assert_equal "$inc1 [expr {$inc2+2}] $inc3" [r HMGET myhash f1 f2 f3]
     }
     """
+    if cmd == "HINCRBY":
+        inc1 = 2
+        inc2 = 3
+        inc3 = 4
+    else:
+        inc1 = 2.5
+        inc2 = 3.5
+        inc3 = 4.5
     r.run("FLUSHALL")
     initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "myhash", "f1", 1, "f2", 2, "f3", 3)
@@ -6445,9 +6449,9 @@ def test_cmd_handles_mix_of_expired_and_existing_fields_during_increment_operati
     assert f"{inc1} [expr {{{inc2}+2}}] {inc3}" == r.run("HMGET", "myhash", "f1", "f2", "f3")
 
 
-@pytest.mark.parametrize(["cmd", "inc2", "inc1", "inc3"], [("HINCRBY", 3, 2, 4), ("HINCRBYFLOAT", 3.5, 2.5, 4.5)])
+@pytest.mark.parametrize(["cmd", "inc1", "inc3", "inc2"], [("HINCRBY", 2, 4, 3), ("HINCRBYFLOAT", 2.5, 4.5, 3.5)])
 def test_cmd_maintains_ttl_values_when_incrementing_fields_with_existing_expiry(
-    r: ValkeyTestClient, cmd, inc2, inc1, inc3
+    r: ValkeyTestClient, cmd, inc1, inc3, inc2
 ) -> None:
     """
     test "$cmd maintains TTL values when incrementing fields with existing expiry" {
@@ -6467,6 +6471,14 @@ def test_cmd_maintains_ttl_values_when_incrementing_fields_with_existing_expiry(
         assert_equal "[expr {$inc1+1}] 2 [expr {-$inc3+3}]" [r HMGET myhash f1 f2 f3]
     }
     """
+    if cmd == "HINCRBY":
+        inc1 = 2
+        inc2 = 3
+        inc3 = 4
+    else:
+        inc1 = 2.5
+        inc2 = 3.5
+        inc3 = 4.5
     r.run("FLUSHALL")
     initial_expired = info_field(r.run("info", "stats"), "expired_fields")
     r.run("HSET", "myhash", "f1", 1, "f2", 2, "f3", 3)

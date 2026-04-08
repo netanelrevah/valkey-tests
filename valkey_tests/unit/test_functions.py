@@ -2315,7 +2315,7 @@ def test_function_allow_stale(r: ValkeyTestClient) -> None:
     assert fnmatch(str(r.run("fcall", "f4", 0)), "*redis_version*")
     r.run("replicaof", "no", "one")
     r.run("config", "set", "replica-serve-stale-data", "yes")
-    _ = ""
+    _ = []
 
 
 def test_function_valkey_version_api(r: ValkeyTestClient) -> None:

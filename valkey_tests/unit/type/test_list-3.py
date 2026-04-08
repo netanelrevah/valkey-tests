@@ -213,21 +213,6 @@ def test_linsert_correctly_recompress_full_quicklistnode_after_inserting_a_eleme
     r.run("ping")
 
 
-"""
-set cycles 1000
-"""
-
-
-"""
-if {$::accurate} { set cycles 10000 }
-"""
-
-
-"""
-config_set list-compress-depth comp
-"""
-
-
 @pytest.mark.parametrize(["comp"], [(2), (1), (0)])
 def test_stress_tester_for_3343_alike_bugs_comp_comp(r: ValkeyTestClient, comp) -> None:
     """
@@ -273,14 +258,21 @@ def test_stress_tester_for_3343_alike_bugs_comp_comp(r: ValkeyTestClient, comp) 
         assert_equal $crash false
     }
     """
+    cycles = 1000
+    if False:
+        cycles = 10000
+    config_set("list-compress-depth", comp)
     r.run("del", "key")
     sent = []
-    for_(
-        "set j 0",
-        "$j < $cycles",
-        "incr j",
-        "            catch {\n                set cmd [generate_cmd_on_list_key key]\n                lappend sent $cmd\n\n                # execute the command, we expect commands to fail on syntax errors\n                r {*}$cmd\n            }\n        ",
-    )
+    j = 0
+    while j < cycles:
+        try:
+            cmd = generate_cmd_on_list_key("key")
+            sent.append(cmd)
+            r.run("*", cmd)
+        except Exception:
+            pass
+        j += 1
     print_commands = "false"
     crash = "false"
     if catch("r ping"):
@@ -308,8 +300,8 @@ def config_set(*args):
     raise NotImplementedError("config_set")
 
 
-def for_(*args):
-    raise NotImplementedError("for_")
+def generate_cmd_on_list_key(*args):
+    raise NotImplementedError("generate_cmd_on_list_key")
 
 
 def if_(*args):

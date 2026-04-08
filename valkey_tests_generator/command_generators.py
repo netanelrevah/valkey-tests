@@ -1,12 +1,29 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, Protocol, cast
+from typing import ClassVar, Protocol, cast
 
-from pytcl.commands import TCLCommandForEach, TCLCommandIf
+from pytcl.commands import TCLCommandForEach, TCLCommandIf, TCLScript
 from pytcl.words import TCLCommandWord, TCLVariableSubstitutionWord, TCLWord
 
-if TYPE_CHECKING:
-    from pytcl.commands import TCLScript
+
+def _collect_foreach_setup(foreach_command: TCLCommandForEach) -> TCLScript | None:
+    """Return commands from the foreach body that appear before the first test."""
+    setup: list[TCLCommandWord] = []
+    for cmd in foreach_command.body.commands:
+        if not isinstance(cmd, TCLCommandWord):
+            continue
+        if cmd.name == "test":
+            break
+        if cmd.name == "if":
+            try:
+                if_cmd = TCLCommandIf.build(cmd.args, {})
+                _, if_body = if_cmd.if_part
+                if any(c.name == "test" for c in if_body.commands if isinstance(c, TCLCommandWord)):
+                    break
+            except Exception:
+                pass
+        setup.append(cmd)
+    return TCLScript(setup) if setup else None
 
 
 def _collect_set_values(script: TCLScript) -> dict[str, str]:
@@ -108,6 +125,7 @@ class TestFileGenerator(Protocol):
         if_expressions: list[str] | None,
         parametrizes: list[str] | None,
         parametrize_vars: list[str] | None,
+        setup_script: TCLScript | None = None,
     ) -> None: ...
 
     def generate_comment(self, command: TCLCommandWord) -> None: ...
@@ -118,6 +136,7 @@ class TestFileGenerator(Protocol):
         if_expressions: list[str] | None,
         foreach_commands: list[str] | None,
         parametrize_vars: list[str] | None,
+        setup_script: TCLScript | None = None,
     ) -> None: ...
 
     def generate_parametrize(self, foreach_command: TCLCommandForEach) -> str: ...
@@ -137,6 +156,7 @@ class CommandGenerator:
         if_expressions: list[str] | None,
         foreach_commands: list[str] | None,
         parametrize_vars: list[str] | None = None,
+        setup_script: TCLScript | None = None,
     ) -> None:
         raise NotImplementedError
 
@@ -149,8 +169,9 @@ class TestCommandGenerator(CommandGenerator):
         if_expressions: list[str] | None,
         foreach_commands: list[str] | None,
         parametrize_vars: list[str] | None = None,
+        setup_script: TCLScript | None = None,
     ) -> None:
-        generator.generate_test(command, if_expressions, foreach_commands, parametrize_vars)
+        generator.generate_test(command, if_expressions, foreach_commands, parametrize_vars, setup_script)
 
 
 class IfCommandGenerator(CommandGenerator):
@@ -161,6 +182,7 @@ class IfCommandGenerator(CommandGenerator):
         if_expressions: list[str] | None,
         foreach_commands: list[str] | None,
         parametrize_vars: list[str] | None = None,
+        setup_script: TCLScript | None = None,
     ) -> None:
         try:
             if_command = TCLCommandIf.build(command.args, {})
@@ -176,6 +198,7 @@ class IfCommandGenerator(CommandGenerator):
             (if_expressions or []) + [str(command.args[0])],
             foreach_commands,
             parametrize_vars,
+            setup_script,
         )
 
 
@@ -187,6 +210,7 @@ class ForeachCommandGenerator(CommandGenerator):
         if_expressions: list[str] | None,
         foreach_commands: list[str] | None,
         parametrize_vars: list[str] | None = None,
+        setup_script: TCLScript | None = None,
     ) -> None:
         try:
             foreach_command = TCLCommandForEach.build(command.args, {})
@@ -208,11 +232,13 @@ class ForeachCommandGenerator(CommandGenerator):
         else:
             parametrize_str = generator.generate_parametrize(foreach_command)
             all_new_vars = new_vars
+        foreach_setup = _collect_foreach_setup(foreach_command)
         generator.generate_tests(
             foreach_command.body,
             if_expressions,
             (foreach_commands or []) + [parametrize_str],
             (parametrize_vars or []) + all_new_vars,
+            foreach_setup,
         )
 
 
@@ -224,6 +250,7 @@ class TagsCommandGenerator(CommandGenerator):
         if_expressions: list[str] | None,
         foreach_commands: list[str] | None,
         parametrize_vars: list[str] | None = None,
+        setup_script: TCLScript | None = None,
     ) -> None:
         pass
 

@@ -1,4 +1,5 @@
-# ruff: noqa: PLR2004, ANN001, ANN002, ANN201
+# ruff: noqa: PLR2004, F841, ANN002, ANN201
+
 from fnmatch import fnmatch
 
 import pytest
@@ -8,12 +9,7 @@ from tests.valkey_test_client import ValkeyTestClient
 pytestmark = [pytest.mark.acl_external_skip]
 
 
-"""
-set r2 valkey_client
-"""
-
-
-def test_test_basic_multiple_selectors(r: ValkeyTestClient, r2) -> None:
+def test_test_basic_multiple_selectors(r: ValkeyTestClient) -> None:
     """
     test {Test basic multiple selectors} {
         r ACL SETUSER selector-1 on -@all resetkeys nopass
@@ -35,6 +31,7 @@ def test_test_basic_multiple_selectors(r: ValkeyTestClient, r2) -> None:
         assert_match "*NOPERM*key*" $err
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "selector-1", "on", "-@all", "resetkeys", "nopass")
     r2.run("auth", "selector-1", "password")
     try:
@@ -82,6 +79,7 @@ def test_test_acl_selectors_by_default_have_no_permissions(r: ValkeyTestClient) 
         assert_equal "-@all" [dict get [lindex [dict get $user selectors] 0] commands]
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "selector-default", "reset", "()")
     user = r.run("ACL", "GETUSER", "selector-default")
     assert 1 == len(user["selectors"])
@@ -103,6 +101,7 @@ def test_test_deleting_selectors(r: ValkeyTestClient) -> None:
         assert_equal [llength [dict get $user selectors]] 0
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "selector-del", "on", "(~added-selector)")
     user = r.run("ACL", "GETUSER", "selector-del")
     assert "~added-selector" == user["selectors"][0]["keys"]
@@ -133,6 +132,7 @@ def test_test_selector_syntax_error_reports_the_error_in_the_selector_context(r:
         assert_equal "" [r ACL GETUSER selector-syntax]
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     try:
         e = r.run("ACL", "SETUSER", "selector-syntax", "on", "(this-is-invalid)")
     except Exception as _catch_err:
@@ -186,6 +186,7 @@ def test_test_flexible_selector_definition(r: ValkeyTestClient) -> None:
         assert_match "ERR*Syntax error*" $err
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "selector-2", "(~key1 +get )", "( ~key2 +get )", "( ~key3 +get)", "(~key4 +get)")
     r.run(
         "ACL",
@@ -230,7 +231,7 @@ def test_test_flexible_selector_definition(r: ValkeyTestClient) -> None:
     assert fnmatch(str(err), "ERR*Syntax error*")
 
 
-def test_test_separate_read_permission(r: ValkeyTestClient, r2) -> None:
+def test_test_separate_read_permission(r: ValkeyTestClient) -> None:
     """
     test {Test separate read permission} {
         r ACL SETUSER key-permission-R on nopass %R~read* +@all
@@ -244,6 +245,7 @@ def test_test_separate_read_permission(r: ValkeyTestClient, r2) -> None:
         assert_match "*NOPERM*key*" $err
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "key-permission-R", "on", "nopass", "%R~read*", "+@all")
     r2.run("auth", "key-permission-R", "password")
     assert "PONG" == r2.run("PING")
@@ -261,7 +263,7 @@ def test_test_separate_read_permission(r: ValkeyTestClient, r2) -> None:
     assert fnmatch(str(err), "*NOPERM*key*")
 
 
-def test_test_separate_write_permission(r: ValkeyTestClient, r2) -> None:
+def test_test_separate_write_permission(r: ValkeyTestClient) -> None:
     """
     test {Test separate write permission} {
         r ACL SETUSER key-permission-W on nopass %W~write* +@all
@@ -275,6 +277,7 @@ def test_test_separate_write_permission(r: ValkeyTestClient, r2) -> None:
         assert_match "*NOPERM*key*" $err
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "key-permission-W", "on", "nopass", "%W~write*", "+@all")
     r2.run("auth", "key-permission-W", "password")
     assert "PONG" == r2.run("PING")
@@ -291,7 +294,7 @@ def test_test_separate_write_permission(r: ValkeyTestClient, r2) -> None:
     assert fnmatch(str(err), "*NOPERM*key*")
 
 
-def test_test_separate_read_and_write_permissions(r: ValkeyTestClient, r2) -> None:
+def test_test_separate_read_and_write_permissions(r: ValkeyTestClient) -> None:
     """
     test {Test separate read and write permissions} {
         r ACL SETUSER key-permission-RW on nopass %R~read* %W~write* +@all
@@ -303,6 +306,7 @@ def test_test_separate_read_and_write_permissions(r: ValkeyTestClient, r2) -> No
         assert_match "*NOPERM*key*" $err
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "key-permission-RW", "on", "nopass", "%R~read*", "%W~write*", "+@all")
     r2.run("auth", "key-permission-RW", "password")
     assert "PONG" == r2.run("PING")
@@ -323,6 +327,7 @@ def test_validate_read_and_write_permissions_format(r: ValkeyTestClient) -> None
         assert_error "ERR Error in ACL SETUSER modifier '%': Syntax error" {r ACL SETUSER invalid %}
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     with pytest.raises(Exception, match="ERR\\ Error\\ in\\ ACL\\ SETUSER\\ modifier\\ '%\\~':\\ Syntax\\ error"):
         r.run("ACL", "SETUSER", "invalid", "%~")
     with pytest.raises(Exception, match="ERR\\ Error\\ in\\ ACL\\ SETUSER\\ modifier\\ '%':\\ Syntax\\ error"):
@@ -346,6 +351,7 @@ def test_validate_key_permissions_format_empty_and_omitted_pattern(r: ValkeyTest
         assert_equal [r ACL GETUSER key-permission-omit] [r ACL GETUSER key-permission-no-key]
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "key-permission-no-key", "on", "nopass", "%RW~", "+@all")
     assert "User key-permission-no-key has no permissions to access the 'x' key" == r.run(
         "ACL", "DRYRUN", "key-permission-no-key", "GET", "x"
@@ -359,9 +365,7 @@ def test_validate_key_permissions_format_empty_and_omitted_pattern(r: ValkeyTest
     assert r.run("ACL", "GETUSER", "key-permission-omit") == r.run("ACL", "GETUSER", "key-permission-no-key")
 
 
-def test_test_separate_read_and_write_permissions_on_different_selectors_are_not_additive(
-    r: ValkeyTestClient, r2
-) -> None:
+def test_test_separate_read_and_write_permissions_on_different_selectors_are_not_additive(r: ValkeyTestClient) -> None:
     """
     test {Test separate read and write permissions on different selectors are not additive} {
         r ACL SETUSER key-permission-RW-selector on nopass "(%R~read* +@all)" "(%W~write* +@all)"
@@ -390,6 +394,7 @@ def test_test_separate_read_and_write_permissions_on_different_selectors_are_not
         assert_match "*NOPERM*key*" $err
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "key-permission-RW-selector", "on", "nopass", "(%R~read* +@all)", "(%W~write* +@all)")
     r2.run("auth", "key-permission-RW-selector", "password")
     assert "PONG" == r2.run("PING")
@@ -428,7 +433,7 @@ def test_test_separate_read_and_write_permissions_on_different_selectors_are_not
     assert fnmatch(str(err), "*NOPERM*key*")
 
 
-def test_test_set_with_separate_read_permission(r: ValkeyTestClient, r2) -> None:
+def test_test_set_with_separate_read_permission(r: ValkeyTestClient) -> None:
     """
     test {Test SET with separate read permission} {
         r del readstr
@@ -444,6 +449,7 @@ def test_test_set_with_separate_read_permission(r: ValkeyTestClient, r2) -> None
         assert_error {*NOPERM*key*} {$r2 set readstr bar keepttl nx}
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("del", "readstr")
     r.run("ACL", "SETUSER", "set-key-permission-R", "on", "nopass", "%R~read*", "+@all")
     r2.run("auth", "set-key-permission-R", "password")
@@ -455,7 +461,7 @@ def test_test_set_with_separate_read_permission(r: ValkeyTestClient, r2) -> None
     assert_error("*NOPERM*key*", "$r2 set readstr bar keepttl nx")
 
 
-def test_test_set_with_separate_write_permission(r: ValkeyTestClient, r2) -> None:
+def test_test_set_with_separate_write_permission(r: ValkeyTestClient) -> None:
     """
     test {Test SET with separate write permission} {
         r del writestr
@@ -475,6 +481,7 @@ def test_test_set_with_separate_write_permission(r: ValkeyTestClient, r2) -> Non
         assert_error {*NOPERM*key*} {$r2 set writestr bar ex get}
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("del", "writestr")
     r.run("ACL", "SETUSER", "set-key-permission-W", "on", "nopass", "%W~write*", "+@all")
     r2.run("auth", "set-key-permission-W", "password")
@@ -488,7 +495,7 @@ def test_test_set_with_separate_write_permission(r: ValkeyTestClient, r2) -> Non
     assert_error("*NOPERM*key*", "$r2 set writestr bar ex get")
 
 
-def test_test_set_with_read_and_write_permissions(r: ValkeyTestClient, r2) -> None:
+def test_test_set_with_read_and_write_permissions(r: ValkeyTestClient) -> None:
     """
     test {Test SET with read and write permissions} {
         r del readwrite_str
@@ -510,6 +517,7 @@ def test_test_set_with_read_and_write_permissions(r: ValkeyTestClient, r2) -> No
         assert_range [$r2 ttl readwrite_str] 5 10
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("del", "readwrite_str")
     r.run("ACL", "SETUSER", "set-key-permission-RW-selector", "on", "nopass", "%RW~readwrite*", "+@all")
     r2.run("auth", "set-key-permission-RW-selector", "password")
@@ -525,7 +533,7 @@ def test_test_set_with_read_and_write_permissions(r: ValkeyTestClient, r2) -> No
     assert_range(r2.run("ttl", "readwrite_str"), 5, 10)
 
 
-def test_test_bitfield_with_separate_read_permission(r: ValkeyTestClient, r2) -> None:
+def test_test_bitfield_with_separate_read_permission(r: ValkeyTestClient) -> None:
     """
     test {Test BITFIELD with separate read permission} {
         r del readstr
@@ -540,6 +548,7 @@ def test_test_bitfield_with_separate_read_permission(r: ValkeyTestClient, r2) ->
         assert_error {*NOPERM*key*} {$r2 bitfield readstr incrby u4 0 1}
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("del", "readstr")
     r.run("ACL", "SETUSER", "bitfield-key-permission-R", "on", "nopass", "%R~read*", "+@all")
     r2.run("auth", "bitfield-key-permission-R", "password")
@@ -550,7 +559,7 @@ def test_test_bitfield_with_separate_read_permission(r: ValkeyTestClient, r2) ->
     assert_error("*NOPERM*key*", "$r2 bitfield readstr incrby u4 0 1")
 
 
-def test_test_bitfield_with_separate_write_permission(r: ValkeyTestClient, r2) -> None:
+def test_test_bitfield_with_separate_write_permission(r: ValkeyTestClient) -> None:
     """
     test {Test BITFIELD with separate write permission} {
         r del writestr
@@ -564,6 +573,7 @@ def test_test_bitfield_with_separate_write_permission(r: ValkeyTestClient, r2) -
         assert_error {*NOPERM*key*} {$r2 bitfield writestr incrby u4 0 1}
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("del", "writestr")
     r.run("ACL", "SETUSER", "bitfield-key-permission-W", "on", "nopass", "%W~write*", "+@all")
     r2.run("auth", "bitfield-key-permission-W", "password")
@@ -573,7 +583,7 @@ def test_test_bitfield_with_separate_write_permission(r: ValkeyTestClient, r2) -
     assert_error("*NOPERM*key*", "$r2 bitfield writestr incrby u4 0 1")
 
 
-def test_test_bitfield_with_read_and_write_permissions(r: ValkeyTestClient, r2) -> None:
+def test_test_bitfield_with_read_and_write_permissions(r: ValkeyTestClient) -> None:
     """
     test {Test BITFIELD with read and write permissions} {
         r del readwrite_str
@@ -587,6 +597,7 @@ def test_test_bitfield_with_read_and_write_permissions(r: ValkeyTestClient, r2) 
         assert_equal {2} [$r2 bitfield readwrite_str get u4 0]
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("del", "readwrite_str")
     r.run("ACL", "SETUSER", "bitfield-key-permission-RW-selector", "on", "nopass", "%RW~readwrite*", "+@all")
     r2.run("auth", "bitfield-key-permission-RW-selector", "password")
@@ -597,7 +608,7 @@ def test_test_bitfield_with_read_and_write_permissions(r: ValkeyTestClient, r2) 
     assert "2" == r2.run("bitfield", "readwrite_str", "get", "u4", 0)
 
 
-def test_test_acl_log_correctly_identifies_the_relevant_item_when_selectors_are_used(r: ValkeyTestClient, r2) -> None:
+def test_test_acl_log_correctly_identifies_the_relevant_item_when_selectors_are_used(r: ValkeyTestClient) -> None:
     """
     test {Test ACL log correctly identifies the relevant item when selectors are used} {
         r ACL SETUSER acl-log-test-selector on nopass
@@ -635,6 +646,7 @@ def test_test_acl_log_correctly_identifies_the_relevant_item_when_selectors_are_
         assert_equal [dict get $entry object] "someotherkey"
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "acl-log-test-selector", "on", "nopass")
     r.run("ACL", "SETUSER", "acl-log-test-selector", "+mget", "~key", "(+mget", "~key", "~otherkey)")
     r2.run("auth", "acl-log-test-selector", "password")
@@ -692,6 +704,7 @@ def test_test_acl_getuser_response_information(r: ValkeyTestClient) -> None:
         assert_equal "-@all +set" [dict get $secondary_selector commands]
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run(
         "ACL", "setuser", "selector-info", "-@all", "+get", "resetchannels", "&channel1", "%R~foo1", "%W~bar1", "~baz1"
     )
@@ -760,6 +773,7 @@ def test_test_acl_getuser_response_with_database_permissions(r: ValkeyTestClient
         assert_equal "" [dict get $secondary_selector databases]
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "setuser", "db-getuser-test", "on", "nopass", "-@all", "+get", "~*", "db=0,1,2")
     user = r.run("ACL", "GETUSER", "db-getuser-test")
     assert "db=0,1,2" == user["databases"]
@@ -845,6 +859,7 @@ def test_test_acl_list_idempotency(r: ValkeyTestClient) -> None:
         assert_match "*(*%R~foo2*%W~bar2*~baz2*)*" $response
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run(
         "ACL",
         "SETUSER",
@@ -882,6 +897,7 @@ def test_test_r_w_is_the_same_as_all_permissions(r: ValkeyTestClient) -> None:
         assert_equal "~foo ~bar" [dict get $user keys]
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "setuser", "selector-rw-info", "%R~foo", "%W~foo", "%RW~bar")
     user = r.run("ACL", "GETUSER", "selector-rw-info")
     assert "~foo ~bar" == user["keys"]
@@ -900,6 +916,7 @@ def test_test_basic_dry_run_functionality(r: ValkeyTestClient) -> None:
         assert_equal "ERR Command 'not-a-command' not found" $e
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "setuser", "command-test", "+@all", "%R~read*", "%W~write*", "%RW~rw*")
     assert "OK" == r.run("ACL", "DRYRUN", "command-test", "GET", "read")
     try:
@@ -922,6 +939,7 @@ def test_test_various_commands_for_command_permissions(r: ValkeyTestClient) -> N
         assert_match {*has no permissions to run the 'get' command*} [r ACL DRYRUN command-test get somekey]
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "setuser", "command-test", "-@all")
     assert fnmatch(
         str(r.run("ACL", "DRYRUN", "command-test", "set", "somekey", "somevalue")),
@@ -984,6 +1002,7 @@ def test_test_various_odd_commands_for_key_permissions(r: ValkeyTestClient) -> N
         assert_match {*has no permissions to access the 'write1' key*} [r ACL DRYRUN command-test GEORADIUS write1 longitude latitude radius M STORE write2]
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "setuser", "command-test", "+@all", "%R~read*", "%W~write*", "%RW~rw*")
     assert "OK" == r.run("ACL", "DRYRUN", "command-test", "MIGRATE", "whatever", "whatever", "rw", 0, 500)
     assert fnmatch(
@@ -1290,6 +1309,7 @@ def test_existence_test_commands_are_not_marked_as_access(r: ValkeyTestClient) -
         assert_match {*has no permissions to access the 'nothing' key*} [r ACL DRYRUN command-test SISMEMBER nothing foo]
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     assert "OK" == r.run("ACL", "DRYRUN", "command-test", "HEXISTS", "read", "foo")
     assert "OK" == r.run("ACL", "DRYRUN", "command-test", "HEXISTS", "write", "foo")
     assert fnmatch(
@@ -1330,6 +1350,7 @@ def test_intersection_cardinaltiy_commands_are_access_commands(r: ValkeyTestClie
         assert_match {*has no permissions to access the 'nothing' key*} [r ACL DRYRUN command-test ZINTERCARD 2 nothing read]
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     assert "OK" == r.run("ACL", "DRYRUN", "command-test", "SINTERCARD", 2, "read", "read")
     assert fnmatch(
         str(r.run("ACL", "DRYRUN", "command-test", "SINTERCARD", 2, "write", "read")),
@@ -1392,6 +1413,7 @@ def test_test_general_keyspace_commands_require_some_type_of_permission_to_execu
         assert_match {*has no permissions to access the 'nothing' key*} [r ACL DRYRUN command-test TYPE nothing]
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     assert "OK" == r.run("ACL", "DRYRUN", "command-test", "touch", "read")
     assert "OK" == r.run("ACL", "DRYRUN", "command-test", "touch", "write")
     assert "OK" == r.run("ACL", "DRYRUN", "command-test", "touch", "rw")
@@ -1434,6 +1456,7 @@ def test_cardinality_commands_require_some_type_of_permission_to_execute(r: Valk
         }
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     commands = "STRLEN HLEN LLEN SCARD ZCARD XLEN"
     foreach(
         "command",
@@ -1456,6 +1479,7 @@ def test_test_sharded_channel_permissions(r: ValkeyTestClient) -> None:
         assert_match {*has no permissions to access the 'otherchannel' channel*} [r ACL DRYRUN test-channels ssubscribe otherchannel foo]
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "setuser", "test-channels", "+@all", "resetchannels", "&channel")
     assert "OK" == r.run("ACL", "DRYRUN", "test-channels", "spublish", "channel", "foo")
     assert "OK" == r.run("ACL", "DRYRUN", "test-channels", "ssubscribe", "channel")
@@ -1472,7 +1496,7 @@ def test_test_sharded_channel_permissions(r: ValkeyTestClient) -> None:
     )
 
 
-def test_test_sort_with_acl_permissions(r: ValkeyTestClient, r2) -> None:
+def test_test_sort_with_acl_permissions(r: ValkeyTestClient) -> None:
     """
     test {Test sort with ACL permissions} {
         r set v1 1
@@ -1506,6 +1530,7 @@ def test_test_sort_with_acl_permissions(r: ValkeyTestClient, r2) -> None:
         r del v1 mylist
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("set", "v1", 1)
     r.run("lpush", "mylist", 1)
     r.run("ACL", "setuser", "test-sort-acl", "on", "nopass", "(+sort", "~mylist)")
@@ -1562,6 +1587,7 @@ def test_test_dryrun_with_wrong_number_of_arguments(r: ValkeyTestClient) -> None
         assert_equal "ERR wrong number of arguments for 'set' command" $e
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "setuser", "test-dry-run", "+@all", "~v*")
     assert "OK" == r.run("ACL", "DRYRUN", "test-dry-run", "SET", "v", "v")
     try:
@@ -1634,12 +1660,7 @@ def test_test_behavior_of_loading_acls(r: ValkeyTestClient) -> None:
 pytestmark = [pytest.mark.acl_external_skip]
 
 
-"""
-set r2 valkey_client
-"""
-
-
-def test_test_basic_database_level_acl_functionality(r: ValkeyTestClient, r2) -> None:
+def test_test_basic_database_level_acl_functionality(r: ValkeyTestClient) -> None:
     """
     test {Test basic database-level ACL functionality} {
         r ACL SETUSER db-user on +@all nopass ~* db=0,1
@@ -1655,6 +1676,7 @@ def test_test_basic_database_level_acl_functionality(r: ValkeyTestClient, r2) ->
         assert_match "*NOPERM*database*" $err
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "db-user", "on", "+@all", "nopass", "~*", "db=0,1")
     r2.run("auth", "db-user", "password")
     assert "OK" == r2.run("select", 0)
@@ -1668,7 +1690,7 @@ def test_test_basic_database_level_acl_functionality(r: ValkeyTestClient, r2) ->
     assert fnmatch(str(err), "*NOPERM*database*")
 
 
-def test_test_database_permissions_with_selectors(r: ValkeyTestClient, r2) -> None:
+def test_test_database_permissions_with_selectors(r: ValkeyTestClient) -> None:
     """
     test {Test database permissions with selectors} {
         r ACL SETUSER db-selector on nopass (db=0,1 +@all -@read ~write*) (db=2,3 +@all -@write ~read*)
@@ -1698,6 +1720,7 @@ def test_test_database_permissions_with_selectors(r: ValkeyTestClient, r2) -> No
         assert_match "*NOPERM*command*" $err
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run(
         "ACL",
         "SETUSER",
@@ -1743,7 +1766,7 @@ def test_test_database_permissions_with_selectors(r: ValkeyTestClient, r2) -> No
     assert fnmatch(str(err), "*NOPERM*command*")
 
 
-def test_test_alldbs_and_resetdbs_commands(r: ValkeyTestClient, r2) -> None:
+def test_test_alldbs_and_resetdbs_commands(r: ValkeyTestClient) -> None:
     """
     test {Test alldbs and resetdbs commands} {
         r ACL SETUSER db-reset-user on +@all ~* nopass db=0
@@ -1768,6 +1791,7 @@ def test_test_alldbs_and_resetdbs_commands(r: ValkeyTestClient, r2) -> None:
         assert_equal "OK" [$r2 select 1]
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "db-reset-user", "on", "+@all", "~*", "nopass", "db=0")
     r2.run("auth", "db-reset-user", "password")
     assert "OK" == r2.run("select", 0)
@@ -1797,7 +1821,7 @@ def test_test_alldbs_and_resetdbs_commands(r: ValkeyTestClient, r2) -> None:
     assert "OK" == r2.run("select", 1)
 
 
-def test_test_transaction_with_database_switching(r: ValkeyTestClient, r2) -> None:
+def test_test_transaction_with_database_switching(r: ValkeyTestClient) -> None:
     """
     test {Test transaction with database switching} {
         r ACL SETUSER db-tx-user on nopass (db=0,1 +@all -@read ~*) (db=2,3 +@all -@write ~*)
@@ -1824,6 +1848,7 @@ def test_test_transaction_with_database_switching(r: ValkeyTestClient, r2) -> No
         assert_match "*EXECABORT*" $err
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run(
         "ACL",
         "SETUSER",
@@ -1864,7 +1889,7 @@ def test_test_transaction_with_database_switching(r: ValkeyTestClient, r2) -> No
     assert fnmatch(str(err), "*EXECABORT*")
 
 
-def test_test_transaction_with_command_permissions_in_different_dbs(r: ValkeyTestClient, r2) -> None:
+def test_test_transaction_with_command_permissions_in_different_dbs(r: ValkeyTestClient) -> None:
     """
     test {Test transaction with command permissions in different DBs} {
         r ACL SETUSER db-cmd-user on nopass (db=0,1 +@all -@read ~*) (db=2,3 +@all -@write ~*)
@@ -1889,6 +1914,7 @@ def test_test_transaction_with_command_permissions_in_different_dbs(r: ValkeyTes
         assert_equal 3 [llength $result]
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run(
         "ACL",
         "SETUSER",
@@ -1937,6 +1963,7 @@ def test_test_database_acl_with_string_representation(r: ValkeyTestClient) -> No
         assert_match "*db=0,1*" $user_line
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "db-string-user", "on", "+@all", "nopass", "~*", "db=0,1")
     acl_str = r.run("ACL", "LIST")
     user_line = lsearch("-inline", acl_str, "user db-string-user*")
@@ -1963,6 +1990,7 @@ def test_test_edge_cases_with_database_ids_check_new_errmsg(r: ValkeyTestClient)
         assert_equal "" $user_line
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     try:
         err = r.run("ACL", "SETUSER", "db-edge-user", "db=-1")
     except Exception as _catch_err:
@@ -1990,7 +2018,7 @@ def test_test_edge_cases_with_database_ids_check_new_errmsg(r: ValkeyTestClient)
     assert "" == user_line
 
 
-def test_test_default_behavior_without_db_restrictions(r: ValkeyTestClient, r2) -> None:
+def test_test_default_behavior_without_db_restrictions(r: ValkeyTestClient) -> None:
     """
     test {Test default behavior without db restrictions} {
         r ACL SETUSER db-compat-user on >password +@all
@@ -2012,6 +2040,7 @@ def test_test_default_behavior_without_db_restrictions(r: ValkeyTestClient, r2) 
         assert_equal "OK" [$r2 select 3]
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "db-compat-user", "on", ">password", "+@all")
     r2.run("auth", "db-compat-user", "password")
     assert "OK" == r2.run("select", 0)
@@ -2028,7 +2057,7 @@ def test_test_default_behavior_without_db_restrictions(r: ValkeyTestClient, r2) 
     assert "OK" == r2.run("select", 3)
 
 
-def test_test_flushall_with_database_permissions(r: ValkeyTestClient, r2) -> None:
+def test_test_flushall_with_database_permissions(r: ValkeyTestClient) -> None:
     """
     test {Test FLUSHALL with database permissions} {
         r ACL SETUSER flushall-user on nopass +@all ~* db=0
@@ -2042,6 +2071,7 @@ def test_test_flushall_with_database_permissions(r: ValkeyTestClient, r2) -> Non
         assert_equal "OK" [$r2 flushdb]
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "flushall-user", "on", "nopass", "+@all", "~*", "db=0")
     r2.run("auth", "flushall-user", "password")
     r2.run("select", 0)
@@ -2054,7 +2084,7 @@ def test_test_flushall_with_database_permissions(r: ValkeyTestClient, r2) -> Non
     assert "OK" == r2.run("flushdb")
 
 
-def test_test_swapdb_with_database_permissions(r: ValkeyTestClient, r2) -> None:
+def test_test_swapdb_with_database_permissions(r: ValkeyTestClient) -> None:
     """
     test {Test SWAPDB with database permissions} {
         r ACL SETUSER swapdb-user on nopass +@all ~* db=0,1
@@ -2066,6 +2096,7 @@ def test_test_swapdb_with_database_permissions(r: ValkeyTestClient, r2) -> None:
         assert_match "*NOPERM*database*" $e
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "swapdb-user", "on", "nopass", "+@all", "~*", "db=0,1")
     r2.run("auth", "swapdb-user", "password")
     assert "OK" == r2.run("swapdb", 0, 1)
@@ -2076,7 +2107,7 @@ def test_test_swapdb_with_database_permissions(r: ValkeyTestClient, r2) -> None:
     assert fnmatch(str(e), "*NOPERM*database*")
 
 
-def test_test_move_with_database_permissions(r: ValkeyTestClient, r2) -> None:
+def test_test_move_with_database_permissions(r: ValkeyTestClient) -> None:
     """
     test {Test MOVE with database permissions} {
         r ACL SETUSER move-user on nopass +move +set ~* db=0,1
@@ -2088,6 +2119,7 @@ def test_test_move_with_database_permissions(r: ValkeyTestClient, r2) -> None:
         assert_match "*NOPERM*database*" $e
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "move-user", "on", "nopass", "+move", "+set", "~*", "db=0,1")
     r2.run("auth", "move-user", "password")
     r2.run("set", "move-key", "value")
@@ -2099,7 +2131,7 @@ def test_test_move_with_database_permissions(r: ValkeyTestClient, r2) -> None:
     assert fnmatch(str(e), "*NOPERM*database*")
 
 
-def test_test_copy_with_database_permissions(r: ValkeyTestClient, r2) -> None:
+def test_test_copy_with_database_permissions(r: ValkeyTestClient) -> None:
     """
     test {Test COPY with database permissions} {
         r ACL SETUSER copy-user on nopass +copy +set +get +select ~* db=0,1
@@ -2124,6 +2156,7 @@ def test_test_copy_with_database_permissions(r: ValkeyTestClient, r2) -> None:
         r select 0
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "copy-user", "on", "nopass", "+copy", "+set", "+get", "+select", "~*", "db=0,1")
     r2.run("auth", "copy-user", "password")
     r2.run("select", 0)
@@ -2142,7 +2175,7 @@ def test_test_copy_with_database_permissions(r: ValkeyTestClient, r2) -> None:
     r.run("select", 0)
 
 
-def test_test_duplicate_database_ids_in_db_are_handled_correctly(r: ValkeyTestClient, r2) -> None:
+def test_test_duplicate_database_ids_in_db_are_handled_correctly(r: ValkeyTestClient) -> None:
     """
     test {Test duplicate database IDs in db= are handled correctly} {
         r ACL SETUSER db-dup-user on nopass +@all ~* db=0,0,1,1,0
@@ -2161,6 +2194,7 @@ def test_test_duplicate_database_ids_in_db_are_handled_correctly(r: ValkeyTestCl
         assert_match "*db=0,1*" $user_line
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "db-dup-user", "on", "nopass", "+@all", "~*", "db=0,0,1,1,0")
     r2.run("auth", "db-dup-user", "password")
     assert "OK" == r2.run("select", 0)
@@ -2175,7 +2209,7 @@ def test_test_duplicate_database_ids_in_db_are_handled_correctly(r: ValkeyTestCl
     assert fnmatch(str(user_line), "*db=0,1*")
 
 
-def test_test_multiple_selectors_with_overlapping_database_permissions(r: ValkeyTestClient, r2) -> None:
+def test_test_multiple_selectors_with_overlapping_database_permissions(r: ValkeyTestClient) -> None:
     """
     test {Test multiple selectors with overlapping database permissions} {
         r ACL SETUSER db-overlap on nopass (db=0,1 +@write +select ~write*) (db=1,2 +@read +select ~read*)
@@ -2207,6 +2241,7 @@ def test_test_multiple_selectors_with_overlapping_database_permissions(r: Valkey
         assert_match "*NOPERM*" $err
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run(
         "ACL",
         "SETUSER",
@@ -2270,6 +2305,7 @@ def test_test_db_with_leading_or_trailing_commas(r: ValkeyTestClient) -> None:
         assert_match "*Error*" $err
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     try:
         err = r.run("ACL", "SETUSER", "db-comma-start", "db=,0,1")
     except Exception as _catch_err:
@@ -2287,7 +2323,7 @@ def test_test_db_with_leading_or_trailing_commas(r: ValkeyTestClient) -> None:
     assert fnmatch(str(err), "*Error*")
 
 
-def test_test_resetdbs_clears_explicit_db_list(r: ValkeyTestClient, r2) -> None:
+def test_test_resetdbs_clears_explicit_db_list(r: ValkeyTestClient) -> None:
     """
     test {Test resetdbs clears explicit db list} {
         r ACL SETUSER db-reset-test on nopass +@all ~* db=0,1
@@ -2307,6 +2343,7 @@ def test_test_resetdbs_clears_explicit_db_list(r: ValkeyTestClient, r2) -> None:
         $r2 select 0
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "db-reset-test", "on", "nopass", "+@all", "~*", "db=0,1")
     r2.run("auth", "db-reset-test", "password")
     assert "OK" == r2.run("select", 0)
@@ -2326,7 +2363,7 @@ def test_test_resetdbs_clears_explicit_db_list(r: ValkeyTestClient, r2) -> None:
     r2.run("select", 0)
 
 
-def test_test_clearselectors_removes_db_restrictions_from_selectors_but_not_root(r: ValkeyTestClient, r2) -> None:
+def test_test_clearselectors_removes_db_restrictions_from_selectors_but_not_root(r: ValkeyTestClient) -> None:
     """
     test {Test clearselectors removes db restrictions from selectors but not root} {
         r ACL SETUSER db-clear on nopass +select db=0,1 (db=2,3 +@all ~*)
@@ -2342,6 +2379,7 @@ def test_test_clearselectors_removes_db_restrictions_from_selectors_but_not_root
         assert_match "*NOPERM*" $err
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "db-clear", "on", "nopass", "+select", "db=0,1", "(db=2,3", "+@all", "~*)")
     r2.run("auth", "db-clear", "password")
     r.run("ACL", "SETUSER", "db-clear", "clearselectors")
@@ -2369,6 +2407,7 @@ def test_test_acl_dryrun_with_database_permissions(r: ValkeyTestClient) -> None:
         assert_match "*has no permissions to access database*" [r ACL DRYRUN db-dryrun COPY key1 key2 DB 2]
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "db-dryrun", "on", "nopass", "+@all", "~*", "db=0,1")
     assert "OK" == r.run("ACL", "DRYRUN", "db-dryrun", "SELECT", 0)
     assert "OK" == r.run("ACL", "DRYRUN", "db-dryrun", "SELECT", 1)
@@ -2384,7 +2423,7 @@ def test_test_acl_dryrun_with_database_permissions(r: ValkeyTestClient) -> None:
     )
 
 
-def test_test_db_with_maximum_database_id(r: ValkeyTestClient, r2) -> None:
+def test_test_db_with_maximum_database_id(r: ValkeyTestClient) -> None:
     """
     test {Test db= with maximum database ID} {
         set max_db [expr {[lindex [r config get databases] 1] - 1}]
@@ -2399,6 +2438,7 @@ def test_test_db_with_maximum_database_id(r: ValkeyTestClient, r2) -> None:
         assert_match "*out of range*" $err
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     max_db = expr("[lindex [r config get databases] 1] - 1")
     r.run("ACL", "SETUSER", "db-max", "on", "nopass", "+@all", "~*", "db=$max_db")
     r2.run("auth", "db-max", "password")
@@ -2410,7 +2450,7 @@ def test_test_db_with_maximum_database_id(r: ValkeyTestClient, r2) -> None:
     assert fnmatch(str(err), "*out of range*")
 
 
-def test_test_consecutive_database_permissions_only_last_one_should_persist(r: ValkeyTestClient, r2) -> None:
+def test_test_consecutive_database_permissions_only_last_one_should_persist(r: ValkeyTestClient) -> None:
     """
     test {Test consecutive database permissions - only last one should persist} {
         # User db-consec should only have db=2 permissions
@@ -2441,6 +2481,7 @@ def test_test_consecutive_database_permissions_only_last_one_should_persist(r: V
         $r2 select 0
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "db-consec", "on", "nopass", "+@all", "~*", "db=0", "db=1", "db=2")
     r2.run("auth", "db-consec", "password")
     try:
@@ -2477,7 +2518,7 @@ def test_test_consecutive_database_permissions_only_last_one_should_persist(r: V
     r2.run("select", 0)
 
 
-def test_test_commands_without_key_or_metadata_access_work_in_restricted_databases(r: ValkeyTestClient, r2) -> None:
+def test_test_commands_without_key_or_metadata_access_work_in_restricted_databases(r: ValkeyTestClient) -> None:
     """
     test {Test commands without key/metadata access work in restricted databases} {
         r ACL SETUSER db-keyless-cmd on nopass db=15 +@all ~*
@@ -2538,6 +2579,7 @@ def test_test_commands_without_key_or_metadata_access_work_in_restricted_databas
         assert_match "*NOPERM*database*" $err
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "db-keyless-cmd", "on", "nopass", "db=15", "+@all", "~*")
     r2.run("auth", "db-keyless-cmd", "password")
     ping_result = r2.run("ping")
@@ -2603,7 +2645,7 @@ def test_test_commands_without_key_or_metadata_access_work_in_restricted_databas
     assert fnmatch(str(err), "*NOPERM*database*")
 
 
-def test_test_watch_command_with_no_database_access(r: ValkeyTestClient, r2) -> None:
+def test_test_watch_command_with_no_database_access(r: ValkeyTestClient) -> None:
     """
     test {Test WATCH command with no database access} {
         r ACL SETUSER watch-nodb-user on nopass +@all ~* db=1
@@ -2620,6 +2662,7 @@ def test_test_watch_command_with_no_database_access(r: ValkeyTestClient, r2) -> 
         $r2 select 0
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "watch-nodb-user", "on", "nopass", "+@all", "~*", "db=1")
     r2.run("auth", "watch-nodb-user", "password")
     try:
@@ -2633,7 +2676,7 @@ def test_test_watch_command_with_no_database_access(r: ValkeyTestClient, r2) -> 
     r2.run("select", 0)
 
 
-def test_test_keyspace_command_with_no_database_access(r: ValkeyTestClient, r2) -> None:
+def test_test_keyspace_command_with_no_database_access(r: ValkeyTestClient) -> None:
     """
     test {Test keyspace command with no database access} {
         r ACL SETUSER exists-nodb-user on nopass +@all ~* db=1
@@ -2650,6 +2693,7 @@ def test_test_keyspace_command_with_no_database_access(r: ValkeyTestClient, r2) 
         $r2 select 0
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "exists-nodb-user", "on", "nopass", "+@all", "~*", "db=1")
     r2.run("auth", "exists-nodb-user", "password")
     try:
@@ -2663,7 +2707,7 @@ def test_test_keyspace_command_with_no_database_access(r: ValkeyTestClient, r2) 
     r2.run("select", 0)
 
 
-def test_test_multi_with_select_to_invalid_database(r: ValkeyTestClient, r2) -> None:
+def test_test_multi_with_select_to_invalid_database(r: ValkeyTestClient) -> None:
     """
     test {Test MULTI with SELECT to invalid database} {
         r ACL SETUSER db-invalid-select on nopass +@all ~* db=0,1
@@ -2682,6 +2726,7 @@ def test_test_multi_with_select_to_invalid_database(r: ValkeyTestClient, r2) -> 
         assert_equal {} [$r2 get key1]
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "db-invalid-select", "on", "nopass", "+@all", "~*", "db=0,1")
     r2.run("auth", "db-invalid-select", "password")
     assert "OK" == r2.run("select", 0)
@@ -2700,7 +2745,7 @@ def test_test_multi_with_select_to_invalid_database(r: ValkeyTestClient, r2) -> 
     assert "" == r2.run("get", "key1")
 
 
-def test_test_watch_with_multi_and_select_keys_modified(r: ValkeyTestClient, r2) -> None:
+def test_test_watch_with_multi_and_select_keys_modified(r: ValkeyTestClient) -> None:
     """
     test {Test WATCH with MULTI and SELECT - keys modified} {
         r ACL SETUSER db-watch-select on nopass +@all ~* db=0,1
@@ -2723,6 +2768,7 @@ def test_test_watch_with_multi_and_select_keys_modified(r: ValkeyTestClient, r2)
         assert_equal {} [$r2 get key1]
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "db-watch-select", "on", "nopass", "+@all", "~*", "db=0,1")
     r2.run("auth", "db-watch-select", "password")
     assert "OK" == r2.run("select", 0)
@@ -2738,7 +2784,7 @@ def test_test_watch_with_multi_and_select_keys_modified(r: ValkeyTestClient, r2)
     assert "" == r2.run("get", "key1")
 
 
-def test_test_watch_with_multi_and_select_no_modification(r: ValkeyTestClient, r2) -> None:
+def test_test_watch_with_multi_and_select_no_modification(r: ValkeyTestClient) -> None:
     """
     test {Test WATCH with MULTI and SELECT - no modification} {
         r ACL SETUSER db-watch-nomod on nopass +@all ~* db=0,1
@@ -2760,6 +2806,7 @@ def test_test_watch_with_multi_and_select_no_modification(r: ValkeyTestClient, r
         assert_equal "value1" [$r2 get key1]
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "db-watch-nomod", "on", "nopass", "+@all", "~*", "db=0,1")
     r2.run("auth", "db-watch-nomod", "password")
     assert "OK" == r2.run("select", 0)
@@ -2773,7 +2820,7 @@ def test_test_watch_with_multi_and_select_no_modification(r: ValkeyTestClient, r
     assert "value1" == r2.run("get", "key1")
 
 
-def test_test_sort_with_by_or_get_patterns_in_multi_after_select(r: ValkeyTestClient, r2) -> None:
+def test_test_sort_with_by_or_get_patterns_in_multi_after_select(r: ValkeyTestClient) -> None:
     """
     test {Test SORT with BY/GET patterns in MULTI after SELECT} {
         r ACL SETUSER db-sort-multi on nopass +@all ~* db=0,1
@@ -2798,6 +2845,7 @@ def test_test_sort_with_by_or_get_patterns_in_multi_after_select(r: ValkeyTestCl
         $r2 del mylist weight_1 weight_2 weight_3
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "db-sort-multi", "on", "nopass", "+@all", "~*", "db=0,1")
     r2.run("auth", "db-sort-multi", "password")
     assert "OK" == r2.run("select", 0)
@@ -2814,7 +2862,7 @@ def test_test_sort_with_by_or_get_patterns_in_multi_after_select(r: ValkeyTestCl
     r2.run("del", "mylist", "weight_1", "weight_2", "weight_3")
 
 
-def test_test_discard_after_select_in_multi(r: ValkeyTestClient, r2) -> None:
+def test_test_discard_after_select_in_multi(r: ValkeyTestClient) -> None:
     """
     test {Test DISCARD after SELECT in MULTI} {
         r ACL SETUSER db-discard on nopass +@all ~* db=0,1
@@ -2841,6 +2889,7 @@ def test_test_discard_after_select_in_multi(r: ValkeyTestClient, r2) -> None:
         $r2 del testkey
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "db-discard", "on", "nopass", "+@all", "~*", "db=0,1")
     r2.run("auth", "db-discard", "password")
     assert "OK" == r2.run("select", 0)
@@ -2858,7 +2907,7 @@ def test_test_discard_after_select_in_multi(r: ValkeyTestClient, r2) -> None:
     r2.run("del", "testkey")
 
 
-def test_test_multi_with_multiple_select_commands(r: ValkeyTestClient, r2) -> None:
+def test_test_multi_with_multiple_select_commands(r: ValkeyTestClient) -> None:
     """
     test {Test MULTI with multiple SELECT commands} {
         r ACL SETUSER db-multi-select on nopass +@all ~* db=0,1,2
@@ -2894,6 +2943,7 @@ def test_test_multi_with_multiple_select_commands(r: ValkeyTestClient, r2) -> No
         $r2 select 0
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "db-multi-select", "on", "nopass", "+@all", "~*", "db=0,1,2")
     r2.run("auth", "db-multi-select", "password")
     assert "OK" == r2.run("select", 0)
@@ -2921,7 +2971,7 @@ def test_test_multi_with_multiple_select_commands(r: ValkeyTestClient, r2) -> No
     r2.run("select", 0)
 
 
-def test_test_multi_with_select_and_acl_permission_changes_between_queue_and_exec(r: ValkeyTestClient, r2) -> None:
+def test_test_multi_with_select_and_acl_permission_changes_between_queue_and_exec(r: ValkeyTestClient) -> None:
     """
     test {Test MULTI with SELECT and ACL permission changes between queue and exec} {
         r ACL SETUSER db-acl-change on nopass +@all ~* db=0,1
@@ -2942,6 +2992,7 @@ def test_test_multi_with_select_and_acl_permission_changes_between_queue_and_exe
         r ACL SETUSER db-acl-change db=0,1
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "db-acl-change", "on", "nopass", "+@all", "~*", "db=0,1")
     r2.run("auth", "db-acl-change", "password")
     assert "OK" == r2.run("select", 0)
@@ -2958,7 +3009,7 @@ def test_test_multi_with_select_and_acl_permission_changes_between_queue_and_exe
     r.run("ACL", "SETUSER", "db-acl-change", "db=0,1")
 
 
-def test_test_eval_with_database_permissions(r: ValkeyTestClient, r2) -> None:
+def test_test_eval_with_database_permissions(r: ValkeyTestClient) -> None:
     """
     test {Test EVAL with database permissions} {
         r ACL SETUSER eval-db-user on nopass +@all ~* db=0,1
@@ -2980,6 +3031,7 @@ def test_test_eval_with_database_permissions(r: ValkeyTestClient, r2) -> None:
         $r2 del key
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "eval-db-user", "on", "nopass", "+@all", "~*", "db=0,1")
     r2.run("auth", "eval-db-user", "password")
     assert "OK" == r2.run("select", 0)
@@ -2996,7 +3048,7 @@ def test_test_eval_with_database_permissions(r: ValkeyTestClient, r2) -> None:
     r2.run("del", "key")
 
 
-def test_test_evalsha_with_database_permissions(r: ValkeyTestClient, r2) -> None:
+def test_test_evalsha_with_database_permissions(r: ValkeyTestClient) -> None:
     """
     test {Test EVALSHA with database permissions} {
         r ACL SETUSER evalsha-db-user on nopass +@all ~* db=0,1
@@ -3022,6 +3074,7 @@ def test_test_evalsha_with_database_permissions(r: ValkeyTestClient, r2) -> None
         $r2 select 0
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "evalsha-db-user", "on", "nopass", "+@all", "~*", "db=0,1")
     r2.run("auth", "evalsha-db-user", "password")
     assert "OK" == r2.run("select", 0)
@@ -3040,7 +3093,7 @@ def test_test_evalsha_with_database_permissions(r: ValkeyTestClient, r2) -> None
     r2.run("select", 0)
 
 
-def test_test_eval_ro_with_database_permissions(r: ValkeyTestClient, r2) -> None:
+def test_test_eval_ro_with_database_permissions(r: ValkeyTestClient) -> None:
     """
     test {Test EVAL_RO with database permissions} {
         r ACL SETUSER eval-ro-db-user on nopass +@all ~* db=0,1
@@ -3059,6 +3112,7 @@ def test_test_eval_ro_with_database_permissions(r: ValkeyTestClient, r2) -> None
         r del testkey
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "eval-ro-db-user", "on", "nopass", "+@all", "~*", "db=0,1")
     r2.run("auth", "eval-ro-db-user", "password")
     assert "OK" == r2.run("select", 0)
@@ -3073,7 +3127,7 @@ def test_test_eval_ro_with_database_permissions(r: ValkeyTestClient, r2) -> None
     r.run("del", "testkey")
 
 
-def test_test_evalsha_ro_with_database_permissions(r: ValkeyTestClient, r2) -> None:
+def test_test_evalsha_ro_with_database_permissions(r: ValkeyTestClient) -> None:
     """
     test {Test EVALSHA_RO with database permissions} {
         r ACL SETUSER evalsha-ro-db-user on nopass +@all ~* db=0,1
@@ -3096,6 +3150,7 @@ def test_test_evalsha_ro_with_database_permissions(r: ValkeyTestClient, r2) -> N
         r del rokey
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "evalsha-ro-db-user", "on", "nopass", "+@all", "~*", "db=0,1")
     r2.run("auth", "evalsha-ro-db-user", "password")
     assert "OK" == r2.run("select", 0)
@@ -3112,7 +3167,7 @@ def test_test_evalsha_ro_with_database_permissions(r: ValkeyTestClient, r2) -> N
     r.run("del", "rokey")
 
 
-def test_test_fcall_with_database_permissions(r: ValkeyTestClient, r2) -> None:
+def test_test_fcall_with_database_permissions(r: ValkeyTestClient) -> None:
     """
     test {Test FCALL with database permissions} {
         r ACL SETUSER fcall-db-user on nopass +@all ~* db=0,1
@@ -3149,6 +3204,7 @@ def test_test_fcall_with_database_permissions(r: ValkeyTestClient, r2) -> None:
         r function delete dbtest
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "fcall-db-user", "on", "nopass", "+@all", "~*", "db=0,1")
     r2.run("auth", "fcall-db-user", "password")
     assert "OK" == r2.run("select", 0)
@@ -3177,7 +3233,7 @@ def test_test_fcall_with_database_permissions(r: ValkeyTestClient, r2) -> None:
     r.run("function", "delete", "dbtest")
 
 
-def test_test_fcall_ro_with_database_permissions(r: ValkeyTestClient, r2) -> None:
+def test_test_fcall_ro_with_database_permissions(r: ValkeyTestClient) -> None:
     """
     test {Test FCALL_RO with database permissions} {
         r ACL SETUSER fcall-ro-db-user on nopass +@all ~* db=0,1
@@ -3219,6 +3275,7 @@ def test_test_fcall_ro_with_database_permissions(r: ValkeyTestClient, r2) -> Non
         r function delete dbtestro
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "fcall-ro-db-user", "on", "nopass", "+@all", "~*", "db=0,1")
     r2.run("auth", "fcall-ro-db-user", "password")
     assert "OK" == r2.run("select", 0)
@@ -3245,7 +3302,7 @@ def test_test_fcall_ro_with_database_permissions(r: ValkeyTestClient, r2) -> Non
     r.run("function", "delete", "dbtestro")
 
 
-def test_test_eval_with_multiple_database_switches_in_script(r: ValkeyTestClient, r2) -> None:
+def test_test_eval_with_multiple_database_switches_in_script(r: ValkeyTestClient) -> None:
     """
     test {Test EVAL with multiple database switches in script} {
         r ACL SETUSER eval-multi-db on nopass +@all ~* db=0,1,2
@@ -3291,6 +3348,7 @@ def test_test_eval_with_multiple_database_switches_in_script(r: ValkeyTestClient
         $r2 select 0
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     r.run("ACL", "SETUSER", "eval-multi-db", "on", "nopass", "+@all", "~*", "db=0,1,2")
     r2.run("auth", "eval-multi-db", "password")
     assert "OK" == r2.run("select", 0)
@@ -3325,7 +3383,7 @@ def test_test_eval_with_multiple_database_switches_in_script(r: ValkeyTestClient
     r2.run("select", 0)
 
 
-def test_acl_stats_for_invalid_database_accesses(r: ValkeyTestClient, r2) -> None:
+def test_acl_stats_for_invalid_database_accesses(r: ValkeyTestClient) -> None:
     """
     test {ACL stats for invalid database accesses} {
         set current_auth_failures [s acl_access_denied_auth]
@@ -3359,6 +3417,7 @@ def test_acl_stats_for_invalid_database_accesses(r: ValkeyTestClient, r2) -> Non
         r ACL deluser invaliddbuser
     }
     """
+    r2 = ValkeyTestClient.create_from(r)
     current_auth_failures = s("acl_access_denied_auth")
     current_invalid_cmd_accesses = s("acl_access_denied_cmd")
     current_invalid_key_accesses = s("acl_access_denied_key")

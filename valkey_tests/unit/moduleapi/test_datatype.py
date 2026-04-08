@@ -13,11 +13,6 @@ set testmodule file normalize tests/modules/datatype.so
 pytestmark = [pytest.mark.modules]
 
 
-"""
-r module load testmodule
-"""
-
-
 def test_datatype_test_module_is_sane_get_or_set_work(r: ValkeyTestClient) -> None:
     """
     test {DataType: Test module is sane, GET/SET work.} {

@@ -56,17 +56,6 @@ proc check_sort_store_encoding {key} {
 """
 
 
-"""
-set result create_random_dataset $num $cmd
-"""
-
-
-"""
-assert_encoding enc tosort
-"""
-
-
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(
     ["num", "cmd", "enc", "title"],
     [
@@ -84,10 +73,11 @@ def test_title_sort_by_key(r: ValkeyTestClient, num, cmd, enc, title) -> None:
         assert_equal $result [r sort tosort BY weight_*]
     } {} {cluster:skip}
     """
-    # TODO: assert_equal result r sort tosort BY weight_*
+    result = create_random_dataset(num, cmd)
+    assert_encoding(enc, "tosort")
+    assert result == r.run("sort", "tosort", "BY", "weight_*")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(
     ["num", "cmd", "enc", "title"],
     [
@@ -105,10 +95,11 @@ def test_title_sort_by_key_with_limit(r: ValkeyTestClient, num, cmd, enc, title)
         assert_equal [lrange $result 5 9] [r sort tosort BY weight_* LIMIT 5 5]
     } {} {cluster:skip}
     """
-    # TODO: assert_equal lrange $result 5 9 r sort tosort BY weight_* LIMIT 5 5
+    result = create_random_dataset(num, cmd)
+    assert_encoding(enc, "tosort")
+    assert lrange(result, 5, 9) == r.run("sort", "tosort", "BY", "weight_*", "LIMIT", 5, 5)
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(
     ["num", "cmd", "enc", "title"],
     [
@@ -126,22 +117,19 @@ def test_title_sort_by_hash_field(r: ValkeyTestClient, num, cmd, enc, title) -> 
         assert_equal $result [r sort tosort BY wobj_*->weight]
     } {} {cluster:skip}
     """
-    # TODO: assert_equal result r sort tosort BY wobj_*->weight
+    result = create_random_dataset(num, cmd)
+    assert_encoding(enc, "tosort")
+    assert result == r.run("sort", "tosort", "BY", "wobj_*->weight")
 
 
-"""
-set result create_random_dataset 16 lpush
-"""
-
-
-@pytest.mark.xfail(reason="not implemented")
 def test_sort_get(r: ValkeyTestClient) -> None:
     """
     test "SORT GET #" {
         assert_equal [lsort -integer $result] [r sort tosort GET #]
     } {} {cluster:skip}
     """
-    # TODO: assert_equal lsort -integer $result r sort tosort GET #
+    result = create_random_dataset(16, "lpush")
+    assert sorted(result) == r.run("sort", "tosort", "GET", "#")
 
 
 @pytest.mark.parametrize(["command"], [("SORT"), ("SORT_RO")])
@@ -530,7 +518,7 @@ def test_sort_will_complain_with_numerical_sorting_and_bad_doubles_1(r: ValkeyTe
     """
     r.run("del", "myset")
     r.run("sadd", "myset", 1, 2, 3, 4, "not-a-double")
-    e = ""
+    e = []
     try:
         e = r.run("sort", "myset")
     except Exception as _catch_err:
@@ -552,7 +540,7 @@ def test_sort_will_complain_with_numerical_sorting_and_bad_doubles_2(r: ValkeyTe
     r.run("del", "myset")
     r.run("sadd", "myset", 1, 2, 3, 4)
     r.run("mset", "score:1", 10, "score:2", 20, "score:3", 30, "score:4", "not-a-double")
-    e = ""
+    e = []
     try:
         e = r.run("sort", "myset", "by", "score:*")
     except Exception as _catch_err:
@@ -794,8 +782,16 @@ def config_set(*args):
     raise NotImplementedError("config_set")
 
 
+def create_random_dataset(*args):
+    raise NotImplementedError("create_random_dataset")
+
+
 def foreach(*args):
     raise NotImplementedError("foreach")
+
+
+def lrange(*args):
+    raise NotImplementedError("lrange")
 
 
 def split(*args):

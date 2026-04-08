@@ -12,11 +12,6 @@ set testmodule file normalize tests/modules/block_keyspace_notification.so
 pytestmark = [pytest.mark.modules]
 
 
-"""
-r module load testmodule
-"""
-
-
 def test_blocking_keyspace_notification_one(r: ValkeyTestClient) -> None:
     """
     test {Blocking keyspace notification one} {

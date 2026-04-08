@@ -13,11 +13,6 @@ set testmodule file normalize tests/modules/misc.so
 pytestmark = [pytest.mark.modules]
 
 
-"""
-r module load testmodule
-"""
-
-
 def test_test_rm_call(r: ValkeyTestClient) -> None:
     """
     test {test RM_Call} {
@@ -178,11 +173,6 @@ def test_test_module_lru_api(r: ValkeyTestClient) -> None:
     assert was_set == 0
 
 
-"""
-r config set maxmemory-policy allkeys-lru
-"""
-
-
 def test_test_module_lfu_api(r: ValkeyTestClient) -> None:
     """
     test {test module lfu api} {
@@ -203,6 +193,7 @@ def test_test_module_lfu_api(r: ValkeyTestClient) -> None:
         assert { $was_set == 0 }
     }
     """
+    r.run("config", "set", "maxmemory-policy", "allkeys-lru")
     r.run("config", "set", "maxmemory-policy", "allkeys-lfu")
     r.run("set", "x", "foo")
     lfu = r.run("test.getlfu", "x")
@@ -218,23 +209,6 @@ def test_test_module_lfu_api(r: ValkeyTestClient) -> None:
     assert lfu == -1
     was_set = r.run("test.setlfu", "x", 100)
     assert was_set == 0
-
-
-"""
-proc parse_client_flags {flags} {
-    set flag_list [split $flags ":"]
-    set parsed_flags {}
-
-    # Just collect all non-empty flags
-    foreach flag $flag_list {
-        if {$flag ne ""} {
-            lappend parsed_flags $flag
-        }
-    }
-
-    return $parsed_flags
-}
-"""
 
 
 def test_test_module_clientinfo_api(r: ValkeyTestClient) -> None:
@@ -293,6 +267,11 @@ def test_test_module_clientinfo_api(r: ValkeyTestClient) -> None:
         assert { "ever_authenticated" in $flags }
     }
     """
+    proc(
+        "parse_client_flags",
+        "flags",
+        '        set flag_list [split $flags ":"]\n        set parsed_flags {}\n        \n        # Just collect all non-empty flags\n        foreach flag $flag_list {\n            if {$flag ne ""} {\n                lappend parsed_flags $flag\n            }\n        }\n        \n        return $parsed_flags\n    ',
+    )
     info = r.run("test.clientinfo")
     assert info["db"] == 9
     flags = parse_client_flags(info["flags"])
@@ -351,6 +330,11 @@ def test_tracking_with_rm_call_sanity(r: ValkeyTestClient) -> None:
         $rd_trk close
     }
     """
+    proc(
+        "parse_client_flags",
+        "flags",
+        '        set flag_list [split $flags ":"]\n        set parsed_flags {}\n        \n        # Just collect all non-empty flags\n        foreach flag $flag_list {\n            if {$flag ne ""} {\n                lappend parsed_flags $flag\n            }\n        }\n        \n        return $parsed_flags\n    ',
+    )
     rd_trk = ValkeyTestClient.create_from(r)
     rd_trk.run("HELLO", 3)
     rd_trk.run("CLIENT", "TRACKING", "on")
@@ -379,6 +363,11 @@ def test_tracking_with_rm_call_with_script(r: ValkeyTestClient) -> None:
         $rd_trk close
     }
     """
+    proc(
+        "parse_client_flags",
+        "flags",
+        '        set flag_list [split $flags ":"]\n        set parsed_flags {}\n        \n        # Just collect all non-empty flags\n        foreach flag $flag_list {\n            if {$flag ne ""} {\n                lappend parsed_flags $flag\n            }\n        }\n        \n        return $parsed_flags\n    ',
+    )
     rd_trk = ValkeyTestClient.create_from(r)
     rd_trk.run("HELLO", 3)
     rd_trk.run("CLIENT", "TRACKING", "on")
@@ -405,6 +394,11 @@ def test_publish_to_self_inside_rm_call(r: ValkeyTestClient) -> None:
         set _ ""
     } {} {resp3}
     """
+    proc(
+        "parse_client_flags",
+        "flags",
+        '        set flag_list [split $flags ":"]\n        set parsed_flags {}\n        \n        # Just collect all non-empty flags\n        foreach flag $flag_list {\n            if {$flag ne ""} {\n                lappend parsed_flags $flag\n            }\n        }\n        \n        return $parsed_flags\n    ',
+    )
     r.run("hello", 3)
     r.run("subscribe", "foo")
     assert r.run("test.rm_call", "publish", "foo", "bar") == "1"
@@ -428,6 +422,11 @@ def test_test_module_get_or_set_client_name_by_id_api(r: ValkeyTestClient) -> No
         assert_equal somebody [r client getname]
     }
     """
+    proc(
+        "parse_client_flags",
+        "flags",
+        '        set flag_list [split $flags ":"]\n        set parsed_flags {}\n        \n        # Just collect all non-empty flags\n        foreach flag $flag_list {\n            if {$flag ne ""} {\n                lappend parsed_flags $flag\n            }\n        }\n        \n        return $parsed_flags\n    ',
+    )
     try:
         e = r.run("test.getname")
     except Exception as _catch_err:
@@ -457,6 +456,11 @@ def test_test_module_getclientcert_api(r: ValkeyTestClient) -> None:
         }
     }
     """
+    proc(
+        "parse_client_flags",
+        "flags",
+        '        set flag_list [split $flags ":"]\n        set parsed_flags {}\n        \n        # Just collect all non-empty flags\n        foreach flag $flag_list {\n            if {$flag ne ""} {\n                lappend parsed_flags $flag\n            }\n        }\n        \n        return $parsed_flags\n    ',
+    )
     cert = r.run("test.getclientcert")
     if False:
         assert_('$cert != ""')
@@ -471,6 +475,11 @@ def test_test_detached_thread_safe_cnotext(r: ValkeyTestClient) -> None:
         verify_log_message 0 "*<misc> Test message*" 0
     }
     """
+    proc(
+        "parse_client_flags",
+        "flags",
+        '        set flag_list [split $flags ":"]\n        set parsed_flags {}\n        \n        # Just collect all non-empty flags\n        foreach flag $flag_list {\n            if {$flag ne ""} {\n                lappend parsed_flags $flag\n            }\n        }\n        \n        return $parsed_flags\n    ',
+    )
     r.run("test.log_tsctx", "info", "Test message")
     verify_log_message(0, "*<misc> Test message*", 0)
 
@@ -481,6 +490,11 @@ def test_test_rm_call_client_info(r: ValkeyTestClient) -> None:
         assert_match "*fd=-1*" [r test.call_generic client info]
     }
     """
+    proc(
+        "parse_client_flags",
+        "flags",
+        '        set flag_list [split $flags ":"]\n        set parsed_flags {}\n        \n        # Just collect all non-empty flags\n        foreach flag $flag_list {\n            if {$flag ne ""} {\n                lappend parsed_flags $flag\n            }\n        }\n        \n        return $parsed_flags\n    ',
+    )
     assert fnmatch(str(r.run("test.call_generic", "client", "info")), "*fd=-1*")
 
 
@@ -492,6 +506,11 @@ def test_unsafe_command_names_are_sanitized_in_info_output(r: ValkeyTestClient) 
         assert_match {*cmdstat_test.weird_cmd:calls=1*} $info
     }
     """
+    proc(
+        "parse_client_flags",
+        "flags",
+        '        set flag_list [split $flags ":"]\n        set parsed_flags {}\n        \n        # Just collect all non-empty flags\n        foreach flag $flag_list {\n            if {$flag ne ""} {\n                lappend parsed_flags $flag\n            }\n        }\n        \n        return $parsed_flags\n    ',
+    )
     r.run("test.weird:cmd")
     info = r.run("info", "commandstats")
     assert fnmatch(str(info), "*cmdstat_test.weird_cmd:calls=1*")
@@ -504,6 +523,11 @@ def test_test_monotonic_time(r: ValkeyTestClient) -> None:
         assert { [r test.monotonic_time] >= $x }
     }
     """
+    proc(
+        "parse_client_flags",
+        "flags",
+        '        set flag_list [split $flags ":"]\n        set parsed_flags {}\n        \n        # Just collect all non-empty flags\n        foreach flag $flag_list {\n            if {$flag ne ""} {\n                lappend parsed_flags $flag\n            }\n        }\n        \n        return $parsed_flags\n    ',
+    )
     x = r.run("test.monotonic_time")
     assert r.run("test.monotonic_time") >= x
 
@@ -533,6 +557,11 @@ def test_rm_call_oom(r: ValkeyTestClient) -> None:
         r config set maxmemory 0
     } {OK} {needs:config-maxmemory}
     """
+    proc(
+        "parse_client_flags",
+        "flags",
+        '        set flag_list [split $flags ":"]\n        set parsed_flags {}\n        \n        # Just collect all non-empty flags\n        foreach flag $flag_list {\n            if {$flag ne ""} {\n                lappend parsed_flags $flag\n            }\n        }\n        \n        return $parsed_flags\n    ',
+    )
     r.run("config", "set", "maxmemory", 1)
     r.run("config", "set", "maxmemory-policy", "volatile-lru")
     assert "OK" == r.run("test.rm_call", "set", "x", 1)
@@ -559,6 +588,11 @@ def test_rm_call_clear_oom(r: ValkeyTestClient) -> None:
         r test.rm_call_flags M set x 1
     } {OK} {needs:config-maxmemory}
     """
+    proc(
+        "parse_client_flags",
+        "flags",
+        '        set flag_list [split $flags ":"]\n        set parsed_flags {}\n        \n        # Just collect all non-empty flags\n        foreach flag $flag_list {\n            if {$flag ne ""} {\n                lappend parsed_flags $flag\n            }\n        }\n        \n        return $parsed_flags\n    ',
+    )
     r.run("config", "set", "maxmemory", 1)
     with pytest.raises(Exception, match="OOM\\ .*"):
         r.run("test.rm_call_flags", "M", "set", "x", 1)
@@ -591,6 +625,11 @@ def test_rm_call_oom_eval(r: ValkeyTestClient) -> None:
         r config set maxmemory 0
     } {OK} {needs:config-maxmemory}
     """
+    proc(
+        "parse_client_flags",
+        "flags",
+        '        set flag_list [split $flags ":"]\n        set parsed_flags {}\n        \n        # Just collect all non-empty flags\n        foreach flag $flag_list {\n            if {$flag ne ""} {\n                lappend parsed_flags $flag\n            }\n        }\n        \n        return $parsed_flags\n    ',
+    )
     r.run("config", "set", "maxmemory", 1)
     r.run("config", "set", "maxmemory-policy", "volatile-lru")
     with pytest.raises(Exception, match="OOM\\ .*"):
@@ -625,6 +664,11 @@ def test_rm_call_write_flag(r: ValkeyTestClient) -> None:
         r test.rm_call_flags W get x
     } {1}
     """
+    proc(
+        "parse_client_flags",
+        "flags",
+        '        set flag_list [split $flags ":"]\n        set parsed_flags {}\n        \n        # Just collect all non-empty flags\n        foreach flag $flag_list {\n            if {$flag ne ""} {\n                lappend parsed_flags $flag\n            }\n        }\n        \n        return $parsed_flags\n    ',
+    )
     with pytest.raises(
         Exception, match="ERR\\ Write\\ command\\ 'set'\\ was\\ called\\ while\\ write\\ is\\ not\\ allowed\\."
     ):
@@ -648,6 +692,11 @@ def test_rm_call_eval(r: ValkeyTestClient) -> None:
         }
     }
     """
+    proc(
+        "parse_client_flags",
+        "flags",
+        '        set flag_list [split $flags ":"]\n        set parsed_flags {}\n        \n        # Just collect all non-empty flags\n        foreach flag $flag_list {\n            if {$flag ne ""} {\n                lappend parsed_flags $flag\n            }\n        }\n        \n        return $parsed_flags\n    ',
+    )
     r.run("test.rm_call", "eval", "            redis.call('set','x',1)\n            return 1\n        ", 1, "x")
     with pytest.raises(
         Exception, match="ERR\\ Write\\ commands\\ are\\ not\\ allowed\\ from\\ read\\-only\\ scripts\\..*"
@@ -703,6 +752,11 @@ def test_rm_call_eval_oom_with_m_flag(r: ValkeyTestClient) -> None:
         r config set maxmemory 0
     } {OK} {needs:config-maxmemory}
     """
+    proc(
+        "parse_client_flags",
+        "flags",
+        '        set flag_list [split $flags ":"]\n        set parsed_flags {}\n        \n        # Just collect all non-empty flags\n        foreach flag $flag_list {\n            if {$flag ne ""} {\n                lappend parsed_flags $flag\n            }\n        }\n        \n        return $parsed_flags\n    ',
+    )
     r.run("config", "set", "maxmemory", 1)
     with pytest.raises(Exception, match=".*OOM\\ command\\ not\\ allowed\\ when\\ used\\ memory\\ >\\ 'maxmemory'.*"):
         r.run(
@@ -770,6 +824,11 @@ def test_rm_call_eval_oom_without_m_flag(r: ValkeyTestClient) -> None:
         r config set maxmemory 0
     } {OK} {needs:config-maxmemory}
     """
+    proc(
+        "parse_client_flags",
+        "flags",
+        '        set flag_list [split $flags ":"]\n        set parsed_flags {}\n        \n        # Just collect all non-empty flags\n        foreach flag $flag_list {\n            if {$flag ne ""} {\n                lappend parsed_flags $flag\n            }\n        }\n        \n        return $parsed_flags\n    ',
+    )
     r.run("config", "set", "maxmemory", 1)
     r.run("test.rm_call", "eval", "            redis.call('set','x',1)\n            return 6\n        ", 1, "x")
     r.run("test.rm_call", "eval", "#!lua\n            redis.call('set','x', 1)\n            return 7\n        ", 1, "x")
@@ -819,6 +878,11 @@ def test_not_enough_good_replicas(r: ValkeyTestClient) -> None:
         r config set min-replicas-to-write 0
     }
     """
+    proc(
+        "parse_client_flags",
+        "flags",
+        '        set flag_list [split $flags ":"]\n        set parsed_flags {}\n        \n        # Just collect all non-empty flags\n        foreach flag $flag_list {\n            if {$flag ne ""} {\n                lappend parsed_flags $flag\n            }\n        }\n        \n        return $parsed_flags\n    ',
+    )
     r.run("set", "x", "some value")
     r.run("config", "set", "min-replicas-to-write", 1)
     with pytest.raises(Exception, match="NOREPLICAS\\ .*"):
@@ -879,6 +943,11 @@ def test_rm_call_eval_read_only_replica(r: ValkeyTestClient) -> None:
         r replicaof no one
     } {OK} {needs:config-maxmemory}
     """
+    proc(
+        "parse_client_flags",
+        "flags",
+        '        set flag_list [split $flags ":"]\n        set parsed_flags {}\n        \n        # Just collect all non-empty flags\n        foreach flag $flag_list {\n            if {$flag ne ""} {\n                lappend parsed_flags $flag\n            }\n        }\n        \n        return $parsed_flags\n    ',
+    )
     r.run("replicaof", "127.0.0.1", 1)
     with pytest.raises(Exception, match="READONLY\\ .*"):
         r.run("test.rm_call_flags", "S", "set", "x", 1)
@@ -942,6 +1011,11 @@ def test_rm_call_eval_stale_replica(r: ValkeyTestClient) -> None:
         r config set replica-serve-stale-data yes
     } {OK} {needs:config-maxmemory}
     """
+    proc(
+        "parse_client_flags",
+        "flags",
+        '        set flag_list [split $flags ":"]\n        set parsed_flags {}\n        \n        # Just collect all non-empty flags\n        foreach flag $flag_list {\n            if {$flag ne ""} {\n                lappend parsed_flags $flag\n            }\n        }\n        \n        return $parsed_flags\n    ',
+    )
     r.run("replicaof", "127.0.0.1", 1)
     r.run("config", "set", "replica-serve-stale-data", "no")
     with pytest.raises(Exception, match="MASTERDOWN\\ .*"):
@@ -1014,6 +1088,11 @@ def test_rm_call_eval_failed_bgsave_prevents_writes(r: ValkeyTestClient) -> None
         r set x y
     } {OK}
     """
+    proc(
+        "parse_client_flags",
+        "flags",
+        '        set flag_list [split $flags ":"]\n        set parsed_flags {}\n        \n        # Just collect all non-empty flags\n        foreach flag $flag_list {\n            if {$flag ne ""} {\n                lappend parsed_flags $flag\n            }\n        }\n        \n        return $parsed_flags\n    ',
+    )
     r.run("config", "set", "rdb-key-save-delay", 10000000)
     populate(1000)
     r.run("set", "x", "x")
@@ -1049,6 +1128,11 @@ def test_malloc_api(r: ValkeyTestClient) -> None:
         assert_equal {OK} [r test.malloc_api 0]
     }
     """
+    proc(
+        "parse_client_flags",
+        "flags",
+        '        set flag_list [split $flags ":"]\n        set parsed_flags {}\n        \n        # Just collect all non-empty flags\n        foreach flag $flag_list {\n            if {$flag ne ""} {\n                lappend parsed_flags $flag\n            }\n        }\n        \n        return $parsed_flags\n    ',
+    )
     assert "OK" == r.run("test.malloc_api", 0)
 
 
@@ -1058,15 +1142,15 @@ def test_cluster_keyslot(r: ValkeyTestClient) -> None:
         assert_equal 12182 [r test.keyslot foo]
     }
     """
+    proc(
+        "parse_client_flags",
+        "flags",
+        '        set flag_list [split $flags ":"]\n        set parsed_flags {}\n        \n        # Just collect all non-empty flags\n        foreach flag $flag_list {\n            if {$flag ne ""} {\n                lappend parsed_flags $flag\n            }\n        }\n        \n        return $parsed_flags\n    ',
+    )
     assert 12182 == r.run("test.keyslot", "foo")
 
 
 pytestmark = [pytest.mark.modules]
-
-
-"""
-r module load testmodule
-"""
 
 
 def test_test_dry_run_ok_oom_or_acl(r: ValkeyTestClient) -> None:
@@ -1207,6 +1291,10 @@ def parse_client_flags(*args):
 
 def populate(*args):
     raise NotImplementedError("populate")
+
+
+def proc(*args):
+    raise NotImplementedError("proc")
 
 
 def s(*args):

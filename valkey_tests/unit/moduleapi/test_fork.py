@@ -11,11 +11,6 @@ set testmodule file normalize tests/modules/fork.so
 pytestmark = [pytest.mark.modules]
 
 
-"""
-r module load testmodule
-"""
-
-
 def test_module_fork(r: ValkeyTestClient) -> None:
     """
     test {Module fork} {

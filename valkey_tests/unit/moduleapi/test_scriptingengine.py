@@ -18,16 +18,6 @@ set HELLO_PROGRAM "#!hello name=mylib\nRFUNCTION foo\nARGS 0\nRETURN\nFUNCTION b
 pytestmark = [pytest.mark.modules]
 
 
-"""
-r module load testmodule
-"""
-
-
-"""
-r function load HELLO_PROGRAM
-"""
-
-
 def test_load_script_with_invalid_library_name(r: ValkeyTestClient) -> None:
     """
     test {Load script with invalid library name} {

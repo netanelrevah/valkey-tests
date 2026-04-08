@@ -13,11 +13,6 @@ set testmodule file normalize tests/modules/basics.so
 pytestmark = [pytest.mark.modules]
 
 
-"""
-r module load testmodule
-"""
-
-
 def test_test_module_api_basics(r: ValkeyTestClient) -> None:
     """
     test {test module api basics} {

@@ -11,11 +11,6 @@ set testmodule file normalize tests/modules/test_lazyfree.so
 pytestmark = [pytest.mark.modules]
 
 
-"""
-r module load testmodule
-"""
-
-
 def test_modules_allocated_memory_can_be_reclaimed_in_the_background(r: ValkeyTestClient) -> None:
     """
     test "modules allocated memory can be reclaimed in the background" {

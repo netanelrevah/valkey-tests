@@ -144,17 +144,6 @@ def test_temp_rdb_will_be_deleted_in_signal_handle(r: ValkeyTestClient) -> None:
 pytestmark = [pytest.mark.shutdown_external_skip]
 
 
-"""
-set pid s process_id
-"""
-
-
-"""
-set dump_rdb file join [lindex [r config get dir] 1] dump.rdb
-"""
-
-
-@pytest.mark.xfail(reason="not implemented")
 def test_rdb_save_will_be_failed_in_shutdown(r: ValkeyTestClient) -> None:
     """
     test {RDB save will be failed in shutdown} {
@@ -170,15 +159,16 @@ def test_rdb_save_will_be_failed_in_shutdown(r: ValkeyTestClient) -> None:
         exec mkdir -p $dump_rdb
     }
     """
+    pid = s("process_id")
+    dump_rdb = file("join", r.run("config", "get", "dir")[1], "dump.rdb")
     i = 0
     while i < 20:
         r.run("set", i, i)
         i += 1
     if_("[file exists $dump_rdb]", "            exec rm -f $dump_rdb\n        ")
-    # TODO: exec mkdir -p dump_rdb
+    exec_("mkdir", "-p", dump_rdb)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_shutdown_will_abort_if_rdb_save_failed_on_signal(r: ValkeyTestClient) -> None:
     """
     test {SHUTDOWN will abort if rdb save failed on signal} {
@@ -187,7 +177,9 @@ def test_shutdown_will_abort_if_rdb_save_failed_on_signal(r: ValkeyTestClient) -
         wait_for_log_messages 0 {"*Error trying to save the DB, can't exit*"} 0 100 10
     }
     """
-    # TODO: exec kill -SIGINT pid
+    pid = s("process_id")
+    dump_rdb = file("join", r.run("config", "get", "dir")[1], "dump.rdb")
+    exec_("kill", "-SIGINT", pid)
     wait_for_log_messages(0, '"*Error trying to save the DB, can\'t exit*"', 0, 100, 10)
 
 
@@ -200,6 +192,8 @@ def test_shutdown_will_abort_if_rdb_save_failed_on_shutdown_command(r: ValkeyTes
         assert_equal [r ping] {PONG}
     }
     """
+    pid = s("process_id")
+    dump_rdb = file("join", r.run("config", "get", "dir")[1], "dump.rdb")
     try:
         err = r.run("shutdown")
     except Exception as _catch_err:
@@ -215,6 +209,8 @@ def test_shutdown_can_proceed_if_shutdown_command_was_with_nosave(r: ValkeyTestC
         wait_for_log_messages 0 {"*ready to exit, bye bye*"} 0 100 10
     }
     """
+    pid = s("process_id")
+    dump_rdb = file("join", r.run("config", "get", "dir")[1], "dump.rdb")
     try:
         r.run("shutdown", "nosave")
     except Exception:
@@ -222,14 +218,15 @@ def test_shutdown_can_proceed_if_shutdown_command_was_with_nosave(r: ValkeyTestC
     wait_for_log_messages(0, '"*ready to exit, bye bye*"', 0, 100, 10)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_clean_up_rdb_same_named_folder(r: ValkeyTestClient) -> None:
     """
     test {Clean up rdb same named folder} {
         exec rm -r $dump_rdb
     }
     """
-    # TODO: exec rm -r dump_rdb
+    pid = s("process_id")
+    dump_rdb = file("join", r.run("config", "get", "dir")[1], "dump.rdb")
+    exec_("rm", "-r", dump_rdb)
 
 
 pytestmark = [pytest.mark.shutdown_external_skip]

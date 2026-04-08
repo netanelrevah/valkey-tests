@@ -12,11 +12,6 @@ set testmodule file normalize tests/modules/aclcheck.so
 pytestmark = [pytest.mark.modules_acl]
 
 
-"""
-r module load testmodule
-"""
-
-
 def test_test_module_check_acl_for_command_perm(r: ValkeyTestClient) -> None:
     """
     test {test module check acl for command perm} {
@@ -394,11 +389,6 @@ def test_unload_the_module_aclcheck(r: ValkeyTestClient) -> None:
 pytestmark = [pytest.mark.modules_check_access_for_keys_with_prefix]
 
 
-"""
-r module load testmodule
-"""
-
-
 def test_test_module_check_acl_check_permissions_for_key_prefix(r: ValkeyTestClient) -> None:
     """
     test {test module check acl check permissions for key prefix} {
@@ -433,11 +423,6 @@ def test_test_module_check_acl_check_permissions_for_key_prefix(r: ValkeyTestCli
 
 
 pytestmark = [pytest.mark.modules_check_access_for_keys_with_prefix]
-
-
-"""
-r module load testmodule
-"""
 
 
 def test_test_module_check_acl_check_permissions_for_key_prefix_read(r: ValkeyTestClient) -> None:

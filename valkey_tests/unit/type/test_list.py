@@ -107,15 +107,6 @@ r config set list-compress-depth 0
 """
 
 
-"""
-if {$type eq "listpack"} {
-    r config set list-max-listpack-size -2
-} else {
-    r config set list-max-listpack-size 1
-}
-"""
-
-
 @pytest.mark.parametrize(["type"], [("listpack"), ("quicklist")])
 def test_test_lpush_and_lpop_on_plain_nodes(r: ValkeyTestClient, type) -> None:
     """
@@ -143,6 +134,10 @@ def test_test_lpush_and_lpop_on_plain_nodes(r: ValkeyTestClient, type) -> None:
         r debug quicklist-packed-threshold 0
     } {OK} {needs:debug}
     """
+    if type == "listpack":
+        r.run("config", "set", "list-max-listpack-size", -2)
+    else:
+        r.run("config", "set", "list-max-listpack-size", 1)
     r.run("flushdb")
     r.run("debug", "quicklist-packed-threshold", "1b")
     r.run("lpush", "lst", 9)
@@ -183,6 +178,10 @@ def test_test_lindex_and_linsert_on_plain_nodes(r: ValkeyTestClient, type) -> No
         r debug quicklist-packed-threshold 0
     } {OK} {needs:debug}
     """
+    if type == "listpack":
+        r.run("config", "set", "list-max-listpack-size", -2)
+    else:
+        r.run("config", "set", "list-max-listpack-size", 1)
     r.run("flushdb")
     r.run("debug", "quicklist-packed-threshold", "1b")
     r.run("lpush", "lst", "xxxxxxxxxxx")
@@ -212,6 +211,10 @@ def test_test_ltrim_on_plain_nodes(r: ValkeyTestClient, type) -> None:
         r debug quicklist-packed-threshold 0
     } {OK} {needs:debug}
     """
+    if type == "listpack":
+        r.run("config", "set", "list-max-listpack-size", -2)
+    else:
+        r.run("config", "set", "list-max-listpack-size", 1)
     r.run("flushdb")
     r.run("debug", "quicklist-packed-threshold", "1b")
     r.run("lpush", "lst1", 9)
@@ -240,6 +243,10 @@ def test_test_lrem_on_plain_nodes(r: ValkeyTestClient, type) -> None:
         r debug quicklist-packed-threshold 0
     } {OK} {needs:debug}
     """
+    if type == "listpack":
+        r.run("config", "set", "list-max-listpack-size", -2)
+    else:
+        r.run("config", "set", "list-max-listpack-size", 1)
     r.run("flushdb")
     r.run("debug", "quicklist-packed-threshold", "1b")
     r.run("lpush", "lst", "one")
@@ -268,6 +275,10 @@ def test_test_lpos_on_plain_nodes(r: ValkeyTestClient, type) -> None:
         r debug quicklist-packed-threshold 0
     } {OK} {needs:debug}
     """
+    if type == "listpack":
+        r.run("config", "set", "list-max-listpack-size", -2)
+    else:
+        r.run("config", "set", "list-max-listpack-size", 1)
     r.run("flushdb")
     r.run("debug", "quicklist-packed-threshold", "1b")
     r.run("RPUSH", "lst", "aa")
@@ -302,6 +313,10 @@ def test_test_lmove_on_plain_nodes(r: ValkeyTestClient, type) -> None:
         r debug quicklist-packed-threshold 0
     } {OK} {needs:debug}
     """
+    if type == "listpack":
+        r.run("config", "set", "list-max-listpack-size", -2)
+    else:
+        r.run("config", "set", "list-max-listpack-size", 1)
     r.run("flushdb")
     r.run("debug", "quicklist-packed-threshold", "1b")
     r.run("RPUSH", "lst2{t}", "aa")
@@ -347,6 +362,10 @@ def test_test_lset_with_packed_or_plain_combinations(r: ValkeyTestClient, type) 
         r debug quicklist-packed-threshold 0
     } {OK} {needs:debug}
     """
+    if type == "listpack":
+        r.run("config", "set", "list-max-listpack-size", -2)
+    else:
+        r.run("config", "set", "list-max-listpack-size", 1)
     r.run("debug", "quicklist-packed-threshold", "5b")
     r.run("RPUSH", "lst", "aa")
     r.run("RPUSH", "lst", "bb")
@@ -392,6 +411,10 @@ def test_test_lset_with_packed_is_split_in_the_middle(r: ValkeyTestClient, type)
         r config set list-max-listpack-size $original_config
     } {OK} {needs:debug}
     """
+    if type == "listpack":
+        r.run("config", "set", "list-max-listpack-size", -2)
+    else:
+        r.run("config", "set", "list-max-listpack-size", 1)
     original_config = config_get_set("list-max-listpack-size", 4)
     r.run("flushdb")
     r.run("debug", "quicklist-packed-threshold", "5b")
@@ -439,6 +462,10 @@ def test_test_lset_with_packed_consist_only_one_item(r: ValkeyTestClient, type) 
         r config set list-max-ziplist-size $original_config
     } {OK} {needs:debug}
     """
+    if type == "listpack":
+        r.run("config", "set", "list-max-listpack-size", -2)
+    else:
+        r.run("config", "set", "list-max-listpack-size", 1)
     r.run("flushdb")
     original_config = config_get_set("list-max-ziplist-size", 1)
     r.run("debug", "quicklist-packed-threshold", "1b")
@@ -491,6 +518,10 @@ def test_crash_due_to_delete_entry_from_a_compress_quicklist_node(r: ValkeyTestC
         r config set list-compress-depth $original_config
     } {OK} {needs:debug}
     """
+    if type == "listpack":
+        r.run("config", "set", "list-max-listpack-size", -2)
+    else:
+        r.run("config", "set", "list-max-listpack-size", 1)
     r.run("flushdb")
     r.run("debug", "quicklist-packed-threshold", "100b")
     original_config = config_get_set("list-compress-depth", 1)
@@ -523,6 +554,10 @@ def test_crash_due_to_split_quicklist_node_wrongly(r: ValkeyTestClient, type) ->
         r debug quicklist-packed-threshold 0
     } {OK} {needs:debug}
     """
+    if type == "listpack":
+        r.run("config", "set", "list-max-listpack-size", -2)
+    else:
+        r.run("config", "set", "list-max-listpack-size", 1)
     r.run("flushdb")
     r.run("debug", "quicklist-packed-threshold", "10b")
     r.run("LPUSH", "lst", "aa")
@@ -862,25 +897,6 @@ proc verify_resp_response {resp response resp2_response resp3_response} {
 """
 
 
-"""
-if {[lsearch $::denytags "resp3"] >= 0} {
-    if {$resp == 3} {continue}
-} elseif {$::force_resp3} {
-    if {$resp == 2} {continue}
-}
-"""
-
-
-"""
-r hello resp
-"""
-
-
-"""
-r readraw 1
-"""
-
-
 @pytest.mark.parametrize(["resp"], [(3), (2)])
 def test_lpop_or_rpop_with_the_count_0_returns_an_empty_array_in_resp_resp(r: ValkeyTestClient, resp) -> None:
     """
@@ -890,6 +906,15 @@ def test_lpop_or_rpop_with_the_count_0_returns_an_empty_array_in_resp_resp(r: Va
         assert_equal {*0} [r rpop listcount 0]
     }
     """
+    if_(
+        '[lsearch $::denytags "resp3"] >= 0',
+        "            if {$resp == 3} {continue}\n        ",
+        "elseif",
+        "$::force_resp3",
+        "            if {$resp == 2} {continue}\n        ",
+    )
+    r.run("hello", resp)
+    r.run("readraw", 1)
     r.run("lpush", "listcount", "zero")
     assert "*0" == r.run("lpop", "listcount", 0)
     assert "*0" == r.run("rpop", "listcount", 0)
@@ -905,6 +930,15 @@ def test_lpop_or_rpop_against_non_existing_key_in_resp_resp(r: ValkeyTestClient,
         verify_resp_response $resp [r rpop non_existing_key] {$-1} {_}
     }
     """
+    if_(
+        '[lsearch $::denytags "resp3"] >= 0',
+        "            if {$resp == 3} {continue}\n        ",
+        "elseif",
+        "$::force_resp3",
+        "            if {$resp == 2} {continue}\n        ",
+    )
+    r.run("hello", resp)
+    r.run("readraw", 1)
     r.run("del", "non_existing_key")
     verify_resp_response(resp, r.run("lpop", "non_existing_key"), "$-1", "_")
     verify_resp_response(resp, r.run("rpop", "non_existing_key"), "$-1", "_")
@@ -923,6 +957,15 @@ def test_lpop_or_rpop_with_count_against_non_existing_key_in_resp_resp(r: Valkey
         verify_resp_response $resp [r rpop non_existing_key 1] {*-1} {_}
     }
     """
+    if_(
+        '[lsearch $::denytags "resp3"] >= 0',
+        "            if {$resp == 3} {continue}\n        ",
+        "elseif",
+        "$::force_resp3",
+        "            if {$resp == 2} {continue}\n        ",
+    )
+    r.run("hello", resp)
+    r.run("readraw", 1)
     r.run("del", "non_existing_key")
     verify_resp_response(resp, r.run("lpop", "non_existing_key", 0), "*-1", "_")
     verify_resp_response(resp, r.run("lpop", "non_existing_key", 1), "*-1", "_")

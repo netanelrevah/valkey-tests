@@ -18,21 +18,6 @@ proc get_reply_buffer_size {cname} {
 pytestmark = [pytest.mark.replybufsize]
 
 
-"""
-r config set min-io-threads-avoid-copy-reply 0
-"""
-
-
-"""
-r config set min-string-size-avoid-copy-reply 0
-"""
-
-
-"""
-r config set min-string-size-avoid-copy-reply-threaded 0
-"""
-
-
 def test_verify_reply_buffer_limits(r: ValkeyTestClient) -> None:
     """
     test {verify reply buffer limits} {
@@ -69,6 +54,9 @@ def test_verify_reply_buffer_limits(r: ValkeyTestClient) -> None:
         $tc close
     } {0} {needs:debug}
     """
+    r.run("config", "set", "min-io-threads-avoid-copy-reply", 0)
+    r.run("config", "set", "min-string-size-avoid-copy-reply", 0)
+    r.run("config", "set", "min-string-size-avoid-copy-reply-threaded", 0)
     r.run("debug", "replybuffer", "peak-reset-time", 100)
     tc = ValkeyTestClient.create_from(r)
     tc.run("client", "setname", "test_client")

@@ -31,11 +31,6 @@ proc client_query_buffer {name} {
 pytestmark = [pytest.mark.querybuf_slow]
 
 
-"""
-r config set hz 100
-"""
-
-
 def test_query_buffer_resized_correctly(r: ValkeyTestClient) -> None:
     """
     test "query buffer resized correctly" {
@@ -83,6 +78,7 @@ def test_query_buffer_resized_correctly(r: ValkeyTestClient) -> None:
         $rd close
     }
     """
+    r.run("config", "set", "hz", 100)
     rd = ValkeyTestClient.create_from(r)
     rd.run("client", "setname", "test_client")
     rd.run("read")
@@ -146,6 +142,7 @@ def test_query_buffer_resized_correctly_when_not_idle(r: ValkeyTestClient) -> No
         $rd close
     } {0} {needs:debug}
     """
+    r.run("config", "set", "hz", 100)
     r.run("debug", "pause-cron", 1)
     rd = ValkeyTestClient.create_from(r)
     rd.run("client", "setname", "test_client")
@@ -190,6 +187,7 @@ def test_query_buffer_resized_correctly_with_fat_argv(r: ValkeyTestClient) -> No
         $rd close
     }
     """
+    r.run("config", "set", "hz", 100)
     rd = ValkeyTestClient.create_from(r)
     rd.run("client", "setname", "test_client")
     rd.run("write", "*3\r\n$3\r\nset\r\n$1\r\na\r\n$1000000\r\n")

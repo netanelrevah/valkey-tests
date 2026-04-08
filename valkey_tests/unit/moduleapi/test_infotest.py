@@ -22,11 +22,6 @@ proc field {info property} {
 pytestmark = [pytest.mark.modules]
 
 
-"""
-r module load testmodule log-key 0
-"""
-
-
 def test_module_reading_info(r: ValkeyTestClient) -> None:
     """
     test {module reading info} {

@@ -24,11 +24,6 @@ waitForBgrewriteaof r
 """
 
 
-"""
-r config set aof-use-rdb-preamble rdbpre
-"""
-
-
 @pytest.mark.parametrize(["rdbpre"], [("yes"), ("no")])
 def test_aof_rewrite_during_write_load_rdb_preamble_rdbpre(r: ValkeyTestClient, rdbpre) -> None:
     """
@@ -84,6 +79,7 @@ def test_aof_rewrite_during_write_load_rdb_preamble_rdbpre(r: ValkeyTestClient, 
         assert {$d1 eq $d2}
     }
     """
+    r.run("config", "set", "aof-use-rdb-preamble", rdbpre)
     r.run("flushall")
     master = ValkeyTestClient.create_from(r)
     master_host = r.host

@@ -13,11 +13,6 @@ set testmodule file normalize tests/modules/subcommands.so
 pytestmark = [pytest.mark.modules]
 
 
-"""
-r module load testmodule
-"""
-
-
 def test_module_subcommands_via_command(r: ValkeyTestClient) -> None:
     """
     test "Module subcommands via COMMAND" {

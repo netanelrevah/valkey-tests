@@ -8,16 +8,6 @@ from tests.valkey_test_client import ValkeyTestClient
 pytestmark = [pytest.mark.latency_monitor_needs_latency]
 
 
-"""
-r config set latency-monitor-threshold 200
-"""
-
-
-"""
-r latency reset
-"""
-
-
 def test_latency_histogram_with_empty_histogram(r: ValkeyTestClient) -> None:
     """
     test {LATENCY HISTOGRAM with empty histogram} {
@@ -28,6 +18,8 @@ def test_latency_histogram_with_empty_histogram(r: ValkeyTestClient) -> None:
         assert_match {*config|resetstat*} $histo
     }
     """
+    r.run("config", "set", "latency-monitor-threshold", 200)
+    r.run("latency", "reset")
     r.run("config", "resetstat")
     histo = dict_("create", "*", r.run("latency", "histogram"))
     assert dict_("size", histo) == 1
@@ -45,6 +37,8 @@ def test_latency_histogram_all_commands(r: ValkeyTestClient) -> None:
         assert_match {calls 1 histogram_usec *} [dict get $histo "config|resetstat"]
     }
     """
+    r.run("config", "set", "latency-monitor-threshold", 200)
+    r.run("latency", "reset")
     r.run("config", "resetstat")
     r.run("set", "a", "b")
     r.run("set", "c", "d")
@@ -71,6 +65,8 @@ def test_latency_histogram_sub_commands(r: ValkeyTestClient) -> None:
         assert_match {calls 1 histogram_usec *} [dict get $histo "client|id"]
     }
     """
+    r.run("config", "set", "latency-monitor-threshold", 200)
+    r.run("latency", "reset")
     r.run("config", "resetstat")
     r.run("client", "id")
     r.run("client", "list")
@@ -102,6 +98,8 @@ def test_latency_histogram_with_a_subset_of_commands(r: ValkeyTestClient) -> Non
         assert_equal [dict size $histo] 2
     }
     """
+    r.run("config", "set", "latency-monitor-threshold", 200)
+    r.run("latency", "reset")
     r.run("config", "resetstat")
     r.run("set", "a", "b")
     r.run("set", "c", "d")
@@ -127,6 +125,8 @@ def test_latency_histogram_command(r: ValkeyTestClient) -> None:
         assert {[llength [r latency histogram set get]] == 4}
     }
     """
+    r.run("config", "set", "latency-monitor-threshold", 200)
+    r.run("latency", "reset")
     r.run("config", "resetstat")
     r.run("set", "a", "b")
     r.run("get", "a")
@@ -146,6 +146,8 @@ def test_latency_histogram_with_wrong_command_name_skips_the_invalid_one(r: Valk
         assert {[string length [r latency histogram blabla set get]] > 0}
     }
     """
+    r.run("config", "set", "latency-monitor-threshold", 200)
+    r.run("latency", "reset")
     r.run("config", "resetstat")
     assert len(r.run("latency", "histogram", "blabla")) == 0
     assert len(r.run("latency", "histogram", "blabla", "blabla2", "set", "get")) == 0

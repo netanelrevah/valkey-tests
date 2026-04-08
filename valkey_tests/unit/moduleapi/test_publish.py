@@ -11,11 +11,6 @@ set testmodule file normalize tests/modules/publish.so
 pytestmark = [pytest.mark.modules]
 
 
-"""
-r module load testmodule
-"""
-
-
 def test_publish_and_spublish_via_a_module(r: ValkeyTestClient) -> None:
     """
     test {PUBLISH and SPUBLISH via a module} {

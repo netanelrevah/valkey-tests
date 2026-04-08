@@ -64,7 +64,10 @@ class SetStatementTranslator(StatementTranslator):
         name_argument = arguments[0]
         if not isinstance(name_argument, TCLWord) or not name_argument.value.isidentifier():
             return None
-        val = ArgumentTranslator.translate(arguments[1], defined_vars)
+        value_arg = arguments[1]
+        if isinstance(value_arg, TCLBracesWord) and not value_arg.value.strip():
+            return [f"{_safe_var_name(name_argument.value)} = []"]
+        val = ArgumentTranslator.translate(value_arg, defined_vars)
         return None if val is None else [f"{_safe_var_name(name_argument.value)} = {val}"]
 
 
@@ -388,6 +391,14 @@ class TCLBodyTranslator:
                     defined_vars.update(_collect_set_vars(elif_body))
                 if if_cmd.else_part is not None:
                     defined_vars.update(_collect_set_vars(if_cmd.else_part))
+            except Exception:
+                pass
+        elif command.name == "for":
+            try:
+                for_cmd = TCLCommandFor.build(command.args, {})
+                for cmd in for_cmd.init.commands:
+                    if cmd.name in ("set", "variable") and cmd.args and isinstance(cmd.args[0], TCLWord):
+                        defined_vars.add(cmd.args[0].value)
             except Exception:
                 pass
 

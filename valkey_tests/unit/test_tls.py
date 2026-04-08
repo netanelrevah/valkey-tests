@@ -1,5 +1,4 @@
 # ruff: noqa: F841, ANN002, ANN201
-
 from fnmatch import fnmatch
 
 import pytest
@@ -7,11 +6,6 @@ import pytest
 from tests.valkey_test_client import ValkeyTestClient
 
 pytestmark = [pytest.mark.tls]
-
-
-"""
-package require tls
-"""
 
 
 @pytest.mark.skipif("", reason="{$::tls}")
@@ -23,6 +17,7 @@ def test_tls_not_accepting_non_tls_connections_on_a_tls_port(r: ValkeyTestClient
         set e
     } {*I/O error*}
     """
+    package("require", "tls")
     s = ValkeyTestClient.create_from(r)
     try:
         e = s.run("PING")
@@ -63,6 +58,7 @@ def test_tls_verify_tls_auth_clients_behaves_as_expected(r: ValkeyTestClient) ->
         assert_match {*error*} $e
     }
     """
+    package("require", "tls")
     s = ValkeyTestClient.create_from(r)
     # TODO: ::tls::import $s channel
     try:
@@ -113,6 +109,7 @@ def test_tls_verify_tls_protocols_behaves_as_expected(r: ValkeyTestClient) -> No
         r CONFIG SET tls-protocols ""
     }
     """
+    package("require", "tls")
     r.run("CONFIG", "SET", "tls-protocols", "TLSv1.2")
     s = ValkeyTestClient.create_from(r)
     try:
@@ -154,6 +151,7 @@ def test_tls_verify_tls_ciphers_behaves_as_expected(r: ValkeyTestClient) -> None
         r CONFIG SET tls-ciphers "DEFAULT"
     }
     """
+    package("require", "tls")
     r.run("CONFIG", "SET", "tls-protocols", "TLSv1.2")
     r.run("CONFIG", "SET", "tls-ciphers", "DEFAULT:-AES128-SHA256")
     s = ValkeyTestClient.create_from(r)
@@ -205,6 +203,7 @@ def test_tls_verify_tls_prefer_server_ciphers_behaves_as_expected(r: ValkeyTestC
         r CONFIG SET tls-ciphers "DEFAULT"
     }
     """
+    package("require", "tls")
     r.run("CONFIG", "SET", "tls-protocols", "TLSv1.2")
     r.run("CONFIG", "SET", "tls-ciphers", "AES128-SHA256:AES256-SHA256")
     s = ValkeyTestClient.create_from(r)
@@ -250,6 +249,7 @@ def test_tls_verify_tls_cert_file_is_also_used_as_a_client_cert_if_none_specifie
         }
     }
     """
+    package("require", "tls")
     master = ValkeyTestClient.create_from(r)
     master_host = r.host
     master_port = r.port
@@ -294,6 +294,7 @@ def test_tls_switch_between_tcp_and_tls_ports(r: ValkeyTestClient) -> None:
         $rd close
     }
     """
+    package("require", "tls")
     srv_port = r.port
     rd = ValkeyTestClient.create_from(r)
     rd.run("PING")
@@ -328,6 +329,7 @@ def test_tls_working_with_an_encrypted_keyfile(r: ValkeyTestClient) -> None:
         r config set tls-key-file $keyfile_encrypted
     }
     """
+    package("require", "tls")
     keyfile = r.run("config", "get", "tls-key-file")[1]
     keyfile_encrypted = f"{keyfile}.encrypted"
     exec_(
@@ -374,6 +376,7 @@ def test_tls_auto_authenticate_using_tls_auth_clients_user_cn(r: ValkeyTestClien
         $s close
     }
     """
+    package("require", "tls")
     r.run("ACL", "SETUSER", "Client-only", "on", ">clientpass", "allcommands", "allkeys")
     r.run("CONFIG", "SET", "tls-auth-clients-user", "CN")
     s = ValkeyTestClient.create_from(r)
@@ -470,6 +473,7 @@ def test_tls_auto_reload_detects_changes(r: ValkeyTestClient) -> None:
         }
     }
     """
+    package("require", "tls")
     if False:
         skip("Not supported with TLS built as a module")
     orig_server_crt = r.run("config", "get", "tls-cert-file")[1]
@@ -513,6 +517,7 @@ def test_tls_auto_reload_skips_unchanged_materials(r: ValkeyTestClient) -> None:
         }
     }
     """
+    package("require", "tls")
     if False:
         skip("Not supported with TLS built as a module")
     orig_loglevel = r.run("config", "get", "loglevel")[1]
@@ -546,6 +551,7 @@ def test_tls_auto_reload_interval_validation(r: ValkeyTestClient) -> None:
         }
     }
     """
+    package("require", "tls")
     if False:
         skip("Not supported with TLS built as a module")
     try_(
@@ -595,6 +601,7 @@ def test_tls_auto_reload_with_ca_cert_directory(r: ValkeyTestClient) -> None:
         }
     }
     """
+    package("require", "tls")
     if False:
         skip("Not supported with TLS built as a module")
     ca_cert_dir = r.run("config", "get", "tls-ca-cert-dir")[1]
@@ -602,41 +609,6 @@ def test_tls_auto_reload_with_ca_cert_directory(r: ValkeyTestClient) -> None:
         '$ca_cert_dir ne ""',
         '                # Touch a file in the directory to trigger change detection\n                set test_file "$ca_cert_dir/test_marker"\n                set fd [open $test_file w]\n                puts $fd "test"\n                close $fd\n\n                # Ensure cleanup happens even if test fails\n                try {\n                    # Enable auto-reload with 1 second interval\n                    r CONFIG SET tls-auto-reload-interval 1\n\n                    # Wait for reload to actually complete by checking server logs\n                    wait_for_log_messages 0 {"*TLS materials reloaded successfully*"} 0 50 100\n\n                    # Verify connection still works after reload\n                    set s [valkey_client]\n                    assert_equal "PONG" [$s PING]\n                    $s close\n                } finally {\n                    # Disable auto-reload\n                    r CONFIG SET tls-auto-reload-interval 0\n\n                    # Clean up test file\n                    file delete -force $test_file\n                }\n            ',
     )
-
-
-"""
-proc test_tls_cert_rejection {cert_type cert_path expected_error} {
-    set tlsdir [file normalize ./tests/tls]
-    set server_path $::VALKEY_SERVER_BIN
-    set server_cert $tlsdir/server.crt
-    set server_key $tlsdir/server.key
-    set client_cert $tlsdir/client.crt
-    set client_key $tlsdir/client.key
-    set ca_cert_file $tlsdir/ca.crt
-    set ca_cert_dir  ""
-
-    switch -- $cert_type {
-        server { set server_cert $cert_path }
-        client { set client_cert $cert_path }
-        "ca-file" { set ca_cert_file $cert_path }
-        "ca-dir"  { set ca_cert_dir $cert_path; set ca_cert_file "" }
-    }
-
-    set cmd [list $server_path --port 0 --tls-port 16379 \
-        --tls-cert-file $server_cert --tls-key-file $server_key \
-        --tls-client-cert-file $client_cert --tls-client-key-file $client_key]
-
-    if {$ca_cert_file ne ""} { lappend cmd --tls-ca-cert-file $ca_cert_file }
-    if {$ca_cert_dir ne ""}  { lappend cmd --tls-ca-cert-dir  $ca_cert_dir }
-
-    if {$::tls_module} {
-        lappend cmd --loadmodule $::VALKEY_TLS_MODULE
-    }
-
-    catch {exec {*}$cmd 2>@1} err
-    assert_match $expected_error $err
-}
-"""
 
 
 @pytest.mark.skipif("", reason="{$::tls}")
@@ -670,6 +642,11 @@ def test_tls_fail_fast_on_invalid_certificates_at_startup(r: ValkeyTestClient) -
         test_tls_cert_rejection ca-dir $tlsdir/ca-notyet {*One or more loaded CA certificates are invalid*}
     }
     """
+    proc(
+        "test_tls_cert_rejection",
+        "cert_type cert_path expected_error",
+        '            set tlsdir [file normalize ./tests/tls]\n            set server_path $::VALKEY_SERVER_BIN\n            set server_cert $tlsdir/server.crt\n            set server_key $tlsdir/server.key\n            set client_cert $tlsdir/client.crt\n            set client_key $tlsdir/client.key\n            set ca_cert_file $tlsdir/ca.crt\n            set ca_cert_dir  ""\n\n            switch -- $cert_type {\n                server { set server_cert $cert_path }\n                client { set client_cert $cert_path }\n                "ca-file" { set ca_cert_file $cert_path }\n                "ca-dir"  { set ca_cert_dir $cert_path; set ca_cert_file "" }\n            }\n\n            set cmd [list $server_path --port 0 --tls-port 16379 \\\n                --tls-cert-file $server_cert --tls-key-file $server_key \\\n                --tls-client-cert-file $client_cert --tls-client-key-file $client_key]\n\n            if {$ca_cert_file ne ""} { lappend cmd --tls-ca-cert-file $ca_cert_file }\n            if {$ca_cert_dir ne ""}  { lappend cmd --tls-ca-cert-dir  $ca_cert_dir }\n\n            if {$::tls_module} {\n                lappend cmd --loadmodule $::VALKEY_TLS_MODULE\n            }\n\n            catch {exec {*}$cmd 2>@1} err\n            assert_match $expected_error $err\n        ',
+    )
     tlsdir = file("normalize", "./tests/tls")
     test_tls_cert_rejection("server", tlsdir, "/server-expired.crt", "*Server TLS certificate is invalid*")
     test_tls_cert_rejection("server", tlsdir, "/server-notyet.crt", "*Server TLS certificate is invalid*")
@@ -679,27 +656,6 @@ def test_tls_fail_fast_on_invalid_certificates_at_startup(r: ValkeyTestClient) -
     test_tls_cert_rejection("ca-file", tlsdir, "/ca-notyet.crt", "*One or more loaded CA certificates are invalid*")
     test_tls_cert_rejection("ca-dir", tlsdir, "/ca-expired", "*One or more loaded CA certificates are invalid*")
     test_tls_cert_rejection("ca-dir", tlsdir, "/ca-notyet", "*One or more loaded CA certificates are invalid*")
-
-
-"""
-proc test_tls_cert_rejection_runtime {r cert_type cert_path} {
-    switch -- $cert_type {
-        server {
-            catch {$r CONFIG SET tls-cert-file $cert_path} err
-        }
-        client {
-            catch {$r CONFIG SET tls-client-cert-file $cert_path} err
-        }
-        "ca-file" {
-            catch {$r CONFIG SET tls-ca-cert-file $cert_path} err
-        }
-        "ca-dir" {
-            catch {$r CONFIG SET tls-ca-cert-dir $cert_path} err
-        }
-    }
-    assert_match {*Unable to update TLS*} $err
-}
-"""
 
 
 @pytest.mark.skipif("", reason="{$::tls}")
@@ -733,6 +689,11 @@ def test_tls_fail_fast_on_invalid_certificates_at_runtime(r: ValkeyTestClient) -
         test_tls_cert_rejection_runtime r ca-dir $tlsdir/ca-notyet
     }
     """
+    proc(
+        "test_tls_cert_rejection_runtime",
+        "r cert_type cert_path",
+        '            switch -- $cert_type {\n                server {\n                    catch {$r CONFIG SET tls-cert-file $cert_path} err\n                }\n                client {\n                    catch {$r CONFIG SET tls-client-cert-file $cert_path} err\n                }\n                "ca-file" {\n                    catch {$r CONFIG SET tls-ca-cert-file $cert_path} err\n                }\n                "ca-dir" {\n                    catch {$r CONFIG SET tls-ca-cert-dir $cert_path} err\n                }\n            }\n            assert_match {*Unable to update TLS*} $err\n        ',
+    )
     tlsdir = file("normalize", "./tests/tls")
     test_tls_cert_rejection_runtime("r", "server", tlsdir, "/server-expired.crt")
     test_tls_cert_rejection_runtime("r", "server", tlsdir, "/server-notyet.crt")
@@ -1321,6 +1282,14 @@ def get_info_property(*args):
 
 def if_(*args):
     raise NotImplementedError("if_")
+
+
+def package(*args):
+    raise NotImplementedError("package")
+
+
+def proc(*args):
+    raise NotImplementedError("proc")
 
 
 def pwd(*args):

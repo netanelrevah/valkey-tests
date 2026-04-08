@@ -2270,76 +2270,6 @@ def test_no_writes_shebang_flag(r: ValkeyTestClient) -> None:
         )
 
 
-"""
-start_server {tags {"external:skip"}} {
-    r -1 set x "some value"
-    test "no-writes shebang flag on replica" {
-        r replicaof [srv -1 host] [srv -1 port]
-        wait_for_condition 50 100 {
-            [s role] eq {slave} &&
-            [string match {*master_link_status:up*} [r info replication]]
-        } else {
-            fail "Can't turn the instance into a replica"
-        }
-
-        assert_equal [
-            r eval {#!lua flags=no-writes
-                return redis.call('get','x')
-            } 1 x
-        ] "some value"
-
-        assert_error {READONLY You can't write against a read only replica.} {
-            r eval {#!lua
-                return redis.call('get','x')
-            } 1 x
-        }
-
-        # test no-write inside multi-exec
-        r multi
-        r eval {#!lua flags=no-writes
-            redis.call('get','x')
-            return 1
-        } 1 x
-        assert_equal [r exec] 1
-
-        # test no shebang without write inside multi-exec
-        r multi
-        r eval {
-            redis.call('get','x')
-            return 1
-        } 1 x
-        assert_equal [r exec] 1
-
-        # temporarily set the server to master, so it doesn't block the queuing
-        # and we can test the evaluation of the flags on exec
-        r replicaof no one
-        set rr [valkey_client]
-        set rr2 [valkey_client]
-        $rr multi
-        $rr2 multi
-
-        # test write inside multi-exec
-        # we don't need to do any actual write
-        $rr eval {#!lua
-            return 1
-        } 0
-
-        # test no shebang with write inside multi-exec
-        $rr2 eval {
-            redis.call('set','x',1)
-            return 1
-        } 1 x
-
-        r replicaof [srv -1 host] [srv -1 port]
-        assert_error {EXECABORT Transaction discarded because of: READONLY *} {$rr exec}
-        assert_error {READONLY You can't write against a read only replica. script: *} {$rr2 exec}
-        $rr close
-        $rr2 close
-    }
-}
-"""
-
-
 def test_not_enough_good_replicas(r: ValkeyTestClient) -> None:
     """
     test "not enough good replicas" {
@@ -2373,6 +2303,10 @@ def test_not_enough_good_replicas(r: ValkeyTestClient) -> None:
         r config set min-replicas-to-write 0
     }
     """
+    start_server(
+        'tags {"external:skip"}',
+        "        r -1 set x \"some value\"\n        test \"no-writes shebang flag on replica\" {\n            r replicaof [srv -1 host] [srv -1 port]\n            wait_for_condition 50 100 {\n                [s role] eq {slave} &&\n                [string match {*master_link_status:up*} [r info replication]]\n            } else {\n                fail \"Can't turn the instance into a replica\"\n            }\n\n            assert_equal [\n                r eval {#!lua flags=no-writes\n                    return redis.call('get','x')\n                } 1 x\n            ] \"some value\"\n\n            assert_error {READONLY You can't write against a read only replica.} {\n                r eval {#!lua\n                    return redis.call('get','x')\n                } 1 x\n            }\n\n            # test no-write inside multi-exec\n            r multi\n            r eval {#!lua flags=no-writes\n                redis.call('get','x')\n                return 1\n            } 1 x\n            assert_equal [r exec] 1\n\n            # test no shebang without write inside multi-exec\n            r multi\n            r eval {\n                redis.call('get','x')\n                return 1\n            } 1 x\n            assert_equal [r exec] 1\n\n            # temporarily set the server to master, so it doesn't block the queuing\n            # and we can test the evaluation of the flags on exec\n            r replicaof no one\n            set rr [valkey_client]\n            set rr2 [valkey_client]\n            $rr multi\n            $rr2 multi\n\n            # test write inside multi-exec\n            # we don't need to do any actual write\n            $rr eval {#!lua\n                return 1\n            } 0\n\n            # test no shebang with write inside multi-exec\n            $rr2 eval {\n                redis.call('set','x',1)\n                return 1\n            } 1 x\n\n            r replicaof [srv -1 host] [srv -1 port]\n            assert_error {EXECABORT Transaction discarded because of: READONLY *} {$rr exec}\n            assert_error {READONLY You can't write against a read only replica. script: *} {$rr2 exec}\n            $rr close\n            $rr2 close\n        }\n    ",
+    )
     r.run("set", "x", "some value")
     r.run("config", "set", "min-replicas-to-write", 1)
     assert (
@@ -2435,6 +2369,10 @@ def test_not_enough_good_replicas_state_change_during_long_script(r: ValkeyTestC
         r config set lua-time-limit 5000
     } {OK} {external:skip needs:repl}
     """
+    start_server(
+        'tags {"external:skip"}',
+        "        r -1 set x \"some value\"\n        test \"no-writes shebang flag on replica\" {\n            r replicaof [srv -1 host] [srv -1 port]\n            wait_for_condition 50 100 {\n                [s role] eq {slave} &&\n                [string match {*master_link_status:up*} [r info replication]]\n            } else {\n                fail \"Can't turn the instance into a replica\"\n            }\n\n            assert_equal [\n                r eval {#!lua flags=no-writes\n                    return redis.call('get','x')\n                } 1 x\n            ] \"some value\"\n\n            assert_error {READONLY You can't write against a read only replica.} {\n                r eval {#!lua\n                    return redis.call('get','x')\n                } 1 x\n            }\n\n            # test no-write inside multi-exec\n            r multi\n            r eval {#!lua flags=no-writes\n                redis.call('get','x')\n                return 1\n            } 1 x\n            assert_equal [r exec] 1\n\n            # test no shebang without write inside multi-exec\n            r multi\n            r eval {\n                redis.call('get','x')\n                return 1\n            } 1 x\n            assert_equal [r exec] 1\n\n            # temporarily set the server to master, so it doesn't block the queuing\n            # and we can test the evaluation of the flags on exec\n            r replicaof no one\n            set rr [valkey_client]\n            set rr2 [valkey_client]\n            $rr multi\n            $rr2 multi\n\n            # test write inside multi-exec\n            # we don't need to do any actual write\n            $rr eval {#!lua\n                return 1\n            } 0\n\n            # test no shebang with write inside multi-exec\n            $rr2 eval {\n                redis.call('set','x',1)\n                return 1\n            } 1 x\n\n            r replicaof [srv -1 host] [srv -1 port]\n            assert_error {EXECABORT Transaction discarded because of: READONLY *} {$rr exec}\n            assert_error {READONLY You can't write against a read only replica. script: *} {$rr2 exec}\n            $rr close\n            $rr2 close\n        }\n    ",
+    )
     r.run("set", "x", "pre-script value")
     r.run("config", "set", "min-replicas-to-write", 1)
     r.run("config", "set", "lua-time-limit", 10)
@@ -2496,6 +2434,10 @@ def test_allow_stale_shebang_flag(r: ValkeyTestClient) -> None:
         set _ {}
     } {} {external:skip}
     """
+    start_server(
+        'tags {"external:skip"}',
+        "        r -1 set x \"some value\"\n        test \"no-writes shebang flag on replica\" {\n            r replicaof [srv -1 host] [srv -1 port]\n            wait_for_condition 50 100 {\n                [s role] eq {slave} &&\n                [string match {*master_link_status:up*} [r info replication]]\n            } else {\n                fail \"Can't turn the instance into a replica\"\n            }\n\n            assert_equal [\n                r eval {#!lua flags=no-writes\n                    return redis.call('get','x')\n                } 1 x\n            ] \"some value\"\n\n            assert_error {READONLY You can't write against a read only replica.} {\n                r eval {#!lua\n                    return redis.call('get','x')\n                } 1 x\n            }\n\n            # test no-write inside multi-exec\n            r multi\n            r eval {#!lua flags=no-writes\n                redis.call('get','x')\n                return 1\n            } 1 x\n            assert_equal [r exec] 1\n\n            # test no shebang without write inside multi-exec\n            r multi\n            r eval {\n                redis.call('get','x')\n                return 1\n            } 1 x\n            assert_equal [r exec] 1\n\n            # temporarily set the server to master, so it doesn't block the queuing\n            # and we can test the evaluation of the flags on exec\n            r replicaof no one\n            set rr [valkey_client]\n            set rr2 [valkey_client]\n            $rr multi\n            $rr2 multi\n\n            # test write inside multi-exec\n            # we don't need to do any actual write\n            $rr eval {#!lua\n                return 1\n            } 0\n\n            # test no shebang with write inside multi-exec\n            $rr2 eval {\n                redis.call('set','x',1)\n                return 1\n            } 1 x\n\n            r replicaof [srv -1 host] [srv -1 port]\n            assert_error {EXECABORT Transaction discarded because of: READONLY *} {$rr exec}\n            assert_error {READONLY You can't write against a read only replica. script: *} {$rr2 exec}\n            $rr close\n            $rr2 close\n        }\n    ",
+    )
     r.run("config", "set", "replica-serve-stale-data", "no")
     r.run("replicaof", "127.0.0.1", 1)
     with pytest.raises(
@@ -2534,7 +2476,7 @@ def test_allow_stale_shebang_flag(r: ValkeyTestClient) -> None:
     assert fnmatch(str(r.run("evalsha", sha, 0)), "foobar")
     r.run("replicaof", "no", "one")
     r.run("config", "set", "replica-serve-stale-data", "yes")
-    _ = ""
+    _ = []
 
 
 def test_reject_script_do_not_cause_a_lua_stack_leak(r: ValkeyTestClient) -> None:
@@ -2552,6 +2494,10 @@ def test_reject_script_do_not_cause_a_lua_stack_leak(r: ValkeyTestClient) -> Non
         } 0] 1
     }
     """
+    start_server(
+        'tags {"external:skip"}',
+        "        r -1 set x \"some value\"\n        test \"no-writes shebang flag on replica\" {\n            r replicaof [srv -1 host] [srv -1 port]\n            wait_for_condition 50 100 {\n                [s role] eq {slave} &&\n                [string match {*master_link_status:up*} [r info replication]]\n            } else {\n                fail \"Can't turn the instance into a replica\"\n            }\n\n            assert_equal [\n                r eval {#!lua flags=no-writes\n                    return redis.call('get','x')\n                } 1 x\n            ] \"some value\"\n\n            assert_error {READONLY You can't write against a read only replica.} {\n                r eval {#!lua\n                    return redis.call('get','x')\n                } 1 x\n            }\n\n            # test no-write inside multi-exec\n            r multi\n            r eval {#!lua flags=no-writes\n                redis.call('get','x')\n                return 1\n            } 1 x\n            assert_equal [r exec] 1\n\n            # test no shebang without write inside multi-exec\n            r multi\n            r eval {\n                redis.call('get','x')\n                return 1\n            } 1 x\n            assert_equal [r exec] 1\n\n            # temporarily set the server to master, so it doesn't block the queuing\n            # and we can test the evaluation of the flags on exec\n            r replicaof no one\n            set rr [valkey_client]\n            set rr2 [valkey_client]\n            $rr multi\n            $rr2 multi\n\n            # test write inside multi-exec\n            # we don't need to do any actual write\n            $rr eval {#!lua\n                return 1\n            } 0\n\n            # test no shebang with write inside multi-exec\n            $rr2 eval {\n                redis.call('set','x',1)\n                return 1\n            } 1 x\n\n            r replicaof [srv -1 host] [srv -1 port]\n            assert_error {EXECABORT Transaction discarded because of: READONLY *} {$rr exec}\n            assert_error {READONLY You can't write against a read only replica. script: *} {$rr2 exec}\n            $rr close\n            $rr2 close\n        }\n    ",
+    )
     r.run("config", "set", "maxmemory", 1)
     i = 0
     while i < 50:
@@ -3004,7 +2950,7 @@ def test_eval_select_inside_script_affects_subsequent_commands_in_same_script(r:
     r.run("del", "testkey")
     r.run("select", 0)
     r.run("del", "testkey")
-    _ = ""
+    _ = []
 
 
 def test_don_t_stop_the_dirty_scripts_when_an_oom_occurs_midway_through_execution(r: ValkeyTestClient) -> None:

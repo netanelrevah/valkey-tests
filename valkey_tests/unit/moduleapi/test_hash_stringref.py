@@ -11,11 +11,6 @@ set testmodule file normalize tests/modules/hash_stringref.so
 pytestmark = [pytest.mark.modules]
 
 
-"""
-r module load testmodule
-"""
-
-
 def test_module_hash_set(r: ValkeyTestClient) -> None:
     """
     test {Module hash set} {

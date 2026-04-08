@@ -34,11 +34,6 @@ proc module_get_args {mod} {
 pytestmark = [pytest.mark.modules]
 
 
-"""
-r module load testmodule
-"""
-
-
 def test_config_get_commands_work(r: ValkeyTestClient) -> None:
     """
     test {Config get commands work} {

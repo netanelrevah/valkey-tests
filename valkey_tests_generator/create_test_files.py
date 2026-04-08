@@ -157,6 +157,7 @@ class TCLTestFileGenerator:
         if_expressions: list[str] | None = None,
         parametrizes: list[str] | None = None,
         parametrize_vars: list[str] | None = None,
+        setup_script: TCLScript | None = None,
     ) -> None:
         raw_name = (
             test_command.args[0].value if isinstance(test_command.args[0], TCLBracesWord) else str(test_command.args[0])
@@ -166,17 +167,34 @@ class TCLTestFileGenerator:
         self._used_names[base_name] += 1
         test_name = base_name if count == 0 else f"{base_name}_{count}"
 
-        initial_vars = set(parametrize_vars) if parametrize_vars else None
-        lines, fixture_refs = _translate_test_body(test_command, initial_vars=initial_vars)
+        initial_vars = set(parametrize_vars) if parametrize_vars else set()
+
+        setup_lines: list[str] = []
+        if setup_script is not None:
+            candidate = TCLBodyTranslator().translate(setup_script, None, initial_vars=initial_vars)
+            if not _has_todos(candidate):
+                setup_lines = candidate
+                for cmd in setup_script.commands:
+                    if (
+                        isinstance(cmd, TCLCommandWord)
+                        and cmd.name in ("set", "variable")
+                        and cmd.args
+                        and isinstance(cmd.args[0], TCLWord)
+                    ):
+                        initial_vars = initial_vars | {cmd.args[0].value}
+
+        lines, fixture_refs = _translate_test_body(test_command, initial_vars=initial_vars or None)
+
+        all_lines = setup_lines + lines
 
         self._total_tests += 1
-        if _has_todos(lines):
-            self._todo_counter.update(_extract_todo_commands(lines))
+        if _has_todos(all_lines):
+            self._todo_counter.update(_extract_todo_commands(all_lines))
         else:
             self._translated_tests += 1
 
         self.output.write("\n\n")
-        if _has_todos(lines):
+        if _has_todos(all_lines):
             self.output.write("@pytest.mark.xfail(reason='not implemented')\n")
         for if_expression in if_expressions or []:
             self.output.write(f"@pytest.mark.skipif('', reason={if_expression!r})\n")
@@ -188,7 +206,7 @@ class TCLTestFileGenerator:
         self.output.write('    """\n')
         self.output.write(textwrap.indent(test_command.formatted(), "    ") + "\n")
         self.output.write('    """\n')
-        for line in lines:
+        for line in all_lines:
             self.output.write(f"    {line}\n")
 
     def generate_comment(self, command: TCLCommandWord) -> None:
@@ -202,15 +220,38 @@ class TCLTestFileGenerator:
         if_expressions: list[str] | None = None,
         foreach_commands: list[str] | None = None,
         parametrize_vars: list[str] | None = None,
+        setup_script: TCLScript | None = None,
     ) -> None:
+        setup_ids = {id(c) for c in setup_script.commands} if setup_script else set()
+        pending: list[TCLCommandWord] = []
+        pending_used = False
         for command in script.commands:
             if not isinstance(command, TCLCommandWord):
                 continue
+            if id(command) in setup_ids:
+                continue
             handler = CommandGenerator.MAPPING.get(command.name)
-            if handler is not None:
-                handler.generate(command, self, if_expressions, foreach_commands, parametrize_vars)
+            if handler is None:
+                if pending_used:
+                    pending = []
+                    pending_used = False
+                pending.append(command)
+                continue
+            if command.name == "test":
+                combined_cmds = list(setup_script.commands if setup_script else []) + pending
+                combined = TCLScript(combined_cmds) if combined_cmds else None
+                handler.generate(command, self, if_expressions, foreach_commands, parametrize_vars, combined)
+                pending_used = True
             else:
-                self.generate_comment(command)
+                if not pending_used:
+                    for cmd in pending:
+                        self.generate_comment(cmd)
+                pending = []
+                pending_used = False
+                handler.generate(command, self, if_expressions, foreach_commands, parametrize_vars, setup_script)
+        if not pending_used:
+            for cmd in pending:
+                self.generate_comment(cmd)
 
     def _process_start_server(self, command: TCLCommandWord) -> None:
         tags: list[str] = []

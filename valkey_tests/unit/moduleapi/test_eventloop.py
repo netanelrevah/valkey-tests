@@ -11,11 +11,6 @@ set testmodule file normalize tests/modules/eventloop.so
 pytestmark = [pytest.mark.modules]
 
 
-"""
-r module load testmodule
-"""
-
-
 def test_module_eventloop_sendbytes(r: ValkeyTestClient) -> None:
     """
     test "Module eventloop sendbytes" {

@@ -30,26 +30,6 @@ proc cmdstat {cmd} {
 pytestmark = [pytest.mark.modules]
 
 
-"""
-r module load testmodule
-"""
-
-
-"""
-r module load testmoduletwo
-"""
-
-
-"""
-set hello2_response r HELLO 2
-"""
-
-
-"""
-set hello3_response r HELLO 3
-"""
-
-
 def test_test_registering_module_auth_callbacks(r: ValkeyTestClient) -> None:
     """
     test {test registering module auth callbacks} {

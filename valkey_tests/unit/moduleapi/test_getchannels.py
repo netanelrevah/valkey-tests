@@ -9,16 +9,6 @@ set testmodule file normalize tests/modules/getchannels.so
 pytestmark = [pytest.mark.modules]
 
 
-"""
-r module load testmodule
-"""
-
-
-"""
-r ACL setuser testuser +@all resetchannels &channel &pattern*
-"""
-
-
 def test_module_getchannels_api_with_literals_acl(r: ValkeyTestClient) -> None:
     """
     test "module getchannels-api with literals - ACL" {

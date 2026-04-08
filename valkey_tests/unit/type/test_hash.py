@@ -1,5 +1,4 @@
 # ruff: noqa: PLR2004, F841, RUF043, ANN001, ANN002, ANN201
-
 from fnmatch import fnmatch
 
 import pytest
@@ -71,31 +70,6 @@ proc get_keys {l} {
 """
 
 
-"""
-set original_max_value lindex [r config get hash-max-ziplist-value] 1
-"""
-
-
-"""
-r config set hash-max-ziplist-value 10
-"""
-
-
-"""
-create_hash myhash contents
-"""
-
-
-"""
-assert_encoding type myhash
-"""
-
-
-"""
-assert_morethan memory_usage myhash 0
-"""
-
-
 @pytest.mark.parametrize(
     ["type", "contents"], [("listpack", "{a 1} {b 2} {c 3}"), ("hashtable", "{a 1} {b 2} {[randstring 70 90 alpha] 3}")]
 )
@@ -111,6 +85,11 @@ def test_hrandfield_type(r: ValkeyTestClient, type, contents) -> None:
         assert_equal [lsort [get_keys $contents]] [lsort [array names myhash]]
     }
     """
+    original_max_value = r.run("config", "get", "hash-max-ziplist-value")[1]
+    r.run("config", "set", "hash-max-ziplist-value", 10)
+    create_hash("myhash", contents)
+    assert_encoding(type, "myhash")
+    assert memory_usage("myhash") > 0
     unset("-nocomplain", "myhash")
     array("set", "myhash", "")
     i = 0
@@ -186,17 +165,13 @@ def test_hrandfield_with_count_against_non_existing_key(r: ValkeyTestClient) -> 
     r.run("hrandfield", "nonexisting_key", 100)
 
 
-"""
-r readraw 1
-"""
-
-
 def test_hrandfield_count_of_0_is_handled_correctly_emptyarray(r: ValkeyTestClient) -> None:
     """
     test "HRANDFIELD count of 0 is handled correctly - emptyarray" {
         r hrandfield myhash 0
     } {*0}
     """
+    r.run("readraw", 1)
     assert fnmatch(str(r.run("hrandfield", "myhash", 0)), "*0")
 
 
@@ -206,6 +181,7 @@ def test_hrandfield_with_count_against_non_existing_key_emptyarray(r: ValkeyTest
         r hrandfield nonexisting_key 100
     } {*0}
     """
+    r.run("readraw", 1)
     assert fnmatch(str(r.run("hrandfield", "nonexisting_key", 100)), "*0")
 
 
@@ -443,7 +419,7 @@ def test_hget_against_the_small_hash(r: ValkeyTestClient) -> None:
         set _ $err
     } {}
     """
-    err = ""
+    err = []
     foreach(
         "k",
         array("names", "smallhash", "*"),
@@ -465,7 +441,7 @@ def test_hget_against_the_big_hash(r: ValkeyTestClient) -> None:
         set _ $err
     } {}
     """
-    err = ""
+    err = []
     foreach(
         "k",
         array("names", "bighash", "*"),
@@ -726,7 +702,7 @@ def test_hmget_small_hash(r: ValkeyTestClient) -> None:
     keys = []
     vals = []
     foreach("k v", array("get", "smallhash"), "            lappend keys $k\n            lappend vals $v\n        ")
-    err = ""
+    err = []
     result = r.run("hmget", "smallhash", "*", keys)
     if_("$vals ne $result", '            set err "$vals != $result"\n            break\n        ')
     _ = err
@@ -753,7 +729,7 @@ def test_hmget_big_hash(r: ValkeyTestClient) -> None:
     keys = []
     vals = []
     foreach("k v", array("get", "bighash"), "            lappend keys $k\n            lappend vals $v\n        ")
-    err = ""
+    err = []
     result = r.run("hmget", "bighash", "*", keys)
     if_("$vals ne $result", '            set err "$vals != $result"\n            break\n        ')
     _ = err
@@ -1062,7 +1038,7 @@ def test_hdel_more_than_a_single_value(r: ValkeyTestClient) -> None:
         r hgetall myhash
     } {b 2}
     """
-    rv = ""
+    rv = []
     r.run("del", "myhash")
     r.run("hmset", "myhash", "a", 1, "b", 2, "c", 3)
     assert 0 == r.run("hdel", "myhash", "x", "y")
@@ -1291,7 +1267,7 @@ def test_hincrby_can_detect_overflows(r: ValkeyTestClient) -> None:
         set e
     } {*overflow*}
     """
-    e = ""
+    e = []
     r.run("hset", "hash", "n", -9223372036854775484)
     assert r.run("hincrby", "hash", "n", -1) == -9223372036854775485
     try:
@@ -1488,7 +1464,7 @@ def test_hstrlen_against_the_small_hash(r: ValkeyTestClient) -> None:
         set _ $err
     } {}
     """
-    err = ""
+    err = []
     foreach(
         "k",
         array("names", "smallhash", "*"),
@@ -1513,7 +1489,7 @@ def test_hstrlen_against_the_big_hash(r: ValkeyTestClient) -> None:
         set _ $err
     } {}
     """
-    err = ""
+    err = []
     foreach(
         "k",
         array("names", "bighash", "*"),
@@ -1958,6 +1934,10 @@ def info(*args):
 
 def lsort(*args):
     raise NotImplementedError("lsort")
+
+
+def memory_usage(*args):
+    raise NotImplementedError("memory_usage")
 
 
 def random_value(*args):

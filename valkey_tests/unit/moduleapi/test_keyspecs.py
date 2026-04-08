@@ -13,11 +13,6 @@ set testmodule file normalize tests/modules/keyspecs.so
 pytestmark = [pytest.mark.modules]
 
 
-"""
-r module load testmodule
-"""
-
-
 def test_module_key_specs_no_spec_only_legacy_triple(r: ValkeyTestClient) -> None:
     """
     test "Module key specs: No spec, only legacy triple" {
@@ -352,11 +347,6 @@ def test_command_getkeysandflags_correctly_reports_module_key_spec_flags(r: Valk
     )
 
 
-"""
-r ACL setuser testuser +@all %R~read* %W~write* %RW~rw*
-"""
-
-
 def test_module_key_specs_no_spec_only_legacy_triple_acl(r: ValkeyTestClient) -> None:
     """
     test "Module key specs: No spec, only legacy triple - ACL" {
@@ -366,6 +356,7 @@ def test_module_key_specs_no_spec_only_legacy_triple_acl(r: ValkeyTestClient) ->
         assert_match {*has no permissions to access the 'write' key*} [r ACL DRYRUN testuser kspec.none write val1]
     }
     """
+    r.run("ACL", "setuser", "testuser", "+@all", "%R~read*", "%W~write*", "%RW~rw*")
     assert "OK" == r.run("ACL", "DRYRUN", "testuser", "kspec.none", "rw", "val1")
     assert fnmatch(
         str(r.run("ACL", "DRYRUN", "testuser", "kspec.none", "read", "val1")),
@@ -386,6 +377,7 @@ def test_module_key_specs_tworanges_acl(r: ValkeyTestClient) -> None:
         assert_match {*has no permissions to access the 'write' key*} [r ACL DRYRUN testuser kspec.tworanges write rw]
     }
     """
+    r.run("ACL", "setuser", "testuser", "+@all", "%R~read*", "%W~write*", "%RW~rw*")
     assert "OK" == r.run("ACL", "DRYRUN", "testuser", "kspec.tworanges", "read", "write")
     assert "OK" == r.run("ACL", "DRYRUN", "testuser", "kspec.tworanges", "rw", "rw")
     assert fnmatch(

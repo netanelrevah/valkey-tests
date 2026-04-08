@@ -11,11 +11,6 @@ set testmodule file normalize tests/modules/getkeys.so
 pytestmark = [pytest.mark.modules]
 
 
-"""
-r module load testmodule
-"""
-
-
 def test_command_info_correctly_reports_a_movable_keys_module_command(r: ValkeyTestClient) -> None:
     """
     test {COMMAND INFO correctly reports a movable keys module command} {
@@ -206,11 +201,6 @@ def test_rm_getcommandkeys_with_bad_arity(r: ValkeyTestClient) -> None:
     assert fnmatch(str(e), "*EINVAL*")
 
 
-"""
-r ACL setuser testuser +@all %R~read* %W~write* %RW~rw*
-"""
-
-
 def test_module_getkeys_api_acl(r: ValkeyTestClient) -> None:
     """
     test "module getkeys-api - ACL" {
@@ -220,6 +210,7 @@ def test_module_getkeys_api_acl(r: ValkeyTestClient) -> None:
         assert_match {*has no permissions to access the 'write' key*} [r ACL DRYRUN testuser getkeys.command key write]
     }
     """
+    r.run("ACL", "setuser", "testuser", "+@all", "%R~read*", "%W~write*", "%RW~rw*")
     assert "OK" == r.run("ACL", "DRYRUN", "testuser", "getkeys.command", "key", "rw")
     assert fnmatch(
         str(r.run("ACL", "DRYRUN", "testuser", "getkeys.command", "key", "read")),
@@ -239,6 +230,7 @@ def test_module_getkeys_api_with_flags_acl(r: ValkeyTestClient) -> None:
         assert_match {*has no permissions to access the 'write' key*} [r ACL DRYRUN testuser getkeys.command_with_flags key write]
     }
     """
+    r.run("ACL", "setuser", "testuser", "+@all", "%R~read*", "%W~write*", "%RW~rw*")
     assert "OK" == r.run("ACL", "DRYRUN", "testuser", "getkeys.command_with_flags", "key", "rw")
     assert "OK" == r.run("ACL", "DRYRUN", "testuser", "getkeys.command_with_flags", "key", "read")
     assert fnmatch(
@@ -253,4 +245,5 @@ def test_unload_the_module_getkeys(r: ValkeyTestClient) -> None:
         assert_equal {OK} [r module unload getkeys]
     }
     """
+    r.run("ACL", "setuser", "testuser", "+@all", "%R~read*", "%W~write*", "%RW~rw*")
     assert "OK" == r.run("module", "unload", "getkeys")

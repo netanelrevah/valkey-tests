@@ -9,66 +9,6 @@ from tests.valkey_test_client import ValkeyTestClient
 pytestmark = [pytest.mark.tracking_network_logreqres_skip]
 
 
-"""
-set rd_redirection valkey_deferring_client
-"""
-
-
-"""
-$rd_redirection client id
-"""
-
-
-"""
-set redir_id $rd_redirection read
-"""
-
-
-"""
-$rd_redirection subscribe __redis__:invalidate
-"""
-
-
-"""
-$rd_redirection read
-"""
-
-
-"""
-set rd valkey_deferring_client
-"""
-
-
-"""
-set rd_sg valkey_client
-"""
-
-
-"""
-proc clean_all {} {
-    uplevel {
-        # We should make r TRACKING off first. If r is in RESP3,
-        # r FLUSH ALL will send us tracking-redir-broken or other
-        # info which will not be consumed.
-        r CLIENT TRACKING off
-        $rd QUIT
-        $rd close
-        $rd_redirection QUIT
-        $rd_redirection close
-        set rd [valkey_deferring_client]
-        set rd_redirection [valkey_deferring_client]
-        $rd_redirection client id
-        set redir_id [$rd_redirection read]
-        $rd_redirection subscribe __redis__:invalidate
-        $rd_redirection read ; # Consume the SUBSCRIBE reply.
-        r FLUSHALL
-        r HELLO 2
-        r config set tracking-table-max-keys 1000000
-    }
-}
-"""
-
-
 def test_client_tracking_prefixes_memory_overhead(r: ValkeyTestClient) -> None:
     """
     test {Client tracking prefixes memory overhead} {
@@ -99,6 +39,18 @@ def test_client_tracking_prefixes_memory_overhead(r: ValkeyTestClient) -> None:
         r CLIENT TRACKING off
     }
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     r.run("CLIENT", "TRACKING", "off")
     tot_mem_before = get_field_in_client_info(r.run("client", "info"), "tot-mem")
     args = []
@@ -121,18 +73,27 @@ def test_client_tracking_prefixes_memory_overhead(r: ValkeyTestClient) -> None:
     r.run("CLIENT", "TRACKING", "off")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_clients_are_able_to_enable_tracking_and_redirect_it(r: ValkeyTestClient) -> None:
     """
     test {Clients are able to enable tracking and redirect it} {
         r CLIENT TRACKING on REDIRECT $redir_id
     } {*OK}
     """
-    # TODO: r CLIENT TRACKING on REDIRECT redir_id
-    assert False
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
+    assert fnmatch(str(r.run("CLIENT", "TRACKING", "on", "REDIRECT", redir_id)), "*OK")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_the_other_connection_is_able_to_get_invalidations(r: ValkeyTestClient) -> None:
     """
     test {The other connection is able to get invalidations} {
@@ -146,14 +107,26 @@ def test_the_other_connection_is_able_to_get_invalidations(r: ValkeyTestClient) 
         assert {[lindex $keys 0] eq {a{t}}}
     }
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     r.run("SET", "a{t}", 1)
     r.run("SET", "b{t}", 1)
     r.run("GET", "a{t}")
     r.run("INCR", "b{t}")
     r.run("INCR", "a{t}")
-    # TODO: set keys lindex [$rd_redirection read] 2
-    assert_("[llength $keys] == 1")
-    assert_("[lindex $keys 0] eq {a{t}}")
+    keys = rd_redirection.run("read")[2]
+    assert len(keys) == 1
+    assert keys[0] == "a{t}"
 
 
 def test_the_client_is_now_able_to_disable_tracking(r: ValkeyTestClient) -> None:
@@ -165,22 +138,43 @@ def test_the_client_is_now_able_to_disable_tracking(r: ValkeyTestClient) -> None
         r CLIENT TRACKING off
     } {*OK}
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     r.run("MGET", "a{t}", "b{t}", "c{t}", "d{t}", "e{t}", "f{t}", "g{t}")
     assert fnmatch(str(r.run("CLIENT", "TRACKING", "off")), "*OK")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_clients_can_enable_the_bcast_mode_with_the_empty_prefix(r: ValkeyTestClient) -> None:
     """
     test {Clients can enable the BCAST mode with the empty prefix} {
         r CLIENT TRACKING on BCAST REDIRECT $redir_id
     } {*OK*}
     """
-    # TODO: r CLIENT TRACKING on BCAST REDIRECT redir_id
-    assert False
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
+    assert fnmatch(str(r.run("CLIENT", "TRACKING", "on", "BCAST", "REDIRECT", redir_id)), "*OK*")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_the_connection_gets_invalidation_messages_about_all_the_keys(r: ValkeyTestClient) -> None:
     """
     test {The connection gets invalidation messages about all the keys} {
@@ -189,12 +183,23 @@ def test_the_connection_gets_invalidation_messages_about_all_the_keys(r: ValkeyT
         assert {$keys eq {a{t} b{t} c{t}}}
     }
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     r.run("MSET", "a{t}", 1, "b{t}", 2, "c{t}", 3)
-    # TODO: set keys lsort [lindex [$rd_redirection read] 2]
-    assert_("$keys eq {a{t} b{t} c{t}}")
+    keys = sorted(rd_redirection.run("read")[2])
+    assert keys == "a{t} b{t} c{t}"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_clients_can_enable_the_bcast_mode_with_prefixes(r: ValkeyTestClient) -> None:
     """
     test {Clients can enable the BCAST mode with prefixes} {
@@ -216,8 +221,20 @@ def test_clients_can_enable_the_bcast_mode_with_prefixes(r: ValkeyTestClient) ->
         assert {$keys eq {a:1{t} a:2{t} b:1{t} b:2{t}}}
     }
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     r.run("CLIENT", "TRACKING", "off")
-    # TODO: r CLIENT TRACKING on BCAST REDIRECT redir_id PREFIX a: PREFIX b:
+    r.run("CLIENT", "TRACKING", "on", "BCAST", "REDIRECT", redir_id, "PREFIX", "a:", "PREFIX", "b:")
     r.run("MULTI")
     r.run("INCR", "a:1{t}")
     r.run("INCR", "a:2{t}")
@@ -225,13 +242,12 @@ def test_clients_can_enable_the_bcast_mode_with_prefixes(r: ValkeyTestClient) ->
     r.run("INCR", "b:2{t}")
     r.run("INCR", "c:1{t}")
     r.run("EXEC")
-    # TODO: set keys1 lsort [lindex [$rd_redirection read] 2]
-    # TODO: set keys2 lsort [lindex [$rd_redirection read] 2]
-    # TODO: set keys lsort [list {*}$keys1 {*}$keys2]
-    assert_("$keys eq {a:1{t} a:2{t} b:1{t} b:2{t}}")
+    keys1 = sorted(rd_redirection.run("read")[2])
+    keys2 = sorted(rd_redirection.run("read")[2])
+    keys = sorted(["*", keys1, "*", keys2])
+    assert keys == "a:1{t} a:2{t} b:1{t} b:2{t}"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_adding_prefixes_to_bcast_mode_works(r: ValkeyTestClient) -> None:
     """
     test {Adding prefixes to BCAST mode works} {
@@ -241,14 +257,25 @@ def test_adding_prefixes_to_bcast_mode_works(r: ValkeyTestClient) -> None:
         assert {$keys eq {c:1234}}
     }
     """
-    # TODO: r CLIENT TRACKING on BCAST REDIRECT redir_id PREFIX c:
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
+    r.run("CLIENT", "TRACKING", "on", "BCAST", "REDIRECT", redir_id, "PREFIX", "c:")
     r.run("INCR", "c:1234")
-    # TODO: set keys lsort [lindex [$rd_redirection read] 2]
-    assert_("$keys eq {c:1234}")
+    keys = sorted(rd_redirection.run("read")[2])
+    assert keys == "c:1234"
 
 
-@pytest.mark.xfail(reason="not implemented")
-def test_tracking_noloop_mode_in_standard_mode_works(r: ValkeyTestClient, rd_sg) -> None:
+def test_tracking_noloop_mode_in_standard_mode_works(r: ValkeyTestClient) -> None:
     """
     test {Tracking NOLOOP mode in standard mode works} {
         r CLIENT TRACKING off
@@ -265,20 +292,31 @@ def test_tracking_noloop_mode_in_standard_mode_works(r: ValkeyTestClient, rd_sg)
         assert {$keys eq {otherkey1{t} otherkey2{t}}}
     }
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     r.run("CLIENT", "TRACKING", "off")
-    # TODO: r CLIENT TRACKING on REDIRECT redir_id NOLOOP
+    r.run("CLIENT", "TRACKING", "on", "REDIRECT", redir_id, "NOLOOP")
     r.run("MGET", "otherkey1{t}", "loopkey{t}", "otherkey2{t}")
     rd_sg.run("SET", "otherkey1{t}", 1)
     r.run("SET", "loopkey{t}", 1)
     rd_sg.run("SET", "otherkey2{t}", 1)
-    # TODO: set keys1 lsort [lindex [$rd_redirection read] 2]
-    # TODO: set keys2 lsort [lindex [$rd_redirection read] 2]
-    # TODO: set keys lsort [list {*}$keys1 {*}$keys2]
-    assert_("$keys eq {otherkey1{t} otherkey2{t}}")
+    keys1 = sorted(rd_redirection.run("read")[2])
+    keys2 = sorted(rd_redirection.run("read")[2])
+    keys = sorted(["*", keys1, "*", keys2])
+    assert keys == "otherkey1{t} otherkey2{t}"
 
 
-@pytest.mark.xfail(reason="not implemented")
-def test_tracking_noloop_mode_in_bcast_mode_works(r: ValkeyTestClient, rd_sg) -> None:
+def test_tracking_noloop_mode_in_bcast_mode_works(r: ValkeyTestClient) -> None:
     """
     test {Tracking NOLOOP mode in BCAST mode works} {
         r CLIENT TRACKING off
@@ -294,18 +332,29 @@ def test_tracking_noloop_mode_in_bcast_mode_works(r: ValkeyTestClient, rd_sg) ->
         assert {$keys eq {otherkey1 otherkey2}}
     }
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     r.run("CLIENT", "TRACKING", "off")
-    # TODO: r CLIENT TRACKING on BCAST REDIRECT redir_id NOLOOP
+    r.run("CLIENT", "TRACKING", "on", "BCAST", "REDIRECT", redir_id, "NOLOOP")
     rd_sg.run("SET", "otherkey1", 1)
     r.run("SET", "loopkey", 1)
     rd_sg.run("SET", "otherkey2", 1)
-    # TODO: set keys1 lsort [lindex [$rd_redirection read] 2]
-    # TODO: set keys2 lsort [lindex [$rd_redirection read] 2]
-    # TODO: set keys lsort [list {*}$keys1 {*}$keys2]
-    assert_("$keys eq {otherkey1 otherkey2}")
+    keys1 = sorted(rd_redirection.run("read")[2])
+    keys2 = sorted(rd_redirection.run("read")[2])
+    keys = sorted(["*", keys1, "*", keys2])
+    assert keys == "otherkey1 otherkey2"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_tracking_gets_notification_of_expired_keys(r: ValkeyTestClient) -> None:
     """
     test {Tracking gets notification of expired keys} {
@@ -318,16 +367,27 @@ def test_tracking_gets_notification_of_expired_keys(r: ValkeyTestClient) -> None
         assert {$keys eq {mykey}}
     }
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     r.run("CLIENT", "TRACKING", "off")
-    # TODO: r CLIENT TRACKING on BCAST REDIRECT redir_id NOLOOP
+    r.run("CLIENT", "TRACKING", "on", "BCAST", "REDIRECT", redir_id, "NOLOOP")
     r.run("SET", "mykey", "myval", "px", 1)
     r.run("SET", "mykeyotherkey", "myval")
     time.sleep(1000 / 1000)
-    # TODO: set keys lsort [lindex [$rd_redirection read] 2]
-    assert_("$keys eq {mykey}")
+    keys = sorted(rd_redirection.run("read")[2])
+    assert keys == "mykey"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_tracking_gets_notification_of_lazy_expired_keys(r: ValkeyTestClient) -> None:
     """
     test {Tracking gets notification of lazy expired keys} {
@@ -346,16 +406,28 @@ def test_tracking_gets_notification_of_lazy_expired_keys(r: ValkeyTestClient) ->
         assert {$keys eq {mykey{t}}}
     } {} {needs:debug}
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     r.run("CLIENT", "TRACKING", "off")
-    # TODO: r CLIENT TRACKING on BCAST REDIRECT redir_id NOLOOP
+    r.run("CLIENT", "TRACKING", "on", "BCAST", "REDIRECT", redir_id, "NOLOOP")
     r.run("MULTI")
     r.run("SET", "mykey{t}", "myval", "px", 1)
     r.run("SET", "mykeyotherkey{t}", "myval")
     r.run("DEBUG", "SLEEP", 0.1)
     r.run("GET", "mykey{t}")
     r.run("EXEC")
-    # TODO: set keys lsort [lindex [$rd_redirection read] 2]
-    assert_("$keys eq {mykey{t}}")
+    keys = sorted(rd_redirection.run("read")[2])
+    assert keys == "mykey{t}"
 
 
 def test_hello_3_reply_is_correct(r: ValkeyTestClient) -> None:
@@ -365,11 +437,23 @@ def test_hello_3_reply_is_correct(r: ValkeyTestClient) -> None:
         assert_equal [dict get $reply proto] 3
     }
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     reply = r.run("HELLO", 3)
     assert reply["proto"] == 3
 
 
-def test_resp3_based_basic_invalidation(r: ValkeyTestClient, rd_sg) -> None:
+def test_resp3_based_basic_invalidation(r: ValkeyTestClient) -> None:
     """
     test {RESP3 based basic invalidation} {
         r CLIENT TRACKING off
@@ -380,6 +464,18 @@ def test_resp3_based_basic_invalidation(r: ValkeyTestClient, rd_sg) -> None:
         r read
     } {invalidate key1}
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     r.run("CLIENT", "TRACKING", "off")
     r.run("CLIENT", "TRACKING", "on")
     rd_sg.run("SET", "key1", 1)
@@ -388,8 +484,7 @@ def test_resp3_based_basic_invalidation(r: ValkeyTestClient, rd_sg) -> None:
     assert r.run("read") == "invalidate key1"
 
 
-@pytest.mark.xfail(reason="not implemented")
-def test_resp3_tracking_redirection(r: ValkeyTestClient, rd_sg) -> None:
+def test_resp3_tracking_redirection(r: ValkeyTestClient) -> None:
     """
     test {RESP3 tracking redirection} {
         r CLIENT TRACKING off
@@ -401,17 +496,28 @@ def test_resp3_tracking_redirection(r: ValkeyTestClient, rd_sg) -> None:
         assert {$res eq {key1}}
     }
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     r.run("CLIENT", "TRACKING", "off")
-    # TODO: r CLIENT TRACKING on REDIRECT redir_id
+    r.run("CLIENT", "TRACKING", "on", "REDIRECT", redir_id)
     rd_sg.run("SET", "key1", 1)
     r.run("GET", "key1")
     rd_sg.run("SET", "key1", 2)
-    # TODO: set res lindex [$rd_redirection read] 2
-    assert_("$res eq {key1}")
+    res = rd_redirection.run("read")[2]
+    assert res == "key1"
 
 
-@pytest.mark.xfail(reason="not implemented")
-def test_invalidations_of_previous_keys_can_be_redirected_after_switching_to_resp3(r: ValkeyTestClient, rd_sg) -> None:
+def test_invalidations_of_previous_keys_can_be_redirected_after_switching_to_resp3(r: ValkeyTestClient) -> None:
     """
     test {Invalidations of previous keys can be redirected after switching to RESP3} {
         r HELLO 2
@@ -423,17 +529,28 @@ def test_invalidations_of_previous_keys_can_be_redirected_after_switching_to_res
         assert {$res eq {key1}}
     }
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     r.run("HELLO", 2)
     rd_sg.run("SET", "key1", 1)
     r.run("GET", "key1")
     r.run("HELLO", 3)
     rd_sg.run("SET", "key1", 2)
-    # TODO: set res lindex [$rd_redirection read] 2
-    assert_("$res eq {key1}")
+    res = rd_redirection.run("read")[2]
+    assert res == "key1"
 
 
-@pytest.mark.xfail(reason="not implemented")
-def test_invalidations_of_new_keys_can_be_redirected_after_switching_to_resp3(r: ValkeyTestClient, rd_sg) -> None:
+def test_invalidations_of_new_keys_can_be_redirected_after_switching_to_resp3(r: ValkeyTestClient) -> None:
     """
     test {Invalidations of new keys can be redirected after switching to RESP3} {
         r HELLO 3
@@ -444,15 +561,27 @@ def test_invalidations_of_new_keys_can_be_redirected_after_switching_to_resp3(r:
         assert {$res eq {key1}}
     }
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     r.run("HELLO", 3)
     rd_sg.run("SET", "key1", 1)
     r.run("GET", "key1")
     rd_sg.run("SET", "key1", 2)
-    # TODO: set res lindex [$rd_redirection read] 2
-    assert_("$res eq {key1}")
+    res = rd_redirection.run("read")[2]
+    assert res == "key1"
 
 
-def test_invalid_keys_should_not_be_tracked_for_scripts_in_noloop_mode(r: ValkeyTestClient, rd_sg) -> None:
+def test_invalid_keys_should_not_be_tracked_for_scripts_in_noloop_mode(r: ValkeyTestClient) -> None:
     """
     test {Invalid keys should not be tracked for scripts in NOLOOP mode} {
         $rd_sg CLIENT TRACKING off
@@ -467,6 +596,18 @@ def test_invalid_keys_should_not_be_tracked_for_scripts_in_noloop_mode(r: Valkey
         $rd_sg CLIENT TRACKING off
     }
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     rd_sg.run("CLIENT", "TRACKING", "off")
     rd_sg.run("CLIENT", "TRACKING", "on", "NOLOOP")
     rd_sg.run("HELLO", 3)
@@ -477,7 +618,7 @@ def test_invalid_keys_should_not_be_tracked_for_scripts_in_noloop_mode(r: Valkey
     rd_sg.run("CLIENT", "TRACKING", "off")
 
 
-def test_tracking_only_occurs_for_scripts_when_a_command_calls_a_read_only_command(r: ValkeyTestClient, rd_sg) -> None:
+def test_tracking_only_occurs_for_scripts_when_a_command_calls_a_read_only_command(r: ValkeyTestClient) -> None:
     """
     test {Tracking only occurs for scripts when a command calls a read-only command} {
         r CLIENT TRACKING off
@@ -509,6 +650,18 @@ def test_tracking_only_occurs_for_scripts_when_a_command_calls_a_read_only_comma
         assert_equal "PONG" [r ping]
     }
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     r.run("CLIENT", "TRACKING", "off")
     r.run("CLIENT", "TRACKING", "on")
     rd_sg.run("MSET", "key2{t}", 1, "key2{t}", 1)
@@ -530,7 +683,7 @@ def test_tracking_only_occurs_for_scripts_when_a_command_calls_a_read_only_comma
 
 @pytest.mark.xfail(reason="not implemented")
 def test_resp3_client_gets_tracking_redir_broken_push_message_after_cached_key_changed_when_rediretion_client_is_terminated(
-    r: ValkeyTestClient, rd_sg
+    r: ValkeyTestClient,
 ) -> None:
     """
     test {RESP3 Client gets tracking-redir-broken push message after cached key changed when rediretion client is terminated} {
@@ -563,14 +716,26 @@ def test_resp3_client_gets_tracking_redir_broken_push_message_after_cached_key_c
         assert_equal PONG [r read]
     }
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     r.run("HELLO", 3)
-    # TODO: r CLIENT TRACKING on REDIRECT redir_id
-    # TODO: set redir_error "tracking-redir-broken $redir_id"
+    r.run("CLIENT", "TRACKING", "on", "REDIRECT", redir_id)
+    redir_error = f"tracking-redir-broken {redir_id}"
     rd_sg.run("SET", "key1", 1)
     r.run("GET", "key1")
-    # TODO: $rd_redirection QUIT
-    # TODO: assert_equal OK $rd_redirection read
-    # TODO: $rd_redirection close
+    rd_redirection.run("QUIT")
+    assert "OK" == rd_redirection.run("read")
+    rd_redirection.run("close")
     rd_sg.run("SET", "key1", 2)
     rd_redirection = ValkeyTestClient.create_from(r)
     rd_redirection.run("CLIENT", "ID")
@@ -584,8 +749,7 @@ def test_resp3_client_gets_tracking_redir_broken_push_message_after_cached_key_c
     assert "PONG" == r.run("read")
 
 
-@pytest.mark.xfail(reason="not implemented")
-def test_different_clients_can_redirect_to_the_same_connection(r: ValkeyTestClient, rd, rd_sg) -> None:
+def test_different_clients_can_redirect_to_the_same_connection(r: ValkeyTestClient) -> None:
     """
     test {Different clients can redirect to the same connection} {
         r CLIENT TRACKING on REDIRECT $redir_id
@@ -603,8 +767,20 @@ def test_different_clients_can_redirect_to_the_same_connection(r: ValkeyTestClie
         assert {$res2 eq {key2{t}}}
     }
     """
-    # TODO: r CLIENT TRACKING on REDIRECT redir_id
-    # TODO: $rd CLIENT TRACKING on REDIRECT redir_id
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
+    r.run("CLIENT", "TRACKING", "on", "REDIRECT", redir_id)
+    rd.run("CLIENT", "TRACKING", "on", "REDIRECT", redir_id)
     assert "OK" == rd.run("read")
     rd_sg.run("MSET", "key1{t}", 1, "key2{t}", 1)
     r.run("GET", "key1{t}")
@@ -612,14 +788,13 @@ def test_different_clients_can_redirect_to_the_same_connection(r: ValkeyTestClie
     assert 1 == rd.run("read")
     rd_sg.run("INCR", "key1{t}")
     rd_sg.run("INCR", "key2{t}")
-    # TODO: set res1 lindex [$rd_redirection read] 2
-    # TODO: set res2 lindex [$rd_redirection read] 2
-    assert_("$res1 eq {key1{t}}")
-    assert_("$res2 eq {key2{t}}")
+    res1 = rd_redirection.run("read")[2]
+    res2 = rd_redirection.run("read")[2]
+    assert res1 == "key1{t}"
+    assert res2 == "key2{t}"
 
 
-@pytest.mark.xfail(reason="not implemented")
-def test_different_clients_using_different_protocols_can_track_the_same_key(r: ValkeyTestClient, rd, rd_sg) -> None:
+def test_different_clients_using_different_protocols_can_track_the_same_key(r: ValkeyTestClient) -> None:
     """
     test {Different clients using different protocols can track the same key} {
         $rd HELLO 3
@@ -640,6 +815,18 @@ def test_different_clients_using_different_protocols_can_track_the_same_key(r: V
         assert {$res2 eq {key1}}
     }
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     rd.run("HELLO", 3)
     reply = rd.run("read")
     assert 3 == reply["proto"]
@@ -650,16 +837,15 @@ def test_different_clients_using_different_protocols_can_track_the_same_key(r: V
     rd.run("GET", "key1")
     assert 1 == rd.run("read")
     rd_sg.run("INCR", "key1")
-    # TODO: set res1 lindex [$rd_redirection read] 2
+    res1 = rd_redirection.run("read")[2]
     rd.run("PING")
     res2 = split(rd.run("read"), " ")[1]
     assert "PONG" == rd.run("read")
-    assert_("$res1 eq {key1}")
+    assert res1 == "key1"
     assert res2 == "key1"
 
 
-@pytest.mark.xfail(reason="not implemented")
-def test_no_invalidation_message_when_using_optin_option(r: ValkeyTestClient, rd_sg) -> None:
+def test_no_invalidation_message_when_using_optin_option(r: ValkeyTestClient) -> None:
     """
     test {No invalidation message when using OPTIN option} {
         r CLIENT TRACKING on OPTIN REDIRECT $redir_id
@@ -676,21 +862,32 @@ def test_no_invalidation_message_when_using_optin_option(r: ValkeyTestClient, rd
         assert {$res eq {key2}}
     }
     """
-    # TODO: r CLIENT TRACKING on OPTIN REDIRECT redir_id
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
+    r.run("CLIENT", "TRACKING", "on", "OPTIN", "REDIRECT", redir_id)
     rd_sg.run("SET", "key1", 1)
     r.run("GET", "key1")
     rd_sg.run("SET", "key1", 2)
     r.run("CLIENT", "TRACKING", "off")
-    # TODO: r CLIENT TRACKING on REDIRECT redir_id
+    r.run("CLIENT", "TRACKING", "on", "REDIRECT", redir_id)
     rd_sg.run("SET", "key2", 1)
     r.run("GET", "key2")
     rd_sg.run("SET", "key2", 2)
-    # TODO: set res lindex [$rd_redirection read] 2
-    assert_("$res eq {key2}")
+    res = rd_redirection.run("read")[2]
+    assert res == "key2"
 
 
-@pytest.mark.xfail(reason="not implemented")
-def test_invalidation_message_sent_when_using_optin_option_with_client_caching_yes(r: ValkeyTestClient, rd_sg) -> None:
+def test_invalidation_message_sent_when_using_optin_option_with_client_caching_yes(r: ValkeyTestClient) -> None:
     """
     test {Invalidation message sent when using OPTIN option with CLIENT CACHING yes} {
         r CLIENT TRACKING on OPTIN REDIRECT $redir_id
@@ -702,17 +899,28 @@ def test_invalidation_message_sent_when_using_optin_option_with_client_caching_y
         assert {$res eq {key1}}
     }
     """
-    # TODO: r CLIENT TRACKING on OPTIN REDIRECT redir_id
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
+    r.run("CLIENT", "TRACKING", "on", "OPTIN", "REDIRECT", redir_id)
     rd_sg.run("SET", "key1", 3)
     r.run("CLIENT", "CACHING", "yes")
     r.run("GET", "key1")
     rd_sg.run("SET", "key1", 4)
-    # TODO: set res lindex [$rd_redirection read] 2
-    assert_("$res eq {key1}")
+    res = rd_redirection.run("read")[2]
+    assert res == "key1"
 
 
-@pytest.mark.xfail(reason="not implemented")
-def test_invalidation_message_sent_when_using_optout_option(r: ValkeyTestClient, rd_sg) -> None:
+def test_invalidation_message_sent_when_using_optout_option(r: ValkeyTestClient) -> None:
     """
     test {Invalidation message sent when using OPTOUT option} {
         r CLIENT TRACKING off
@@ -724,17 +932,28 @@ def test_invalidation_message_sent_when_using_optout_option(r: ValkeyTestClient,
         assert {$res eq {key1}}
     }
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     r.run("CLIENT", "TRACKING", "off")
-    # TODO: r CLIENT TRACKING on OPTOUT REDIRECT redir_id
+    r.run("CLIENT", "TRACKING", "on", "OPTOUT", "REDIRECT", redir_id)
     rd_sg.run("SET", "key1", 1)
     r.run("GET", "key1")
     rd_sg.run("SET", "key1", 2)
-    # TODO: set res lindex [$rd_redirection read] 2
-    assert_("$res eq {key1}")
+    res = rd_redirection.run("read")[2]
+    assert res == "key1"
 
 
-@pytest.mark.xfail(reason="not implemented")
-def test_no_invalidation_message_when_using_optout_option_with_client_caching_no(r: ValkeyTestClient, rd_sg) -> None:
+def test_no_invalidation_message_when_using_optout_option_with_client_caching_no(r: ValkeyTestClient) -> None:
     """
     test {No invalidation message when using OPTOUT option with CLIENT CACHING no} {
         $rd_sg SET key1 1
@@ -749,6 +968,18 @@ def test_no_invalidation_message_when_using_optout_option_with_client_caching_no
         assert {$res eq {key2}}
     }
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     rd_sg.run("SET", "key1", 1)
     r.run("CLIENT", "CACHING", "no")
     r.run("GET", "key1")
@@ -756,12 +987,12 @@ def test_no_invalidation_message_when_using_optout_option_with_client_caching_no
     rd_sg.run("SET", "key2", 1)
     r.run("GET", "key2")
     rd_sg.run("SET", "key2", 2)
-    # TODO: set res lindex [$rd_redirection read] 2
-    assert_("$res eq {key2}")
+    res = rd_redirection.run("read")[2]
+    assert res == "key2"
 
 
 @pytest.mark.xfail(reason="not implemented")
-def test_able_to_redirect_to_a_resp3_client(r: ValkeyTestClient, rd_redirection, rd_sg) -> None:
+def test_able_to_redirect_to_a_resp3_client(r: ValkeyTestClient) -> None:
     """
     test {Able to redirect to a RESP3 client} {
         $rd_redirection UNSUBSCRIBE __redis__:invalidate ; # Need to unsub first before we can do HELLO 3
@@ -784,6 +1015,18 @@ def test_able_to_redirect_to_a_resp3_client(r: ValkeyTestClient, rd_redirection,
         assert_equal [dict get $res proto] 2
     }
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     rd_redirection.run("UNSUBSCRIBE", "__redis__:invalidate")
     res = rd_redirection.run("read")
     assert "__redis__:invalidate" == res[1]
@@ -793,7 +1036,7 @@ def test_able_to_redirect_to_a_resp3_client(r: ValkeyTestClient, rd_redirection,
     rd_redirection.run("SUBSCRIBE", "__redis__:invalidate")
     res = rd_redirection.run("read")
     assert "__redis__:invalidate" == res[1]
-    # TODO: r CLIENT TRACKING on REDIRECT redir_id
+    r.run("CLIENT", "TRACKING", "on", "REDIRECT", redir_id)
     rd_sg.run("SET", "key1", 1)
     r.run("GET", "key1")
     rd_sg.run("INCR", "key1")
@@ -805,7 +1048,7 @@ def test_able_to_redirect_to_a_resp3_client(r: ValkeyTestClient, rd_redirection,
 
 
 def test_after_switching_from_normal_tracking_to_bcast_mode_no_invalidation_message_is_produced_for_pre_bcast_keys(
-    r: ValkeyTestClient, rd_sg
+    r: ValkeyTestClient,
 ) -> None:
     """
     test {After switching from normal tracking to BCAST mode, no invalidation message is produced for pre-BCAST keys} {
@@ -823,6 +1066,18 @@ def test_after_switching_from_normal_tracking_to_bcast_mode_no_invalidation_mess
         assert {$ping_reply eq {PONG}}
     }
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     r.run("CLIENT", "TRACKING", "off")
     r.run("HELLO", 3)
     r.run("CLIENT", "TRACKING", "on")
@@ -857,6 +1112,18 @@ def test_bcast_with_prefix_collisions_throw_errors(r: ValkeyTestClient) -> None:
         $r CLIENT TRACKING OFF
     }
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     r = ValkeyTestClient.create_from(r)
     try:
         output = r.run("CLIENT", "TRACKING", "ON", "BCAST", "PREFIX", "FOOBAR", "PREFIX", "FOO")
@@ -896,6 +1163,18 @@ def test_hdel_deliver_invalidate_message_after_response_in_the_same_connection(r
         assert_equal $res {invalidate myhash}
     }
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     r.run("CLIENT", "TRACKING", "off")
     r.run("HELLO", 3)
     r.run("CLIENT", "TRACKING", "on")
@@ -930,6 +1209,18 @@ def test_tracking_invalidation_message_is_not_interleaved_with_multiple_keys_res
         r DEBUG SET-ACTIVE-EXPIRE 1
     } {OK} {needs:debug}
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     r.run("CLIENT", "TRACKING", "off")
     r.run("HELLO", 3)
     r.run("CLIENT", "TRACKING", "on")
@@ -966,6 +1257,18 @@ def test_tracking_invalidation_message_is_not_interleaved_with_transaction_respo
         assert_equal $res {invalidate a{t}}
     }
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     r.run("CLIENT", "TRACKING", "off")
     r.run("HELLO", 3)
     r.run("CLIENT", "TRACKING", "on")
@@ -1013,6 +1316,18 @@ def test_tracking_invalidation_message_of_eviction_keys_should_be_before_respons
         r config set maxmemory 0
     }
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     r.run("CLIENT", "TRACKING", "off")
     r.run("HELLO", 3)
     r.run("CLIENT", "TRACKING", "on")
@@ -1033,7 +1348,7 @@ def test_tracking_invalidation_message_of_eviction_keys_should_be_before_respons
     r.run("config", "set", "maxmemory", 0)
 
 
-def test_unblocked_blmove_gets_notification_after_response(r: ValkeyTestClient, rd) -> None:
+def test_unblocked_blmove_gets_notification_after_response(r: ValkeyTestClient) -> None:
     """
     test {Unblocked BLMOVE gets notification after response} {
         r RPUSH list2{t} a
@@ -1053,6 +1368,18 @@ def test_unblocked_blmove_gets_notification_after_response(r: ValkeyTestClient, 
         assert_equal [$rd read] {invalidate list2{t}}
     }
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     r.run("RPUSH", "list2{t}", "a")
     rd.run("HELLO", 3)
     rd.run("read")
@@ -1067,7 +1394,6 @@ def test_unblocked_blmove_gets_notification_after_response(r: ValkeyTestClient, 
     assert rd.run("read") == "invalidate list2{t}"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_tracking_gets_notification_on_tracking_table_key_eviction(r: ValkeyTestClient) -> None:
     """
     test {Tracking gets notification on tracking table key eviction} {
@@ -1092,8 +1418,20 @@ def test_tracking_gets_notification_on_tracking_table_key_eviction(r: ValkeyTest
         assert {$keys eq {key1{t}} || $keys eq {key2{t}}}
     }
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     r.run("CLIENT", "TRACKING", "off")
-    # TODO: r CLIENT TRACKING on REDIRECT redir_id NOLOOP
+    r.run("CLIENT", "TRACKING", "on", "REDIRECT", redir_id, "NOLOOP")
     r.run("MSET", "key1{t}", 1, "key2{t}", 2)
     r.run("MGET", "key1{t}", "key2{t}")
     r.run("config", "set", "tracking-table-max-keys", 1)
@@ -1104,8 +1442,7 @@ def test_tracking_gets_notification_on_tracking_table_key_eviction(r: ValkeyTest
     assert_("$keys eq {key1{t}} || $keys eq {key2{t}}")
 
 
-@pytest.mark.xfail(reason="not implemented")
-def test_invalidation_message_received_for_flushall(r: ValkeyTestClient, rd_sg) -> None:
+def test_invalidation_message_received_for_flushall(r: ValkeyTestClient) -> None:
     """
     test {Invalidation message received for flushall} {
         clean_all
@@ -1117,17 +1454,28 @@ def test_invalidation_message_received_for_flushall(r: ValkeyTestClient, rd_sg) 
         assert {[lindex msg 2] eq {} }
     }
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     clean_all()
-    # TODO: r CLIENT TRACKING on REDIRECT redir_id
+    r.run("CLIENT", "TRACKING", "on", "REDIRECT", redir_id)
     rd_sg.run("SET", "key1", 1)
     r.run("GET", "key1")
     rd_sg.run("FLUSHALL")
-    # TODO: set msg $rd_redirection read
+    msg = rd_redirection.run("read")
     assert "msg"[2] == ""
 
 
-@pytest.mark.xfail(reason="not implemented")
-def test_invalidation_message_received_for_flushdb(r: ValkeyTestClient, rd_sg) -> None:
+def test_invalidation_message_received_for_flushdb(r: ValkeyTestClient) -> None:
     """
     test {Invalidation message received for flushdb} {
         clean_all
@@ -1139,17 +1487,28 @@ def test_invalidation_message_received_for_flushdb(r: ValkeyTestClient, rd_sg) -
         assert {[lindex msg 2] eq {} }
     }
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     clean_all()
-    # TODO: r CLIENT TRACKING on REDIRECT redir_id
+    r.run("CLIENT", "TRACKING", "on", "REDIRECT", redir_id)
     rd_sg.run("SET", "key1", 1)
     r.run("GET", "key1")
     rd_sg.run("FLUSHDB")
-    # TODO: set msg $rd_redirection read
+    msg = rd_redirection.run("read")
     assert "msg"[2] == ""
 
 
-@pytest.mark.xfail(reason="not implemented")
-def test_test_async_flushall(r: ValkeyTestClient, rd_sg) -> None:
+def test_test_async_flushall(r: ValkeyTestClient) -> None:
     """
     test {Test ASYNC flushall} {
         clean_all
@@ -1162,14 +1521,26 @@ def test_test_async_flushall(r: ValkeyTestClient, rd_sg) -> None:
         assert_equal [lindex [$rd_redirection read] 2] {}
     }
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     clean_all()
-    # TODO: r CLIENT TRACKING on REDIRECT redir_id
+    r.run("CLIENT", "TRACKING", "on", "REDIRECT", redir_id)
     r.run("GET", "key1")
     r.run("GET", "key2")
     assert s(0, "tracking_total_keys") == 2
     rd_sg.run("FLUSHALL", "ASYNC")
     assert s(0, "tracking_total_keys") == 0
-    # TODO: assert_equal lindex [$rd_redirection read] 2 {}
+    assert rd_redirection.run("read")[2] == ""
 
 
 def test_flushdb_tracking_invalidation_message_is_not_interleaved_with_transaction_response(
@@ -1190,6 +1561,18 @@ def test_flushdb_tracking_invalidation_message_is_not_interleaved_with_transacti
         r read
     } {invalidate {}}
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     clean_all()
     r.run("HELLO", 3)
     r.run("CLIENT", "TRACKING", "on")
@@ -1202,9 +1585,8 @@ def test_flushdb_tracking_invalidation_message_is_not_interleaved_with_transacti
     assert r.run("read") == "invalidate {}"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_server_is_able_to_evacuate_enough_keys_when_num_of_keys_surpasses_limit_by_more_than_defined_initial_effort(
-    r: ValkeyTestClient, rd_redirection, rd_sg
+    r: ValkeyTestClient,
 ) -> None:
     """
     test {Server is able to evacuate enough keys when num of keys surpasses limit by more than defined initial effort} {
@@ -1228,10 +1610,22 @@ def test_server_is_able_to_evacuate_enough_keys_when_num_of_keys_surpasses_limit
         assert {[$rd_redirection read] eq {pong {}}}
     }
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     clean_all()
     NUM_OF_KEYS_TO_TEST = 250
     TRACKING_TABLE_MAX_KEYS = 1
-    # TODO: r CLIENT TRACKING on REDIRECT redir_id
+    r.run("CLIENT", "TRACKING", "on", "REDIRECT", redir_id)
     i = 0
     while i < NUM_OF_KEYS_TO_TEST:
         rd_sg.run("SET", "key$i", i)
@@ -1246,8 +1640,7 @@ def test_server_is_able_to_evacuate_enough_keys_when_num_of_keys_surpasses_limit
     assert rd_redirection.run("read") == "pong {}"
 
 
-@pytest.mark.xfail(reason="not implemented")
-def test_tracking_info_is_correct(r: ValkeyTestClient, rd, rd_sg) -> None:
+def test_tracking_info_is_correct(r: ValkeyTestClient) -> None:
     """
     test {Tracking info is correct} {
         clean_all
@@ -1271,8 +1664,20 @@ def test_tracking_info_is_correct(r: ValkeyTestClient, rd, rd_sg) -> None:
         assert {$tracking_clients == 2}
     }
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     clean_all()
-    # TODO: r CLIENT TRACKING on REDIRECT redir_id
+    r.run("CLIENT", "TRACKING", "on", "REDIRECT", redir_id)
     rd_sg.run("SET", "key1", 1)
     rd_sg.run("SET", "key2", 2)
     r.run("GET", "key1")
@@ -1292,7 +1697,6 @@ def test_tracking_info_is_correct(r: ValkeyTestClient, rd, rd_sg) -> None:
     assert_("$tracking_clients == 2")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_client_getredir_provides_correct_client_id(r: ValkeyTestClient) -> None:
     """
     test {CLIENT GETREDIR provides correct client id} {
@@ -1306,8 +1710,20 @@ def test_client_getredir_provides_correct_client_id(r: ValkeyTestClient) -> None
         assert_equal 0 $res
     }
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     res = r.run("CLIENT", "GETREDIR")
-    # TODO: assert_equal redir_id res
+    assert redir_id == res
     r.run("CLIENT", "TRACKING", "off")
     res = r.run("CLIENT", "GETREDIR")
     assert -1 == res
@@ -1329,6 +1745,18 @@ def test_client_trackinginfo_provides_reasonable_results_when_tracking_off(r: Va
         assert_equal {} $prefixes
     }
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     r.run("CLIENT", "TRACKING", "off")
     res = r.run("client", "trackinginfo")
     flags = res["flags"]
@@ -1352,6 +1780,18 @@ def test_client_trackinginfo_provides_reasonable_results_when_tracking_on(r: Val
         assert_equal {} $prefixes
     }
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     r.run("CLIENT", "TRACKING", "on")
     res = r.run("client", "trackinginfo")
     flags = res["flags"]
@@ -1362,7 +1802,6 @@ def test_client_trackinginfo_provides_reasonable_results_when_tracking_on(r: Val
     assert "" == prefixes
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_client_trackinginfo_provides_reasonable_results_when_tracking_on_with_options(r: ValkeyTestClient) -> None:
     """
     test {CLIENT TRACKINGINFO provides reasonable results when tracking on with options} {
@@ -1376,12 +1815,24 @@ def test_client_trackinginfo_provides_reasonable_results_when_tracking_on_with_o
         assert_equal {} $prefixes
     }
     """
-    # TODO: r CLIENT TRACKING on REDIRECT redir_id noloop
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
+    r.run("CLIENT", "TRACKING", "on", "REDIRECT", redir_id, "noloop")
     res = r.run("client", "trackinginfo")
     flags = res["flags"]
     assert "on noloop" == flags
     redirect = res["redirect"]
-    # TODO: assert_equal redir_id redirect
+    assert redir_id == redirect
     prefixes = res["prefixes"]
     assert "" == prefixes
 
@@ -1405,6 +1856,18 @@ def test_client_trackinginfo_provides_reasonable_results_when_tracking_optin(r: 
         assert_equal {on optin caching-yes} $flags
     }
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     r.run("CLIENT", "TRACKING", "off")
     r.run("CLIENT", "TRACKING", "on", "optin")
     res = r.run("client", "trackinginfo")
@@ -1439,6 +1902,18 @@ def test_client_trackinginfo_provides_reasonable_results_when_tracking_optout(r:
         assert_equal {on optout caching-no} $flags
     }
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     r.run("CLIENT", "TRACKING", "off")
     r.run("CLIENT", "TRACKING", "on", "optout")
     res = r.run("client", "trackinginfo")
@@ -1474,6 +1949,18 @@ def test_client_trackinginfo_provides_reasonable_results_when_tracking_bcast_mod
         assert_equal {{}} $prefixes
     }
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     r.run("CLIENT", "TRACKING", "off")
     r.run("CLIENT", "TRACKING", "on", "BCAST", "PREFIX", "foo", "PREFIX", "bar")
     res = r.run("client", "trackinginfo")
@@ -1490,10 +1977,7 @@ def test_client_trackinginfo_provides_reasonable_results_when_tracking_bcast_mod
     assert "{}" == prefixes
 
 
-@pytest.mark.xfail(reason="not implemented")
-def test_client_trackinginfo_provides_reasonable_results_when_tracking_redir_broken(
-    r: ValkeyTestClient, rd_redirection, rd_sg
-) -> None:
+def test_client_trackinginfo_provides_reasonable_results_when_tracking_redir_broken(r: ValkeyTestClient) -> None:
     """
     test {CLIENT TRACKINGINFO provides reasonable results when tracking redir broken} {
         clean_all
@@ -1515,9 +1999,21 @@ def test_client_trackinginfo_provides_reasonable_results_when_tracking_redir_bro
         assert_equal {} $prefixes
     }
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     clean_all()
     r.run("HELLO", 3)
-    # TODO: r CLIENT TRACKING on REDIRECT redir_id
+    r.run("CLIENT", "TRACKING", "on", "REDIRECT", redir_id)
     rd_sg.run("SET", "key1", 1)
     r.run("GET", "key1")
     rd_redirection.run("QUIT")
@@ -1529,12 +2025,12 @@ def test_client_trackinginfo_provides_reasonable_results_when_tracking_redir_bro
     flags = res["flags"]
     assert "on broken_redirect" == flags
     redirect = res["redirect"]
-    # TODO: assert_equal redir_id redirect
+    assert redir_id == redirect
     prefixes = res["prefixes"]
     assert "" == prefixes
 
 
-def test_regression_test_for_11715(r: ValkeyTestClient, rd) -> None:
+def test_regression_test_for_11715(r: ValkeyTestClient) -> None:
     """
     test {Regression test for #11715} {
         # This issue manifests when a client invalidates keys through the max key
@@ -1574,6 +2070,18 @@ def test_regression_test_for_11715(r: ValkeyTestClient, rd) -> None:
         r debug pause-cron 0
     } {OK} {needs:debug}
     """
+    rd_redirection = ValkeyTestClient.create_from(r)
+    rd_redirection.run("client", "id")
+    redir_id = rd_redirection.run("read")
+    rd_redirection.run("subscribe", "__redis__:invalidate")
+    rd_redirection.run("read")
+    rd = ValkeyTestClient.create_from(r)
+    rd_sg = ValkeyTestClient.create_from(r)
+    proc(
+        "clean_all",
+        "",
+        "        uplevel {\n            # We should make r TRACKING off first. If r is in RESP3,\n            # r FLUSH ALL will send us tracking-redir-broken or other\n            # info which will not be consumed.\n            r CLIENT TRACKING off\n            $rd QUIT\n            $rd close\n            $rd_redirection QUIT\n            $rd_redirection close\n            set rd [valkey_deferring_client]\n            set rd_redirection [valkey_deferring_client]\n            $rd_redirection client id\n            set redir_id [$rd_redirection read]\n            $rd_redirection subscribe __redis__:invalidate\n            $rd_redirection read ; # Consume the SUBSCRIBE reply.\n            r FLUSHALL\n            r HELLO 2\n            r config set tracking-table-max-keys 1000000\n        }\n    ",
+    )
     clean_all()
     r.run("config", "set", "tracking-table-max-keys", 2)
     r.run("debug", "pause-cron", 1)
@@ -1869,6 +2377,10 @@ def if_(*args):
 
 def lsearch(*args):
     raise NotImplementedError("lsearch")
+
+
+def proc(*args):
+    raise NotImplementedError("proc")
 
 
 def regexp(*args):

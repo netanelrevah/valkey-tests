@@ -92,11 +92,6 @@ proc verify_eviction_test {client_eviction} {
 """
 
 
-"""
-set clients {}
-"""
-
-
 @pytest.mark.parametrize(["client_eviction"], [("false"), ("true")])
 def test_eviction_due_to_output_buffers_of_many_mget_clients_client_eviction_client_eviction(
     r: ValkeyTestClient, client_eviction, rr
@@ -127,11 +122,12 @@ def test_eviction_due_to_output_buffers_of_many_mget_clients_client_eviction_cli
         verify_eviction_test $client_eviction
     }
     """
+    clients = []
     init_test(client_eviction)
     j = 0
     while j < 20:
         rr = ValkeyTestClient.create_from(r)
-        lappend("clients", rr)
+        clients.append(rr)
         j += 1
     t = clock("seconds")
     while_(
@@ -148,12 +144,6 @@ foreach rr clients {
 """
 
 
-"""
-set clients {}
-"""
-
-
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["client_eviction"], [("false"), ("true")])
 def test_eviction_due_to_input_buffer_of_a_dead_client_client_eviction_client_eviction(
     r: ValkeyTestClient, client_eviction, rr
@@ -185,26 +175,19 @@ def test_eviction_due_to_input_buffer_of_a_dead_client_client_eviction_client_ev
         verify_eviction_test $client_eviction
     }
     """
+    clients = []
+    clients = []
     init_test(client_eviction)
     j = 0
     while j < 30:
         rr = ValkeyTestClient.create_from(r)
-        lappend("clients", rr)
+        clients.append(rr)
         j += 1
-    # TODO: foreach rr clients {
-    #       if {[catch {
-    #           $rr write "*250\r\n"
-    #           for {set j 0} {$j < 249} {incr j} {
-    #               $rr write "\$1000\r\n"
-    #               $rr write [string repeat x 1000]
-    #               $rr write "\r\n"
-    #               $rr flush
-    #           }
-    #           after 100; # give the server some time to process the input buffer - this was added to make sure the test pass with io-threads active.
-    #       }]} {
-    #           lremove clients $rr
-    #       }
-    #   }
+    foreach(
+        "rr",
+        clients,
+        '                if {[catch {\n                    $rr write "*250\\r\\n"\n                    for {set j 0} {$j < 249} {incr j} {\n                        $rr write "\\$1000\\r\\n"\n                        $rr write [string repeat x 1000]\n                        $rr write "\\r\\n"\n                        $rr flush\n                    }\n                    after 100; # give the server some time to process the input buffer - this was added to make sure the test pass with io-threads active.\n                }]} {\n                    lremove clients $rr\n                }\n            ',
+    )
     verify_eviction_test(client_eviction)
 
 
@@ -215,12 +198,6 @@ foreach rr clients {
 """
 
 
-"""
-set clients {}
-"""
-
-
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["client_eviction"], [("false"), ("true")])
 def test_eviction_due_to_output_buffers_of_pubsub_client_eviction_client_eviction(
     r: ValkeyTestClient, client_eviction, rr
@@ -253,15 +230,15 @@ def test_eviction_due_to_output_buffers_of_pubsub_client_eviction_client_evictio
         verify_eviction_test $client_eviction
     }
     """
+    clients = []
+    clients = []
     init_test(client_eviction)
     j = 0
     while j < 20:
         rr = ValkeyTestClient.create_from(r)
-        lappend("clients", rr)
+        clients.append(rr)
         j += 1
-    # TODO: foreach rr clients {
-    #       $rr subscribe bla
-    #   }
+    foreach("rr", clients, "                $rr subscribe bla\n            ")
     bigstr = string("repeat", "x", 100000)
     t = clock("seconds")
     while_(
@@ -1003,10 +980,6 @@ def if_(*args):
 
 def init_test(*args):
     raise NotImplementedError("init_test")
-
-
-def lappend(*args):
-    raise NotImplementedError("lappend")
 
 
 def main_hash_table_keys_before_rehashing_starts(*args):

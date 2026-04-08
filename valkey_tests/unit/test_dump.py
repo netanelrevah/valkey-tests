@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841, ANN001, ANN002, ANN201
+# ruff: noqa: PLR2004, F841, ANN002, ANN201
 import time
 from fnmatch import fnmatch
 
@@ -7,11 +7,6 @@ import pytest
 from tests.valkey_test_client import ValkeyTestClient
 
 pytestmark = [pytest.mark.dump]
-
-
-"""
-set db expr {$::singledb ? 0 : 9}
-"""
 
 
 def test_dump_or_restore_are_able_to_serialize_or_unserialize_a_simple_key(r: ValkeyTestClient) -> None:
@@ -23,6 +18,7 @@ def test_dump_or_restore_are_able_to_serialize_or_unserialize_a_simple_key(r: Va
         list [r exists foo] [r restore foo 0 $encoded] [r ttl foo] [r get foo]
     } {0 OK -1 bar}
     """
+    db = expr("$::singledb ? 0 : 9")
     r.run("set", "foo", "bar")
     encoded = r.run("dump", "foo")
     r.run("del", "foo")
@@ -46,6 +42,7 @@ def test_restore_can_set_an_arbitrary_expire_to_the_materialized_key(r: ValkeyTe
         r get foo
     } {bar}
     """
+    db = expr("$::singledb ? 0 : 9")
     r.run("set", "foo", "bar")
     encoded = r.run("dump", "foo")
     r.run("del", "foo")
@@ -67,6 +64,7 @@ def test_restore_can_set_an_expire_that_overflows_a_32_bit_integer(r: ValkeyTest
         r get foo
     } {bar}
     """
+    db = expr("$::singledb ? 0 : 9")
     r.run("set", "foo", "bar")
     encoded = r.run("dump", "foo")
     r.run("del", "foo")
@@ -89,6 +87,7 @@ def test_restore_can_set_an_absolute_expire(r: ValkeyTestClient) -> None:
         r get foo
     } {bar}
     """
+    db = expr("$::singledb ? 0 : 9")
     r.run("set", "foo", "bar")
     encoded = r.run("dump", "foo")
     r.run("del", "foo")
@@ -112,6 +111,7 @@ def test_restore_with_absttl_in_the_past(r: ValkeyTestClient) -> None:
         set e
     } {ERR no such key} {needs:debug}
     """
+    db = expr("$::singledb ? 0 : 9")
     r.run("set", "foo", "bar")
     encoded = r.run("dump", "foo")
     now = clock("milliseconds")
@@ -139,6 +139,7 @@ def test_restore_can_set_lru(r: ValkeyTestClient) -> None:
         r config set maxmemory-policy noeviction
     } {OK} {needs:config-maxmemory}
     """
+    db = expr("$::singledb ? 0 : 9")
     r.run("set", "foo", "bar")
     encoded = r.run("dump", "foo")
     r.run("del", "foo")
@@ -165,6 +166,7 @@ def test_restore_can_set_lfu(r: ValkeyTestClient) -> None:
         r config set maxmemory-policy noeviction
     } {OK} {needs:config-maxmemory}
     """
+    db = expr("$::singledb ? 0 : 9")
     r.run("set", "foo", "bar")
     encoded = r.run("dump", "foo")
     r.run("del", "foo")
@@ -186,8 +188,9 @@ def test_restore_returns_an_error_of_the_key_already_exists(r: ValkeyTestClient)
         set e
     } {*BUSYKEY*}
     """
+    db = expr("$::singledb ? 0 : 9")
     r.run("set", "foo", "bar")
-    e = ""
+    e = []
     try:
         e = r.run("restore", "foo", 0, "...")
     except Exception as _catch_err:
@@ -208,6 +211,7 @@ def test_restore_can_overwrite_an_existing_key_with_replace(r: ValkeyTestClient)
         r get foo
     } {bar2}
     """
+    db = expr("$::singledb ? 0 : 9")
     r.run("set", "foo", "bar1")
     encoded1 = r.run("dump", "foo")
     r.run("set", "foo", "bar2")
@@ -225,6 +229,7 @@ def test_restore_can_detect_a_syntax_error_for_unrecognized_options(r: ValkeyTes
         set e
     } {*syntax*}
     """
+    db = expr("$::singledb ? 0 : 9")
     try:
         e = r.run("restore", "foo", 0, "...", "invalid-option")
     except Exception as _catch_err:
@@ -264,6 +269,7 @@ def test_restore_should_not_store_key_that_are_already_expired_with_replace_will
         close_replication_stream $repl
     } {} {needs:repl}
     """
+    db = expr("$::singledb ? 0 : 9")
     r.run("del", "key1{t}", "key2{t}")
     r.run("set", "key1{t}", "value2")
     r.run(
@@ -359,6 +365,7 @@ def test_restore_key_with_future_rdb_version_strict_version_check(r: ValkeyTestC
         assert_error {ERR DUMP payload version or checksum are wrong} {r restore foo 0 $bar_dump replace}
     }
     """
+    db = expr("$::singledb ? 0 : 9")
     bar_dump = "\x00\x03\x62\x61\x72\xde\x00\x0fYUza\xd3\xec\xe0"
     with pytest.raises(Exception, match="ERR\\ DUMP\\ payload\\ version\\ or\\ checksum\\ are\\ wrong"):
         r.run("restore", "foo", 0, bar_dump, "replace")
@@ -375,6 +382,7 @@ def test_restore_key_with_future_rdb_version_relaxed_version_check(r: ValkeyTest
         assert_equal {bar} [r get foo]
     }
     """
+    db = expr("$::singledb ? 0 : 9")
     r.run("config", "set", "rdb-version-check", "relaxed")
     r.run("restore", "foo", 0, "\x00\x03\x62\x61\x72\xde\x00\x0fYUza\xd3\xec\xe0", "replace")
     r.run("config", "set", "rdb-version-check", "strict")
@@ -387,10 +395,11 @@ def test_dump_of_non_existing_key_returns_nil(r: ValkeyTestClient) -> None:
         r dump nonexisting_key
     } {}
     """
+    db = expr("$::singledb ? 0 : 9")
     r.run("dump", "nonexisting_key")
 
 
-def test_migrate_is_caching_connections(r: ValkeyTestClient, db) -> None:
+def test_migrate_is_caching_connections(r: ValkeyTestClient) -> None:
     """
     test {MIGRATE is caching connections} {
         # Note, we run this as first test so that the connection cache
@@ -408,6 +417,7 @@ def test_migrate_is_caching_connections(r: ValkeyTestClient, db) -> None:
         }
     } {} {external:skip}
     """
+    db = expr("$::singledb ? 0 : 9")
     first = ValkeyTestClient.create_from(r)
     r.run("set", "key", "Some Value")
     start_server(
@@ -423,6 +433,7 @@ def test_migrate_cached_connections_are_released_after_some_time(r: ValkeyTestCl
         assert_match {*migrate_cached_sockets:0*} [r info]
     }
     """
+    db = expr("$::singledb ? 0 : 9")
     time.sleep(15000 / 1000)
     assert fnmatch(str(r.run("info")), "*migrate_cached_sockets:0*")
 
@@ -448,6 +459,7 @@ def test_migrate_is_able_to_migrate_a_key_between_two_instances(r: ValkeyTestCli
         }
     } {} {external:skip}
     """
+    db = expr("$::singledb ? 0 : 9")
     first = ValkeyTestClient.create_from(r)
     r.run("set", "key", "Some Value")
     start_server(
@@ -477,6 +489,7 @@ def test_migrate_is_able_to_copy_a_key_between_two_instances(r: ValkeyTestClient
         }
     } {} {external:skip}
     """
+    db = expr("$::singledb ? 0 : 9")
     first = ValkeyTestClient.create_from(r)
     r.run("del", "list")
     r.run("lpush", "list", "a", "b", "c", "d")
@@ -486,7 +499,7 @@ def test_migrate_is_able_to_copy_a_key_between_two_instances(r: ValkeyTestClient
     )
 
 
-def test_migrate_will_not_overwrite_existing_keys_unless_replace_is_used(r: ValkeyTestClient, db) -> None:
+def test_migrate_will_not_overwrite_existing_keys_unless_replace_is_used(r: ValkeyTestClient) -> None:
     """
     test {MIGRATE will not overwrite existing keys, unless REPLACE is used} {
         set first [srv 0 client]
@@ -510,6 +523,7 @@ def test_migrate_will_not_overwrite_existing_keys_unless_replace_is_used(r: Valk
         }
     } {} {external:skip}
     """
+    db = expr("$::singledb ? 0 : 9")
     first = ValkeyTestClient.create_from(r)
     r.run("del", "list")
     r.run("lpush", "list", "a", "b", "c", "d")
@@ -541,6 +555,7 @@ def test_migrate_propagates_ttl_correctly(r: ValkeyTestClient) -> None:
         }
     } {} {external:skip}
     """
+    db = expr("$::singledb ? 0 : 9")
     first = ValkeyTestClient.create_from(r)
     r.run("set", "key", "Some Value")
     start_server(
@@ -576,6 +591,7 @@ def test_migrate_can_correctly_transfer_large_values(r: ValkeyTestClient) -> Non
         }
     } {} {external:skip}
     """
+    db = expr("$::singledb ? 0 : 9")
     first = ValkeyTestClient.create_from(r)
     r.run("del", "key")
     j = 0
@@ -625,6 +641,7 @@ def test_migrate_can_correctly_transfer_hashes(r: ValkeyTestClient) -> None:
         }
     } {} {external:skip}
     """
+    db = expr("$::singledb ? 0 : 9")
     first = ValkeyTestClient.create_from(r)
     r.run("del", "key")
     r.run(
@@ -649,7 +666,7 @@ def test_migrate_can_correctly_transfer_hashes(r: ValkeyTestClient) -> None:
     )
 
 
-def test_migrate_timeout_actually_works(r: ValkeyTestClient, db) -> None:
+def test_migrate_timeout_actually_works(r: ValkeyTestClient) -> None:
     """
     test {MIGRATE timeout actually works} {
         set first [srv 0 client]
@@ -671,6 +688,7 @@ def test_migrate_timeout_actually_works(r: ValkeyTestClient, db) -> None:
         }
     } {} {external:skip}
     """
+    db = expr("$::singledb ? 0 : 9")
     first = ValkeyTestClient.create_from(r)
     r.run("set", "key", "Some Value")
     start_server(
@@ -704,6 +722,7 @@ def test_migrate_can_migrate_multiple_keys_at_once(r: ValkeyTestClient) -> None:
         }
     } {} {external:skip}
     """
+    db = expr("$::singledb ? 0 : 9")
     first = ValkeyTestClient.create_from(r)
     r.run("set", "key1", "v1")
     r.run("set", "key2", "v2")
@@ -714,13 +733,14 @@ def test_migrate_can_migrate_multiple_keys_at_once(r: ValkeyTestClient) -> None:
     )
 
 
-def test_migrate_with_multiple_keys_must_have_empty_key_arg(r: ValkeyTestClient, db) -> None:
+def test_migrate_with_multiple_keys_must_have_empty_key_arg(r: ValkeyTestClient) -> None:
     """
     test {MIGRATE with multiple keys must have empty key arg} {
         catch {r MIGRATE 127.0.0.1 6379 NotEmpty $db 5000 keys a b c} e
         set e
     } {*empty string*} {external:skip}
     """
+    db = expr("$::singledb ? 0 : 9")
     try:
         e = r.run("MIGRATE", "127.0.0.1", 6379, "NotEmpty", db, 5000, "keys", "a", "b", "c")
     except Exception as _catch_err:
@@ -756,6 +776,7 @@ def test_migrate_with_multiple_keys_migrate_just_existing_ones(r: ValkeyTestClie
         }
     } {} {external:skip}
     """
+    db = expr("$::singledb ? 0 : 9")
     first = ValkeyTestClient.create_from(r)
     r.run("set", "key1", "v1")
     r.run("set", "key2", "v2")
@@ -784,6 +805,7 @@ def test_migrate_with_multiple_keys_stress_command_rewriting(r: ValkeyTestClient
         }
     } {} {external:skip}
     """
+    db = expr("$::singledb ? 0 : 9")
     first = ValkeyTestClient.create_from(r)
     r.run("flushdb")
     r.run(
@@ -827,7 +849,7 @@ def test_migrate_with_multiple_keys_stress_command_rewriting(r: ValkeyTestClient
     )
 
 
-def test_migrate_with_multiple_keys_delete_just_ack_keys(r: ValkeyTestClient, db) -> None:
+def test_migrate_with_multiple_keys_delete_just_ack_keys(r: ValkeyTestClient) -> None:
     """
     test {MIGRATE with multiple keys: delete just ack keys} {
         set first [srv 0 client]
@@ -849,6 +871,7 @@ def test_migrate_with_multiple_keys_delete_just_ack_keys(r: ValkeyTestClient, db
         }
     } {} {external:skip}
     """
+    db = expr("$::singledb ? 0 : 9")
     first = ValkeyTestClient.create_from(r)
     r.run("flushdb")
     r.run(
@@ -892,7 +915,7 @@ def test_migrate_with_multiple_keys_delete_just_ack_keys(r: ValkeyTestClient, db
     )
 
 
-def test_migrate_auth_correct_and_wrong_password_cases(r: ValkeyTestClient, db) -> None:
+def test_migrate_auth_correct_and_wrong_password_cases(r: ValkeyTestClient) -> None:
     """
     test {MIGRATE AUTH: correct and wrong password cases} {
         set first [srv 0 client]
@@ -919,6 +942,7 @@ def test_migrate_auth_correct_and_wrong_password_cases(r: ValkeyTestClient, db) 
         }
     } {} {external:skip}
     """
+    db = expr("$::singledb ? 0 : 9")
     first = ValkeyTestClient.create_from(r)
     r.run("del", "list")
     r.run("lpush", "list", "a", "b", "c", "d")

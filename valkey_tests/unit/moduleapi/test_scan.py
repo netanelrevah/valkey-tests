@@ -11,11 +11,6 @@ set testmodule file normalize tests/modules/scan.so
 pytestmark = [pytest.mark.modules]
 
 
-"""
-r module load testmodule
-"""
-
-
 def test_module_scan_keyspace(r: ValkeyTestClient) -> None:
     """
     test {Module scan keyspace} {

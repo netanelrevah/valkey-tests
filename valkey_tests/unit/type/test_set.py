@@ -1,5 +1,4 @@
 # ruff: noqa: PLR2004, F841, RUF043, ANN001, ANN002, ANN201
-
 from fnmatch import fnmatch
 
 import pytest
@@ -578,79 +577,10 @@ def test_sintercard_against_non_existing_key(r: ValkeyTestClient) -> None:
     assert 0 == r.run("sintercard", 1, "non-existing-key", "limit", 10)
 
 
-"""
-if {$type eq "regular"} {
-    set smallenc listpack
-    set bigenc hashtable
-} else {
-    set smallenc intset
-    set bigenc intset
-}
-"""
-
-
-"""
-array set encoding "1 $bigenc 2 $bigenc 3 $smallenc 4 $bigenc 5 $smallenc"
-"""
-
-
-"""
-for {set i 1} {$i <= 5} {incr i} {
-    r del [format "set%d{t}" $i]
-}
-"""
-
-
-"""
-for {set i 0} {$i < 200} {incr i} {
-    r sadd set1{t} $i
-    r sadd set2{t} [expr $i+195]
-}
-"""
-
-
-"""
-foreach i {199 195 1000 2000} {
-    r sadd set3{t} $i
-}
-"""
-
-
-"""
-for {set i 5} {$i < 200} {incr i} {
-    r sadd set4{t} $i
-}
-"""
-
-
-"""
-r sadd set5{t} 0
-"""
-
-
-"""
-set large 200
-"""
-
-
-"""
-if {$type eq "regular"} {
-    set large foo
-}
-"""
-
-
-"""
-for {set i 1} {$i <= 5} {incr i} {
-    r sadd [format "set%d{t}" $i] $large
-}
-"""
-
-
 @pytest.mark.parametrize(
-    ["type", "bigenc", "smallenc"], [("regular", "hashtable", "listpack"), ("intset", "intset", "intset")]
+    ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
 )
-def test_generated_sets_must_be_encoded_correctly_type(r: ValkeyTestClient, type, bigenc, smallenc) -> None:
+def test_generated_sets_must_be_encoded_correctly_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
     """
     test "Generated sets must be encoded correctly - $type" {
         for {set i 1} {$i <= 5} {incr i} {
@@ -658,6 +588,35 @@ def test_generated_sets_must_be_encoded_correctly_type(r: ValkeyTestClient, type
         }
     }
     """
+    if type == "regular":
+        smallenc = "listpack"
+        bigenc = "hashtable"
+    else:
+        smallenc = "intset"
+        bigenc = "intset"
+    array("set", "encoding", f"1 {bigenc} 2 {bigenc} 3 {smallenc} 4 {bigenc} 5 {smallenc}")
+    i = 1
+    while i <= 5:
+        r.run("del", format_("set%d{t}", i))
+        i += 1
+    i = 0
+    while i < 200:
+        r.run("sadd", "set1{t}", i)
+        r.run("sadd", "set2{t}", expr(i, 195))
+        i += 1
+    foreach("i", "199 195 1000 2000", "            r sadd set3{t} $i\n        ")
+    i = 5
+    while i < 200:
+        r.run("sadd", "set4{t}", i)
+        i += 1
+    r.run("sadd", "set5{t}", 0)
+    large = 200
+    if type == "regular":
+        large = "foo"
+    i = 1
+    while i <= 5:
+        r.run("sadd", format_("set%d{t}", i), large)
+        i += 1
     for_(
         "set i 1",
         "$i <= 5",
@@ -666,23 +625,51 @@ def test_generated_sets_must_be_encoded_correctly_type(r: ValkeyTestClient, type
     )
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(
-    ["type", "bigenc", "smallenc"], [("regular", "hashtable", "listpack"), ("intset", "intset", "intset")]
+    ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
 )
-def test_sinter_with_two_sets_type(r: ValkeyTestClient, type, bigenc, smallenc) -> None:
+def test_sinter_with_two_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
     """
     test "SINTER with two sets - $type" {
         assert_equal [list 195 196 197 198 199 $large] [lsort [r sinter set1{t} set2{t}]]
     }
     """
-    # TODO: assert_equal list 195 196 197 198 199 $large lsort [r sinter set1{t} set2{t}]
+    if type == "regular":
+        smallenc = "listpack"
+        bigenc = "hashtable"
+    else:
+        smallenc = "intset"
+        bigenc = "intset"
+    array("set", "encoding", f"1 {bigenc} 2 {bigenc} 3 {smallenc} 4 {bigenc} 5 {smallenc}")
+    i = 1
+    while i <= 5:
+        r.run("del", format_("set%d{t}", i))
+        i += 1
+    i = 0
+    while i < 200:
+        r.run("sadd", "set1{t}", i)
+        r.run("sadd", "set2{t}", expr(i, 195))
+        i += 1
+    foreach("i", "199 195 1000 2000", "            r sadd set3{t} $i\n        ")
+    i = 5
+    while i < 200:
+        r.run("sadd", "set4{t}", i)
+        i += 1
+    r.run("sadd", "set5{t}", 0)
+    large = 200
+    if type == "regular":
+        large = "foo"
+    i = 1
+    while i <= 5:
+        r.run("sadd", format_("set%d{t}", i), large)
+        i += 1
+    assert [195, 196, 197, 198, 199, large] == sorted(r.run("sinter", "set1{t}", "set2{t}"))
 
 
 @pytest.mark.parametrize(
-    ["type", "bigenc", "smallenc"], [("regular", "hashtable", "listpack"), ("intset", "intset", "intset")]
+    ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
 )
-def test_sintercard_with_two_sets_type(r: ValkeyTestClient, type, bigenc, smallenc) -> None:
+def test_sintercard_with_two_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
     """
     test "SINTERCARD with two sets - $type" {
         assert_equal 6 [r sintercard 2 set1{t} set2{t}]
@@ -691,17 +678,45 @@ def test_sintercard_with_two_sets_type(r: ValkeyTestClient, type, bigenc, smalle
         assert_equal 6 [r sintercard 2 set1{t} set2{t} limit 10]
     }
     """
+    if type == "regular":
+        smallenc = "listpack"
+        bigenc = "hashtable"
+    else:
+        smallenc = "intset"
+        bigenc = "intset"
+    array("set", "encoding", f"1 {bigenc} 2 {bigenc} 3 {smallenc} 4 {bigenc} 5 {smallenc}")
+    i = 1
+    while i <= 5:
+        r.run("del", format_("set%d{t}", i))
+        i += 1
+    i = 0
+    while i < 200:
+        r.run("sadd", "set1{t}", i)
+        r.run("sadd", "set2{t}", expr(i, 195))
+        i += 1
+    foreach("i", "199 195 1000 2000", "            r sadd set3{t} $i\n        ")
+    i = 5
+    while i < 200:
+        r.run("sadd", "set4{t}", i)
+        i += 1
+    r.run("sadd", "set5{t}", 0)
+    large = 200
+    if type == "regular":
+        large = "foo"
+    i = 1
+    while i <= 5:
+        r.run("sadd", format_("set%d{t}", i), large)
+        i += 1
     assert 6 == r.run("sintercard", 2, "set1{t}", "set2{t}")
     assert 6 == r.run("sintercard", 2, "set1{t}", "set2{t}", "limit", 0)
     assert 3 == r.run("sintercard", 2, "set1{t}", "set2{t}", "limit", 3)
     assert 6 == r.run("sintercard", 2, "set1{t}", "set2{t}", "limit", 10)
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(
-    ["type", "bigenc", "smallenc"], [("regular", "hashtable", "listpack"), ("intset", "intset", "intset")]
+    ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
 )
-def test_sinterstore_with_two_sets_type(r: ValkeyTestClient, type, bigenc, smallenc) -> None:
+def test_sinterstore_with_two_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
     """
     test "SINTERSTORE with two sets - $type" {
         r sinterstore setres{t} set1{t} set2{t}
@@ -709,16 +724,44 @@ def test_sinterstore_with_two_sets_type(r: ValkeyTestClient, type, bigenc, small
         assert_equal [list 195 196 197 198 199 $large] [lsort [r smembers setres{t}]]
     }
     """
+    if type == "regular":
+        smallenc = "listpack"
+        bigenc = "hashtable"
+    else:
+        smallenc = "intset"
+        bigenc = "intset"
+    array("set", "encoding", f"1 {bigenc} 2 {bigenc} 3 {smallenc} 4 {bigenc} 5 {smallenc}")
+    i = 1
+    while i <= 5:
+        r.run("del", format_("set%d{t}", i))
+        i += 1
+    i = 0
+    while i < 200:
+        r.run("sadd", "set1{t}", i)
+        r.run("sadd", "set2{t}", expr(i, 195))
+        i += 1
+    foreach("i", "199 195 1000 2000", "            r sadd set3{t} $i\n        ")
+    i = 5
+    while i < 200:
+        r.run("sadd", "set4{t}", i)
+        i += 1
+    r.run("sadd", "set5{t}", 0)
+    large = 200
+    if type == "regular":
+        large = "foo"
+    i = 1
+    while i <= 5:
+        r.run("sadd", format_("set%d{t}", i), large)
+        i += 1
     r.run("sinterstore", "setres{t}", "set1{t}", "set2{t}")
     assert_encoding(smallenc, "setres{t}")
-    # TODO: assert_equal list 195 196 197 198 199 $large lsort [r smembers setres{t}]
+    assert [195, 196, 197, 198, 199, large] == sorted(r.run("smembers", "setres{t}"))
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(
-    ["type", "bigenc", "smallenc"], [("regular", "hashtable", "listpack"), ("intset", "intset", "intset")]
+    ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
 )
-def test_sinterstore_with_two_sets_after_a_debug_reload_type(r: ValkeyTestClient, type, bigenc, smallenc) -> None:
+def test_sinterstore_with_two_sets_after_a_debug_reload_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
     """
     test "SINTERSTORE with two sets, after a DEBUG RELOAD - $type" {
         r debug reload
@@ -727,30 +770,88 @@ def test_sinterstore_with_two_sets_after_a_debug_reload_type(r: ValkeyTestClient
         assert_equal [list 195 196 197 198 199 $large] [lsort [r smembers setres{t}]]
     } {} {needs:debug}
     """
+    if type == "regular":
+        smallenc = "listpack"
+        bigenc = "hashtable"
+    else:
+        smallenc = "intset"
+        bigenc = "intset"
+    array("set", "encoding", f"1 {bigenc} 2 {bigenc} 3 {smallenc} 4 {bigenc} 5 {smallenc}")
+    i = 1
+    while i <= 5:
+        r.run("del", format_("set%d{t}", i))
+        i += 1
+    i = 0
+    while i < 200:
+        r.run("sadd", "set1{t}", i)
+        r.run("sadd", "set2{t}", expr(i, 195))
+        i += 1
+    foreach("i", "199 195 1000 2000", "            r sadd set3{t} $i\n        ")
+    i = 5
+    while i < 200:
+        r.run("sadd", "set4{t}", i)
+        i += 1
+    r.run("sadd", "set5{t}", 0)
+    large = 200
+    if type == "regular":
+        large = "foo"
+    i = 1
+    while i <= 5:
+        r.run("sadd", format_("set%d{t}", i), large)
+        i += 1
     r.run("debug", "reload")
     r.run("sinterstore", "setres{t}", "set1{t}", "set2{t}")
     assert_encoding(smallenc, "setres{t}")
-    # TODO: assert_equal list 195 196 197 198 199 $large lsort [r smembers setres{t}]
+    assert [195, 196, 197, 198, 199, large] == sorted(r.run("smembers", "setres{t}"))
 
 
 @pytest.mark.parametrize(
-    ["type", "bigenc", "smallenc"], [("regular", "hashtable", "listpack"), ("intset", "intset", "intset")]
+    ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
 )
-def test_sunion_with_two_sets_type(r: ValkeyTestClient, type, bigenc, smallenc) -> None:
+def test_sunion_with_two_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
     """
     test "SUNION with two sets - $type" {
         set expected [lsort -uniq "[r smembers set1{t}] [r smembers set2{t}]"]
         assert_equal $expected [lsort [r sunion set1{t} set2{t}]]
     }
     """
+    if type == "regular":
+        smallenc = "listpack"
+        bigenc = "hashtable"
+    else:
+        smallenc = "intset"
+        bigenc = "intset"
+    array("set", "encoding", f"1 {bigenc} 2 {bigenc} 3 {smallenc} 4 {bigenc} 5 {smallenc}")
+    i = 1
+    while i <= 5:
+        r.run("del", format_("set%d{t}", i))
+        i += 1
+    i = 0
+    while i < 200:
+        r.run("sadd", "set1{t}", i)
+        r.run("sadd", "set2{t}", expr(i, 195))
+        i += 1
+    foreach("i", "199 195 1000 2000", "            r sadd set3{t} $i\n        ")
+    i = 5
+    while i < 200:
+        r.run("sadd", "set4{t}", i)
+        i += 1
+    r.run("sadd", "set5{t}", 0)
+    large = 200
+    if type == "regular":
+        large = "foo"
+    i = 1
+    while i <= 5:
+        r.run("sadd", format_("set%d{t}", i), large)
+        i += 1
     expected = sorted("[r smembers set1{t}] [r smembers set2{t}]")
     assert expected == sorted(r.run("sunion", "set1{t}", "set2{t}"))
 
 
 @pytest.mark.parametrize(
-    ["type", "bigenc", "smallenc"], [("regular", "hashtable", "listpack"), ("intset", "intset", "intset")]
+    ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
 )
-def test_sunionstore_with_two_sets_type(r: ValkeyTestClient, type, bigenc, smallenc) -> None:
+def test_sunionstore_with_two_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
     """
     test "SUNIONSTORE with two sets - $type" {
         r sunionstore setres{t} set1{t} set2{t}
@@ -759,29 +860,86 @@ def test_sunionstore_with_two_sets_type(r: ValkeyTestClient, type, bigenc, small
         assert_equal $expected [lsort [r smembers setres{t}]]
     }
     """
+    if type == "regular":
+        smallenc = "listpack"
+        bigenc = "hashtable"
+    else:
+        smallenc = "intset"
+        bigenc = "intset"
+    array("set", "encoding", f"1 {bigenc} 2 {bigenc} 3 {smallenc} 4 {bigenc} 5 {smallenc}")
+    i = 1
+    while i <= 5:
+        r.run("del", format_("set%d{t}", i))
+        i += 1
+    i = 0
+    while i < 200:
+        r.run("sadd", "set1{t}", i)
+        r.run("sadd", "set2{t}", expr(i, 195))
+        i += 1
+    foreach("i", "199 195 1000 2000", "            r sadd set3{t} $i\n        ")
+    i = 5
+    while i < 200:
+        r.run("sadd", "set4{t}", i)
+        i += 1
+    r.run("sadd", "set5{t}", 0)
+    large = 200
+    if type == "regular":
+        large = "foo"
+    i = 1
+    while i <= 5:
+        r.run("sadd", format_("set%d{t}", i), large)
+        i += 1
     r.run("sunionstore", "setres{t}", "set1{t}", "set2{t}")
     assert_encoding(bigenc, "setres{t}")
     expected = sorted("[r smembers set1{t}] [r smembers set2{t}]")
     assert expected == sorted(r.run("smembers", "setres{t}"))
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(
-    ["type", "bigenc", "smallenc"], [("regular", "hashtable", "listpack"), ("intset", "intset", "intset")]
+    ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
 )
-def test_sinter_against_three_sets_type(r: ValkeyTestClient, type, bigenc, smallenc) -> None:
+def test_sinter_against_three_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
     """
     test "SINTER against three sets - $type" {
         assert_equal [list 195 199 $large] [lsort [r sinter set1{t} set2{t} set3{t}]]
     }
     """
-    # TODO: assert_equal list 195 199 $large lsort [r sinter set1{t} set2{t} set3{t}]
+    if type == "regular":
+        smallenc = "listpack"
+        bigenc = "hashtable"
+    else:
+        smallenc = "intset"
+        bigenc = "intset"
+    array("set", "encoding", f"1 {bigenc} 2 {bigenc} 3 {smallenc} 4 {bigenc} 5 {smallenc}")
+    i = 1
+    while i <= 5:
+        r.run("del", format_("set%d{t}", i))
+        i += 1
+    i = 0
+    while i < 200:
+        r.run("sadd", "set1{t}", i)
+        r.run("sadd", "set2{t}", expr(i, 195))
+        i += 1
+    foreach("i", "199 195 1000 2000", "            r sadd set3{t} $i\n        ")
+    i = 5
+    while i < 200:
+        r.run("sadd", "set4{t}", i)
+        i += 1
+    r.run("sadd", "set5{t}", 0)
+    large = 200
+    if type == "regular":
+        large = "foo"
+    i = 1
+    while i <= 5:
+        r.run("sadd", format_("set%d{t}", i), large)
+        i += 1
+    assert [195, 199, large] == sorted(r.run("sinter", "set1{t}", "set2{t}", "set3{t}"))
 
 
 @pytest.mark.parametrize(
-    ["type", "bigenc", "smallenc"], [("regular", "hashtable", "listpack"), ("intset", "intset", "intset")]
+    ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
 )
-def test_sintercard_against_three_sets_type(r: ValkeyTestClient, type, bigenc, smallenc) -> None:
+def test_sintercard_against_three_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
     """
     test "SINTERCARD against three sets - $type" {
         assert_equal 3 [r sintercard 3 set1{t} set2{t} set3{t}]
@@ -790,69 +948,213 @@ def test_sintercard_against_three_sets_type(r: ValkeyTestClient, type, bigenc, s
         assert_equal 3 [r sintercard 3 set1{t} set2{t} set3{t} limit 10]
     }
     """
+    if type == "regular":
+        smallenc = "listpack"
+        bigenc = "hashtable"
+    else:
+        smallenc = "intset"
+        bigenc = "intset"
+    array("set", "encoding", f"1 {bigenc} 2 {bigenc} 3 {smallenc} 4 {bigenc} 5 {smallenc}")
+    i = 1
+    while i <= 5:
+        r.run("del", format_("set%d{t}", i))
+        i += 1
+    i = 0
+    while i < 200:
+        r.run("sadd", "set1{t}", i)
+        r.run("sadd", "set2{t}", expr(i, 195))
+        i += 1
+    foreach("i", "199 195 1000 2000", "            r sadd set3{t} $i\n        ")
+    i = 5
+    while i < 200:
+        r.run("sadd", "set4{t}", i)
+        i += 1
+    r.run("sadd", "set5{t}", 0)
+    large = 200
+    if type == "regular":
+        large = "foo"
+    i = 1
+    while i <= 5:
+        r.run("sadd", format_("set%d{t}", i), large)
+        i += 1
     assert 3 == r.run("sintercard", 3, "set1{t}", "set2{t}", "set3{t}")
     assert 3 == r.run("sintercard", 3, "set1{t}", "set2{t}", "set3{t}", "limit", 0)
     assert 2 == r.run("sintercard", 3, "set1{t}", "set2{t}", "set3{t}", "limit", 2)
     assert 3 == r.run("sintercard", 3, "set1{t}", "set2{t}", "set3{t}", "limit", 10)
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(
-    ["type", "bigenc", "smallenc"], [("regular", "hashtable", "listpack"), ("intset", "intset", "intset")]
+    ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
 )
-def test_sinterstore_with_three_sets_type(r: ValkeyTestClient, type, bigenc, smallenc) -> None:
+def test_sinterstore_with_three_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
     """
     test "SINTERSTORE with three sets - $type" {
         r sinterstore setres{t} set1{t} set2{t} set3{t}
         assert_equal [list 195 199 $large] [lsort [r smembers setres{t}]]
     }
     """
+    if type == "regular":
+        smallenc = "listpack"
+        bigenc = "hashtable"
+    else:
+        smallenc = "intset"
+        bigenc = "intset"
+    array("set", "encoding", f"1 {bigenc} 2 {bigenc} 3 {smallenc} 4 {bigenc} 5 {smallenc}")
+    i = 1
+    while i <= 5:
+        r.run("del", format_("set%d{t}", i))
+        i += 1
+    i = 0
+    while i < 200:
+        r.run("sadd", "set1{t}", i)
+        r.run("sadd", "set2{t}", expr(i, 195))
+        i += 1
+    foreach("i", "199 195 1000 2000", "            r sadd set3{t} $i\n        ")
+    i = 5
+    while i < 200:
+        r.run("sadd", "set4{t}", i)
+        i += 1
+    r.run("sadd", "set5{t}", 0)
+    large = 200
+    if type == "regular":
+        large = "foo"
+    i = 1
+    while i <= 5:
+        r.run("sadd", format_("set%d{t}", i), large)
+        i += 1
     r.run("sinterstore", "setres{t}", "set1{t}", "set2{t}", "set3{t}")
-    # TODO: assert_equal list 195 199 $large lsort [r smembers setres{t}]
+    assert [195, 199, large] == sorted(r.run("smembers", "setres{t}"))
 
 
 @pytest.mark.parametrize(
-    ["type", "bigenc", "smallenc"], [("regular", "hashtable", "listpack"), ("intset", "intset", "intset")]
+    ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
 )
-def test_sunion_with_non_existing_keys_type(r: ValkeyTestClient, type, bigenc, smallenc) -> None:
+def test_sunion_with_non_existing_keys_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
     """
     test "SUNION with non existing keys - $type" {
         set expected [lsort -uniq "[r smembers set1{t}] [r smembers set2{t}]"]
         assert_equal $expected [lsort [r sunion nokey1{t} set1{t} set2{t} nokey2{t}]]
     }
     """
+    if type == "regular":
+        smallenc = "listpack"
+        bigenc = "hashtable"
+    else:
+        smallenc = "intset"
+        bigenc = "intset"
+    array("set", "encoding", f"1 {bigenc} 2 {bigenc} 3 {smallenc} 4 {bigenc} 5 {smallenc}")
+    i = 1
+    while i <= 5:
+        r.run("del", format_("set%d{t}", i))
+        i += 1
+    i = 0
+    while i < 200:
+        r.run("sadd", "set1{t}", i)
+        r.run("sadd", "set2{t}", expr(i, 195))
+        i += 1
+    foreach("i", "199 195 1000 2000", "            r sadd set3{t} $i\n        ")
+    i = 5
+    while i < 200:
+        r.run("sadd", "set4{t}", i)
+        i += 1
+    r.run("sadd", "set5{t}", 0)
+    large = 200
+    if type == "regular":
+        large = "foo"
+    i = 1
+    while i <= 5:
+        r.run("sadd", format_("set%d{t}", i), large)
+        i += 1
     expected = sorted("[r smembers set1{t}] [r smembers set2{t}]")
     assert expected == sorted(r.run("sunion", "nokey1{t}", "set1{t}", "set2{t}", "nokey2{t}"))
 
 
 @pytest.mark.parametrize(
-    ["type", "bigenc", "smallenc"], [("regular", "hashtable", "listpack"), ("intset", "intset", "intset")]
+    ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
 )
-def test_sdiff_with_two_sets_type(r: ValkeyTestClient, type, bigenc, smallenc) -> None:
+def test_sdiff_with_two_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
     """
     test "SDIFF with two sets - $type" {
         assert_equal {0 1 2 3 4} [lsort [r sdiff set1{t} set4{t}]]
     }
     """
+    if type == "regular":
+        smallenc = "listpack"
+        bigenc = "hashtable"
+    else:
+        smallenc = "intset"
+        bigenc = "intset"
+    array("set", "encoding", f"1 {bigenc} 2 {bigenc} 3 {smallenc} 4 {bigenc} 5 {smallenc}")
+    i = 1
+    while i <= 5:
+        r.run("del", format_("set%d{t}", i))
+        i += 1
+    i = 0
+    while i < 200:
+        r.run("sadd", "set1{t}", i)
+        r.run("sadd", "set2{t}", expr(i, 195))
+        i += 1
+    foreach("i", "199 195 1000 2000", "            r sadd set3{t} $i\n        ")
+    i = 5
+    while i < 200:
+        r.run("sadd", "set4{t}", i)
+        i += 1
+    r.run("sadd", "set5{t}", 0)
+    large = 200
+    if type == "regular":
+        large = "foo"
+    i = 1
+    while i <= 5:
+        r.run("sadd", format_("set%d{t}", i), large)
+        i += 1
     assert "0 1 2 3 4" == sorted(r.run("sdiff", "set1{t}", "set4{t}"))
 
 
 @pytest.mark.parametrize(
-    ["type", "bigenc", "smallenc"], [("regular", "hashtable", "listpack"), ("intset", "intset", "intset")]
+    ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
 )
-def test_sdiff_with_three_sets_type(r: ValkeyTestClient, type, bigenc, smallenc) -> None:
+def test_sdiff_with_three_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
     """
     test "SDIFF with three sets - $type" {
         assert_equal {1 2 3 4} [lsort [r sdiff set1{t} set4{t} set5{t}]]
     }
     """
+    if type == "regular":
+        smallenc = "listpack"
+        bigenc = "hashtable"
+    else:
+        smallenc = "intset"
+        bigenc = "intset"
+    array("set", "encoding", f"1 {bigenc} 2 {bigenc} 3 {smallenc} 4 {bigenc} 5 {smallenc}")
+    i = 1
+    while i <= 5:
+        r.run("del", format_("set%d{t}", i))
+        i += 1
+    i = 0
+    while i < 200:
+        r.run("sadd", "set1{t}", i)
+        r.run("sadd", "set2{t}", expr(i, 195))
+        i += 1
+    foreach("i", "199 195 1000 2000", "            r sadd set3{t} $i\n        ")
+    i = 5
+    while i < 200:
+        r.run("sadd", "set4{t}", i)
+        i += 1
+    r.run("sadd", "set5{t}", 0)
+    large = 200
+    if type == "regular":
+        large = "foo"
+    i = 1
+    while i <= 5:
+        r.run("sadd", format_("set%d{t}", i), large)
+        i += 1
     assert "1 2 3 4" == sorted(r.run("sdiff", "set1{t}", "set4{t}", "set5{t}"))
 
 
 @pytest.mark.parametrize(
-    ["type", "bigenc", "smallenc"], [("regular", "hashtable", "listpack"), ("intset", "intset", "intset")]
+    ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
 )
-def test_sdiffstore_with_three_sets_type(r: ValkeyTestClient, type, bigenc, smallenc) -> None:
+def test_sdiffstore_with_three_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
     """
     test "SDIFFSTORE with three sets - $type" {
         r sdiffstore setres{t} set1{t} set4{t} set5{t}
@@ -863,6 +1165,35 @@ def test_sdiffstore_with_three_sets_type(r: ValkeyTestClient, type, bigenc, smal
         assert_equal {1 2 3 4} [lsort [r smembers setres{t}]]
     }
     """
+    if type == "regular":
+        smallenc = "listpack"
+        bigenc = "hashtable"
+    else:
+        smallenc = "intset"
+        bigenc = "intset"
+    array("set", "encoding", f"1 {bigenc} 2 {bigenc} 3 {smallenc} 4 {bigenc} 5 {smallenc}")
+    i = 1
+    while i <= 5:
+        r.run("del", format_("set%d{t}", i))
+        i += 1
+    i = 0
+    while i < 200:
+        r.run("sadd", "set1{t}", i)
+        r.run("sadd", "set2{t}", expr(i, 195))
+        i += 1
+    foreach("i", "199 195 1000 2000", "            r sadd set3{t} $i\n        ")
+    i = 5
+    while i < 200:
+        r.run("sadd", "set4{t}", i)
+        i += 1
+    r.run("sadd", "set5{t}", 0)
+    large = 200
+    if type == "regular":
+        large = "foo"
+    i = 1
+    while i <= 5:
+        r.run("sadd", format_("set%d{t}", i), large)
+        i += 1
     r.run("sdiffstore", "setres{t}", "set1{t}", "set4{t}", "set5{t}")
     if type == "intset":
         assert_encoding("intset", "setres{t}")
@@ -870,9 +1201,9 @@ def test_sdiffstore_with_three_sets_type(r: ValkeyTestClient, type, bigenc, smal
 
 
 @pytest.mark.parametrize(
-    ["type", "bigenc", "smallenc"], [("regular", "hashtable", "listpack"), ("intset", "intset", "intset")]
+    ["type", "smallenc", "bigenc"], [("regular", "listpack", "hashtable"), ("intset", "intset", "intset")]
 )
-def test_sinter_or_sunion_or_sdiff_with_three_same_sets_type(r: ValkeyTestClient, type, bigenc, smallenc) -> None:
+def test_sinter_or_sunion_or_sdiff_with_three_same_sets_type(r: ValkeyTestClient, type, smallenc, bigenc) -> None:
     """
     test "SINTER/SUNION/SDIFF with three same sets - $type" {
         set expected [lsort "[r smembers set1{t}]"]
@@ -881,6 +1212,35 @@ def test_sinter_or_sunion_or_sdiff_with_three_same_sets_type(r: ValkeyTestClient
         assert_equal {} [lsort [r sdiff set1{t} set1{t} set1{t}]]
     }
     """
+    if type == "regular":
+        smallenc = "listpack"
+        bigenc = "hashtable"
+    else:
+        smallenc = "intset"
+        bigenc = "intset"
+    array("set", "encoding", f"1 {bigenc} 2 {bigenc} 3 {smallenc} 4 {bigenc} 5 {smallenc}")
+    i = 1
+    while i <= 5:
+        r.run("del", format_("set%d{t}", i))
+        i += 1
+    i = 0
+    while i < 200:
+        r.run("sadd", "set1{t}", i)
+        r.run("sadd", "set2{t}", expr(i, 195))
+        i += 1
+    foreach("i", "199 195 1000 2000", "            r sadd set3{t} $i\n        ")
+    i = 5
+    while i < 200:
+        r.run("sadd", "set4{t}", i)
+        i += 1
+    r.run("sadd", "set5{t}", 0)
+    large = 200
+    if type == "regular":
+        large = "foo"
+    i = 1
+    while i <= 5:
+        r.run("sadd", format_("set%d{t}", i), large)
+        i += 1
     expected = sorted("[r smembers set1{t}]")
     assert expected == sorted(r.run("sinter", "set1{t}", "set1{t}", "set1{t}"))
     assert expected == sorted(r.run("sunion", "set1{t}", "set1{t}", "set1{t}"))
@@ -1842,17 +2202,13 @@ def test_srandmember_count_overflow(r: ValkeyTestClient) -> None:
         r.run("srandmember", "myset", -9223372036854775808)
 
 
-"""
-r readraw 1
-"""
-
-
 def test_srandmember_count_of_0_is_handled_correctly_emptyarray(r: ValkeyTestClient) -> None:
     """
     test "SRANDMEMBER count of 0 is handled correctly - emptyarray" {
         r srandmember myset 0
     } {*0}
     """
+    r.run("readraw", 1)
     assert fnmatch(str(r.run("srandmember", "myset", 0)), "*0")
 
 
@@ -1862,6 +2218,7 @@ def test_srandmember_with_count_against_non_existing_key_emptyarray(r: ValkeyTes
         r srandmember nonexisting_key 100
     } {*0}
     """
+    r.run("readraw", 1)
     assert fnmatch(str(r.run("srandmember", "nonexisting_key", 100)), "*0")
 
 
@@ -2097,50 +2454,6 @@ def test_srandmember_histogram_distribution_type(r: ValkeyTestClient, type, cont
     )
 
 
-"""
-proc is_rehashing {myset} {
-    set htstats [r debug HTSTATS-KEY $myset]
-    return [string match {*rehashing target*} $htstats]
-}
-"""
-
-
-"""
-proc rem_hash_set_top_N {myset n} {
-    set cursor 0
-    set members {}
-    set enough 0
-    while 1 {
-        set res [r sscan $myset $cursor]
-        set cursor [lindex $res 0]
-        set k [lindex $res 1]
-        foreach m $k {
-            lappend members $m
-            if {[llength $members] >= $n} {
-                set enough 1
-                break
-            }
-        }
-        if {$enough || $cursor == 0} {
-            break
-        }
-    }
-    r srem $myset {*}$members
-}
-"""
-
-
-"""
-proc setup_move {} {
-    r del myset3{t} myset4{t}
-    create_set myset1{t} {1 a b}
-    create_set myset2{t} {2 3 4}
-    assert_encoding listpack myset1{t}
-    assert_encoding intset myset2{t}
-}
-"""
-
-
 def test_smove_basics_from_regular_set_to_intset(r: ValkeyTestClient) -> None:
     """
     test "SMOVE basics - from regular set to intset" {
@@ -2159,6 +2472,21 @@ def test_smove_basics_from_regular_set_to_intset(r: ValkeyTestClient) -> None:
         assert_encoding intset myset2{t}
     }
     """
+    proc(
+        "is_rehashing",
+        "myset",
+        "        set htstats [r debug HTSTATS-KEY $myset]\n        return [string match {*rehashing target*} $htstats]\n    ",
+    )
+    proc(
+        "rem_hash_set_top_N",
+        "myset n",
+        "        set cursor 0\n        set members {}\n        set enough 0\n        while 1 {\n            set res [r sscan $myset $cursor]\n            set cursor [lindex $res 0]\n            set k [lindex $res 1]\n            foreach m $k {\n                lappend members $m\n                if {[llength $members] >= $n} {\n                    set enough 1\n                    break\n                }\n            }\n            if {$enough || $cursor == 0} {\n                break\n            }\n        }\n        r srem $myset {*}$members\n    ",
+    )
+    proc(
+        "setup_move",
+        "",
+        "        r del myset3{t} myset4{t}\n        create_set myset1{t} {1 a b}\n        create_set myset2{t} {2 3 4}\n        assert_encoding listpack myset1{t}\n        assert_encoding intset myset2{t}\n    ",
+    )
     setup_move()
     assert 1 == r.run("smove", "myset1{t}", "myset2{t}", "a")
     assert "1 b" == sorted(r.run("smembers", "myset1{t}"))
@@ -2180,6 +2508,21 @@ def test_smove_basics_from_intset_to_regular_set(r: ValkeyTestClient) -> None:
         assert_equal {3 4} [lsort [r smembers myset2{t}]]
     }
     """
+    proc(
+        "is_rehashing",
+        "myset",
+        "        set htstats [r debug HTSTATS-KEY $myset]\n        return [string match {*rehashing target*} $htstats]\n    ",
+    )
+    proc(
+        "rem_hash_set_top_N",
+        "myset n",
+        "        set cursor 0\n        set members {}\n        set enough 0\n        while 1 {\n            set res [r sscan $myset $cursor]\n            set cursor [lindex $res 0]\n            set k [lindex $res 1]\n            foreach m $k {\n                lappend members $m\n                if {[llength $members] >= $n} {\n                    set enough 1\n                    break\n                }\n            }\n            if {$enough || $cursor == 0} {\n                break\n            }\n        }\n        r srem $myset {*}$members\n    ",
+    )
+    proc(
+        "setup_move",
+        "",
+        "        r del myset3{t} myset4{t}\n        create_set myset1{t} {1 a b}\n        create_set myset2{t} {2 3 4}\n        assert_encoding listpack myset1{t}\n        assert_encoding intset myset2{t}\n    ",
+    )
     setup_move()
     assert 1 == r.run("smove", "myset2{t}", "myset1{t}", 2)
     assert "1 2 a b" == sorted(r.run("smembers", "myset1{t}"))
@@ -2196,6 +2539,21 @@ def test_smove_non_existing_key(r: ValkeyTestClient) -> None:
         assert_equal {2 3 4} [lsort [r smembers myset2{t}]]
     }
     """
+    proc(
+        "is_rehashing",
+        "myset",
+        "        set htstats [r debug HTSTATS-KEY $myset]\n        return [string match {*rehashing target*} $htstats]\n    ",
+    )
+    proc(
+        "rem_hash_set_top_N",
+        "myset n",
+        "        set cursor 0\n        set members {}\n        set enough 0\n        while 1 {\n            set res [r sscan $myset $cursor]\n            set cursor [lindex $res 0]\n            set k [lindex $res 1]\n            foreach m $k {\n                lappend members $m\n                if {[llength $members] >= $n} {\n                    set enough 1\n                    break\n                }\n            }\n            if {$enough || $cursor == 0} {\n                break\n            }\n        }\n        r srem $myset {*}$members\n    ",
+    )
+    proc(
+        "setup_move",
+        "",
+        "        r del myset3{t} myset4{t}\n        create_set myset1{t} {1 a b}\n        create_set myset2{t} {2 3 4}\n        assert_encoding listpack myset1{t}\n        assert_encoding intset myset2{t}\n    ",
+    )
     setup_move()
     assert 0 == r.run("smove", "myset1{t}", "myset2{t}", "foo")
     assert 0 == r.run("smove", "myset1{t}", "myset1{t}", "foo")
@@ -2211,6 +2569,21 @@ def test_smove_non_existing_src_set(r: ValkeyTestClient) -> None:
         assert_equal {2 3 4} [lsort [r smembers myset2{t}]]
     }
     """
+    proc(
+        "is_rehashing",
+        "myset",
+        "        set htstats [r debug HTSTATS-KEY $myset]\n        return [string match {*rehashing target*} $htstats]\n    ",
+    )
+    proc(
+        "rem_hash_set_top_N",
+        "myset n",
+        "        set cursor 0\n        set members {}\n        set enough 0\n        while 1 {\n            set res [r sscan $myset $cursor]\n            set cursor [lindex $res 0]\n            set k [lindex $res 1]\n            foreach m $k {\n                lappend members $m\n                if {[llength $members] >= $n} {\n                    set enough 1\n                    break\n                }\n            }\n            if {$enough || $cursor == 0} {\n                break\n            }\n        }\n        r srem $myset {*}$members\n    ",
+    )
+    proc(
+        "setup_move",
+        "",
+        "        r del myset3{t} myset4{t}\n        create_set myset1{t} {1 a b}\n        create_set myset2{t} {2 3 4}\n        assert_encoding listpack myset1{t}\n        assert_encoding intset myset2{t}\n    ",
+    )
     setup_move()
     assert 0 == r.run("smove", "noset{t}", "myset2{t}", "foo")
     assert "2 3 4" == sorted(r.run("smembers", "myset2{t}"))
@@ -2226,6 +2599,21 @@ def test_smove_from_regular_set_to_non_existing_destination_set(r: ValkeyTestCli
         assert_encoding listpack myset3{t}
     }
     """
+    proc(
+        "is_rehashing",
+        "myset",
+        "        set htstats [r debug HTSTATS-KEY $myset]\n        return [string match {*rehashing target*} $htstats]\n    ",
+    )
+    proc(
+        "rem_hash_set_top_N",
+        "myset n",
+        "        set cursor 0\n        set members {}\n        set enough 0\n        while 1 {\n            set res [r sscan $myset $cursor]\n            set cursor [lindex $res 0]\n            set k [lindex $res 1]\n            foreach m $k {\n                lappend members $m\n                if {[llength $members] >= $n} {\n                    set enough 1\n                    break\n                }\n            }\n            if {$enough || $cursor == 0} {\n                break\n            }\n        }\n        r srem $myset {*}$members\n    ",
+    )
+    proc(
+        "setup_move",
+        "",
+        "        r del myset3{t} myset4{t}\n        create_set myset1{t} {1 a b}\n        create_set myset2{t} {2 3 4}\n        assert_encoding listpack myset1{t}\n        assert_encoding intset myset2{t}\n    ",
+    )
     setup_move()
     assert 1 == r.run("smove", "myset1{t}", "myset3{t}", "a")
     assert "1 b" == sorted(r.run("smembers", "myset1{t}"))
@@ -2243,6 +2631,21 @@ def test_smove_from_intset_to_non_existing_destination_set(r: ValkeyTestClient) 
         assert_encoding intset myset3{t}
     }
     """
+    proc(
+        "is_rehashing",
+        "myset",
+        "        set htstats [r debug HTSTATS-KEY $myset]\n        return [string match {*rehashing target*} $htstats]\n    ",
+    )
+    proc(
+        "rem_hash_set_top_N",
+        "myset n",
+        "        set cursor 0\n        set members {}\n        set enough 0\n        while 1 {\n            set res [r sscan $myset $cursor]\n            set cursor [lindex $res 0]\n            set k [lindex $res 1]\n            foreach m $k {\n                lappend members $m\n                if {[llength $members] >= $n} {\n                    set enough 1\n                    break\n                }\n            }\n            if {$enough || $cursor == 0} {\n                break\n            }\n        }\n        r srem $myset {*}$members\n    ",
+    )
+    proc(
+        "setup_move",
+        "",
+        "        r del myset3{t} myset4{t}\n        create_set myset1{t} {1 a b}\n        create_set myset2{t} {2 3 4}\n        assert_encoding listpack myset1{t}\n        assert_encoding intset myset2{t}\n    ",
+    )
     setup_move()
     assert 1 == r.run("smove", "myset2{t}", "myset3{t}", 2)
     assert "3 4" == sorted(r.run("smembers", "myset2{t}"))
@@ -2257,6 +2660,21 @@ def test_smove_wrong_src_key_type(r: ValkeyTestClient) -> None:
         assert_error "WRONGTYPE*" {r smove x{t} myset2{t} foo}
     }
     """
+    proc(
+        "is_rehashing",
+        "myset",
+        "        set htstats [r debug HTSTATS-KEY $myset]\n        return [string match {*rehashing target*} $htstats]\n    ",
+    )
+    proc(
+        "rem_hash_set_top_N",
+        "myset n",
+        "        set cursor 0\n        set members {}\n        set enough 0\n        while 1 {\n            set res [r sscan $myset $cursor]\n            set cursor [lindex $res 0]\n            set k [lindex $res 1]\n            foreach m $k {\n                lappend members $m\n                if {[llength $members] >= $n} {\n                    set enough 1\n                    break\n                }\n            }\n            if {$enough || $cursor == 0} {\n                break\n            }\n        }\n        r srem $myset {*}$members\n    ",
+    )
+    proc(
+        "setup_move",
+        "",
+        "        r del myset3{t} myset4{t}\n        create_set myset1{t} {1 a b}\n        create_set myset2{t} {2 3 4}\n        assert_encoding listpack myset1{t}\n        assert_encoding intset myset2{t}\n    ",
+    )
     r.run("set", "x{t}", 10)
     with pytest.raises(Exception, match="WRONGTYPE.*"):
         r.run("smove", "x{t}", "myset2{t}", "foo")
@@ -2269,6 +2687,21 @@ def test_smove_wrong_dst_key_type(r: ValkeyTestClient) -> None:
         assert_error "WRONGTYPE*" {r smove myset2{t} x{t} foo}
     }
     """
+    proc(
+        "is_rehashing",
+        "myset",
+        "        set htstats [r debug HTSTATS-KEY $myset]\n        return [string match {*rehashing target*} $htstats]\n    ",
+    )
+    proc(
+        "rem_hash_set_top_N",
+        "myset n",
+        "        set cursor 0\n        set members {}\n        set enough 0\n        while 1 {\n            set res [r sscan $myset $cursor]\n            set cursor [lindex $res 0]\n            set k [lindex $res 1]\n            foreach m $k {\n                lappend members $m\n                if {[llength $members] >= $n} {\n                    set enough 1\n                    break\n                }\n            }\n            if {$enough || $cursor == 0} {\n                break\n            }\n        }\n        r srem $myset {*}$members\n    ",
+    )
+    proc(
+        "setup_move",
+        "",
+        "        r del myset3{t} myset4{t}\n        create_set myset1{t} {1 a b}\n        create_set myset2{t} {2 3 4}\n        assert_encoding listpack myset1{t}\n        assert_encoding intset myset2{t}\n    ",
+    )
     r.run("set", "x{t}", 10)
     with pytest.raises(Exception, match="WRONGTYPE.*"):
         r.run("smove", "myset2{t}", "x{t}", "foo")
@@ -2283,6 +2716,21 @@ def test_smove_with_identical_source_and_destination(r: ValkeyTestClient) -> Non
         lsort [r smembers set{t}]
     } {a b c}
     """
+    proc(
+        "is_rehashing",
+        "myset",
+        "        set htstats [r debug HTSTATS-KEY $myset]\n        return [string match {*rehashing target*} $htstats]\n    ",
+    )
+    proc(
+        "rem_hash_set_top_N",
+        "myset n",
+        "        set cursor 0\n        set members {}\n        set enough 0\n        while 1 {\n            set res [r sscan $myset $cursor]\n            set cursor [lindex $res 0]\n            set k [lindex $res 1]\n            foreach m $k {\n                lappend members $m\n                if {[llength $members] >= $n} {\n                    set enough 1\n                    break\n                }\n            }\n            if {$enough || $cursor == 0} {\n                break\n            }\n        }\n        r srem $myset {*}$members\n    ",
+    )
+    proc(
+        "setup_move",
+        "",
+        "        r del myset3{t} myset4{t}\n        create_set myset1{t} {1 a b}\n        create_set myset2{t} {2 3 4}\n        assert_encoding listpack myset1{t}\n        assert_encoding intset myset2{t}\n    ",
+    )
     r.run("del", "set{t}")
     r.run("sadd", "set{t}", "a", "b", "c")
     r.run("smove", "set{t}", "set{t}", "b")
@@ -2313,6 +2761,21 @@ def test_smove_only_notify_dstset_when_the_addition_is_successful(r: ValkeyTestC
         $r2 close
     }
     """
+    proc(
+        "is_rehashing",
+        "myset",
+        "        set htstats [r debug HTSTATS-KEY $myset]\n        return [string match {*rehashing target*} $htstats]\n    ",
+    )
+    proc(
+        "rem_hash_set_top_N",
+        "myset n",
+        "        set cursor 0\n        set members {}\n        set enough 0\n        while 1 {\n            set res [r sscan $myset $cursor]\n            set cursor [lindex $res 0]\n            set k [lindex $res 1]\n            foreach m $k {\n                lappend members $m\n                if {[llength $members] >= $n} {\n                    set enough 1\n                    break\n                }\n            }\n            if {$enough || $cursor == 0} {\n                break\n            }\n        }\n        r srem $myset {*}$members\n    ",
+    )
+    proc(
+        "setup_move",
+        "",
+        "        r del myset3{t} myset4{t}\n        create_set myset1{t} {1 a b}\n        create_set myset2{t} {2 3 4}\n        assert_encoding listpack myset1{t}\n        assert_encoding intset myset2{t}\n    ",
+    )
     r.run("del", "srcset{t}")
     r.run("del", "dstset{t}")
     r.run("sadd", "srcset{t}", "a", "b")
@@ -2422,6 +2885,10 @@ def foreach(*args):
 
 def format_(*args):
     raise NotImplementedError("format_")
+
+
+def proc(*args):
+    raise NotImplementedError("proc")
 
 
 def random_int(*args):

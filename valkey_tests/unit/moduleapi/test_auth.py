@@ -13,11 +13,6 @@ set testmodule file normalize tests/modules/auth.so
 pytestmark = [pytest.mark.modules]
 
 
-"""
-r module load testmodule
-"""
-
-
 def test_modules_can_create_a_user_that_can_be_authenticated(r: ValkeyTestClient) -> None:
     """
     test {Modules can create a user that can be authenticated} {

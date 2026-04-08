@@ -11,11 +11,6 @@ set testmodule file normalize tests/modules/commandfilter.so
 pytestmark = [pytest.mark.modules]
 
 
-"""
-r module load testmodule log-key 0
-"""
-
-
 def test_retain_a_command_filter_argument(r: ValkeyTestClient) -> None:
     """
     test {Retain a command filter argument} {
@@ -143,11 +138,6 @@ def test_command_filter_is_unregistered_implicitly_on_module_unload(r: ValkeyTes
     r.run("lrange", "log-key", 0, -1)
 
 
-"""
-r module load testmodule log-key 0
-"""
-
-
 def test_command_filter_unregister_works_as_expected(r: ValkeyTestClient) -> None:
     """
     test {Command Filter unregister works as expected} {
@@ -171,16 +161,6 @@ def test_command_filter_unregister_works_as_expected(r: ValkeyTestClient) -> Non
     r.run("del", "log-key")
     r.run("set", "mykey", "@log")
     r.run("lrange", "log-key", 0, -1)
-
-
-"""
-r module unload commandfilter
-"""
-
-
-"""
-r module load testmodule log-key 1
-"""
 
 
 def test_command_filter_redismodule_cmdfilter_noself_works_as_expected(r: ValkeyTestClient) -> None:

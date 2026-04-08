@@ -11,11 +11,6 @@ set testmodule file normalize tests/modules/stream.so
 pytestmark = [pytest.mark.modules]
 
 
-"""
-r module load testmodule
-"""
-
-
 def test_module_stream_add_and_delete(r: ValkeyTestClient) -> None:
     """
     test {Module stream add and delete} {

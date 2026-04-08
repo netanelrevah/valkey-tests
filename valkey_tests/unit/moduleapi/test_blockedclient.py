@@ -13,11 +13,6 @@ set testmodule file normalize tests/modules/blockedclient.so
 pytestmark = [pytest.mark.modules]
 
 
-"""
-r module load testmodule
-"""
-
-
 def test_locked_gil_acquisition(r: ValkeyTestClient) -> None:
     """
     test {Locked GIL acquisition} {
@@ -126,7 +121,7 @@ def test_monitor_disallow_inside_rm_call(r: ValkeyTestClient) -> None:
         set e
     } {*ERR*DENY BLOCKING*}
     """
-    e = ""
+    e = []
     try:
         e = r.run("do_rm_call", "monitor")
     except Exception as _catch_err:
@@ -144,7 +139,7 @@ def test_subscribe_disallow_inside_rm_call(r: ValkeyTestClient) -> None:
         set e
     } {*ERR*DENY BLOCKING*}
     """
-    e = ""
+    e = []
     try:
         e = r.run("do_rm_call", "subscribe", "x")
     except Exception as _catch_err:
@@ -499,45 +494,6 @@ def test_module_client_error_stats(r: ValkeyTestClient) -> None:
     assert s("total_error_replies") == 6
     assert fnmatch(str(cmdrstat("do_rm_call", "r")), "*calls=5,*,rejected_calls=0,failed_calls=4")
     assert fnmatch(str(cmdrstat("do_bg_rm_call", "r")), "*calls=2,*,rejected_calls=0,failed_calls=2")
-
-
-"""
-set master srv 0 client
-"""
-
-
-"""
-set master_host srv 0 host
-"""
-
-
-"""
-set master_port srv 0 port
-"""
-
-
-"""
-start_server list overrides [list loadmodule "$testmodule"] {
-    set replica [srv 0 client]
-    set replica_host [srv 0 host]
-    set replica_port [srv 0 port]
-
-    # Start the replication process...
-    $replica replicaof $master_host $master_port
-    wait_for_sync $replica
-
-    test {WAIT command on module blocked client} {
-        pause_process [srv 0 pid]
-
-        $master do_bg_rm_call_format ! hset bk1 foo bar
-
-        assert_equal [$master wait 1 1000] 0
-        resume_process [srv 0 pid]
-        assert_equal [$master wait 1 1000] 1
-        assert_equal [$replica hget bk1 foo] bar
-    }
-}
-"""
 
 
 def test_unblock_by_timer(r: ValkeyTestClient) -> None:

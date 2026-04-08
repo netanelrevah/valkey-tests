@@ -16,7 +16,7 @@ def test_incr_against_non_existing_key(r: ValkeyTestClient) -> None:
         append res [r get novar]
     } {11}
     """
-    res = ""
+    res = []
     append("res", r.run("incr", "novar"))
     append("res", r.run("get", "novar"))
 
@@ -275,7 +275,7 @@ def test_incrbyfloat_fails_against_key_with_spaces_left(r: ValkeyTestClient) -> 
         format $err
     } {ERR *valid*}
     """
-    err = ""
+    err = []
     r.run("set", "novar", "    11")
     try:
         err = r.run("incrbyfloat", "novar", 1.0)
@@ -293,7 +293,7 @@ def test_incrbyfloat_fails_against_key_with_spaces_right(r: ValkeyTestClient) ->
         format $err
     } {ERR *valid*}
     """
-    err = ""
+    err = []
     r.run("set", "novar", "11    ")
     try:
         err = r.run("incrbyfloat", "novar", 1.0)
@@ -311,7 +311,7 @@ def test_incrbyfloat_fails_against_key_with_spaces_both(r: ValkeyTestClient) -> 
         format $err
     } {ERR *valid*}
     """
-    err = ""
+    err = []
     r.run("set", "novar", " 11 ")
     try:
         err = r.run("incrbyfloat", "novar", 1.0)
@@ -332,7 +332,7 @@ def test_incrbyfloat_fails_against_a_key_holding_a_list(r: ValkeyTestClient) -> 
     } {WRONGTYPE*}
     """
     r.run("del", "mylist")
-    err = ""
+    err = []
     r.run("rpush", "mylist", 1)
     try:
         err = r.run("incrbyfloat", "mylist", 1.0)
@@ -355,7 +355,7 @@ def test_incrbyfloat_does_not_allow_nan_or_infinity(r: ValkeyTestClient) -> None
     } {ERR *would produce*} {valgrind:skip}
     """
     r.run("set", "foo", 0)
-    err = ""
+    err = []
     try:
         err = r.run("incrbyfloat", "foo", float("+inf"))
     except Exception as _catch_err:

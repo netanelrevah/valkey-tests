@@ -63,25 +63,17 @@ def test_ttl_type_and_exists_do_not_alter_the_last_access_time_of_a_key(r: Valke
     assert r.run("object", "idletime", "foo") >= 2
 
 
-"""
-proc test_touch_alters_access_time {} {
-    r set foo bar
-    r set script_foo bar
-    after 3000
-    r touch foo
-    r eval {redis.call('touch', KEYS[1])} 1 script_foo
-    assert {[r object idletime foo] < 2}
-    assert {[r object idletime script_foo] < 2}
-}
-"""
-
-
 def test_touch_alters_the_last_access_time_of_a_key(r: ValkeyTestClient) -> None:
     """
     test {TOUCH alters the last access time of a key} {
         test_touch_alters_access_time
     }
     """
+    proc(
+        "test_touch_alters_access_time",
+        "",
+        "        r set foo bar\n        r set script_foo bar\n        after 3000\n        r touch foo\n        r eval {redis.call('touch', KEYS[1])} 1 script_foo\n        assert {[r object idletime foo] < 2}\n        assert {[r object idletime script_foo] < 2}\n    ",
+    )
     test_touch_alters_access_time()
 
 
@@ -93,6 +85,11 @@ def test_touch_alters_the_last_access_time_of_a_key_in_no_touch_mode(r: ValkeyTe
         r client no-touch off
     }
     """
+    proc(
+        "test_touch_alters_access_time",
+        "",
+        "        r set foo bar\n        r set script_foo bar\n        after 3000\n        r touch foo\n        r eval {redis.call('touch', KEYS[1])} 1 script_foo\n        assert {[r object idletime foo] < 2}\n        assert {[r object idletime script_foo] < 2}\n    ",
+    )
     r.run("client", "no-touch", "on")
     test_touch_alters_access_time()
     r.run("client", "no-touch", "off")
@@ -114,6 +111,11 @@ def test_operations_in_no_touch_mode_do_not_alter_the_last_access_time_of_a_key(
         assert_morethan $newlru $oldlru
     } {} {needs:debug}
     """
+    proc(
+        "test_touch_alters_access_time",
+        "",
+        "        r set foo bar\n        r set script_foo bar\n        after 3000\n        r touch foo\n        r eval {redis.call('touch', KEYS[1])} 1 script_foo\n        assert {[r object idletime foo] < 2}\n        assert {[r object idletime script_foo] < 2}\n    ",
+    )
     r.run("set", "foo", "bar")
     r.run("client", "no-touch", "on")
     oldlru = getlru("foo")
@@ -136,6 +138,11 @@ def test_touch_returns_the_number_of_existing_keys_specified(r: ValkeyTestClient
         r touch key0{t} key1{t} key2{t} key3{t}
     } 2
     """
+    proc(
+        "test_touch_alters_access_time",
+        "",
+        "        r set foo bar\n        r set script_foo bar\n        after 3000\n        r touch foo\n        r eval {redis.call('touch', KEYS[1])} 1 script_foo\n        assert {[r object idletime foo] < 2}\n        assert {[r object idletime script_foo] < 2}\n    ",
+    )
     r.run("flushdb")
     r.run("set", "key1{t}", 1)
     r.run("set", "key2{t}", 2)
@@ -151,6 +158,11 @@ def test_command_stats_for_geoadd(r: ValkeyTestClient) -> None:
         assert_match {} [cmdstat zadd]
     } {} {needs:config-resetstat}
     """
+    proc(
+        "test_touch_alters_access_time",
+        "",
+        "        r set foo bar\n        r set script_foo bar\n        after 3000\n        r touch foo\n        r eval {redis.call('touch', KEYS[1])} 1 script_foo\n        assert {[r object idletime foo] < 2}\n        assert {[r object idletime script_foo] < 2}\n    ",
+    )
     r.run("config", "resetstat")
     r.run("GEOADD", "foo", 0, 0, "bar")
     assert fnmatch(str(cmdstat("geoadd")), "*calls=1,*")
@@ -168,6 +180,11 @@ def test_errors_stats_for_geoadd(r: ValkeyTestClient) -> None:
         assert_match {} [cmdstat zadd]
     } {} {needs:config-resetstat}
     """
+    proc(
+        "test_touch_alters_access_time",
+        "",
+        "        r set foo bar\n        r set script_foo bar\n        after 3000\n        r touch foo\n        r eval {redis.call('touch', KEYS[1])} 1 script_foo\n        assert {[r object idletime foo] < 2}\n        assert {[r object idletime script_foo] < 2}\n    ",
+    )
     r.run("config", "resetstat")
     r.run("set", "foo", 1)
     with pytest.raises(
@@ -188,6 +205,11 @@ def test_command_stats_for_expire(r: ValkeyTestClient) -> None:
         assert_match {} [cmdstat del]
     } {} {needs:config-resetstat}
     """
+    proc(
+        "test_touch_alters_access_time",
+        "",
+        "        r set foo bar\n        r set script_foo bar\n        after 3000\n        r touch foo\n        r eval {redis.call('touch', KEYS[1])} 1 script_foo\n        assert {[r object idletime foo] < 2}\n        assert {[r object idletime script_foo] < 2}\n    ",
+    )
     r.run("config", "resetstat")
     r.run("SET", "foo", "bar")
     r.run("EXPIRE", "foo", 0)
@@ -205,6 +227,11 @@ def test_command_stats_for_brpop(r: ValkeyTestClient) -> None:
         assert_match {} [cmdstat rpop]
     } {} {needs:config-resetstat}
     """
+    proc(
+        "test_touch_alters_access_time",
+        "",
+        "        r set foo bar\n        r set script_foo bar\n        after 3000\n        r touch foo\n        r eval {redis.call('touch', KEYS[1])} 1 script_foo\n        assert {[r object idletime foo] < 2}\n        assert {[r object idletime script_foo] < 2}\n    ",
+    )
     r.run("config", "resetstat")
     r.run("LPUSH", "list", "foo")
     r.run("BRPOP", "list", 0)
@@ -228,6 +255,11 @@ def test_command_stats_for_multi(r: ValkeyTestClient) -> None:
         assert_match {*calls=1,*} [cmdstat geoadd]
     } {} {needs:config-resetstat}
     """
+    proc(
+        "test_touch_alters_access_time",
+        "",
+        "        r set foo bar\n        r set script_foo bar\n        after 3000\n        r touch foo\n        r eval {redis.call('touch', KEYS[1])} 1 script_foo\n        assert {[r object idletime foo] < 2}\n        assert {[r object idletime script_foo] < 2}\n    ",
+    )
     r.run("config", "resetstat")
     r.run("MULTI")
     r.run("set", "foo{t}", "bar")
@@ -257,6 +289,11 @@ def test_command_stats_for_scripts(r: ValkeyTestClient) -> None:
         assert_match {*calls=1,*} [cmdstat geoadd]
     } {} {needs:config-resetstat}
     """
+    proc(
+        "test_touch_alters_access_time",
+        "",
+        "        r set foo bar\n        r set script_foo bar\n        after 3000\n        r touch foo\n        r eval {redis.call('touch', KEYS[1])} 1 script_foo\n        assert {[r object idletime foo] < 2}\n        assert {[r object idletime script_foo] < 2}\n    ",
+    )
     r.run("config", "resetstat")
     r.run("set", "mykey", "myval")
     r.run(
@@ -277,6 +314,11 @@ def test_command_count_get_total_number_of_commands(r: ValkeyTestClient) -> None
         assert_morethan [r command count] 0
     }
     """
+    proc(
+        "test_touch_alters_access_time",
+        "",
+        "        r set foo bar\n        r set script_foo bar\n        after 3000\n        r touch foo\n        r eval {redis.call('touch', KEYS[1])} 1 script_foo\n        assert {[r object idletime foo] < 2}\n        assert {[r object idletime script_foo] < 2}\n    ",
+    )
     assert r.run("command", "count") > 0
 
 
@@ -286,6 +328,11 @@ def test_command_getkeys_get(r: ValkeyTestClient) -> None:
         assert_equal {key} [r command getkeys get key]
     }
     """
+    proc(
+        "test_touch_alters_access_time",
+        "",
+        "        r set foo bar\n        r set script_foo bar\n        after 3000\n        r touch foo\n        r eval {redis.call('touch', KEYS[1])} 1 script_foo\n        assert {[r object idletime foo] < 2}\n        assert {[r object idletime script_foo] < 2}\n    ",
+    )
     assert "key" == r.run("command", "getkeys", "get", "key")
 
 
@@ -298,6 +345,11 @@ def test_command_getkeysandflags(r: ValkeyTestClient) -> None:
         assert_equal {{k1 {RO access}} {k2 {OW update}}} [r command getkeysandflags sort k1 store k2]
     }
     """
+    proc(
+        "test_touch_alters_access_time",
+        "",
+        "        r set foo bar\n        r set script_foo bar\n        after 3000\n        r touch foo\n        r eval {redis.call('touch', KEYS[1])} 1 script_foo\n        assert {[r object idletime foo] < 2}\n        assert {[r object idletime script_foo] < 2}\n    ",
+    )
     assert "{k1 {OW update}}" == r.run("command", "getkeysandflags", "set", "k1", "v1")
     assert "{k1 {OW update}} {k2 {OW update}}" == r.run("command", "getkeysandflags", "mset", "k1", "v1", "k2", "v2")
     assert "{k1 {RW access delete}} {k2 {RW insert}}" == r.run(
@@ -312,6 +364,11 @@ def test_command_getkeys_memory_usage(r: ValkeyTestClient) -> None:
         assert_equal {key} [r command getkeys memory usage key]
     }
     """
+    proc(
+        "test_touch_alters_access_time",
+        "",
+        "        r set foo bar\n        r set script_foo bar\n        after 3000\n        r touch foo\n        r eval {redis.call('touch', KEYS[1])} 1 script_foo\n        assert {[r object idletime foo] < 2}\n        assert {[r object idletime script_foo] < 2}\n    ",
+    )
     assert "key" == r.run("command", "getkeys", "memory", "usage", "key")
 
 
@@ -321,6 +378,11 @@ def test_command_getkeys_xgroup(r: ValkeyTestClient) -> None:
         assert_equal {key} [r command getkeys xgroup create key groupname $]
     }
     """
+    proc(
+        "test_touch_alters_access_time",
+        "",
+        "        r set foo bar\n        r set script_foo bar\n        after 3000\n        r touch foo\n        r eval {redis.call('touch', KEYS[1])} 1 script_foo\n        assert {[r object idletime foo] < 2}\n        assert {[r object idletime script_foo] < 2}\n    ",
+    )
     assert "key" == r.run("command", "getkeys", "xgroup", "create", "key", "groupname", "$")
 
 
@@ -330,6 +392,11 @@ def test_command_getkeys_eval_with_keys(r: ValkeyTestClient) -> None:
         assert_equal {key} [r command getkeys eval "return 1" 1 key]
     }
     """
+    proc(
+        "test_touch_alters_access_time",
+        "",
+        "        r set foo bar\n        r set script_foo bar\n        after 3000\n        r touch foo\n        r eval {redis.call('touch', KEYS[1])} 1 script_foo\n        assert {[r object idletime foo] < 2}\n        assert {[r object idletime script_foo] < 2}\n    ",
+    )
     assert "key" == r.run("command", "getkeys", "eval", "return 1", 1, "key")
 
 
@@ -339,6 +406,11 @@ def test_command_getkeys_eval_without_keys(r: ValkeyTestClient) -> None:
         assert_equal {} [r command getkeys eval "return 1" 0]
     }
     """
+    proc(
+        "test_touch_alters_access_time",
+        "",
+        "        r set foo bar\n        r set script_foo bar\n        after 3000\n        r touch foo\n        r eval {redis.call('touch', KEYS[1])} 1 script_foo\n        assert {[r object idletime foo] < 2}\n        assert {[r object idletime script_foo] < 2}\n    ",
+    )
     assert "" == r.run("command", "getkeys", "eval", "return 1", 0)
 
 
@@ -348,6 +420,11 @@ def test_command_getkeys_lcs(r: ValkeyTestClient) -> None:
         assert_equal {key1 key2} [r command getkeys lcs key1 key2]
     }
     """
+    proc(
+        "test_touch_alters_access_time",
+        "",
+        "        r set foo bar\n        r set script_foo bar\n        after 3000\n        r touch foo\n        r eval {redis.call('touch', KEYS[1])} 1 script_foo\n        assert {[r object idletime foo] < 2}\n        assert {[r object idletime script_foo] < 2}\n    ",
+    )
     assert "key1 key2" == r.run("command", "getkeys", "lcs", "key1", "key2")
 
 
@@ -368,6 +445,11 @@ def test_command_getkeys_more_than_256_keys(r: ValkeyTestClient) -> None:
         assert_equal $all_keys_with_target [r command getkeys ZUNIONSTORE target $numkeys {*}$all_keys]
     }
     """
+    proc(
+        "test_touch_alters_access_time",
+        "",
+        "        r set foo bar\n        r set script_foo bar\n        after 3000\n        r touch foo\n        r eval {redis.call('touch', KEYS[1])} 1 script_foo\n        assert {[r object idletime foo] < 2}\n        assert {[r object idletime script_foo] < 2}\n    ",
+    )
     all_keys = []
     numkeys = 260
     i = 1
@@ -386,6 +468,11 @@ def test_command_list_syntax_error(r: ValkeyTestClient) -> None:
         assert_error "ERR syntax error*" {r command list filterby bad_arg bad_arg2}
     }
     """
+    proc(
+        "test_touch_alters_access_time",
+        "",
+        "        r set foo bar\n        r set script_foo bar\n        after 3000\n        r touch foo\n        r eval {redis.call('touch', KEYS[1])} 1 script_foo\n        assert {[r object idletime foo] < 2}\n        assert {[r object idletime script_foo] < 2}\n    ",
+    )
     with pytest.raises(Exception, match="ERR\\ syntax\\ error.*"):
         r.run("command", "list", "bad_arg")
     with pytest.raises(Exception, match="ERR\\ syntax\\ error.*"):
@@ -402,6 +489,11 @@ def test_command_list_without_filterby(r: ValkeyTestClient) -> None:
         assert_not_equal [lsearch $commands "client|list"] -1
     }
     """
+    proc(
+        "test_touch_alters_access_time",
+        "",
+        "        r set foo bar\n        r set script_foo bar\n        after 3000\n        r touch foo\n        r eval {redis.call('touch', KEYS[1])} 1 script_foo\n        assert {[r object idletime foo] < 2}\n        assert {[r object idletime script_foo] < 2}\n    ",
+    )
     commands = r.run("command", "list")
     assert_not_equal(lsearch(commands, "set"), -1)
     assert_not_equal(lsearch(commands, "client|list"), -1)
@@ -413,6 +505,11 @@ def test_command_list_filterby_aclcat_against_non_existing_category(r: ValkeyTes
         assert_equal {} [r command list filterby aclcat non_existing_category]
     }
     """
+    proc(
+        "test_touch_alters_access_time",
+        "",
+        "        r set foo bar\n        r set script_foo bar\n        after 3000\n        r touch foo\n        r eval {redis.call('touch', KEYS[1])} 1 script_foo\n        assert {[r object idletime foo] < 2}\n        assert {[r object idletime script_foo] < 2}\n    ",
+    )
     assert "" == r.run("command", "list", "filterby", "aclcat", "non_existing_category")
 
 
@@ -427,6 +524,11 @@ def test_command_list_filterby_aclcat_list_all_commands_or_subcommands(r: Valkey
         assert_equal [lsearch $commands "set"] -1
     }
     """
+    proc(
+        "test_touch_alters_access_time",
+        "",
+        "        r set foo bar\n        r set script_foo bar\n        after 3000\n        r touch foo\n        r eval {redis.call('touch', KEYS[1])} 1 script_foo\n        assert {[r object idletime foo] < 2}\n        assert {[r object idletime script_foo] < 2}\n    ",
+    )
     commands = r.run("command", "list", "filterby", "aclcat", "scripting")
     assert_not_equal(lsearch(commands, "eval"), -1)
     assert_not_equal(lsearch(commands, "script|kill"), -1)
@@ -460,6 +562,11 @@ def test_command_list_filterby_pattern_list_all_commands_or_subcommands(r: Valke
         assert_equal {} [r command list filterby pattern non_exists*]
     }
     """
+    proc(
+        "test_touch_alters_access_time",
+        "",
+        "        r set foo bar\n        r set script_foo bar\n        after 3000\n        r touch foo\n        r eval {redis.call('touch', KEYS[1])} 1 script_foo\n        assert {[r object idletime foo] < 2}\n        assert {[r object idletime script_foo] < 2}\n    ",
+    )
     assert "set" == r.run("command", "list", "filterby", "pattern", "set")
     assert "get" == r.run("command", "list", "filterby", "pattern", "get")
     commands = r.run("command", "list", "filterby", "pattern", "config*")
@@ -482,6 +589,11 @@ def test_command_list_filterby_module_against_non_existing_module(r: ValkeyTestC
         assert_equal {} [r command list filterby module non_existing_module]
     }
     """
+    proc(
+        "test_touch_alters_access_time",
+        "",
+        "        r set foo bar\n        r set script_foo bar\n        after 3000\n        r touch foo\n        r eval {redis.call('touch', KEYS[1])} 1 script_foo\n        assert {[r object idletime foo] < 2}\n        assert {[r object idletime script_foo] < 2}\n    ",
+    )
     assert "" == r.run("command", "list", "filterby", "module", "non_existing_module")
 
 
@@ -492,6 +604,11 @@ def test_command_info_of_invalid_subcommands(r: ValkeyTestClient) -> None:
         assert_equal {{}} [r command info config|get|key]
     }
     """
+    proc(
+        "test_touch_alters_access_time",
+        "",
+        "        r set foo bar\n        r set script_foo bar\n        after 3000\n        r touch foo\n        r eval {redis.call('touch', KEYS[1])} 1 script_foo\n        assert {[r object idletime foo] < 2}\n        assert {[r object idletime script_foo] < 2}\n    ",
+    )
     assert "{}" == r.run("command", "info", "get|key")
     assert "{}" == r.run("command", "info", "config|get|key")
 
@@ -563,6 +680,10 @@ def linsert(*args):
 
 def lsearch(*args):
     raise NotImplementedError("lsearch")
+
+
+def proc(*args):
+    raise NotImplementedError("proc")
 
 
 def test_touch_alters_access_time(*args):
