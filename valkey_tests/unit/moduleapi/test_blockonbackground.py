@@ -1,13 +1,12 @@
-# ruff: noqa: ANN002, ANN201
+# ruff: noqa: PLR2004, ANN002, ANN201
+
 from fnmatch import fnmatch
 
 import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
 
-"""
-set testmodule file normalize tests/modules/blockonbackground.so
-"""
+testmodule = "tests/modules/blockonbackground.so"
 
 
 """
@@ -56,6 +55,7 @@ def test_blocked_clients_time_tracking_check_blocked_command_that_uses_redismodu
         assert {$p50 >= 100000}
     }
     """
+    r.run("module", "load", testmodule)
     r.run("slowlog", "reset")
     r.run("config", "set", "slowlog-log-slower-than", 200000)
     if_("!$::no_latency", "            assert_equal [r slowlog len] 0\n        ")
@@ -76,9 +76,9 @@ def test_blocked_clients_time_tracking_check_blocked_command_that_uses_redismodu
         "usec_per_call",
     )
     regexp("p50=(.+..+)", latencystatline_debug, "->", "p50")
-    assert_("$usec >= 100000")
-    assert_("$usec_per_call >= 100000")
-    assert_("$p50 >= 100000")
+    assert usec >= 100000
+    assert usec_per_call >= 100000
+    assert p50 >= 100000
 
 
 def test_blocked_clients_time_tracking_check_blocked_command_that_uses_redismodule_blockedclientmeasuretimestart_is_tracking_background_time_even_in_timeout(
@@ -108,6 +108,7 @@ def test_blocked_clients_time_tracking_check_blocked_command_that_uses_redismodu
         assert {$usec_per_call >= 250000}
     }
     """
+    r.run("module", "load", testmodule)
     r.run("slowlog", "reset")
     r.run("config", "set", "slowlog-log-slower-than", 200000)
     if_("!$::no_latency", "            assert_equal [r slowlog len] 0\n        ")
@@ -120,8 +121,8 @@ def test_blocked_clients_time_tracking_check_blocked_command_that_uses_redismodu
     regexp(
         "calls=1,usec=(.*?),usec_per_call=(.*?),rejected_calls=0,failed_calls=0", cmdstatline, "usec", "usec_per_call"
     )
-    assert_("$usec >= 250000")
-    assert_("$usec_per_call >= 250000")
+    assert usec >= 250000
+    assert usec_per_call >= 250000
 
 
 def test_blocked_clients_time_tracking_check_blocked_command_with_multiple_calls_redismodule_blockedclientmeasuretimestart_is_tracking_the_total_background_time(
@@ -150,6 +151,7 @@ def test_blocked_clients_time_tracking_check_blocked_command_with_multiple_calls
         assert {$usec_per_call >= 60000}
     }
     """
+    r.run("module", "load", testmodule)
     r.run("slowlog", "reset")
     r.run("config", "set", "slowlog-log-slower-than", 200000)
     if_("!$::no_latency", "            assert_equal [r slowlog len] 0\n        ")
@@ -162,8 +164,8 @@ def test_blocked_clients_time_tracking_check_blocked_command_with_multiple_calls
     regexp(
         "calls=1,usec=(.*?),usec_per_call=(.*?),rejected_calls=0,failed_calls=0", cmdstatline, "usec", "usec_per_call"
     )
-    assert_("$usec >= 60000")
-    assert_("$usec_per_call >= 60000")
+    assert usec >= 60000
+    assert usec_per_call >= 60000
 
 
 def test_blocked_clients_time_tracking_check_blocked_command_without_calling_redismodule_blockedclientmeasuretimestart_is_not_reporting_background_time(
@@ -183,6 +185,7 @@ def test_blocked_clients_time_tracking_check_blocked_command_without_calling_red
         }
     }
     """
+    r.run("module", "load", testmodule)
     r.run("slowlog", "reset")
     r.run("config", "set", "slowlog-log-slower-than", 200000)
     if_("!$::no_latency", "            assert_equal [r slowlog len] 0\n        ")
@@ -221,6 +224,7 @@ def test_client_unblock_works_only_for_modules_with_timeout_support(r: ValkeyTes
         assert_equal "foobar" [$rd read]
     }
     """
+    r.run("module", "load", testmodule)
     rd = ValkeyTestClient.create_from(r)
     rd.run("client", "id")
     id = rd.run("read")
@@ -236,10 +240,6 @@ def test_client_unblock_works_only_for_modules_with_timeout_support(r: ValkeyTes
 
 
 # --- stubs for unimplemented TCL helpers ---
-
-
-def assert_(*args):
-    raise NotImplementedError("assert_")
 
 
 def cmdrstat(*args):

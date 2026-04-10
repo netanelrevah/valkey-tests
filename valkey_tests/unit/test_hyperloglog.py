@@ -212,12 +212,18 @@ def test_hyperloglog_promote_to_dense_well_in_different_hll_sparse_max_bytes(r: 
     set_("max(0)", 100)
     set_("max(1)", 500)
     set_("max(2)", 3000)
-    for_(
-        "set i 0",
-        "$i < [array size max]",
-        "incr i",
-        "            r config set hll-sparse-max-bytes $max($i)\n            r del hll\n            r pfadd hll\n            set len [r strlen hll]\n            while {$len <= $max($i)} {\n                assert {[r pfdebug encoding hll] eq {sparse}}\n                set elements {}\n                for {set j 0} {$j < 10} {incr j} { lappend elements [expr rand()]}\n                r pfadd hll {*}$elements\n                set len [r strlen hll]\n            }\n            assert {[r pfdebug encoding hll] eq {dense}}\n        ",
-    )
+    i = 0
+    while i < array("size", "max"):
+        r.run("config", "set", "hll-sparse-max-bytes", max, "($i)")
+        r.run("del", "hll")
+        r.run("pfadd", "hll")
+        len = r.run("strlen", "hll")
+        while_(
+            "$len <= $max($i)",
+            "                assert {[r pfdebug encoding hll] eq {sparse}}\n                set elements {}\n                for {set j 0} {$j < 10} {incr j} { lappend elements [expr rand()]}\n                r pfadd hll {*}$elements\n                set len [r strlen hll]\n            ",
+        )
+        assert r.run("pfdebug", "encoding", "hll") == "dense"
+        i += 1
 
 
 def test_hyperloglog_sparse_encoding_stress_test(r: ValkeyTestClient) -> None:
@@ -716,10 +722,6 @@ def binary(*args):
 
 def expr(*args):
     raise NotImplementedError("expr")
-
-
-def for_(*args):
-    raise NotImplementedError("for_")
 
 
 def if_(*args):

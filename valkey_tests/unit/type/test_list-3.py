@@ -1,4 +1,4 @@
-# ruff: noqa: F841, ANN002, ANN201
+# ruff: noqa: ANN002, ANN201
 
 import pytest
 
@@ -282,10 +282,8 @@ def test_stress_tester_for_3343_alike_bugs_comp_comp(r: ValkeyTestClient, comp: 
         "!$::external",
         '            # check valgrind and asan report for invalid reads after execute\n            # command so that we have a report that is easier to reproduce\n            set valgrind_errors [find_valgrind_errors [srv 0 stderr] false]\n            set asan_errors [sanitizer_errors_from_file [srv 0 stderr]]\n            if {$valgrind_errors != "" || $asan_errors != ""} {\n                puts "valgrind or asan found an issue"\n                set print_commands true\n            }\n        ',
     )
-    if_(
-        "$print_commands",
-        '            puts "violating commands:"\n            foreach cmd $sent {\n                puts $cmd\n            }\n        ',
-    )
+    if print_commands:
+        foreach("cmd", sent, "                puts $cmd\n            ")
     assert crash == "false"
 
 
@@ -298,6 +296,10 @@ def catch(*args):
 
 def config_set(*args):
     raise NotImplementedError("config_set")
+
+
+def foreach(*args):
+    raise NotImplementedError("foreach")
 
 
 def generate_cmd_on_list_key(*args):

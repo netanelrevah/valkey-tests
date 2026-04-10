@@ -1,10 +1,6 @@
-"""
-set testmodule file normalize tests/modules/hooks.so
-"""
+testmodule = "tests/modules/hooks.so"
 
-"""
-set authmodule file normalize tests/modules/auth.so
-"""
+authmodule = "tests/modules/auth.so"
 
 
 """

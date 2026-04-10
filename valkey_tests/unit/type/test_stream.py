@@ -56,10 +56,7 @@ proc streamSimulateXRANGE {items start end} {
 }
 """
 
-
-"""
-set content {}
-"""
+content = []
 
 pytestmark = [pytest.mark.stream]
 
@@ -133,8 +130,8 @@ def test_xadd_ids_are_incremental_when_ms_is_the_same_as_well(r: ValkeyTestClien
     r.run("XADD", "mystream", "*", "item", 2, "value", "b")
     r.run("XADD", "mystream", "*", "item", 3, "value", "c")
     lassign(r.run("exec"), "id1", "id2", "id3")
-    assert_("[streamCompareID $id1 $id2] == -1")
-    assert_("[streamCompareID $id2 $id3] == -1")
+    assert stream_compare_id(id1, id2) == -1
+    assert stream_compare_id(id2, id3) == -1
 
 
 def test_xadd_ids_correctly_report_an_error_when_overflowing(r: ValkeyTestClient) -> None:
@@ -166,7 +163,7 @@ def test_xadd_auto_generated_sequence_is_incremented_for_last_id(r: ValkeyTestCl
     id1 = r.run("XADD", "mystream", "123-456", "item", 1, "value", "a")
     id2 = r.run("XADD", "mystream", "123-*", "item", 2, "value", "b")
     lassign(split(id2, "-"), "_", "seq")
-    assert_("$seq == 457")
+    assert seq == 457
     assert stream_compare_id(id1, id2) == -1
 
 
@@ -185,7 +182,7 @@ def test_xadd_auto_generated_sequence_is_zero_for_future_timestamp_id(r: ValkeyT
     id1 = r.run("XADD", "mystream", "123-456", "item", 1, "value", "a")
     id2 = r.run("XADD", "mystream", "789-*", "item", 2, "value", "b")
     lassign(split(id2, "-"), "_", "seq")
-    assert_("$seq == 0")
+    assert seq == 0
     assert stream_compare_id(id1, id2) == -1
 
 
@@ -229,7 +226,7 @@ def test_xadd_0_should_succeed(r: ValkeyTestClient) -> None:
     r.run("DEL", "mystream")
     id = r.run("xadd", "mystream", "0-*", "a", "b")
     lassign(split(id, "-"), "_", "seq")
-    assert_("$seq == 1")
+    assert seq == 1
 
 
 def test_xadd_with_maxlen_option(r: ValkeyTestClient) -> None:

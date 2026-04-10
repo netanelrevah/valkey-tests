@@ -1,5 +1,4 @@
 # ruff: noqa: PLR2004, F841, ANN002, ANN201
-
 from fnmatch import fnmatch
 
 import pytest
@@ -137,29 +136,9 @@ proc verify_geo_edge_response_generic {expected_response} {
 }
 """
 
+regression_vectors = "    {1482225976969 7083 81.634948934258375 30.561509253718668}\n    {1482340074151 5416 -70.863281847379767 -46.347003465679947}\n    {1499014685896 6064 -89.818768962202014 -40.463868561416803}\n    {1412 156 149.29737817929004 15.95807862745508}\n    {441574 143 59.235461856813856 66.269555127373678}\n    {160645 187 -101.88575239939883 49.061997951502917}\n    {750269 154 -90.187939661642517 66.615930412251487}\n    {342880 145 163.03472387745728 64.012747720821181}\n    {729955 143 137.86663517256579 63.986745399416776}\n    {939895 151 59.149620271823181 65.204186651485145}\n    {1412 156 149.29737817929004 15.95807862745508}\n    {564862 149 84.062063109158544 -65.685403922426232}\n    {1546032440391 16751 -1.8175081637769495 20.665668878082954}\n"
 
-"""
-set regression_vectors {
-    {1482225976969 7083 81.634948934258375 30.561509253718668}
-    {1482340074151 5416 -70.863281847379767 -46.347003465679947}
-    {1499014685896 6064 -89.818768962202014 -40.463868561416803}
-    {1412 156 149.29737817929004 15.95807862745508}
-    {441574 143 59.235461856813856 66.269555127373678}
-    {160645 187 -101.88575239939883 49.061997951502917}
-    {750269 154 -90.187939661642517 66.615930412251487}
-    {342880 145 163.03472387745728 64.012747720821181}
-    {729955 143 137.86663517256579 63.986745399416776}
-    {939895 151 59.149620271823181 65.204186651485145}
-    {1412 156 149.29737817929004 15.95807862745508}
-    {564862 149 84.062063109158544 -65.685403922426232}
-    {1546032440391 16751 -1.8175081637769495 20.665668878082954}
-}
-"""
-
-
-"""
-set rv_idx 0
-"""
+rv_idx = 0
 
 pytestmark = [pytest.mark.geo]
 
@@ -2066,7 +2045,7 @@ def test_geosearch_fuzzy_test_type(r: ValkeyTestClient, type: str) -> None:
         "[incr attempt -1]",
         '            set rv [lindex $regression_vectors $rv_idx]\n            incr rv_idx\n\n            set radius_km 0; set width_km 0; set height_km 0\n            unset -nocomplain debuginfo\n            set srand_seed [clock milliseconds]\n            if {$rv ne {}} {set srand_seed [lindex $rv 0]}\n            lappend debuginfo "srand_seed is $srand_seed"\n            expr {srand($srand_seed)} ; # If you need a reproducible run\n            r del mypoints\n\n            if {[randomInt 10] == 0} {\n                # From time to time use very big radiuses\n                if {$type == "byradius"} {\n                    set radius_km [expr {[randomInt 5000]+10}]\n                } elseif {$type == "bybox"} {\n                    set width_km [expr {[randomInt 5000]+10}]\n                    set height_km [expr {[randomInt 5000]+10}]\n                }\n            } else {\n                # Normally use a few - ~200km radiuses to stress\n                # test the code the most in edge cases.\n                if {$type == "byradius"} {\n                    set radius_km [expr {[randomInt 200]+10}]\n                } elseif {$type == "bybox"} {\n                    set width_km [expr {[randomInt 200]+10}]\n                    set height_km [expr {[randomInt 200]+10}]\n                }\n            }\n            if {$rv ne {}} {\n                set radius_km [lindex $rv 1]\n                set width_km [lindex $rv 1]\n                set height_km [lindex $rv 1]\n            }\n            geo_random_point search_lon search_lat\n            if {$rv ne {}} {\n                set search_lon [lindex $rv 2]\n                set search_lat [lindex $rv 3]\n            }\n            lappend debuginfo "Search area: $search_lon,$search_lat $radius_km $width_km $height_km km"\n            set tcl_result {}\n            set argv {}\n            for {set j 0} {$j < 20000} {incr j} {\n                geo_random_point lon lat\n                lappend argv $lon $lat "place:$j"\n                if {$type == "byradius"} {\n                    if {[pointInCircle $radius_km $lon $lat $search_lon $search_lat]} {\n                        lappend tcl_result "place:$j"\n                    }\n                } elseif {$type == "bybox"} {\n                    if {[pointInRectangle $width_km $height_km $lon $lat $search_lon $search_lat 1]} {\n                        lappend tcl_result "place:$j"\n                    }\n                }\n                lappend debuginfo "place:$j $lon $lat"\n            }\n            r geoadd mypoints {*}$argv\n            if {$type == "byradius"} {\n                set res [lsort [r geosearch mypoints fromlonlat $search_lon $search_lat byradius $radius_km km]]\n            } elseif {$type == "bybox"} {\n                set res [lsort [r geosearch mypoints fromlonlat $search_lon $search_lat bybox $width_km $height_km km]]\n            }\n            set res2 [lsort $tcl_result]\n            set test_result OK\n\n            if {$res != $res2} {\n                set rounding_errors 0\n                set diff [compare_lists $res $res2]\n                foreach place $diff {\n                    lassign [lindex [r geopos mypoints $place] 0] lon lat\n                    set mydist [geo_distance $lon $lat $search_lon $search_lat]\n                    set mydist [expr $mydist/1000]\n                    if {$type == "byradius"} {\n                        if {($mydist / $radius_km) > 0.999} {\n                            incr rounding_errors\n                            continue\n                        }\n                        if {$mydist < [expr {$radius_km*1000}]} {\n                            # This is a false positive for the server since given the\n                            # same points the higher precision calculation provided\n                            # by TCL shows the point within range\n                            incr rounding_errors\n                            continue\n                        }\n                    } elseif {$type == "bybox"} {\n                        # we add 0.1% error for floating point calculation error\n                        if {[pointInRectangle $width_km $height_km $lon $lat $search_lon $search_lat 1.001]} {\n                            incr rounding_errors\n                            continue\n                        }\n                    }\n                }\n\n                # Make sure this is a real error and not a rounidng issue.\n                if {[llength $diff] == $rounding_errors} {\n                    set res $res2; # Error silenced\n                }\n            }\n\n            if {$res != $res2} {\n                set diff [compare_lists $res $res2]\n                puts "*** Possible problem in GEO radius query ***"\n                puts "Valkey: $res"\n                puts "Tcl  : $res2"\n                puts "Diff : $diff"\n                puts [join $debuginfo "\\n"]\n                foreach place $diff {\n                    if {[lsearch -exact $res2 $place] != -1} {\n                        set where "(only in Tcl)"\n                    } else {\n                        set where "(only in Valkey)"\n                    }\n                    lassign [lindex [r geopos mypoints $place] 0] lon lat\n                    set mydist [geo_distance $lon $lat $search_lon $search_lat]\n                    set mydist [expr $mydist/1000]\n                    puts "$place -> [r geopos mypoints $place] $mydist $where"\n                }\n                set test_result FAIL\n            }\n            unset -nocomplain debuginfo\n            if {$test_result ne {OK}} break\n        ',
     )
-    set_("test_result")
+    assert test_result == "OK"
 
 
 def test_geosearch_box_edges_fuzzy_test(r: ValkeyTestClient) -> None:
@@ -2180,10 +2159,6 @@ def lassign(*args):
 
 def lindex(*args):
     raise NotImplementedError("lindex")
-
-
-def set_(*args):
-    raise NotImplementedError("set_")
 
 
 def verify_geo_edge_response_bylonlat(*args):

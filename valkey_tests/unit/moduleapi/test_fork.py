@@ -4,9 +4,7 @@ import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
 
-"""
-set testmodule file normalize tests/modules/fork.so
-"""
+testmodule = "tests/modules/fork.so"
 
 pytestmark = [pytest.mark.modules]
 
@@ -25,6 +23,7 @@ def test_module_fork(r: ValkeyTestClient) -> None:
         r fork.exitcode
     } {3}
     """
+    r.run("module", "load", testmodule)
     r.run("fork.create", 3, 100000)
     wait_for_condition(20, 100, lambda: r.run("fork.exitcode") != -1, lambda: fail("fork didn't terminate"))
     assert r.run("fork.exitcode") == "3"
@@ -52,6 +51,7 @@ def test_module_fork_kill(r: ValkeyTestClient) -> None:
         assert {[count_log_message 0 "fork child exiting"] eq "1"}
     }
     """
+    r.run("module", "load", testmodule)
     r.run("fork.create", 3, 100000000)
     wait_for_condition(
         20, 100, lambda: count_log_message(0, "fork child started") == 2, lambda: fail("fork didn't start")
@@ -70,6 +70,7 @@ def test_unload_the_module_fork(r: ValkeyTestClient) -> None:
         assert_equal {OK} [r module unload fork]
     }
     """
+    r.run("module", "load", testmodule)
     assert "OK" == r.run("module", "unload", "fork")
 
 

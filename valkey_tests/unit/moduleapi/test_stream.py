@@ -4,9 +4,7 @@ import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
 
-"""
-set testmodule file normalize tests/modules/stream.so
-"""
+testmodule = "tests/modules/stream.so"
 
 pytestmark = [pytest.mark.modules]
 
@@ -36,6 +34,7 @@ def test_module_stream_add_and_delete(r: ValkeyTestClient) -> None:
         assert_error "ERR StreamDelete*" {r stream.delete mystream 123-456}
     }
     """
+    r.run("module", "load", testmodule)
     r.run("del", "mystream")
     streamid1 = r.run("stream.add", "mystream", "item", 1, "value", "a")
     streamid2 = r.run("stream.add", "mystream", "item", 2, "value", "b")
@@ -86,6 +85,7 @@ def test_module_stream_add_unblocks_blocking_xread(r: ValkeyTestClient) -> None:
         assert_equal "{mystream {{$id {field 2 value b}}}}" [$rd2 read]
     }
     """
+    r.run("module", "load", testmodule)
     r.run("del", "mystream")
     rd1 = ValkeyTestClient.create_from(r)
     rd1.run("XREAD", "BLOCK", 3000, "STREAMS", "mystream", "$")
@@ -108,6 +108,7 @@ def test_module_stream_add_benchmark_1m_stream_add(r: ValkeyTestClient) -> None:
         assert_equal $result $n
     }
     """
+    r.run("module", "load", testmodule)
     n = 1000000
     r.run("del", "mystream")
     result = r.run("stream.addn", "mystream", n, "field", "value")
@@ -139,6 +140,7 @@ def test_module_stream_iterator(r: ValkeyTestClient) -> None:
         assert_equal $result3 [list [list $streamid2 {item 2 value b}]]
     }
     """
+    r.run("module", "load", testmodule)
     r.run("del", "mystream")
     streamid1 = r.run("xadd", "mystream", "*", "item", 1, "value", "a")
     streamid2 = r.run("xadd", "mystream", "*", "item", 2, "value", "b")
@@ -173,6 +175,7 @@ def test_module_stream_iterator_delete(r: ValkeyTestClient) -> None:
             [r stream.range mystream - +]
     }
     """
+    r.run("module", "load", testmodule)
     r.run("del", "mystream")
     id1 = r.run("xadd", "mystream", "*", "normal", "item")
     id2 = r.run("xadd", "mystream", "*", "selfdestruct", "yes")
@@ -211,6 +214,7 @@ def test_module_stream_trim_by_length(r: ValkeyTestClient) -> None:
         assert_equal 0     [r xlen mystream]
     }
     """
+    r.run("module", "load", testmodule)
     r.run("del", "mystream")
     r.run("xadd", "mystream", "*", "item", 1, "value", "a")
     r.run("xadd", "mystream", "*", "item", 2, "value", "b")
@@ -263,6 +267,7 @@ def test_module_stream_trim_by_id(r: ValkeyTestClient) -> None:
         assert_equal 0     [r xlen mystream]
     }
     """
+    r.run("module", "load", testmodule)
     r.run("del", "mystream")
     r.run("xadd", "mystream", "*", "item", 1, "value", "a")
     r.run("xadd", "mystream", "*", "item", 2, "value", "b")
@@ -293,6 +298,7 @@ def test_unload_the_module_stream(r: ValkeyTestClient) -> None:
         assert_equal {OK} [r module unload stream]
     }
     """
+    r.run("module", "load", testmodule)
     assert "OK" == r.run("module", "unload", "stream")
 
 

@@ -1,4 +1,4 @@
-# ruff: noqa: ANN002, ANN201
+# ruff: noqa: RUF043, ANN002, ANN201
 
 from fnmatch import fnmatch
 
@@ -6,9 +6,7 @@ import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
 
-"""
-set testmodule file normalize tests/modules/basics.so
-"""
+testmodule = "tests/modules/basics.so"
 
 pytestmark = [pytest.mark.modules]
 
@@ -19,6 +17,7 @@ def test_test_module_api_basics(r: ValkeyTestClient) -> None:
         r test.basics
     } {ALL TESTS PASSED}
     """
+    r.run("module", "load", testmodule)
     assert r.run("test.basics") == "ALL TESTS PASSED"
 
 
@@ -37,6 +36,7 @@ def test_test_rm_call_auto_mode(r: ValkeyTestClient) -> None:
         assert_equal [dict get $reply f2] v2
     }
     """
+    r.run("module", "load", testmodule)
     r.run("hello", 2)
     reply = r.run("test.rmcallautomode")
     assert reply[0] == "f1"
@@ -65,6 +65,7 @@ def test_test_get_resp(r: ValkeyTestClient) -> None:
         }
     }
     """
+    r.run("module", "load", testmodule)
     foreach(
         "resp",
         "3 2",
@@ -79,7 +80,11 @@ def test_busy_module_name(r: ValkeyTestClient) -> None:
         verify_log_message 0 "*Module name is busy*" 0
     }
     """
-    assert_error("ERR Error loading the extension. Please check the server logs.", "r module load $testmodule")
+    r.run("module", "load", testmodule)
+    with pytest.raises(
+        Exception, match="ERR\\ Error\\ loading\\ the\\ extension\\.\\ Please\\ check\\ the\\ server\\ logs\\."
+    ):
+        r.run("module", "load", testmodule)
     verify_log_message(0, "*Module name is busy*", 0)
 
 
@@ -102,6 +107,7 @@ def test_test_latency(r: ValkeyTestClient) -> None:
         assert_match {*test * 2 2*} [r latency latest]
     }
     """
+    r.run("module", "load", testmodule)
     r.run("config", "set", "latency-monitor-threshold", 0)
     r.run("latency", "reset")
     r.run("test.latency", 0)
@@ -123,6 +129,7 @@ def test_unload_the_module_basics(r: ValkeyTestClient) -> None:
         assert_equal {OK} [r module unload test]
     }
     """
+    r.run("module", "load", testmodule)
     assert "OK" == r.run("module", "unload", "test")
 
 
@@ -138,16 +145,14 @@ def test_module_command_disabled(r: ValkeyTestClient) -> None:
         assert_error "ERR *MODULE command not allowed*" {r module load $testmodule}
     }
     """
-    assert_error("NOAUTH *", "r module load $testmodule")
+    with pytest.raises(Exception, match="NOAUTH\\ .*"):
+        r.run("module", "load", testmodule)
     r.run("auth", "mypass")
-    assert_error("ERR *MODULE command not allowed*", "r module load $testmodule")
+    with pytest.raises(Exception, match="ERR\\ .*MODULE\\ command\\ not\\ allowed.*"):
+        r.run("module", "load", testmodule)
 
 
 # --- stubs for unimplemented TCL helpers ---
-
-
-def assert_error(*args):
-    raise NotImplementedError("assert_error")
 
 
 def foreach(*args):

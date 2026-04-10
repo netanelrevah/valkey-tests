@@ -4,9 +4,7 @@ import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
 
-"""
-set testmodule file normalize tests/modules/cmdintrospection.so
-"""
+testmodule = "tests/modules/cmdintrospection.so"
 
 pytestmark = [pytest.mark.modules]
 
@@ -32,14 +30,16 @@ def test_module_command_introspection_via_command_info(r: ValkeyTestClient) -> N
         }
     }
     """
+    r.run("module", "load", testmodule)
     redis_reply = r.run("command", "info", "xadd")[0]
     module_reply = r.run("command", "info", "cmdintrospection.xadd")[0]
     i = 1
     while i < len(redis_reply):
-        if_(
-            "$i == 2",
-            '                # Remove the "module" flag\n                set mylist [lindex $module_reply $i]\n                set idx [lsearch $mylist "module"]\n                set mylist [lreplace $mylist $idx $idx]\n                lset module_reply $i $mylist\n            ',
-        )
+        if i == 2:
+            mylist = module_reply[i]
+            idx = lsearch(mylist, "module")
+            mylist = lreplace(mylist, idx, idx)
+            lset("module_reply", i, mylist)
         if i == 6:
             continue_()
         assert redis_reply[i] == module_reply[i]
@@ -62,6 +62,7 @@ def test_module_command_introspection_via_command_docs(r: ValkeyTestClient) -> N
         assert_equal $redis_reply $module_reply
     }
     """
+    r.run("module", "load", testmodule)
     redis_reply = dict_("create", "*", r.run("command", "docs", "xadd")[1])
     module_reply = dict_("create", "*", r.run("command", "docs", "cmdintrospection.xadd")[1])
     dict_("unset", "redis_reply", "group")
@@ -78,6 +79,7 @@ def test_unload_the_module_cmdintrospection(r: ValkeyTestClient) -> None:
         assert_equal {OK} [r module unload cmdintrospection]
     }
     """
+    r.run("module", "load", testmodule)
     assert "OK" == r.run("module", "unload", "cmdintrospection")
 
 
@@ -92,5 +94,13 @@ def dict_(*args):
     raise NotImplementedError("dict_")
 
 
-def if_(*args):
-    raise NotImplementedError("if_")
+def lreplace(*args):
+    raise NotImplementedError("lreplace")
+
+
+def lsearch(*args):
+    raise NotImplementedError("lsearch")
+
+
+def lset(*args):
+    raise NotImplementedError("lset")

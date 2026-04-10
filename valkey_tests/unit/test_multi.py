@@ -291,7 +291,6 @@ def test_exec_fail_on_watched_key_modified_by_sort_with_store_even_if_the_result
     r.run("exec")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_exec_fail_on_lazy_expired_watched_key(r: ValkeyTestClient) -> None:
     """
     test {EXEC fail on lazy expired WATCHed key} {
@@ -330,7 +329,7 @@ def test_exec_fail_on_lazy_expired_watched_key(r: ValkeyTestClient) -> None:
     if False:
         pass
     r.run("debug", "set-active-expire", 1)
-    # TODO: set _ res
+    _ = res
 
 
 def test_watch_stale_keys_should_not_fail_exec(r: ValkeyTestClient) -> None:

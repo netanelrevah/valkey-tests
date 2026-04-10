@@ -338,6 +338,7 @@ class TCLBodyTranslator:
             lambda: self._try_statement(command, defined_vars),
             lambda: self._try_stub_call(command, defined_vars),
             lambda: self._try_var_command(command, defined_vars),
+            lambda: self._try_dynamic_name_call(command, defined_vars),
         ]:
             result = attempt()
             if result is not None:
@@ -416,15 +417,24 @@ class TCLBodyTranslator:
 
     @classmethod
     def _try_var_command(cls, command: TCLCommandWord, defined_vars: set[str]) -> list[str] | None:
+        # Handle {*}$var — TCL list expansion: call first element as command with rest as args
+        if command.name.startswith("{*}$"):
+            var_name = command.name[4:]
+            if var_name.isidentifier():
+                return [f"r.run(*{_safe_var_name(var_name)}[1:])"]
+            return None
         if not command.name.startswith("$"):
             return None
         var_name = command.name[1:]
-        if not var_name.isidentifier() or var_name not in defined_vars or not command.args:
+        if not var_name.isidentifier():
+            return None
+        # No-arg variable command (e.g. $rd close without subcommand)
+        if not command.args:
             return None
         subcmd_arg = command.args[0]
         if isinstance(subcmd_arg, TCLWord):
             subcmd_str = repr(subcmd_arg.value)
-        elif isinstance(subcmd_arg, TCLVariableSubstitutionWord) and subcmd_arg.variable_name in defined_vars:
+        elif isinstance(subcmd_arg, TCLVariableSubstitutionWord):
             subcmd_str = _safe_var_name(subcmd_arg.variable_name)
         else:
             return None
@@ -432,6 +442,27 @@ class TCLBodyTranslator:
         if rest is None:
             return None
         return [f"{_safe_var_name(var_name)}.run({', '.join([subcmd_str, *rest])})"]
+
+    @classmethod
+    def _try_dynamic_name_call(cls, command: TCLCommandWord, defined_vars: set[str]) -> list[str] | None:
+        """Handle commands with variable substitution in the name: prefix$var args."""
+        name = command.name
+        dollar_pos = name.find("$")
+        if dollar_pos < 0:
+            return None
+        prefix = name[:dollar_pos]
+        var_part = name[dollar_pos + 1 :]
+        if not var_part.isidentifier():
+            return None
+        args = ArgumentTranslator.translate_all(command.args, defined_vars)
+        if args is None:
+            return None
+        safe_var = _safe_var_name(var_part)
+        if prefix:
+            func_expr = f'globals()[f"{prefix}{{{safe_var}}}"]'
+        else:
+            func_expr = f"globals()[{safe_var}]"
+        return [f"{func_expr}({', '.join(args)})"]
 
     @classmethod
     def _make_todo(cls, command: TCLCommandWord, is_last: bool, expected: str | None) -> list[str]:

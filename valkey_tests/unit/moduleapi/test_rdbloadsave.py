@@ -4,9 +4,7 @@ import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
 
-"""
-set testmodule file normalize tests/modules/rdbloadsave.so
-"""
+testmodule = "tests/modules/rdbloadsave.so"
 
 pytestmark = [pytest.mark.modules]
 
@@ -27,6 +25,7 @@ def test_module_rdbloadsave_sanity(r: ValkeyTestClient) -> None:
         assert_equal 1 [r get x]
     }
     """
+    r.run("module", "load", testmodule)
     r.run("test.sanity")
     with pytest.raises(Exception, match=".*No\\ such\\ file\\ or\\ directory.*"):
         r.run("test.rdbload", "sanity.rdb")
@@ -78,6 +77,7 @@ def test_module_rdbloadsave_test_with_pipelining(r: ValkeyTestClient) -> None:
         r config set key-load-delay 0
     }
     """
+    r.run("module", "load", testmodule)
     r.run("config", "set", "save", "")
     r.run("config", "set", "loading-process-events-interval-bytes", 1024)
     r.run("config", "set", "key-load-delay", 50)
@@ -139,6 +139,7 @@ def test_module_rdbloadsave_with_aof(r: ValkeyTestClient) -> None:
         r config set appendonly no
     }
     """
+    r.run("module", "load", testmodule)
     r.run("config", "set", "save", "")
     r.run("config", "set", "appendonly", "yes")
     r.run("config", "set", "auto-aof-rewrite-percentage", 0)
@@ -190,6 +191,7 @@ def test_module_rdbloadsave_with_bgsave(r: ValkeyTestClient) -> None:
         r config set rdb-key-save-delay 0
     }
     """
+    r.run("module", "load", testmodule)
     r.run("flushdb")
     r.run("config", "set", "save", "")
     r.run("set", "k", "v1")
@@ -236,6 +238,7 @@ def test_module_rdbloadsave_calls_rdbsave_in_a_module_fork(r: ValkeyTestClient) 
         r config set rdb-key-save-delay 0
     }
     """
+    r.run("module", "load", testmodule)
     r.run("flushdb")
     r.run("config", "set", "save", "")
     r.run("config", "set", "rdb-key-save-delay", 500000)
@@ -257,6 +260,7 @@ def test_unload_the_module_rdbloadsave(r: ValkeyTestClient) -> None:
         assert_equal {OK} [r module unload rdbloadsave]
     }
     """
+    r.run("module", "load", testmodule)
     assert "OK" == r.run("module", "unload", "rdbloadsave")
 
 

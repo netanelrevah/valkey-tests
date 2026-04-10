@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841, N806, ANN001, ANN002, ANN201
+# ruff: noqa: PLR2004, PLR1714, F841, N806, ANN001, ANN002, ANN201
 import time
 from fnmatch import fnmatch
 
@@ -63,13 +63,10 @@ def test_client_tracking_prefixes_memory_overhead(r: ValkeyTestClient) -> None:
     arch_bits = s("arch_bits")
     tot_mem_after = get_field_in_client_info(r.run("client", "info"), "tot-mem")
     diff = expr(tot_mem_after, "-", tot_mem_before)
-    if_(
-        "$arch_bits == 64",
-        "            assert_lessthan $diff 300000\n        ",
-        "elseif",
-        "$arch_bits == 32",
-        "            assert_lessthan $diff 200000\n        ",
-    )
+    if arch_bits == 64:
+        assert diff < 300000
+    elif arch_bits == 32:
+        assert diff < 200000
     r.run("CLIENT", "TRACKING", "off")
 
 
@@ -681,7 +678,6 @@ def test_tracking_only_occurs_for_scripts_when_a_command_calls_a_read_only_comma
     assert "PONG" == r.run("ping")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_resp3_client_gets_tracking_redir_broken_push_message_after_cached_key_changed_when_rediretion_client_is_terminated(
     r: ValkeyTestClient,
 ) -> None:
@@ -745,7 +741,7 @@ def test_resp3_client_gets_tracking_redir_broken_push_message_after_cached_key_c
     wait_for_condition(
         1000, 50, lambda: r.run("PING") != "PONG", lambda: fail("Failed to get redirect broken indication")
     )
-    # TODO: assert_equal redir_error response
+    assert redir_error == response
     assert "PONG" == r.run("read")
 
 
@@ -991,7 +987,6 @@ def test_no_invalidation_message_when_using_optout_option_with_client_caching_no
     assert res == "key2"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_able_to_redirect_to_a_resp3_client(r: ValkeyTestClient) -> None:
     """
     test {Able to redirect to a RESP3 client} {
@@ -1032,7 +1027,7 @@ def test_able_to_redirect_to_a_resp3_client(r: ValkeyTestClient) -> None:
     assert "__redis__:invalidate" == res[1]
     rd_redirection.run("HELLO", 3)
     res = rd_redirection.run("read")
-    # TODO: assert_equal dict get $reply proto 3
+    assert reply["proto"] == 3
     rd_redirection.run("SUBSCRIBE", "__redis__:invalidate")
     res = rd_redirection.run("read")
     assert "__redis__:invalidate" == res[1]
@@ -1439,7 +1434,7 @@ def test_tracking_gets_notification_on_tracking_table_key_eviction(r: ValkeyTest
         1,
         "            set keys [lindex [$rd_redirection read] 2]\n            if {$keys eq {key1{t}} || $keys eq {key2{t}}} break\n        ",
     )
-    assert_("$keys eq {key1{t}} || $keys eq {key2{t}}")
+    assert (keys == "key1{t}") or (keys == "key2{t}")
 
 
 def test_invalidation_message_received_for_flushall(r: ValkeyTestClient) -> None:
@@ -1691,10 +1686,10 @@ def test_tracking_info_is_correct(r: ValkeyTestClient) -> None:
     regexp("\r\ntracking_total_keys:(.*?)\r\n", info, "_", "total_keys")
     regexp("\r\ntracking_total_prefixes:(.*?)\r\n", info, "_", "total_prefixes")
     regexp("\r\ntracking_clients:(.*?)\r\n", info, "_", "tracking_clients")
-    assert_("$total_items == 2")
-    assert_("$total_keys == 2")
-    assert_("$total_prefixes == 1")
-    assert_("$tracking_clients == 2")
+    assert total_items == 2
+    assert total_keys == 2
+    assert total_prefixes == 1
+    assert tracking_clients == 2
 
 
 def test_client_getredir_provides_correct_client_id(r: ValkeyTestClient) -> None:
@@ -2143,13 +2138,10 @@ def test_resp_resp_based_basic_invalidation_with_client_reply_off(r: ValkeyTestC
     rd.run("read")
     rd.run("client", "reply", "off")
     rd_sg.run("set", "foo", "bar2")
-    if_(
-        "$resp == 3",
-        "                assert_equal {invalidate foo} [$rd read]\n            ",
-        "elseif",
-        "$resp == 2",
-        " ",
-    )
+    if resp == 3:
+        assert "invalidate foo" == rd.run("read")
+    elif resp == 2:
+        pass
     rd.run("client", "reply", "on")
     assert "OK" == rd.run("read")
     rd.run("ping")
@@ -2210,7 +2202,6 @@ def test_resp3_based_basic_redirect_invalidation_with_client_reply_off(r: Valkey
     rd_redir.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_resp3_based_basic_tracking_redir_broken_with_client_reply_off(
     r: ValkeyTestClient, rd, rd_redirection, rd_sg
 ) -> None:
@@ -2247,7 +2238,7 @@ def test_resp3_based_basic_tracking_redir_broken_with_client_reply_off(
     clean_all()
     rd.run("hello", 3)
     rd.run("read")
-    # TODO: $rd client tracking on redirect redir_id
+    rd.run("client", "tracking", "on", "redirect", redir_id)
     rd.run("read")
     rd_sg.run("set", "foo", "bar")
     rd.run("get", "foo")
@@ -2369,10 +2360,6 @@ def fail(*args):
 
 def get_field_in_client_info(*args):
     raise NotImplementedError("get_field_in_client_info")
-
-
-def if_(*args):
-    raise NotImplementedError("if_")
 
 
 def lsearch(*args):

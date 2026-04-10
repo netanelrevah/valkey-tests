@@ -1,6 +1,5 @@
-"""
-set testmodule file normalize tests/modules/postnotifications.so
-"""
+testmodule = "tests/modules/postnotifications.so"
+
 
 """
 tags "modules" {
@@ -176,10 +175,7 @@ tags "modules" {
 }
 """
 
-
-"""
-set testmodule2 file normalize tests/modules/keyspace_events.so
-"""
+testmodule2 = "tests/modules/keyspace_events.so"
 
 
 """

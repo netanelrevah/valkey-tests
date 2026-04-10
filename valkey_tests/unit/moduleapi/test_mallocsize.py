@@ -4,9 +4,7 @@ import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
 
-"""
-set testmodule file normalize tests/modules/mallocsize.so
-"""
+testmodule = "tests/modules/mallocsize.so"
 
 pytestmark = [pytest.mark.modules]
 
@@ -18,6 +16,7 @@ def test_mallocsize_of_raw_bytes(r: ValkeyTestClient) -> None:
         assert_morethan [r memory usage key] 40
     }
     """
+    r.run("module", "load", testmodule)
     assert r.run("mallocsize.setraw", "key", 40) == "OK"
     assert r.run("memory", "usage", "key") > 40
 
@@ -29,6 +28,7 @@ def test_mallocsize_of_string(r: ValkeyTestClient) -> None:
         assert_morethan [r memory usage key] 7 ;# Length of "abcdefg"
     }
     """
+    r.run("module", "load", testmodule)
     assert r.run("mallocsize.setstr", "key", "abcdefg") == "OK"
     assert r.run("memory", "usage", "key") > 7
 
@@ -40,5 +40,6 @@ def test_mallocsize_of_dict(r: ValkeyTestClient) -> None:
         assert_morethan [r memory usage key] 8 ;# Length of "f1v1f2v2"
     }
     """
+    r.run("module", "load", testmodule)
     assert r.run("mallocsize.setdict", "key", "f1", "v1", "f2", "v2") == "OK"
     assert r.run("memory", "usage", "key") > 8

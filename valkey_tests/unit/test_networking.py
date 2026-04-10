@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, F841, ANN002, ANN201
+# ruff: noqa: PLR2004, F841, ANN001, ANN002, ANN201
 from fnmatch import fnmatch
 
 import pytest
@@ -241,10 +241,9 @@ set server_pid s process_id
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.skipif("", reason='{[r config get io-threads] ne "io-threads 1"}')
 def test_prefetch_works_as_expected_when_killing_a_client_from_the_middle_of_prefetch_commands_batch(
-    r: ValkeyTestClient,
+    r: ValkeyTestClient, rd0, rd15, rd4
 ) -> None:
     """
     test {prefetch works as expected when killing a client from the middle of prefetch commands batch} {
@@ -299,31 +298,33 @@ def test_prefetch_works_as_expected_when_killing_a_client_from_the_middle_of_pre
         set_("rd$i", ValkeyTestClient.create_from(r))
         i += 1
     r.run("set", "a", 0)
-    # TODO: $rd4 client id
-    # TODO: set rd4_id $rd4 read
-    # TODO: pause_process server_pid
-    # TODO: $rd0 client kill id rd4_id
+    rd4.run("client", "id")
+    rd4_id = rd4.run("read")
+    pause_process(server_pid)
+    rd0.run("client", "kill", "id", rd4_id)
     for_(
         "set i 1",
         "$i < 16",
         "incr i",
         "                [set rd$i] set a $i\n                [set rd$i] flush\n            ",
     )
-    # TODO: resume_process server_pid
-    # TODO: assert_equal {1} $rd0 read
-    catch("$rd4 read", "err")
-    # TODO: assert_match {I/O error reading reply} err
+    resume_process(server_pid)
+    assert "1" == rd0.run("read")
+    try:
+        err = rd4.run("read")
+    except Exception as _catch_err:
+        err = str(_catch_err)
+    assert fnmatch(str(err), "I/O error reading reply")
     info = r.run("info", "stats")
     prefetch_entries = get_info_property(info, "io_threaded_total_prefetch_entries")
     assert_range(prefetch_entries, 2, 15)
     prefetch_batches = get_info_property(info, "io_threaded_total_prefetch_batches")
     assert_range(prefetch_batches, 1, 7)
-    # TODO: $rd15 get a
-    # TODO: assert_equal {OK} $rd15 read
-    # TODO: assert_equal {15} $rd15 read
+    rd15.run("get", "a")
+    assert "OK" == rd15.run("read")
+    assert "15" == rd15.run("read")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.skipif("", reason='{[r config get io-threads] ne "io-threads 1"}')
 def test_prefetch_works_as_expected_when_changing_the_batch_size_while_executing_the_commands_batch(
     r: ValkeyTestClient,
@@ -362,19 +363,18 @@ def test_prefetch_works_as_expected_when_changing_the_batch_size_while_executing
     while i < 16:
         set_("rd$i", ValkeyTestClient.create_from(r))
         i += 1
-    # TODO: pause_process server_pid
+    pause_process(server_pid)
     for_(
         "set i 0",
         "$i < 16",
         "incr i",
         "                if {$i == 4} {\n                    [set rd$i] config set prefetch-batch-max-size 1\n                }\n                [set rd$i] set a $i\n                [set rd$i] flush\n            ",
     )
-    # TODO: resume_process server_pid
+    resume_process(server_pid)
     for_("set i 0", "$i < 16", "incr i", "                assert_equal {OK} [[set rd$i] read]\n            ")
     assert r.run("config", "get", "prefetch-batch-max-size") == "prefetch-batch-max-size 1"
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.skipif("", reason='{[r config get io-threads] ne "io-threads 1"}')
 def test_no_prefetch_when_the_batch_size_is_set_to_0(r: ValkeyTestClient) -> None:
     """
@@ -421,14 +421,14 @@ def test_no_prefetch_when_the_batch_size_is_set_to_0(r: ValkeyTestClient) -> Non
     while i < 16:
         set_("rd$i", ValkeyTestClient.create_from(r))
         i += 1
-    # TODO: pause_process server_pid
+    pause_process(server_pid)
     for_(
         "set i 0",
         "$i < 16",
         "incr i",
         "                [set rd$i] set a $i\n                [set rd$i] flush\n            ",
     )
-    # TODO: resume_process server_pid
+    resume_process(server_pid)
     for_("set i 0", "$i < 16", "incr i", "                assert_equal {OK} [[set rd$i] read]\n            ")
     info = r.run("info", "stats")
     new_prefetch_entries = get_info_property(info, "io_threaded_total_prefetch_entries")
@@ -485,10 +485,6 @@ def assert_range(*args):
     raise NotImplementedError("assert_range")
 
 
-def catch(*args):
-    raise NotImplementedError("catch")
-
-
 def count_message_lines(*args):
     raise NotImplementedError("count_message_lines")
 
@@ -509,12 +505,20 @@ def if_(*args):
     raise NotImplementedError("if_")
 
 
+def pause_process(*args):
+    raise NotImplementedError("pause_process")
+
+
 def reconnect(*args):
     raise NotImplementedError("reconnect")
 
 
 def restart_server(*args):
     raise NotImplementedError("restart_server")
+
+
+def resume_process(*args):
+    raise NotImplementedError("resume_process")
 
 
 def set_(*args):

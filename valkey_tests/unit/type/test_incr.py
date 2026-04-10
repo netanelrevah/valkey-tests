@@ -1,5 +1,4 @@
 # ruff: noqa: F841, RUF043, ANN002, ANN201
-
 from fnmatch import fnmatch
 
 import pytest
@@ -480,12 +479,10 @@ def test_cmd_operation_should_update_encoding_from_raw_to_int(r: ValkeyTestClien
     r.run("append", "foo", 2)
     assert_encoding("raw", "foo")
     res.append(r.run("get", "foo"))
-    if_(
-        "[string match {*by*} $cmd]",
-        "                r $cmd foo 1\n            ",
-        "else",
-        "                r $cmd foo\n            ",
-    )
+    if string("match", "*by*", cmd):
+        r.run(cmd, "foo", 1)
+    else:
+        r.run(cmd, "foo")
     assert_encoding("int", "foo")
     res.append(r.run("get", "foo"))
     assert res == expected
@@ -512,10 +509,6 @@ def expr(*args):
 
 def format_(*args):
     raise NotImplementedError("format_")
-
-
-def if_(*args):
-    raise NotImplementedError("if_")
 
 
 def lappend(*args):

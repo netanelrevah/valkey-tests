@@ -1,6 +1,5 @@
-"""
-set testmodule file normalize tests/modules/testrdb.so
-"""
+testmodule = "tests/modules/testrdb.so"
+
 
 """
 tags "modules" {

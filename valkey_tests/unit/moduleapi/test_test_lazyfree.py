@@ -4,9 +4,7 @@ import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
 
-"""
-set testmodule file normalize tests/modules/test_lazyfree.so
-"""
+testmodule = "tests/modules/test_lazyfree.so"
 
 pytestmark = [pytest.mark.modules]
 
@@ -40,6 +38,7 @@ def test_modules_allocated_memory_can_be_reclaimed_in_the_background(r: ValkeyTe
         }
     }
     """
+    r.run("module", "load", testmodule)
     orig_mem = s("used_memory")
     rd = ValkeyTestClient.create_from(r)
     i = 0

@@ -1,6 +1,5 @@
-"""
-set testmodule file normalize tests/modules/keyspace_events.so
-"""
+testmodule = "tests/modules/keyspace_events.so"
+
 
 """
 tags "modules" {

@@ -165,7 +165,8 @@ def test_rdb_save_will_be_failed_in_shutdown(r: ValkeyTestClient) -> None:
     while i < 20:
         r.run("set", i, i)
         i += 1
-    if_("[file exists $dump_rdb]", "            exec rm -f $dump_rdb\n        ")
+    if file("exists", dump_rdb):
+        exec_("rm", "-f", dump_rdb)
     exec_("mkdir", "-p", dump_rdb)
 
 
@@ -292,10 +293,6 @@ def file(*args):
 
 def get_child_pid(*args):
     raise NotImplementedError("get_child_pid")
-
-
-def if_(*args):
-    raise NotImplementedError("if_")
 
 
 def s(*args):

@@ -171,7 +171,6 @@ def test_sort_get_key_and_hash_with_sanity_check(r: ValkeyTestClient) -> None:
     )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_sort_by_key_store(r: ValkeyTestClient) -> None:
     """
     test "SORT BY key STORE" {
@@ -182,12 +181,11 @@ def test_sort_by_key_store(r: ValkeyTestClient) -> None:
     } {} {cluster:skip}
     """
     r.run("sort", "tosort", "BY", "weight_*", "store", "sort-res")
-    # TODO: assert_equal result r lrange sort-res 0 -1
+    assert result == r.run("lrange", "sort-res", 0, -1)
     assert 16 == r.run("llen", "sort-res")
     check_sort_store_encoding("sort-res")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_sort_by_hash_field_store(r: ValkeyTestClient) -> None:
     """
     test "SORT BY hash field STORE" {
@@ -198,7 +196,7 @@ def test_sort_by_hash_field_store(r: ValkeyTestClient) -> None:
     } {} {cluster:skip}
     """
     r.run("sort", "tosort", "BY", "wobj_*->weight", "store", "sort-res")
-    # TODO: assert_equal result r lrange sort-res 0 -1
+    assert result == r.run("lrange", "sort-res", 0, -1)
     assert 16 == r.run("llen", "sort-res")
     check_sort_store_encoding("sort-res")
 
@@ -232,14 +230,13 @@ def test_sort_extracts_multiple_store_correctly(r: ValkeyTestClient) -> None:
     )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_sort_desc(r: ValkeyTestClient) -> None:
     """
     test "SORT DESC" {
         assert_equal [lsort -decreasing -integer $result] [r sort tosort DESC]
     }
     """
-    # TODO: assert_equal lsort -decreasing -integer $result r sort tosort DESC
+    assert sorted(result) == r.run("sort", "tosort", "DESC")
 
 
 def test_sort_alpha_against_integer_encoded_strings(r: ValkeyTestClient) -> None:

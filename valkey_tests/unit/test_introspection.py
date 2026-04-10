@@ -60,7 +60,6 @@ def test_client_info(r: ValkeyTestClient) -> None:
     )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_client_list_with_addr_filter(r: ValkeyTestClient) -> None:
     """
     test {CLIENT LIST with ADDR filter} {
@@ -74,13 +73,12 @@ def test_client_list_with_addr_filter(r: ValkeyTestClient) -> None:
     """
     client_info = r.run("client", "info")
     regexp("addr=([^ ]+)", client_info, "match", "myaddr")
-    # TODO: set cl split [r client list addr $myaddr] "\r\n"
-    # TODO: regexp {addr=([^ ]+) .* cmd=([^ ]+)} lindex $cl 0 _ actual_addr actual_cmd
-    # TODO: assert_equal myaddr actual_addr
-    # TODO: assert_equal "client|list" actual_cmd
+    cl = split(r.run("client", "list", "addr", myaddr), "\r\n")
+    regexp("addr=([^ ]+) .* cmd=([^ ]+)", cl[0], "_", "actual_addr", "actual_cmd")
+    assert myaddr == actual_addr
+    assert "client|list" == actual_cmd
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_client_list_with_laddr_filter(r: ValkeyTestClient) -> None:
     """
     test {CLIENT LIST with LADDR filter} {
@@ -95,9 +93,9 @@ def test_client_list_with_laddr_filter(r: ValkeyTestClient) -> None:
     """
     client_info = r.run("client", "info")
     regexp("laddr=([^ ]+)", client_info, "match", "myladdr")
-    # TODO: set cl split [r client list laddr $myladdr] "\r\n"
-    # TODO: regexp {laddr=([^ ]+)} lindex $cl 0 _ actual_laddr
-    # TODO: assert_equal myladdr actual_laddr
+    cl = split(r.run("client", "list", "laddr", myladdr), "\r\n")
+    regexp("laddr=([^ ]+)", cl[0], "_", "actual_laddr")
+    assert myladdr == actual_laddr
 
 
 def test_client_list_with_maxage_filter(r: ValkeyTestClient) -> None:
@@ -138,7 +136,6 @@ def test_client_list_with_type_filter(r: ValkeyTestClient) -> None:
     )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_client_list_with_user_filter(r: ValkeyTestClient) -> None:
     """
     test {CLIENT LIST with USER filter} {
@@ -154,11 +151,12 @@ def test_client_list_with_user_filter(r: ValkeyTestClient) -> None:
     """
     client_info = r.run("client", "info")
     regexp("user=([^ ]+)", client_info, "match", "myuser")
-    # TODO: set cl split [r client list user $myuser] "\r\n"
-    # TODO: foreach line cl {
-    #       regexp {user=([^ ]+)} $line _ actual_user
-    #       assert_equal $myuser $actual_user
-    #   }
+    cl = split(r.run("client", "list", "user", myuser), "\r\n")
+    foreach(
+        "line",
+        cl,
+        "            regexp {user=([^ ]+)} $line _ actual_user\n            assert_equal $myuser $actual_user\n        ",
+    )
 
 
 def test_client_list_with_skipme_filter(r: ValkeyTestClient) -> None:
@@ -256,7 +254,6 @@ def test_client_list_with_filters_matching_no_clients(r: ValkeyTestClient) -> No
     c2.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_client_list_with_name_filter(r: ValkeyTestClient) -> None:
     """
     test {CLIENT LIST with NAME filter} {
@@ -272,10 +269,10 @@ def test_client_list_with_name_filter(r: ValkeyTestClient) -> None:
     r.run("client", "setname", "mytestclient")
     client_info = r.run("client", "info")
     regexp("name=([^ ]+)", client_info, "match", "myname")
-    # TODO: set cl split [r client list name $myname] "\r\n"
-    # TODO: regexp {name=([^ ]+) .* cmd=([^ ]+)} lindex $cl 0 _ actual_name actual_cmd
-    # TODO: assert_equal myname actual_name
-    # TODO: assert_equal "client|list" actual_cmd
+    cl = split(r.run("client", "list", "name", myname), "\r\n")
+    regexp("name=([^ ]+) .* cmd=([^ ]+)", cl[0], "_", "actual_name", "actual_cmd")
+    assert myname == actual_name
+    assert "client|list" == actual_cmd
 
 
 def test_client_list_with_flags_filter(r: ValkeyTestClient) -> None:
@@ -328,7 +325,6 @@ def test_client_list_with_type_filter_1(r: ValkeyTestClient) -> None:
     assert string("match", "*N*", info["flags"])
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_client_list_with_multiple_filters(r: ValkeyTestClient) -> None:
     """
     test {CLIENT LIST with multiple filters} {
@@ -362,15 +358,16 @@ def test_client_list_with_multiple_filters(r: ValkeyTestClient) -> None:
         fields,
         '            lassign [split $pair "="] key val\n            if {$key eq "id"} { set myid $val }\n            if {$key eq "name"} { set myname $val }\n        ',
     )
-    # TODO: set cl split [r client list id $myid name $myname] "\r\n"
-    # TODO: set line lindex $cl 0
+    cl = split(r.run("client", "list", "id", myid, "name", myname), "\r\n")
+    line = cl[0]
     info = dict_("create")
-    # TODO: foreach pair split $line " " {
-    #       lassign [split $pair "="] key val
-    #       dict set info $key $val
-    #   }
-    # TODO: assert_equal myid dict get $info id
-    # TODO: assert_equal myname dict get $info name
+    foreach(
+        "pair",
+        split(line, " "),
+        '            lassign [split $pair "="] key val\n            dict set info $key $val\n        ',
+    )
+    assert myid == info["id"]
+    assert myname == info["name"]
     assert "client|list" == info["cmd"]
 
 
@@ -432,7 +429,6 @@ def test_client_list_with_multiple_filters_1(r: ValkeyTestClient) -> None:
     c3.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_client_list_with_ip_filter(r: ValkeyTestClient) -> None:
     """
     test {CLIENT LIST with IP filter} {
@@ -449,8 +445,8 @@ def test_client_list_with_ip_filter(r: ValkeyTestClient) -> None:
     r.run("client", "setname", "client-ip")
     client_info = r.run("client", "info")
     regexp("addr=([^:]+):", client_info, "->", "iponly")
-    # TODO: set filtered r client list ip $iponly ip $iponly
-    # TODO: assert_match *client-ip* filtered
+    filtered = r.run("client", "list", "ip", iponly, "ip", iponly)
+    assert fnmatch(str(filtered), "*client-ip*")
 
 
 def test_client_list_with_capa_filter(r: ValkeyTestClient) -> None:
@@ -480,7 +476,6 @@ def test_client_list_with_capa_filter(r: ValkeyTestClient) -> None:
         pass
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_client_kill_with_ip_filter(r: ValkeyTestClient) -> None:
     """
     test {CLIENT KILL with IP filter} {
@@ -506,7 +501,7 @@ def test_client_kill_with_ip_filter(r: ValkeyTestClient) -> None:
     r.run("client", "setname", "client-normal")
     client_info = c1.run("client", "info")
     regexp("addr=([^:]+):", client_info, "->", "iponly")
-    # TODO: r client kill ip iponly skipme yes
+    r.run("client", "kill", "ip", iponly, "skipme", "yes")
     assert_error("*I/O error*", "$c1 ping")
 
 
@@ -660,7 +655,7 @@ def test_client_kill_with_multiple_filters(r: ValkeyTestClient) -> None:
     r.run("client", "kill", "name", "client1", "flags", "N")
     err1 = catch("$c1 ping", "error_message1")
     assert err1 == 1
-    assert_('[string match "*I/O error*" $error_message1]')
+    assert string("match", "*I/O error*", error_message1)
     assert catch("$c2 ping") == 0
     try:
         c2.run("close")
@@ -707,7 +702,7 @@ def test_client_kill_with_multiple_filters_including_idle_time(r: ValkeyTestClie
     r.run("client", "kill", "name", "client1", "idle", 100, "idle", 1)
     err1 = catch("$c1 ping", "error_message1")
     assert err1 == 1
-    assert_('[string match "*I/O error*" $error_message1]')
+    assert string("match", "*I/O error*", error_message1)
     assert catch("$c2 ping") == 0
     try:
         c2.run("close")
@@ -799,7 +794,6 @@ def test_client_list_with_not_type_filter(r: ValkeyTestClient) -> None:
         pass
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_client_list_with_multiple_negative_filters(r: ValkeyTestClient) -> None:
     """
     test {CLIENT LIST with multiple negative filters} {
@@ -836,9 +830,9 @@ def test_client_list_with_multiple_negative_filters(r: ValkeyTestClient) -> None
     )
     c1 = ValkeyTestClient.create_from(r)
     c1.run("client", "setname", "client1")
-    # TODO: set cl r client list not-id $myid not-name $myname
-    # TODO: assert_match "*name=client1*" cl
-    # TODO: assert_no_match "*name=mytestclient*" cl
+    cl = r.run("client", "list", "not-id", myid, "not-name", myname)
+    assert fnmatch(str(cl), "*name=client1*")
+    assert_no_match("*name=mytestclient*", cl)
     try:
         c1.run("close")
     except Exception:
@@ -979,7 +973,6 @@ def test_client_list_with_multiple_negative_filters_1(r: ValkeyTestClient) -> No
     c3.run("close")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_client_list_with_not_ip_filter(r: ValkeyTestClient) -> None:
     """
     test {CLIENT LIST with NOT-IP filter} {
@@ -999,7 +992,7 @@ def test_client_list_with_not_ip_filter(r: ValkeyTestClient) -> None:
     r.run("client", "setname", "not-ip")
     client_info = r.run("client", "info")
     regexp("addr=([^:]+):", client_info, "->", "not_ip")
-    # TODO: r client list not-ip not_ip not-ip not_ip
+    r.run("client", "list", "not-ip", not_ip, "not-ip", not_ip)
 
 
 def test_client_list_with_not_capa_filter(r: ValkeyTestClient) -> None:
@@ -1257,7 +1250,7 @@ def test_client_kill_with_multiple_negative_filters(r: ValkeyTestClient) -> None
     r.run("client", "kill", "not-name", "client2", "not-flags", "x")
     err1 = catch("$c1 ping", "error_message1")
     assert err1 == 1
-    assert_('[string match "*I/O error*" $error_message1]')
+    assert string("match", "*I/O error*", error_message1)
     assert catch("$c2 ping") == 0
     try:
         c2.run("close")
@@ -1304,7 +1297,7 @@ def test_client_kill_with_both_positive_and_negative_filters_including_idle_time
     r.run("client", "kill", "not-name", "client2", "idle", 1)
     err1 = catch("$c1 ping", "error_message1")
     assert err1 == 1
-    assert_('[string match "*I/O error*" $error_message1]')
+    assert string("match", "*I/O error*", error_message1)
     assert catch("$c2 ping") == 0
     try:
         c2.run("close")
@@ -1540,7 +1533,6 @@ def test_client_kill_with_illegal_arguments(r: ValkeyTestClient) -> None:
         r.run("client", "kill", "maxage", -1)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_client_kill_maxage_will_kill_old_clients(r: ValkeyTestClient, rd1, rd2) -> None:
     """
     test {CLIENT KILL maxAGE will kill old clients} {
@@ -1601,16 +1593,16 @@ def test_client_kill_maxage_will_kill_old_clients(r: ValkeyTestClient, rd1, rd2)
         rd2.run("read")
         max_age = expr(sleep_time, "/", 2)
         res = r.run("client", "kill", "user", "dummy", "maxage", max_age)
-        if_(
-            "$res == 1",
-            "                break\n            ",
-            "else",
-            "                # Clean up and try again next time\n                set sleep_time [expr $sleep_time * 2]\n                $rd1 close\n                $rd2 close\n            ",
-        )
+        if res == 1:
+            break_()
+        else:
+            sleep_time = expr(sleep_time, "*", 2)
+            rd1.run("close")
+            rd2.run("close")
         i += 1
     if False:
         pass
-    # TODO: assert_equal res 1
+    assert res == 1
     rd2.run("ping")
     assert "PONG" == rd2.run("read")
     rd1.run("close")
@@ -2819,7 +2811,6 @@ def test_config_set_rollback_on_set_error(r: ValkeyTestClient) -> None:
     assert r.run("config", "set", "maxmemory", mm_backup) == "OK"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_config_set_rollback_on_apply_error(r: ValkeyTestClient) -> None:
     """
     test {CONFIG SET rollback on apply error} {
@@ -2891,15 +2882,22 @@ def test_config_set_rollback_on_apply_error(r: ValkeyTestClient) -> None:
     proc("dummy_accept", "chan addr port", "")
     some_configs = "maxmemory 10000001 port 0 client-query-buffer-limit 10m"
     oom_adj_avail = expr('!$::external && [exec uname] == "Linux"')
-    if_(
-        "$oom_adj_avail",
-        '            proc get_oom_score_adj {} {\n                set pid [srv 0 pid]\n                set fd [open "/proc/$pid/oom_score_adj" "r"]\n                set val [gets $fd]\n                close $fd\n                return $val\n            }\n            set some_configs [linsert $some_configs 0 oom-score-adj yes oom-score-adj-values {1 1 1}]\n            set read_oom_adj [get_oom_score_adj]\n        ',
-    )
+    if oom_adj_avail:
+        proc(
+            "get_oom_score_adj",
+            "",
+            '                set pid [srv 0 pid]\n                set fd [open "/proc/$pid/oom_score_adj" "r"]\n                set val [gets $fd]\n                close $fd\n                return $val\n            ',
+        )
+        some_configs = linsert(some_configs, 0, "oom-score-adj", "yes", "oom-score-adj-values", "1 1 1")
+        read_oom_adj = get_oom_score_adj()
     backups = []
     foreach("c", dict_("keys", some_configs), "            lappend backups $c [lindex [r config get $c] 1]\n        ")
-    # TODO: set used_port find_available_port $::baseport $::portcount
-    # TODO: dict set some_configs port used_port
-    catch("socket -server dummy_accept -myaddr 127.0.0.1 $used_port", "e")
+    used_port = find_available_port(baseport, portcount)
+    dict_("set", "some_configs", "port", used_port)
+    try:
+        e = socket("-server", "dummy_accept", "-myaddr", "127.0.0.1", used_port)
+    except Exception as _catch_err:
+        e = str(_catch_err)
     if False:
         pass
     assert_error(
@@ -2907,7 +2905,8 @@ def test_config_set_rollback_on_apply_error(r: ValkeyTestClient) -> None:
         '            eval "r config set $some_configs"\n        ',
     )
     dict_("for", "conf val", backups, "            assert_equal [lindex [r config get $conf] 1] $val\n        ")
-    if_("$oom_adj_avail", "            assert_equal [get_oom_score_adj] $read_oom_adj\n        ")
+    if oom_adj_avail:
+        assert get_oom_score_adj() == read_oom_adj
     r1 = ValkeyTestClient.create_from(r)
     assert r1.run("ping") == "PONG"
     r1.run("close")
@@ -2997,7 +2996,6 @@ def test_config_get_multiple_args(r: ValkeyTestClient) -> None:
     assert dict_("exists", res, "bind")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_valkey_server_command_line_arguments_error_cases(r: ValkeyTestClient) -> None:
     """
     test {valkey-server command line arguments - error cases} {
@@ -3048,30 +3046,66 @@ def test_valkey_server_command_line_arguments_error_cases(r: ValkeyTestClient) -
         "id",
         '        set info_list [r client list]\n        set in [get_field_in_client_list $id $info_list "tot-net-in"]\n        set out [get_field_in_client_list $id $info_list "tot-net-out"]\n        set cmds [get_field_in_client_list $id $info_list "tot-cmds"]\n        return [list $in $out $cmds]\n    ',
     )
-    catch("exec $::VALKEY_SERVER_BIN --invalid", "err")
-    # TODO: assert_match {*Bad directive or wrong number of arguments*} err
-    catch("exec $::VALKEY_SERVER_BIN --port", "err")
-    # TODO: assert_match {*'port'*wrong number of arguments*} err
-    catch("exec $::VALKEY_SERVER_BIN --port 6380 --loglevel", "err")
-    # TODO: assert_match {*'loglevel'*wrong number of arguments*} err
-    catch("exec $::VALKEY_SERVER_BIN --port 6379 6380", "err")
-    # TODO: assert_match {*'port "6379" "6380"'*wrong number of arguments*} err
-    catch("exec $::VALKEY_SERVER_BIN --port --loglevel verbose", "err")
-    # TODO: assert_match {*'port "--loglevel" "verbose"'*wrong number of arguments*} err
-    catch("exec $::VALKEY_SERVER_BIN --port --bla --loglevel verbose", "err")
-    # TODO: assert_match {*'port "--bla"'*argument couldn't be parsed into an integer*} err
-    catch("exec $::VALKEY_SERVER_BIN --logfile --my--log--file --loglevel --bla", "err")
-    # TODO: assert_match {*'loglevel "--bla"'*argument(s) must be one of the following*} err
-    catch("exec $::VALKEY_SERVER_BIN --shutdown-on-sigint", "err")
-    # TODO: assert_match {*'shutdown-on-sigint'*argument(s) must be one of the following*} err
-    catch('exec $::VALKEY_SERVER_BIN --shutdown-on-sigint "now force" --shutdown-on-sigterm', "err")
-    # TODO: assert_match {*'shutdown-on-sigterm'*argument(s) must be one of the following*} err
-    catch("exec $::VALKEY_SERVER_BIN --replicaof 127.0.0.1 abc", "err")
-    # TODO: assert_match {*'replicaof "127.0.0.1" "abc"'*Invalid primary port*} err
-    catch("exec $::VALKEY_SERVER_BIN --replicaof --127.0.0.1 abc", "err")
-    # TODO: assert_match {*'replicaof "--127.0.0.1" "abc"'*Invalid primary port*} err
-    catch("exec $::VALKEY_SERVER_BIN --replicaof --127.0.0.1 --abc", "err")
-    # TODO: assert_match {*'replicaof "--127.0.0.1"'*wrong number of arguments*} err
+    try:
+        err = exec_(VALKEY_SERVER_BIN, "--invalid")
+    except Exception as _catch_err:
+        err = str(_catch_err)
+    assert fnmatch(str(err), "*Bad directive or wrong number of arguments*")
+    try:
+        err = exec_(VALKEY_SERVER_BIN, "--port")
+    except Exception as _catch_err:
+        err = str(_catch_err)
+    assert fnmatch(str(err), "*'port'*wrong number of arguments*")
+    try:
+        err = exec_(VALKEY_SERVER_BIN, "--port", 6380, "--loglevel")
+    except Exception as _catch_err:
+        err = str(_catch_err)
+    assert fnmatch(str(err), "*'loglevel'*wrong number of arguments*")
+    try:
+        err = exec_(VALKEY_SERVER_BIN, "--port", 6379, 6380)
+    except Exception as _catch_err:
+        err = str(_catch_err)
+    assert fnmatch(str(err), '*\'port "6379" "6380"\'*wrong number of arguments*')
+    try:
+        err = exec_(VALKEY_SERVER_BIN, "--port", "--loglevel", "verbose")
+    except Exception as _catch_err:
+        err = str(_catch_err)
+    assert fnmatch(str(err), '*\'port "--loglevel" "verbose"\'*wrong number of arguments*')
+    try:
+        err = exec_(VALKEY_SERVER_BIN, "--port", "--bla", "--loglevel", "verbose")
+    except Exception as _catch_err:
+        err = str(_catch_err)
+    assert fnmatch(str(err), "*'port \"--bla\"'*argument couldn't be parsed into an integer*")
+    try:
+        err = exec_(VALKEY_SERVER_BIN, "--logfile", "--my--log--file", "--loglevel", "--bla")
+    except Exception as _catch_err:
+        err = str(_catch_err)
+    assert fnmatch(str(err), "*'loglevel \"--bla\"'*argument(s) must be one of the following*")
+    try:
+        err = exec_(VALKEY_SERVER_BIN, "--shutdown-on-sigint")
+    except Exception as _catch_err:
+        err = str(_catch_err)
+    assert fnmatch(str(err), "*'shutdown-on-sigint'*argument(s) must be one of the following*")
+    try:
+        err = exec_(VALKEY_SERVER_BIN, "--shutdown-on-sigint", "now force", "--shutdown-on-sigterm")
+    except Exception as _catch_err:
+        err = str(_catch_err)
+    assert fnmatch(str(err), "*'shutdown-on-sigterm'*argument(s) must be one of the following*")
+    try:
+        err = exec_(VALKEY_SERVER_BIN, "--replicaof", "127.0.0.1", "abc")
+    except Exception as _catch_err:
+        err = str(_catch_err)
+    assert fnmatch(str(err), '*\'replicaof "127.0.0.1" "abc"\'*Invalid primary port*')
+    try:
+        err = exec_(VALKEY_SERVER_BIN, "--replicaof", "--127.0.0.1", "abc")
+    except Exception as _catch_err:
+        err = str(_catch_err)
+    assert fnmatch(str(err), '*\'replicaof "--127.0.0.1" "abc"\'*Invalid primary port*')
+    try:
+        err = exec_(VALKEY_SERVER_BIN, "--replicaof", "--127.0.0.1", "--abc")
+    except Exception as _catch_err:
+        err = str(_catch_err)
+    assert fnmatch(str(err), "*'replicaof \"--127.0.0.1\"'*wrong number of arguments*")
 
 
 def test_tot_net_out_for_replica_client(r: ValkeyTestClient) -> None:
@@ -3933,12 +3967,20 @@ def eval_(*args):
     raise NotImplementedError("eval_")
 
 
+def exec_(*args):
+    raise NotImplementedError("exec_")
+
+
 def expr(*args):
     raise NotImplementedError("expr")
 
 
 def fail(*args):
     raise NotImplementedError("fail")
+
+
+def find_available_port(*args):
+    raise NotImplementedError("find_available_port")
 
 
 def foreach(*args):
@@ -3969,6 +4011,10 @@ def if_(*args):
     raise NotImplementedError("if_")
 
 
+def linsert(*args):
+    raise NotImplementedError("linsert")
+
+
 def proc(*args):
     raise NotImplementedError("proc")
 
@@ -3987,6 +4033,10 @@ def restart_server(*args):
 
 def s(*args):
     raise NotImplementedError("s")
+
+
+def socket(*args):
+    raise NotImplementedError("socket")
 
 
 def split(*args):

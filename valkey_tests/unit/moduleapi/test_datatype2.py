@@ -4,9 +4,7 @@ import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
 
-"""
-set testmodule file normalize tests/modules/datatype2.so
-"""
+testmodule = "tests/modules/datatype2.so"
 
 pytestmark = [pytest.mark.modules]
 
@@ -33,6 +31,7 @@ def test_datatype2_test_mem_alloc_and_free(r: ValkeyTestClient) -> None:
         assert_equal 1 [r mem.free k2]
     }
     """
+    r.run("module", "load", testmodule)
     r.run("flushall")
     r.run("select", 0)
     assert 3 == r.run("mem.alloc", "k1", 3)
@@ -60,6 +59,7 @@ def test_datatype2_test_del_and_unlink(r: ValkeyTestClient) -> None:
         assert_equal 1 [r del k2]
     }
     """
+    r.run("module", "load", testmodule)
     r.run("flushall")
     assert 100 == r.run("mem.alloc", "k1", 100)
     assert 60 == r.run("mem.alloc", "k2", 60)
@@ -79,6 +79,7 @@ def test_datatype2_test_read_and_write(r: ValkeyTestClient) -> None:
         assert_equal $data [r mem.read k1 0]
     }
     """
+    r.run("module", "load", testmodule)
     r.run("flushall")
     assert 3 == r.run("mem.alloc", "k1", 3)
     data = "datatype2"
@@ -122,6 +123,7 @@ def test_datatype2_test_rdb_save_and_load(r: ValkeyTestClient) -> None:
         assert_equal k4 [r mem.read k4 0]
     }
     """
+    r.run("module", "load", testmodule)
     r.run("flushall")
     r.run("select", 0)
     data = "k1"
@@ -184,6 +186,7 @@ def test_datatype2_test_aof_rewrite(r: ValkeyTestClient) -> None:
         assert_equal k4 [r mem.read k4 0]
     }
     """
+    r.run("module", "load", testmodule)
     r.run("flushall")
     r.run("select", 0)
     data = "k1"
@@ -250,6 +253,7 @@ def test_datatype2_test_copy(r: ValkeyTestClient) -> None:
         assert_equal {total 7 used 3} [r mem.usage 1]
     }
     """
+    r.run("module", "load", testmodule)
     r.run("flushall")
     r.run("select", 0)
     data = "k1"
@@ -313,6 +317,7 @@ def test_datatype2_test_swapdb(r: ValkeyTestClient) -> None:
         assert_equal {total 5 used 2} [r mem.usage 0]
     }
     """
+    r.run("module", "load", testmodule)
     r.run("flushall")
     r.run("select", 0)
     data = "k1"
@@ -373,6 +378,7 @@ def test_datatype2_test_digest(r: ValkeyTestClient) -> None:
         assert_equal $digest0 $digest1
     }
     """
+    r.run("module", "load", testmodule)
     r.run("flushall")
     r.run("select", 0)
     data = "k1"
@@ -417,6 +423,7 @@ def test_datatype2_test_memusage(r: ValkeyTestClient) -> None:
         assert_equal [memory_usage k1] [memory_usage k2]
     }
     """
+    r.run("module", "load", testmodule)
     r.run("flushall")
     data = "k1"
     assert 3 == r.run("mem.alloc", "k1", 3)

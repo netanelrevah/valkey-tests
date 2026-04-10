@@ -6,9 +6,7 @@ import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
 
-"""
-set testmodule file normalize tests/modules/subcommands.so
-"""
+testmodule = "tests/modules/subcommands.so"
 
 pytestmark = [pytest.mark.modules]
 
@@ -31,6 +29,7 @@ def test_module_subcommands_via_command(r: ValkeyTestClient) -> None:
         assert_equal [dict get $subcmds_in_cmd_docs "subcommands.bitarray|set"] {group module module subcommands}
     }
     """
+    r.run("module", "load", testmodule)
     command_reply = r.run("command", "info", "subcommands.bitarray")
     first_cmd = command_reply[0]
     subcmds_in_command = sorted(first_cmd[9])
@@ -63,6 +62,7 @@ def test_module_pure_container_command_fails_on_arity_error(r: ValkeyTestClient)
         assert_match {*wrong number of arguments for 'subcommands.bitarray|get' command} $e
     }
     """
+    r.run("module", "load", testmodule)
     try:
         e = r.run("subcommands.bitarray")
     except Exception as _catch_err:
@@ -82,6 +82,7 @@ def test_module_get_current_command_fullname(r: ValkeyTestClient) -> None:
         assert_equal [r subcommands.parent_get_fullname] {subcommands.parent_get_fullname}
     }
     """
+    r.run("module", "load", testmodule)
     assert r.run("subcommands.parent_get_fullname") == "subcommands.parent_get_fullname"
 
 
@@ -91,6 +92,7 @@ def test_module_get_current_subcommand_fullname(r: ValkeyTestClient) -> None:
         assert_equal [r subcommands.sub get_fullname] {subcommands.sub|get_fullname}
     }
     """
+    r.run("module", "load", testmodule)
     assert r.run("subcommands.sub", "get_fullname") == "subcommands.sub|get_fullname"
 
 
@@ -108,6 +110,7 @@ def test_command_list_filterby_module(r: ValkeyTestClient) -> None:
         assert_equal [lsearch $commands "set"] -1
     }
     """
+    r.run("module", "load", testmodule)
     assert "" == r.run("command", "list", "filterby", "module", "non_existing")
     commands = r.run("command", "list", "filterby", "module", "subcommands")
     assert_not_equal(lsearch(commands, "subcommands.bitarray"), -1)
@@ -123,6 +126,7 @@ def test_unload_the_module_subcommands(r: ValkeyTestClient) -> None:
         assert_equal {OK} [r module unload subcommands]
     }
     """
+    r.run("module", "load", testmodule)
     assert "OK" == r.run("module", "unload", "subcommands")
 
 

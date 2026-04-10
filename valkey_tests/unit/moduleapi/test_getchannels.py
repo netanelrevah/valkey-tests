@@ -2,9 +2,7 @@ import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
 
-"""
-set testmodule file normalize tests/modules/getchannels.so
-"""
+testmodule = "tests/modules/getchannels.so"
 
 pytestmark = [pytest.mark.modules]
 
@@ -25,6 +23,8 @@ def test_module_getchannels_api_with_literals_acl(r: ValkeyTestClient) -> None:
         assert_equal "OK" [r ACL DRYRUN testuser getchannels.command unsubscribe literal otherchannel unsubscribe literal pattern1]
     }
     """
+    r.run("module", "load", testmodule)
+    r.run("ACL", "setuser", "testuser", "+@all", "resetchannels", "&channel", "&pattern*")
     assert "OK" == r.run(
         "ACL",
         "DRYRUN",
@@ -151,6 +151,8 @@ def test_module_getchannels_api_with_patterns_acl(r: ValkeyTestClient) -> None:
         assert_equal "OK" [r ACL DRYRUN testuser getchannels.command unsubscribe pattern otherpattern* unsubscribe pattern pattern*]
     }
     """
+    r.run("module", "load", testmodule)
+    r.run("ACL", "setuser", "testuser", "+@all", "resetchannels", "&channel", "&pattern*")
     assert "OK" == r.run("ACL", "DRYRUN", "testuser", "getchannels.command", "subscribe", "pattern", "pattern*")
     assert "OK" == r.run("ACL", "DRYRUN", "testuser", "getchannels.command", "publish", "pattern", "pattern*")
     assert "OK" == r.run("ACL", "DRYRUN", "testuser", "getchannels.command", "unsubscribe", "pattern", "pattern*")
@@ -234,4 +236,6 @@ def test_unload_the_module_getchannels(r: ValkeyTestClient) -> None:
         assert_equal {OK} [r module unload getchannels]
     }
     """
+    r.run("module", "load", testmodule)
+    r.run("ACL", "setuser", "testuser", "+@all", "resetchannels", "&channel", "&pattern*")
     assert "OK" == r.run("module", "unload", "getchannels")

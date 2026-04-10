@@ -4,9 +4,7 @@ import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
 
-"""
-set testmodule file normalize tests/modules/blockonkeys.so
-"""
+testmodule = "tests/modules/blockonkeys.so"
 
 pytestmark = [pytest.mark.modules]
 
@@ -32,6 +30,7 @@ def test_module_client_blocked_on_keys_circular_bpoppush(r: ValkeyTestClient) ->
         assert_equal {} [r fsl.getall dst]
     }
     """
+    r.run("module", "load", testmodule)
     rd1 = ValkeyTestClient.create_from(r)
     rd2 = ValkeyTestClient.create_from(r)
     r.run("del", "src", "dst")
@@ -59,6 +58,7 @@ def test_module_client_blocked_on_keys_self_referential_bpoppush(r: ValkeyTestCl
         assert_equal {42} [r fsl.getall src]
     }
     """
+    r.run("module", "load", testmodule)
     rd1 = ValkeyTestClient.create_from(r)
     r.run("del", "src")
     rd1.run("fsl.bpoppush", "src", "src", 0)
@@ -94,6 +94,7 @@ def test_module_client_blocked_on_keys_bpoppush_unblocked_by_timer(r: ValkeyTest
         close_replication_stream $repl
     } {} {needs:repl}
     """
+    r.run("module", "load", testmodule)
     rd1 = ValkeyTestClient.create_from(r)
     r.run("del", "src", "dst")
     repl = attach_to_replication_stream()
@@ -118,6 +119,7 @@ def test_module_client_blocked_on_keys_no_metadata_no_block(r: ValkeyTestClient)
         r fsl.bpop k 0
     } {34}
     """
+    r.run("module", "load", testmodule)
     r.run("del", "k")
     r.run("fsl.push", "k", 33)
     r.run("fsl.push", "k", 34)
@@ -133,6 +135,7 @@ def test_module_client_blocked_on_keys_no_metadata_timeout(r: ValkeyTestClient) 
         assert_equal {Request timedout} [$rd read]
     }
     """
+    r.run("module", "load", testmodule)
     r.run("del", "k")
     rd = ValkeyTestClient.create_from(r)
     rd.run("fsl.bpop", "k", 1)
@@ -150,6 +153,7 @@ def test_module_client_blocked_on_keys_no_metadata_blocked(r: ValkeyTestClient) 
         assert_equal {34} [$rd read]
     }
     """
+    r.run("module", "load", testmodule)
     r.run("del", "k")
     rd = ValkeyTestClient.create_from(r)
     rd.run("fsl.bpop", "k", 0)
@@ -166,6 +170,7 @@ def test_module_client_blocked_on_keys_with_metadata_no_block(r: ValkeyTestClien
         r fsl.bpopgt k 30 0
     } {34}
     """
+    r.run("module", "load", testmodule)
     r.run("del", "k")
     r.run("fsl.push", "k", 34)
     assert r.run("fsl.bpopgt", "k", 30, 0) == "34"
@@ -184,6 +189,7 @@ def test_module_client_blocked_on_keys_with_metadata_timeout(r: ValkeyTestClient
         r client kill id $cid ;# try to smoke-out client-related memory leak
     }
     """
+    r.run("module", "load", testmodule)
     r.run("del", "k")
     rd = ValkeyTestClient.create_from(r)
     rd.run("client", "id")
@@ -209,6 +215,7 @@ def test_module_client_blocked_on_keys_with_metadata_blocked_case_1(r: ValkeyTes
         r client kill id $cid ;# try to smoke-out client-related memory leak
     }
     """
+    r.run("module", "load", testmodule)
     r.run("del", "k")
     rd = ValkeyTestClient.create_from(r)
     rd.run("client", "id")
@@ -236,6 +243,7 @@ def test_module_client_blocked_on_keys_with_metadata_blocked_case_2(r: ValkeyTes
         assert_equal {36} [$rd read]
     }
     """
+    r.run("module", "load", testmodule)
     r.run("del", "k")
     r.run("fsl.push", "k", 32)
     rd = ValkeyTestClient.create_from(r)
@@ -260,6 +268,7 @@ def test_module_client_blocked_on_keys_with_metadata_blocked_del(r: ValkeyTestCl
         assert_error {*UNBLOCKED key no longer exists*} {$rd read}
     }
     """
+    r.run("module", "load", testmodule)
     r.run("del", "k")
     r.run("fsl.push", "k", 32)
     rd = ValkeyTestClient.create_from(r)
@@ -281,6 +290,7 @@ def test_module_client_blocked_on_keys_with_metadata_blocked_flushall(r: ValkeyT
         assert_error {*UNBLOCKED key no longer exists*} {$rd read}
     }
     """
+    r.run("module", "load", testmodule)
     r.run("del", "k")
     r.run("fsl.push", "k", 32)
     rd = ValkeyTestClient.create_from(r)
@@ -303,6 +313,7 @@ def test_module_client_blocked_on_keys_with_metadata_blocked_swapdb_no_key(r: Va
         assert_error {*UNBLOCKED key no longer exists*} {$rd read}
     }
     """
+    r.run("module", "load", testmodule)
     r.run("select", 9)
     r.run("del", "k")
     r.run("fsl.push", "k", 32)
@@ -331,6 +342,7 @@ def test_module_client_blocked_on_keys_with_metadata_blocked_swapdb_key_exists_c
         r select 9
     }
     """
+    r.run("module", "load", testmodule)
     r.run("flushall")
     r.run("select", 9)
     r.run("fsl.push", "k", 32)
@@ -365,6 +377,7 @@ def test_module_client_blocked_on_keys_with_metadata_blocked_swapdb_key_exists_c
         r select 9
     }
     """
+    r.run("module", "load", testmodule)
     r.run("flushall")
     r.run("select", 9)
     r.run("fsl.push", "k", 32)
@@ -399,6 +412,7 @@ def test_module_client_blocked_on_keys_with_metadata_blocked_swapdb_key_exists_c
         r select 9
     }
     """
+    r.run("module", "load", testmodule)
     r.run("flushall")
     r.run("select", 9)
     r.run("fsl.push", "k", 32)
@@ -426,6 +440,7 @@ def test_module_client_blocked_on_keys_with_metadata_blocked_client_kill(r: Valk
         r client kill id $cid ;# try to smoke-out client-related memory leak
     }
     """
+    r.run("module", "load", testmodule)
     r.run("del", "k")
     r.run("fsl.push", "k", 32)
     rd = ValkeyTestClient.create_from(r)
@@ -450,6 +465,7 @@ def test_module_client_blocked_on_keys_with_metadata_blocked_client_unblock_time
         assert_equal {Request timedout} [$rd read]
     }
     """
+    r.run("module", "load", testmodule)
     r.run("del", "k")
     r.run("fsl.push", "k", 32)
     rd = ValkeyTestClient.create_from(r)
@@ -475,6 +491,7 @@ def test_module_client_blocked_on_keys_with_metadata_blocked_client_unblock_erro
         assert_error "*unblocked*" {$rd read}
     }
     """
+    r.run("module", "load", testmodule)
     r.run("del", "k")
     r.run("fsl.push", "k", 32)
     rd = ValkeyTestClient.create_from(r)
@@ -499,6 +516,7 @@ def test_module_client_blocked_on_keys_no_timeout_cb_client_unblock_timeout(r: V
         $rd close
     }
     """
+    r.run("module", "load", testmodule)
     r.run("del", "k")
     rd = ValkeyTestClient.create_from(r)
     rd.run("client", "id")
@@ -522,6 +540,7 @@ def test_module_client_blocked_on_keys_no_timeout_cb_client_unblock_error(r: Val
         $rd close
     }
     """
+    r.run("module", "load", testmodule)
     r.run("del", "k")
     rd = ValkeyTestClient.create_from(r)
     rd.run("client", "id")
@@ -548,6 +567,7 @@ def test_module_client_re_blocked_on_keys_after_woke_up_on_wrong_type(r: ValkeyT
         assert_equal {1} [r get fsl_wrong_type] ;# first lpush caused one wrong-type wake-up
     }
     """
+    r.run("module", "load", testmodule)
     r.run("del", "k")
     rd = ValkeyTestClient.create_from(r)
     rd.run("fsl.bpop", "k", 0)
@@ -573,6 +593,7 @@ def test_module_client_blocked_on_keys_woken_up_by_lpush(r: ValkeyTestClient) ->
         $rd close
     }
     """
+    r.run("module", "load", testmodule)
     r.run("del", "k")
     rd = ValkeyTestClient.create_from(r)
     rd.run("blockonkeys.popall", "k")
@@ -594,6 +615,7 @@ def test_module_client_unblocks_blpop(r: ValkeyTestClient) -> None:
         $rd close
     }
     """
+    r.run("module", "load", testmodule)
     r.run("del", "k")
     rd = ValkeyTestClient.create_from(r)
     rd.run("blpop", "k", 3)
@@ -620,6 +642,7 @@ def test_module_unblocks_module_blocked_on_non_empty_list(r: ValkeyTestClient) -
         $rd close
     }
     """
+    r.run("module", "load", testmodule)
     r.run("del", "k")
     r.run("lpush", "k", "aa")
     rd = ValkeyTestClient.create_from(r)
@@ -651,6 +674,7 @@ def test_module_explicit_unblock_when_blocked_on_keys(r: ValkeyTestClient) -> No
         $rd close
     }
     """
+    r.run("module", "load", testmodule)
     r.run("del", "k")
     r.run("set", "somekey", "someval")
     rd = ValkeyTestClient.create_from(r)

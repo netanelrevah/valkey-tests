@@ -1,4 +1,5 @@
 # ruff: noqa: PLR2004, F841, RUF043, ANN002, ANN201
+
 from fnmatch import fnmatch
 
 import pytest
@@ -704,7 +705,9 @@ def test_hmget_small_hash(r: ValkeyTestClient) -> None:
     foreach("k v", array("get", "smallhash"), "            lappend keys $k\n            lappend vals $v\n        ")
     err = []
     result = r.run("hmget", "smallhash", "*", keys)
-    if_("$vals ne $result", '            set err "$vals != $result"\n            break\n        ')
+    if vals != result:
+        err = f"{vals} != {result}"
+        break_()
     _ = err
 
 
@@ -731,7 +734,9 @@ def test_hmget_big_hash(r: ValkeyTestClient) -> None:
     foreach("k v", array("get", "bighash"), "            lappend keys $k\n            lappend vals $v\n        ")
     err = []
     result = r.run("hmget", "bighash", "*", keys)
-    if_("$vals ne $result", '            set err "$vals != $result"\n            break\n        ')
+    if vals != result:
+        err = f"{vals} != {result}"
+        break_()
     _ = err
 
 
@@ -1828,7 +1833,6 @@ def test_hash_ziplist_of_various_encodings(r: ValkeyTestClient) -> None:
     )
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_hash_ziplist_of_various_encodings_sanitize_dump(r: ValkeyTestClient) -> None:
     """
     test {Hash ziplist of various encodings - sanitize dump} {
@@ -1849,7 +1853,7 @@ def test_hash_ziplist_of_various_encodings_sanitize_dump(r: ValkeyTestClient) ->
     } {ZIP_INT_8B 127 ZIP_INT_16B 32767 ZIP_INT_32B 2147483647 ZIP_INT_64B 9223372036854775808 ZIP_INT_IMM_MIN 0 ZIP_INT_IMM_MAX 12}
     """
     config_set("sanitize-dump-payload", "yes", "mayfail")
-    # TODO: r restore kk 0 dump replace
+    r.run("restore", "kk", 0, dump, "replace")
     k = r.run("hgetall", "k")
     kk = r.run("hgetall", "kk")
     assert sorted(k) == sorted(kk)
@@ -1918,10 +1922,6 @@ def foreach(*args):
 
 def get_keys(*args):
     raise NotImplementedError("get_keys")
-
-
-def if_(*args):
-    raise NotImplementedError("if_")
 
 
 def incr(*args):

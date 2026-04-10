@@ -28,7 +28,6 @@ for {set i 0} {$i < 130} {incr i} {
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["type"], [("listpack"), ("hashtable")])
 def test_sadd_scard_sismember_smismember_smembers_basics_type(r: ValkeyTestClient, type: str) -> None:
     """
@@ -50,11 +49,11 @@ def test_sadd_scard_sismember_smismember_smembers_basics_type(r: ValkeyTestClien
         r memory usage myset
     }
     """
-    # TODO: create_set myset initelems ($type)
+    create_set("myset", initelems, "($type)")
     assert_encoding(type, "myset")
     assert 1 == r.run("sadd", "myset", "bar")
     assert 0 == r.run("sadd", "myset", "bar")
-    # TODO: assert_equal expr [llength $initelems($type)] + 1 r scard myset
+    assert expr(llength(initelems, "($type)"), "+", 1) == r.run("scard", "myset")
     assert 1 == r.run("sismember", "myset", "foo")
     assert 1 == r.run("sismember", "myset", "bar")
     assert 0 == r.run("sismember", "myset", "bla")
@@ -63,7 +62,7 @@ def test_sadd_scard_sismember_smismember_smembers_basics_type(r: ValkeyTestClien
     assert "1 0" == r.run("smismember", "myset", "foo", "bla")
     assert "0 1" == r.run("smismember", "myset", "bla", "foo")
     assert "0" == r.run("smismember", "myset", "bla")
-    # TODO: assert_equal "bar $initelems($type)" lsort [r smembers myset]
+    assert f"bar {initelems[type]}" == sorted(r.run("smembers", "myset"))
     r.run("memory", "usage", "myset")
 
 
@@ -429,7 +428,6 @@ def test_set_encoding_after_debug_reload(r: ValkeyTestClient) -> None:
     assert_encoding("hashtable", "myhashset")
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["type"], [("listpack"), ("hashtable")])
 def test_srem_basics_type(r: ValkeyTestClient, type: str) -> None:
     """
@@ -442,12 +440,12 @@ def test_srem_basics_type(r: ValkeyTestClient, type: str) -> None:
         assert_equal $initelems($type) [lsort [r smembers myset]]
     }
     """
-    # TODO: create_set myset initelems ($type)
+    create_set("myset", initelems, "($type)")
     r.run("sadd", "myset", "ciao")
     assert_encoding(type, "myset")
     assert 0 == r.run("srem", "myset", "qux")
     assert 1 == r.run("srem", "myset", "ciao")
-    # TODO: assert_equal initelems ($type) lsort [r smembers myset]
+    assert initelems == "($type)"
 
 
 def test_srem_basics_intset(r: ValkeyTestClient) -> None:
@@ -619,12 +617,10 @@ def test_generated_sets_must_be_encoded_correctly_type(
     while i <= 5:
         r.run("sadd", format_("set%d{t}", i), large)
         i += 1
-    for_(
-        "set i 1",
-        "$i <= 5",
-        "incr i",
-        '                assert_encoding $encoding($i) [format "set%d{t}" $i]\n            ',
-    )
+    i = 1
+    while i <= 5:
+        assert_encoding(encoding, "($i)", format_("set%d{t}", i))
+        i += 1
 
 
 @pytest.mark.parametrize(
@@ -2881,16 +2877,16 @@ def expr(*args):
     raise NotImplementedError("expr")
 
 
-def for_(*args):
-    raise NotImplementedError("for_")
-
-
 def foreach(*args):
     raise NotImplementedError("foreach")
 
 
 def format_(*args):
     raise NotImplementedError("format_")
+
+
+def llength(*args):
+    raise NotImplementedError("llength")
 
 
 def proc(*args):

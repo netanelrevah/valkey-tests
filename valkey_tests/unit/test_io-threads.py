@@ -1,4 +1,4 @@
-# ruff: noqa: F841, ANN002, ANN201
+# ruff: noqa: ANN002, ANN201
 import time
 
 import pytest
@@ -118,12 +118,11 @@ def test_force_the_use_of_io_threads_and_assert_active_io_thread_usage(r: Valkey
     i = 1
     while i <= io_threads_count:
         used_active_time = get_info_property(info, "used_active_time_io_thread_$i")
-        if_(
-            "$i < $io_threads_count",
-            "                assert_morethan $used_active_time 0\n                set initial_active_times($i) $used_active_time\n            ",
-            "else",
-            "                assert_equal $used_active_time {}\n            ",
-        )
+        if i < io_threads_count:
+            assert used_active_time > 0
+            set_("initial_active_times($i)", used_active_time)
+        else:
+            assert used_active_time == ""
         i += 1
     assert "OK" == r.run("config", "set", "io-threads", 1)
     info = r.run("info")
@@ -140,12 +139,10 @@ def test_force_the_use_of_io_threads_and_assert_active_io_thread_usage(r: Valkey
     i = 1
     while i <= io_threads_count:
         used_active_time = get_info_property(info, "used_active_time_io_thread_$i")
-        if_(
-            "$i < $io_threads_count",
-            "                # Assert active thread usage isn't reset to 0.\n                assert_morethan $used_active_time 0\n            ",
-            "else",
-            "                assert_equal $used_active_time {}\n            ",
-        )
+        if i < io_threads_count:
+            assert used_active_time > 0
+        else:
+            assert used_active_time == ""
         i += 1
     sleep_time_ms = 1000
     time.sleep(sleep_time_ms / 1000)
@@ -154,12 +151,11 @@ def test_force_the_use_of_io_threads_and_assert_active_io_thread_usage(r: Valkey
     i = 1
     while i <= io_threads_count:
         used_active_time = get_info_property(info, "used_active_time_io_thread_$i")
-        if_(
-            "$i < $io_threads_count",
-            "                assert {($used_active_time - $initial_active_times($i)) < ($sleep_time_ms/1000)}\n                # Assert that total active time is lower than the sleep duration assumed\n                assert {$used_active_time < ($sleep_time_ms/1000)}\n            ",
-            "else",
-            "                assert_equal $used_active_time {}\n            ",
-        )
+        if i < io_threads_count:
+            assert_("($used_active_time - $initial_active_times($i)) < ($sleep_time_ms/1000)")
+            assert_("$used_active_time < ($sleep_time_ms/1000)")
+        else:
+            assert used_active_time == ""
         i += 1
 
 
@@ -186,8 +182,8 @@ def get_info_property(*args):
     raise NotImplementedError("get_info_property")
 
 
-def if_(*args):
-    raise NotImplementedError("if_")
+def set_(*args):
+    raise NotImplementedError("set_")
 
 
 def wait_for_condition(*args):

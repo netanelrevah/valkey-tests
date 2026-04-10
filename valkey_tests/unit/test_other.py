@@ -809,9 +809,7 @@ def test_test_io_threads_are_runtime_modifiable(r: ValkeyTestClient) -> None:
         i += 1
 
 
-"""
-set tempFileName file join [pwd] [pid]
-"""
+tempFileName = file("join", pwd(), pid())
 
 
 """
@@ -820,15 +818,9 @@ if {$::verbose} {
 }
 """
 
+tempFileId = open_(tempFileName, "w")
 
-"""
-set tempFileId open $tempFileName w
-"""
-
-
-"""
-set group dict get [file attributes $tempFileName] -group
-"""
+group = file("attributes", tempFileName)["-group"]
 
 
 """
@@ -887,6 +879,10 @@ def fail(*args):
     raise NotImplementedError("fail")
 
 
+def file(*args):
+    raise NotImplementedError("file")
+
+
 def foreach(*args):
     raise NotImplementedError("foreach")
 
@@ -915,8 +911,20 @@ def main_hash_table_size(*args):
     raise NotImplementedError("main_hash_table_size")
 
 
+def open_(*args):
+    raise NotImplementedError("open_")
+
+
+def pid(*args):
+    raise NotImplementedError("pid")
+
+
 def populate(*args):
     raise NotImplementedError("populate")
+
+
+def pwd(*args):
+    raise NotImplementedError("pwd")
 
 
 def s(*args):

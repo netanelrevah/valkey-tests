@@ -27,9 +27,12 @@ _TEST_NAME_TRANSLATE_TABLE = str.maketrans({"/": "_or_", **{c: "_" for c in "{}\
 _KNOWN_FIXTURE_VARS = frozenset(
     {
         "rd",
+        "rd0",
         "rd1",
         "rd2",
         "rd3",
+        "rd4",
+        "rd15",
         "rr",
         "r2",
         "rd_trk",
@@ -311,19 +314,30 @@ class TCLTestFileGenerator:
     def generate(self, source_file: TextIO) -> None:
         _arg_translators.collected_stubs.clear()
 
-        self.output.write("# ruff: noqa: PLR2004, PLR1714, F841, N806, RUF043, ANN001, ANN002, ANN201\n")
+        self.output.write("# ruff: noqa: PLR2004, PLR1714, PLR1730, E101, F841, N806, RUF043, ANN001, ANN002, ANN201\n")
         self.output.write("import time\n\n")
         self.output.write("import pytest\n")
         self.output.write("from fnmatch import fnmatch\n\n")
         self.output.write("from tests.valkey_test_client import ValkeyTestClient\n")
 
         script = TCLScript.read_text_io(source_file)
+        outer_vars: set[str] = set()
 
         for command in script.commands:
             if not isinstance(command, TCLCommandWord):
                 continue
             if command.name == "start_server":
                 self._process_start_server(command)
+            elif command.name == "set":
+                lines = TCLBodyTranslator().translate(TCLScript([command]), None, initial_vars=outer_vars)
+                if not _has_todos(lines):
+                    self.output.write("\n")
+                    for line in lines:
+                        self.output.write(f"{line}\n")
+                    if command.args and isinstance(command.args[0], TCLWord):
+                        outer_vars.add(command.args[0].value)
+                else:
+                    self.generate_comment(command)
             else:
                 self.generate_comment(command)
 

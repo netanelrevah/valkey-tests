@@ -1,5 +1,4 @@
 # ruff: noqa: PLR2004, F841, ANN002, ANN201
-
 from fnmatch import fnmatch
 
 import pytest
@@ -1606,10 +1605,7 @@ def test_test_dryrun_with_wrong_number_of_arguments(r: ValkeyTestClient) -> None
 $r2 close
 """
 
-
-"""
-set server_path tmpdir "selectors.acl"
-"""
+server_path = tmpdir("selectors.acl")
 
 
 """
@@ -3479,3 +3475,7 @@ def lsearch(*args):
 
 def s(*args):
     raise NotImplementedError("s")
+
+
+def tmpdir(*args):
+    raise NotImplementedError("tmpdir")

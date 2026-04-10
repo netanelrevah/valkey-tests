@@ -1,6 +1,8 @@
-"""
-set system_name string tolower [exec uname -s]
-"""
+# ruff: noqa: ANN002, ANN201
+
+
+system_name = string("tolower", exec_("uname", "-s"))
+
 
 """
 if {$system_name eq {linux}} {
@@ -146,3 +148,14 @@ if {$system_name eq {linux}} {
     }
 }
 """
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def exec_(*args):
+    raise NotImplementedError("exec_")
+
+
+def string(*args):
+    raise NotImplementedError("string")

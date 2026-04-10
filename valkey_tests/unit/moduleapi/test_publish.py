@@ -4,9 +4,7 @@ import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
 
-"""
-set testmodule file normalize tests/modules/publish.so
-"""
+testmodule = "tests/modules/publish.so"
 
 pytestmark = [pytest.mark.modules]
 
@@ -27,6 +25,7 @@ def test_publish_and_spublish_via_a_module(r: ValkeyTestClient) -> None:
         $rd2 close
     }
     """
+    r.run("module", "load", testmodule)
     rd1 = ValkeyTestClient.create_from(r)
     rd2 = ValkeyTestClient.create_from(r)
     assert "1" == ssubscribe(rd1, "chan1")
@@ -55,6 +54,7 @@ def test_module_publish_to_self_with_multi_message(r: ValkeyTestClient) -> None:
         set _ ""
     } {} {resp3}
     """
+    r.run("module", "load", testmodule)
     r.run("hello", 3)
     r.run("subscribe", "foo")
     assert r.run("publish.classic_multi", "foo", "bar", "vaz") == "1 1"

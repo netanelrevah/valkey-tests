@@ -975,12 +975,17 @@ def test_getrange_fuzzing(r: ValkeyTestClient) -> None:
         }
     }
     """
-    for_(
-        "set i 0",
-        "$i < 1000",
-        "incr i",
-        '            r set bin [set bin [randstring 0 1024 binary]]\n            set _start [set start [randomInt 1500]]\n            set _end [set end [randomInt 1500]]\n            if {$_start < 0} {set _start "end-[abs($_start)-1]"}\n            if {$_end < 0} {set _end "end-[abs($_end)-1]"}\n            assert_equal [string range $bin $_start $_end] [r getrange bin $start $end]\n        ',
-    )
+    i = 0
+    while i < 1000:
+        r.run("set", "bin", randstring(0, 1024, "binary"))
+        _start = random_int(1500)
+        _end = random_int(1500)
+        if _start < 0:
+            _start = f"end-[abs({_start})-1]"
+        if _end < 0:
+            _end = f"end-[abs({_end})-1]"
+        assert string("range", bin, _start, _end) == r.run("getrange", "bin", start, end)
+        i += 1
 
 
 def test_coverage_substr(r: ValkeyTestClient) -> None:
@@ -1733,20 +1738,12 @@ def expr(*args):
     raise NotImplementedError("expr")
 
 
-def for_(*args):
-    raise NotImplementedError("for_")
-
-
 def foreach(*args):
     raise NotImplementedError("foreach")
 
 
 def format_(*args):
     raise NotImplementedError("format_")
-
-
-def if_(*args):
-    raise NotImplementedError("if_")
 
 
 def random_int(*args):

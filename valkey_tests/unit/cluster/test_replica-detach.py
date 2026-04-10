@@ -25,10 +25,7 @@ proc find_primary_node {number_of_shards shard_id} {
 }
 """
 
-
-"""
-set number_of_shards 3
-"""
+number_of_shards = 3
 
 
 """

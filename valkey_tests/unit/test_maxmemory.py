@@ -373,12 +373,13 @@ def test_maxmemory_only_allkeys_should_remove_non_volatile_keys_policy(r: Valkey
     j = 0
     while j < numkeys:
         if catch("r set [randomKey] x", "e"):
-            if_("[string match {*used memory*} $e]", "                        set err 1\n                    ")
+            if string("match", "*used memory*", e):
+                err = 1
         j += 1
     if string("match", "allkeys-*", policy):
         assert_("[s used_memory] < ($limit+4096)")
     else:
-        assert_("$err == 1")
+        assert err == 1
 
 
 @pytest.mark.parametrize(["policy"], [("volatile-lru"), ("volatile-lfu"), ("volatile-random"), ("volatile-ttl")])
@@ -972,10 +973,6 @@ def fail(*args):
 
 def foreach(*args):
     raise NotImplementedError("foreach")
-
-
-def if_(*args):
-    raise NotImplementedError("if_")
 
 
 def init_test(*args):

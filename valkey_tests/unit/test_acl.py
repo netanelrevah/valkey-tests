@@ -2241,9 +2241,7 @@ def test_acl_metrics_invalid_channels_accesses(r: ValkeyTestClient) -> None:
     assert s("acl_access_denied_channel") == expr(current_invalid_channel_accesses, "+", 1)
 
 
-"""
-set server_path tmpdir "server.acl"
-"""
+server_path = tmpdir("server.acl")
 
 
 """
@@ -2524,9 +2522,7 @@ def test_acl_load_and_save_with_restricted_channels(r: ValkeyTestClient) -> None
     assert fnmatch(str(e), "*NOPERM*channel*")
 
 
-"""
-set server_path tmpdir "resetchannels.acl"
-"""
+server_path = tmpdir("resetchannels.acl")
 
 
 """
@@ -2612,9 +2608,7 @@ def test_single_channel_is_not_valid_with_allchannels(r: ValkeyTestClient) -> No
     assert fnmatch(str(err), "*start with an empty list of channels*")
 
 
-"""
-set server_path tmpdir "resetchannels.acl"
-"""
+server_path = tmpdir("resetchannels.acl")
 
 
 """
@@ -2681,9 +2675,7 @@ def test_default_load_from_config_file_with_all_channels_permissions(r: ValkeyTe
     r.run("PUBLISH", "hello", "world")
 
 
-"""
-set server_path tmpdir "duplicate.acl"
-"""
+server_path = tmpdir("duplicate.acl")
 
 
 """
@@ -2696,7 +2688,6 @@ exec cp -f tests/assets/default.conf server_path
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_loading_an_acl_file_with_duplicate_users(r: ValkeyTestClient) -> None:
     """
     test {Test loading an ACL file with duplicate users} {
@@ -2717,9 +2708,9 @@ def test_test_loading_an_acl_file_with_duplicate_users(r: ValkeyTestClient) -> N
         assert {[r ACL GETUSER default] != ""}
     }
     """
-    # TODO: exec cp -f tests/assets/user.acl server_path
+    exec_("cp", "-f", "tests/assets/user.acl", server_path)
     corruption = "\nuser alice on nopass ~* -@all"
-    # TODO: exec echo corruption >> server_path /user.acl
+    exec_("echo", corruption, ">>", server_path, "/user.acl")
     try:
         err = r.run("ACL", "LOAD")
     except Exception as _catch_err:
@@ -2731,7 +2722,6 @@ def test_test_loading_an_acl_file_with_duplicate_users(r: ValkeyTestClient) -> N
     assert r.run("ACL", "GETUSER", "default") != ""
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_loading_an_acl_file_with_duplicate_default_user(r: ValkeyTestClient) -> None:
     """
     test {Test loading an ACL file with duplicate default user} {
@@ -2752,9 +2742,9 @@ def test_test_loading_an_acl_file_with_duplicate_default_user(r: ValkeyTestClien
         assert {[r ACL GETUSER default] != ""}
     }
     """
-    # TODO: exec cp -f tests/assets/user.acl server_path
+    exec_("cp", "-f", "tests/assets/user.acl", server_path)
     corruption = "\nuser default on nopass ~* -@all"
-    # TODO: exec echo corruption >> server_path /user.acl
+    exec_("echo", corruption, ">>", server_path, "/user.acl")
     try:
         err = r.run("ACL", "LOAD")
     except Exception as _catch_err:
@@ -2766,7 +2756,6 @@ def test_test_loading_an_acl_file_with_duplicate_default_user(r: ValkeyTestClien
     assert r.run("ACL", "GETUSER", "default") != ""
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_loading_duplicate_users_in_config_on_startup(r: ValkeyTestClient) -> None:
     """
     test {Test loading duplicate users in config on startup} {
@@ -2777,10 +2766,16 @@ def test_test_loading_duplicate_users_in_config_on_startup(r: ValkeyTestClient) 
         assert_match {*Duplicate user*} $err
     } {} {external:skip}
     """
-    catch("exec $::VALKEY_SERVER_BIN --user foo --user foo", "err")
-    # TODO: assert_match {*Duplicate user*} err
-    catch("exec $::VALKEY_SERVER_BIN --user default --user default", "err")
-    # TODO: assert_match {*Duplicate user*} err
+    try:
+        err = exec_(VALKEY_SERVER_BIN, "--user", "foo", "--user", "foo")
+    except Exception as _catch_err:
+        err = str(_catch_err)
+    assert fnmatch(str(err), "*Duplicate user*")
+    try:
+        err = exec_(VALKEY_SERVER_BIN, "--user", "default", "--user", "default")
+    except Exception as _catch_err:
+        err = str(_catch_err)
+    assert fnmatch(str(err), "*Duplicate user*")
 
 
 pytestmark = [pytest.mark.acl, pytest.mark.external_skip]
@@ -2868,10 +2863,7 @@ tags {acl external:skip} {
 }
 """
 
-
-"""
-set server_path tmpdir "server.acl"
-"""
+server_path = tmpdir("server.acl")
 
 
 """
@@ -2879,7 +2871,6 @@ exec cp -f tests/assets/user.acl server_path
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_acl_load_works_on_primary(r: ValkeyTestClient) -> None:
     """
     test "Test ACL LOAD works on primary" {
@@ -2893,7 +2884,7 @@ def test_test_acl_load_works_on_primary(r: ValkeyTestClient) -> None:
     primary = ValkeyTestClient.create_from(r)
     primary_host = r.host
     primary_port = r.port
-    # TODO: exec cp -f tests/assets/user.acl server_path
+    exec_("cp", "-f", "tests/assets/user.acl", server_path)
     primary.run("ACL", "setuser", "harry", "on", "nopass", "resetchannels", "&test", "+@all", "~*")
     primary.run("ACL", "save")
     primary.run("ACL", "load")
@@ -2940,12 +2931,12 @@ def assert_not_equal(*args):
     raise NotImplementedError("assert_not_equal")
 
 
-def catch(*args):
-    raise NotImplementedError("catch")
-
-
 def cmdrstat(*args):
     raise NotImplementedError("cmdrstat")
+
+
+def exec_(*args):
+    raise NotImplementedError("exec_")
 
 
 def expr(*args):
@@ -2974,6 +2965,10 @@ def restart_server(*args):
 
 def s(*args):
     raise NotImplementedError("s")
+
+
+def tmpdir(*args):
+    raise NotImplementedError("tmpdir")
 
 
 def wait_for_blocked_client(*args):

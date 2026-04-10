@@ -1,15 +1,8 @@
-"""
-set testmodule file normalize tests/modules/propagate.so
-"""
+testmodule = "tests/modules/propagate.so"
 
-"""
-set miscmodule file normalize tests/modules/misc.so
-"""
+miscmodule = "tests/modules/misc.so"
 
-
-"""
-set keyspace_events file normalize tests/modules/keyspace_events.so
-"""
+keyspace_events = "tests/modules/keyspace_events.so"
 
 
 """

@@ -5,9 +5,7 @@ import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
 
-"""
-set testmodule file normalize tests/modules/keyspecs.so
-"""
+testmodule = "tests/modules/keyspecs.so"
 
 pytestmark = [pytest.mark.modules]
 
@@ -28,6 +26,7 @@ def test_module_key_specs_no_spec_only_legacy_triple(r: ValkeyTestClient) -> Non
         assert_equal [r command getkeys kspec.none key1 val1 key2 val2] {key1 key2}
     }
     """
+    r.run("module", "load", testmodule)
     reply = r.run("command", "info", "kspec.none")[0]
     assert reply[2] == "module"
     assert reply[3] == 1
@@ -58,6 +57,7 @@ def test_module_key_specs_no_spec_only_legacy_triple_with_getkeys_api(r: ValkeyT
         assert_equal [r command getkeys kspec.nonewithgetkeys key1 val1 key2 val2] {key1 key2}
     }
     """
+    r.run("module", "load", testmodule)
     reply = r.run("command", "info", "kspec.nonewithgetkeys")[0]
     assert reply[2] == "module movablekeys"
     assert reply[3] == 1
@@ -88,6 +88,7 @@ def test_module_key_specs_two_ranges(r: ValkeyTestClient) -> None:
         assert_equal [r command getkeys kspec.tworanges foo bar baz quux] {foo bar}
     }
     """
+    r.run("module", "load", testmodule)
     reply = r.run("command", "info", "kspec.tworanges")[0]
     assert reply[2] == "module"
     assert reply[3] == 1
@@ -121,6 +122,7 @@ def test_module_key_specs_two_ranges_with_gap(r: ValkeyTestClient) -> None:
         assert_equal [r command getkeys kspec.tworangeswithgap foo bar baz quux] {foo baz}
     }
     """
+    r.run("module", "load", testmodule)
     reply = r.run("command", "info", "kspec.tworangeswithgap")[0]
     assert reply[2] == "module movablekeys"
     assert reply[3] == 1
@@ -153,6 +155,7 @@ def test_module_key_specs_keyword_only_spec_clears_the_legacy_triple(r: ValkeyTe
         assert_equal [r command getkeys kspec.keyword foo KEYS bar baz] {bar baz}
     }
     """
+    r.run("module", "load", testmodule)
     reply = r.run("command", "info", "kspec.keyword")[0]
     assert reply[2] == "module movablekeys"
     assert reply[3] == 0
@@ -183,6 +186,7 @@ def test_module_key_specs_complex_specs_case_1(r: ValkeyTestClient) -> None:
         assert_equal [r command getkeys kspec.complex1 foo dummy KEYS 1 bar baz STORE quux] {foo quux bar}
     }
     """
+    r.run("module", "load", testmodule)
     reply = r.run("command", "info", "kspec.complex1")[0]
     assert reply[2] == "module movablekeys"
     assert reply[3] == 1
@@ -226,6 +230,7 @@ def test_module_key_specs_complex_specs_case_2(r: ValkeyTestClient) -> None:
         assert_equal [r command getkeys kspec.complex2 foo bar 2 baz quux banana STORE dst dummy MOREKEYS hey ho] {dst foo bar baz quux hey ho}
     }
     """
+    r.run("module", "load", testmodule)
     reply = r.run("command", "info", "kspec.complex2")[0]
     assert reply[2] == "module movablekeys"
     assert reply[3] == 1
@@ -283,6 +288,7 @@ def test_module_command_list_filtering(r: ValkeyTestClient) -> None:
         assert_equal [r command getkeys kspec.complex2 foo bar 2 baz quux banana STORE dst dummy MOREKEYS hey ho] {dst foo bar baz quux hey ho}
     }
     """
+    r.run("module", "load", testmodule)
     reply = r.run("command", "list", "filterby", "module", "keyspecs")
     assert (
         sorted(reply)
@@ -316,6 +322,7 @@ def test_command_getkeysandflags_correctly_reports_module_key_spec_without_flags
         r command getkeysandflags kspec.none key1 val1 key2 val2
     } {{key1 {RW access update}} {key2 {RW access update}}}
     """
+    r.run("module", "load", testmodule)
     assert (
         r.run("command", "getkeysandflags", "kspec.none", "key1", "val1", "key2", "val2")
         == "{key1 {RW access update}} {key2 {RW access update}}"
@@ -328,6 +335,7 @@ def test_command_getkeysandflags_correctly_reports_module_key_spec_with_flags(r:
         r command getkeysandflags kspec.nonewithgetkeys key1 val1 key2 val2
     } {{key1 {RO access}} {key2 {RO access}}}
     """
+    r.run("module", "load", testmodule)
     assert (
         r.run("command", "getkeysandflags", "kspec.nonewithgetkeys", "key1", "val1", "key2", "val2")
         == "{key1 {RO access}} {key2 {RO access}}"
@@ -340,6 +348,7 @@ def test_command_getkeysandflags_correctly_reports_module_key_spec_flags(r: Valk
         r command getkeysandflags kspec.keyword keys key1 key2 key3
     } {{key1 {RO access}} {key2 {RO access}} {key3 {RO access}}}
     """
+    r.run("module", "load", testmodule)
     assert (
         r.run("command", "getkeysandflags", "kspec.keyword", "keys", "key1", "key2", "key3")
         == "{key1 {RO access}} {key2 {RO access}} {key3 {RO access}}"

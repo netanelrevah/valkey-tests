@@ -1,4 +1,4 @@
-# ruff: noqa: PLR2004, N806, RUF043, ANN002, ANN201
+# ruff: noqa: PLR2004, PLR1730, N806, RUF043, ANN002, ANN201
 
 from fnmatch import fnmatch
 
@@ -210,10 +210,8 @@ def test_bitcount_fuzzing_with_start_or_end(r: ValkeyTestClient) -> None:
         L = len(str)
         start = random_int(L)
         end = random_int(L)
-        if_(
-            "$start > $end",
-            "                # Swap start and end\n                lassign [list $end $start] start end\n            ",
-        )
+        if start > end:
+            lassign([end, start], "start", "end")
         assert r.run("bitcount", "str", start, end) == count_bits(string("range", str, start, end))
         j += 1
     j = 0
@@ -223,10 +221,8 @@ def test_bitcount_fuzzing_with_start_or_end(r: ValkeyTestClient) -> None:
         L = expr(len(str), "*", 8)
         start = random_int(L)
         end = random_int(L)
-        if_(
-            "$start > $end",
-            "                # Swap start and end\n                lassign [list $end $start] start end\n            ",
-        )
+        if start > end:
+            lassign([end, start], "start", "end")
         assert r.run("bitcount", "str", start, end, "bit") == count_bits_start_end(str, start, end)
         j += 1
 
@@ -367,12 +363,11 @@ def test_bitcount_regression_test_for_github_issue_582(r: ValkeyTestClient) -> N
     """
     r.run("del", "foo")
     r.run("setbit", "foo", 0, 1)
-    if_(
-        "[catch {r bitcount foo 0 4294967296} e]",
-        "            assert_match {*ERR*out of range*} $e\n            set _ 1\n        ",
-        "else",
-        "            set e\n        ",
-    )
+    if catch("r bitcount foo 0 4294967296", "e"):
+        assert fnmatch(str(e), "*ERR*out of range*")
+        _ = 1
+    else:
+        set_("e")
 
 
 def test_bitcount_misaligned_prefix(r: ValkeyTestClient) -> None:
@@ -1077,10 +1072,8 @@ def test_bitpos_bit_1_fuzzy_testing_using_setbit(r: ValkeyTestClient) -> None:
         assert r.run("bitpos", "str", 1, 0, -1, "bit") == first_one_pos
         pos = random_int(max)
         r.run("setbit", "str", pos, 1)
-        if_(
-            "$first_one_pos == -1 || $first_one_pos > $pos",
-            "                # Update the position of the first 1 bit in the array\n                # if the bit we set is on the left of the previous one.\n                set first_one_pos $pos\n            ",
-        )
+        if (first_one_pos == -1) or (first_one_pos > pos):
+            first_one_pos = pos
         j += 1
 
 
@@ -1116,13 +1109,11 @@ def test_bitpos_bit_0_fuzzy_testing_using_setbit(r: ValkeyTestClient) -> None:
         if first_zero_pos == max:
             assert r.run("bitpos", "str", 0, 0, -1, "bit") == -1
         else:
-            assert_("[r bitpos str 0 0 -1 bit] == $first_zero_pos")
+            assert r.run("bitpos", "str", 0, 0, -1, "bit") == first_zero_pos
         pos = random_int(max)
         r.run("setbit", "str", pos, 0)
-        if_(
-            "$first_zero_pos > $pos",
-            "                # Update the position of the first 0 bit in the array\n                # if the bit we clear is on the left of the previous one.\n                set first_zero_pos $pos\n            ",
-        )
+        if first_zero_pos > pos:
+            first_zero_pos = pos
         j += 1
 
 
@@ -1267,10 +1258,6 @@ run_solo {bitops-large-memory} {
 # --- stubs for unimplemented TCL helpers ---
 
 
-def assert_(*args):
-    raise NotImplementedError("assert_")
-
-
 def catch(*args):
     raise NotImplementedError("catch")
 
@@ -1291,8 +1278,8 @@ def foreach(*args):
     raise NotImplementedError("foreach")
 
 
-def if_(*args):
-    raise NotImplementedError("if_")
+def lassign(*args):
+    raise NotImplementedError("lassign")
 
 
 def list_(*args):
@@ -1313,6 +1300,10 @@ def randstring(*args):
 
 def s(*args):
     raise NotImplementedError("s")
+
+
+def set_(*args):
+    raise NotImplementedError("set_")
 
 
 def simulate_bit_op(*args):

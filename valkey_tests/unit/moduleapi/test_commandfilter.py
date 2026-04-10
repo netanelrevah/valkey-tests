@@ -1,12 +1,8 @@
-# ruff: noqa: ANN002, ANN201
-
 import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
 
-"""
-set testmodule file normalize tests/modules/commandfilter.so
-"""
+testmodule = "tests/modules/commandfilter.so"
 
 pytestmark = [pytest.mark.modules]
 
@@ -20,6 +16,7 @@ def test_retain_a_command_filter_argument(r: ValkeyTestClient) -> None:
         r commandfilter.retained
     } {my-retained-string}
     """
+    r.run("module", "load", testmodule, "log-key", 0)
     r.run("rpush", "some-list", "@retain", "my-retained-string")
     assert r.run("commandfilter.retained") == "my-retained-string"
 
@@ -31,6 +28,7 @@ def test_command_filter_handles_redirected_commands(r: ValkeyTestClient) -> None
         r lrange log-key 0 -1
     } "{set mykey @log}"
     """
+    r.run("module", "load", testmodule, "log-key", 0)
     r.run("set", "mykey", "@log")
     r.run("lrange", "log-key", 0, -1)
 
@@ -42,6 +40,7 @@ def test_command_filter_can_call_redismodule_commandfilterargdelete(r: ValkeyTes
         r lrange mylist 0 -1
     } {elem1 elem2}
     """
+    r.run("module", "load", testmodule, "log-key", 0)
     r.run("rpush", "mylist", "elem1", "@delme", "elem2")
     assert r.run("lrange", "mylist", 0, -1) == "elem1 elem2"
 
@@ -54,6 +53,7 @@ def test_command_filter_can_call_redismodule_commandfilterarginsert(r: ValkeyTes
         r lrange mylist 0 -1
     } {elem1 --inserted-before-- @insertbefore elem2 @insertafter --inserted-after-- elem3}
     """
+    r.run("module", "load", testmodule, "log-key", 0)
     r.run("del", "mylist")
     r.run("rpush", "mylist", "elem1", "@insertbefore", "elem2", "@insertafter", "elem3")
     assert (
@@ -70,6 +70,7 @@ def test_command_filter_can_call_redismodule_commandfilterargreplace(r: ValkeyTe
         r lrange mylist 0 -1
     } {elem1 --replaced-- elem2}
     """
+    r.run("module", "load", testmodule, "log-key", 0)
     r.run("del", "mylist")
     r.run("rpush", "mylist", "elem1", "@replaceme", "elem2")
     assert r.run("lrange", "mylist", 0, -1) == "elem1 --replaced-- elem2"
@@ -83,6 +84,7 @@ def test_command_filter_applies_on_rm_call_commands(r: ValkeyTestClient) -> None
         r lrange log-key 0 -1
     } "{ping @log}"
     """
+    r.run("module", "load", testmodule, "log-key", 0)
     r.run("del", "log-key")
     r.run("commandfilter.ping")
     r.run("lrange", "log-key", 0, -1)
@@ -96,6 +98,7 @@ def test_command_filter_applies_on_lua_redis_call(r: ValkeyTestClient) -> None:
         r lrange log-key 0 -1
     } "{ping @log}"
     """
+    r.run("module", "load", testmodule, "log-key", 0)
     r.run("del", "log-key")
     r.run("eval", "redis.call('ping', '@log')", 0)
     r.run("lrange", "log-key", 0, -1)
@@ -109,6 +112,7 @@ def test_command_filter_applies_on_lua_redis_call_that_calls_a_module(r: ValkeyT
         r lrange log-key 0 -1
     } "{ping @log}"
     """
+    r.run("module", "load", testmodule, "log-key", 0)
     r.run("del", "log-key")
     r.run("eval", "redis.call('commandfilter.ping')", 0)
     r.run("lrange", "log-key", 0, -1)
@@ -120,6 +124,7 @@ def test_command_filter_strings_can_be_retained(r: ValkeyTestClient) -> None:
         r commandfilter.retained
     } {my-retained-string}
     """
+    r.run("module", "load", testmodule, "log-key", 0)
     assert r.run("commandfilter.retained") == "my-retained-string"
 
 
@@ -132,6 +137,7 @@ def test_command_filter_is_unregistered_implicitly_on_module_unload(r: ValkeyTes
         r lrange log-key 0 -1
     } {}
     """
+    r.run("module", "load", testmodule, "log-key", 0)
     r.run("del", "log-key")
     r.run("module", "unload", "commandfilter")
     r.run("set", "mykey", "@log")
@@ -154,6 +160,7 @@ def test_command_filter_unregister_works_as_expected(r: ValkeyTestClient) -> Non
         r lrange log-key 0 -1
     } {}
     """
+    r.run("module", "load", testmodule, "log-key", 0)
     r.run("del", "log-key")
     r.run("set", "mykey", "@log")
     assert "{set mykey @log}" == r.run("lrange", "log-key", 0, -1)
@@ -177,6 +184,8 @@ def test_command_filter_redismodule_cmdfilter_noself_works_as_expected(r: Valkey
         assert_equal {} [r lrange log-key 0 -1]
     }
     """
+    r.run("module", "unload", "commandfilter")
+    r.run("module", "load", testmodule, "log-key", 1)
     r.run("set", "mykey", "@log")
     assert "{set mykey @log}" == r.run("lrange", "log-key", 0, -1)
     r.run("del", "log-key")
@@ -192,6 +201,8 @@ def test_unload_the_module_commandfilter(r: ValkeyTestClient) -> None:
         assert_equal {OK} [r module unload commandfilter]
     }
     """
+    r.run("module", "unload", "commandfilter")
+    r.run("module", "load", testmodule, "log-key", 1)
     assert "OK" == r.run("module", "unload", "commandfilter")
 
 
@@ -279,15 +290,11 @@ def test_onload_failure_will_handle_un_registration(r: ValkeyTestClient) -> None
         assert_equal [r lrange mylist 0 -1] {elem1 @delme elem2}
     }
     """
-    catch("r module load $testmodule log-key 0 noload")
+    try:
+        r.run("module", "load", testmodule, "log-key", 0, "noload")
+    except Exception:
+        pass
     r.run("set", "mykey", "@log")
     assert r.run("lrange", "log-key", 0, -1) == ""
     r.run("rpush", "mylist", "elem1", "@delme", "elem2")
     assert r.run("lrange", "mylist", 0, -1) == "elem1 @delme elem2"
-
-
-# --- stubs for unimplemented TCL helpers ---
-
-
-def catch(*args):
-    raise NotImplementedError("catch")

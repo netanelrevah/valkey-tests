@@ -5,9 +5,7 @@ import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
 
-"""
-set testmodule file normalize tests/modules/block_keyspace_notification.so
-"""
+testmodule = "tests/modules/block_keyspace_notification.so"
 
 pytestmark = [pytest.mark.modules]
 
@@ -21,6 +19,7 @@ def test_blocking_keyspace_notification_one(r: ValkeyTestClient) -> None:
         assert_equal "{event hset key a}" [r b_keyspace.events]
     }
     """
+    r.run("module", "load", testmodule)
     wait_for_blocked_clients_count(0)
     r.run("b_keyspace.clear")
     assert "1" == r.run("hset", "a", "b", "c")
@@ -45,6 +44,7 @@ def test_blocking_keyspace_notification_two(r: ValkeyTestClient) -> None:
         assert_equal "{event hset key b} {event hset key c}" [r b_keyspace.events]
     }
     """
+    r.run("module", "load", testmodule)
     wait_for_blocked_clients_count(0)
     r.run("b_keyspace.clear")
     rd1 = ValkeyTestClient.create_from(r)
@@ -87,6 +87,7 @@ def test_blocking_keyspace_notification_with_pipelining_hset_after_hget(r: Valke
         wait_for_blocked_clients_count 0
     }
     """
+    r.run("module", "load", testmodule)
     wait_for_blocked_clients_count(0)
     r.run("b_keyspace.clear")
     rd1 = ValkeyTestClient.create_from(r)
@@ -128,6 +129,7 @@ def test_blocking_keyspace_notification_with_pipelining_hget_after_hset(r: Valke
         assert_equal "value_1" [$rd1 read]
     }
     """
+    r.run("module", "load", testmodule)
     wait_for_blocked_clients_count(0)
     r.run("b_keyspace.clear")
     rd1 = ValkeyTestClient.create_from(r)
@@ -163,6 +165,7 @@ def test_blocking_keyspace_notif_during_multi(r: ValkeyTestClient) -> None:
         }
     }
     """
+    r.run("module", "load", testmodule)
     wait_for_blocked_clients_count(0)
     r.run("b_keyspace.clear")
     r.run("multi")
@@ -200,6 +203,7 @@ def test_event_that_fires_twice(r: ValkeyTestClient) -> None:
         }
     }
     """
+    r.run("module", "load", testmodule)
     wait_for_blocked_clients_count(0)
     r.run("b_keyspace.clear")
     r.run("hset", "f", "g", "h")
@@ -210,7 +214,10 @@ def test_event_that_fires_twice(r: ValkeyTestClient) -> None:
     assert s(0, "blocked_clients") == 1
     assert "" == r.run("b_keyspace.events")
     wait_for_condition(
-        1000, 50, lambda: string("match", "{event rename_* key *} {event rename_* key *}", r.run("b_keyspace.events"))
+        1000,
+        50,
+        lambda: string("match", "{event rename_* key *} {event rename_* key *}", r.run("b_keyspace.events")),
+        lambda: fail(f"Rename event not propagated within 5 seconds: latest value {latest}"),
     )
 
 
@@ -238,6 +245,7 @@ def test_server_created_keyspace_notification(r: ValkeyTestClient) -> None:
         }
     }
     """
+    r.run("module", "load", testmodule)
     wait_for_blocked_clients_count(0)
     r.run("b_keyspace.clear")
     assert "1" == r.run("hset", "h", "i", "j")
@@ -264,6 +272,7 @@ def test_unload_the_module_testblockingkeyspacenotif(r: ValkeyTestClient) -> Non
         assert_equal {OK} [r module unload testblockingkeyspacenotif]
     }
     """
+    r.run("module", "load", testmodule)
     assert "OK" == r.run("module", "unload", "testblockingkeyspacenotif")
 
 

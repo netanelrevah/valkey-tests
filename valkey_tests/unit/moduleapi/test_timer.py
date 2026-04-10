@@ -6,9 +6,7 @@ import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
 
-"""
-set testmodule file normalize tests/modules/timer.so
-"""
+testmodule = "tests/modules/timer.so"
 
 pytestmark = [pytest.mark.modules]
 
@@ -27,6 +25,7 @@ def test_rm_createtimer_a_sequence_of_timers_work(r: ValkeyTestClient) -> None:
         assert_equal 20 [r get timer-incr-key]
     }
     """
+    r.run("module", "load", testmodule)
     r.run("multi")
     i = 0
     while i < 20:
@@ -54,6 +53,7 @@ def test_rm_gettimer_basic_sanity(r: ValkeyTestClient) -> None:
         assert_equal 1 [r test.stoptimer $id]
     }
     """
+    r.run("module", "load", testmodule)
     assert "" == r.run("test.gettimer", 0)
     id = r.run("test.createtimer", 10000, "timer-incr-key")
     info = r.run("test.gettimer", id)
@@ -79,6 +79,7 @@ def test_rm_stoptimer_basic_sanity(r: ValkeyTestClient) -> None:
         assert_equal 0 [r test.stoptimer $id]
     }
     """
+    r.run("module", "load", testmodule)
     r.run("set", "timer-incr-key", 0)
     id = r.run("test.createtimer", 1000, "timer-incr-key")
     assert 1 == r.run("test.stoptimer", id)
@@ -101,6 +102,7 @@ def test_timer_appears_non_existing_after_it_fires(r: ValkeyTestClient) -> None:
         assert_equal {} [r test.gettimer $id]
     }
     """
+    r.run("module", "load", testmodule)
     r.run("set", "timer-incr-key", 0)
     id = r.run("test.createtimer", 10, "timer-incr-key")
     time.sleep(500 / 1000)
@@ -131,6 +133,7 @@ def test_module_can_be_unloaded_when_timer_was_finished(r: ValkeyTestClient) -> 
         assert_equal {OK} [r module unload timer]
     }
     """
+    r.run("module", "load", testmodule)
     r.run("set", "timer-incr-key", 0)
     r.run("test.createtimer", 500, "timer-incr-key")
     assert 0 == r.run("get", "timer-incr-key")
@@ -143,7 +146,6 @@ def test_module_can_be_unloaded_when_timer_was_finished(r: ValkeyTestClient) -> 
     assert "OK" == r.run("module", "unload", "timer")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_module_can_be_unloaded_when_timer_was_stopped(r: ValkeyTestClient) -> None:
     """
     test "Module can be unloaded when timer was stopped" {
@@ -165,7 +167,8 @@ def test_module_can_be_unloaded_when_timer_was_stopped(r: ValkeyTestClient) -> N
         assert_equal {OK} [r module unload timer]
     }
     """
-    # TODO: r module load testmodule
+    r.run("module", "load", testmodule)
+    r.run("module", "load", testmodule)
     r.run("set", "timer-incr-key", 0)
     id = r.run("test.createtimer", 5000, "timer-incr-key")
     try:

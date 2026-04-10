@@ -230,7 +230,6 @@ def test_unbalanced_double_quotes(r: ValkeyTestClient) -> None:
         r.run("read")
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_check_crlf_when_parsing_the_querybuf(r: ValkeyTestClient) -> None:
     """
     test "Check CRLF when parsing the querybuf" {
@@ -290,7 +289,8 @@ def test_check_crlf_when_parsing_the_querybuf(r: ValkeyTestClient) -> None:
     }
     """
     proto = "*3\r\n$3\r\nSET\r\n$3\r\nkey\r\n$5\r\nvalue\r\n"
-    # TODO: reconnect; r write proto
+    reconnect()
+    r.run("write", proto)
     r.run("flush")
     assert "OK" == r.run("read")
     proto1 = "*3x\n$3\r\nSET\r\n$3\r\nkey\r\n$5\r\nvalue\r\n"

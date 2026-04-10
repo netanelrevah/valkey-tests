@@ -6,9 +6,7 @@ import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
 
-"""
-set testmodule file normalize tests/modules/auth.so
-"""
+testmodule = "tests/modules/auth.so"
 
 pytestmark = [pytest.mark.modules]
 
@@ -29,6 +27,7 @@ def test_modules_can_create_a_user_that_can_be_authenticated(r: ValkeyTestClient
         assert_equal [r acl whoami] "global"
     }
     """
+    r.run("module", "load", testmodule)
     r.run("auth", "default", "")
     assert r.run("acl", "whoami") == "default"
     r.run("auth.createmoduleuser")
@@ -52,6 +51,7 @@ def test_de_authenticating_clients_is_tracked_and_kills_clients(r: ValkeyTestCli
         assert_equal [r auth.changecount] 1
     }
     """
+    r.run("module", "load", testmodule)
     assert r.run("auth.changecount") == 0
     r.run("auth.createmoduleuser")
     try:
@@ -69,6 +69,7 @@ def test_modules_can_t_authenticate_with_acls_users_that_dont_exist(r: ValkeyTes
         assert_match {*Invalid user*} $e
     }
     """
+    r.run("module", "load", testmodule)
     try:
         e = r.run("auth.authrealuser", "auth-module-test-fake")
     except Exception as _catch_err:
@@ -92,6 +93,7 @@ def test_modules_can_authenticate_with_acl_users(r: ValkeyTestClient) -> None:
         assert_equal [r acl whoami] "auth-module-test"
     }
     """
+    r.run("module", "load", testmodule)
     assert r.run("acl", "whoami") == "default"
     r.run("acl", "setuser", "auth-module-test", "on", "allkeys", "allcommands")
     id = r.run("auth.authrealuser", "auth-module-test")
@@ -120,6 +122,7 @@ def test_client_callback_is_called_on_user_switch(r: ValkeyTestClient) -> None:
         assert_equal [r acl whoami] "default"
     }
     """
+    r.run("module", "load", testmodule)
     assert r.run("auth.changecount") == 0
     r.run("auth.authrealuser", "auth-module-test")
     assert r.run("auth.changecount") == 1
@@ -149,6 +152,7 @@ def test_modules_can_redact_arguments(r: ValkeyTestClient) -> None:
         assert_equal {auth.redact (redacted) 2 (redacted)} [lindex [lindex $slowlog_resp 0] 3]
     }
     """
+    r.run("module", "load", testmodule)
     r.run("config", "set", "slowlog-log-slower-than", 0)
     r.run("slowlog", "reset")
     r.run("auth.redact", 1, 2, 3, 4)
@@ -167,4 +171,5 @@ def test_unload_the_module_testacl(r: ValkeyTestClient) -> None:
         assert_equal {OK} [r module unload testacl]
     }
     """
+    r.run("module", "load", testmodule)
     assert "OK" == r.run("module", "unload", "testacl")

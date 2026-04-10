@@ -1,10 +1,9 @@
-"""
-set testmodule file normalize tests/modules/crash.so
-"""
+# ruff: noqa: ANN002, ANN201
 
-"""
-set backtrace_supported system_backtrace_supported
-"""
+
+testmodule = "tests/modules/crash.so"
+
+backtrace_supported = system_backtrace_supported()
 
 
 """
@@ -66,3 +65,10 @@ tags {"valgrind:skip"} {
     }
 }
 """
+
+
+# --- stubs for unimplemented TCL helpers ---
+
+
+def system_backtrace_supported(*args):
+    raise NotImplementedError("system_backtrace_supported")

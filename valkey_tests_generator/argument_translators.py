@@ -139,9 +139,11 @@ class VariableSubstitutionArgumentTranslator(ArgumentTranslator):
         global_val = _TCL_GLOBAL_VARS.get(argument.variable_name)
         if global_val is not None:
             return global_val
-        if "::" in argument.variable_name or argument.variable_name not in defined_vars:
+        # Strip leading :: namespace prefix for unknown TCL globals
+        name = argument.variable_name.lstrip(":")
+        if not name or "::" in name:
             return None
-        return _safe_var_name(argument.variable_name)
+        return _safe_var_name(name)
 
 
 @ArgumentTranslator.register(TCLBracketWord)
@@ -165,7 +167,7 @@ class BracketArgumentTranslator(ArgumentTranslator):
         # Variable-as-command: [$var subcmd args] → var.run(subcmd, args)
         if name.startswith("$"):
             var_name = name[1:]
-            if var_name.isidentifier() and var_name in defined_vars and commands[0].args:
+            if var_name.isidentifier() and commands[0].args:
                 subcmd_arg = commands[0].args[0]
                 if isinstance(subcmd_arg, TCLWord):
                     rest = ArgumentTranslator.translate_all(commands[0].args[1:], defined_vars)
@@ -220,9 +222,27 @@ def _translate_double_quoted(raw: str, defined_vars: set[str]) -> str | None:
                 segments.append((global_val, True))
                 has_sub = True
                 continue
-            if "::" in var_name or var_name not in defined_vars:
+            # Strip leading :: namespace prefix for unknown TCL globals
+            stripped = var_name.lstrip(":")
+            if not stripped or "::" in stripped:
                 return None
-            segments.append((_safe_var_name(var_name), True))
+            safe = _safe_var_name(stripped)
+            # Check for array element access: $var(key) or $var($other)
+            if i < len(raw) and raw[i] == "(":
+                i += 1
+                elem_chars: list[str] = []
+                while i < len(raw) and raw[i] != ")":
+                    elem_chars.append(raw[i])
+                    i += 1
+                if i < len(raw):
+                    i += 1  # consume ')'
+                elem_str = "".join(elem_chars)
+                if elem_str.startswith("$"):
+                    elem_key = _safe_var_name(elem_str[1:].strip(":").rstrip("}").split("(")[0])
+                    safe = f"{safe}[{elem_key}]"
+                else:
+                    safe = f"{safe}[{elem_str!r}]"
+            segments.append((safe, True))
             has_sub = True
         elif c == "\\":
             i += 1
@@ -265,7 +285,12 @@ def _translate_double_quoted(raw: str, defined_vars: set[str]) -> str | None:
                 parts.append("{" + text + "}")
             else:
                 parts.append(text.replace("{", "{{").replace("}", "}}"))
-        return "f'" + "".join(parts) + "'"
+        content = "".join(parts)
+        # Use double-quoted f-string if interpolated expressions contain single quotes
+        if "'" in content:
+            content = content.replace("\\'", "'")
+            return 'f"' + content.replace('"', '\\"') + '"'
+        return "f'" + content + "'"
     if has_esc:
         return "'" + "".join(text for text, _ in segments) + "'"
     return repr(raw)
@@ -283,11 +308,38 @@ class DoubleQuotedArgumentTranslator(ArgumentTranslator):
         return _translate_double_quoted(argument.value, defined_vars)
 
 
+_TCL_WORD_BACKSLASH: dict[str, str] = {
+    "[": "[",
+    "]": "]",
+    "{": "{",
+    "}": "}",
+    "\\": "\\",
+    " ": " ",
+    "n": "\n",
+    "t": "\t",
+    "r": "\r",
+}
+
+
 @ArgumentTranslator.register(TCLWord)
 class WordArgumentTranslator(ArgumentTranslator):
     def get_translation(self, argument: TCLCommandArguments, defined_vars: set[str]) -> str | None:
         assert isinstance(argument, TCLWord)
-        s = argument.value
+        raw = argument.value
+        # Resolve TCL backslash sequences in unquoted words (e.g. \[ → [)
+        if "\\" in raw:
+            parts: list[str] = []
+            i = 0
+            while i < len(raw):
+                if raw[i] == "\\" and i + 1 < len(raw):
+                    parts.append(_TCL_WORD_BACKSLASH.get(raw[i + 1], raw[i + 1]))
+                    i += 2
+                else:
+                    parts.append(raw[i])
+                    i += 1
+            s = "".join(parts)
+        else:
+            s = raw
         try:
             return str(int(s))
         except ValueError:
@@ -311,8 +363,8 @@ class SetExpressionTranslator(ExpressionTranslator):
             return None
         name = arguments[0].value
         if len(arguments) == 1:
-            # getter: [set varname] — return the variable if already in scope
-            return _safe_var_name(name) if name in defined_vars else None
+            # getter: [set varname] — return the variable name
+            return _safe_var_name(name)
         # setter: [set varname value] — TCL returns the assigned value
         return ArgumentTranslator.translate(arguments[1], defined_vars)
 
@@ -381,6 +433,36 @@ class LSortExpressionTranslator(ExpressionTranslator):
             return None
         args = ArgumentTranslator.translate_all(positional, defined_vars)
         return None if args is None else f"sorted({args[0]})"
+
+
+@ExpressionTranslator.register("file")
+class FileExpressionTranslator(ExpressionTranslator):
+    def get_expression(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> str | None:
+        if not arguments or not isinstance(arguments[0], TCLWord) or arguments[0].value != "normalize":
+            return None
+        if len(arguments) < 2:
+            return None
+        return ArgumentTranslator.translate(arguments[1], defined_vars)
+
+
+@ExpressionTranslator.register("::tls::status")
+class TLSStatusExpressionTranslator(ExpressionTranslator):
+    def get_expression(self, arguments: list[TCLCommandArguments], defined_vars: set[str]) -> str | None:
+        # ::tls::status [$s channel] → s.tls_status()
+        if len(arguments) != 1 or not isinstance(arguments[0], TCLBracketWord):
+            return None
+        cmds = [c for c in arguments[0].script.commands if c.name]
+        if len(cmds) != 1:
+            return None
+        cmd = cmds[0]
+        if not cmd.name.startswith("$"):
+            return None
+        var_name = cmd.name[1:]
+        if not var_name.isidentifier():
+            return None
+        if not cmd.args or not isinstance(cmd.args[0], TCLWord) or cmd.args[0].value != "channel":
+            return None
+        return f"{_safe_var_name(var_name)}.tls_status()"
 
 
 @ExpressionTranslator.register("dict")

@@ -6,9 +6,7 @@ import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
 
-"""
-set testmodule file normalize tests/modules/blockedclient.so
-"""
+testmodule = "tests/modules/blockedclient.so"
 
 pytestmark = [pytest.mark.modules]
 
@@ -19,6 +17,7 @@ def test_locked_gil_acquisition(r: ValkeyTestClient) -> None:
         assert_match "OK" [r acquire_gil]
     }
     """
+    r.run("module", "load", testmodule)
     assert fnmatch(str(r.run("acquire_gil")), "OK")
 
 
@@ -30,6 +29,7 @@ def test_locked_gil_acquisition_during_multi(r: ValkeyTestClient) -> None:
         assert_equal {{Blocked client is not supported inside multi}} [r exec]
     }
     """
+    r.run("module", "load", testmodule)
     r.run("multi")
     r.run("acquire_gil")
     assert "{Blocked client is not supported inside multi}" == r.run("exec")
@@ -41,6 +41,7 @@ def test_locked_gil_acquisition_from_rm_call(r: ValkeyTestClient) -> None:
         assert_equal {Blocked client is not allowed} [r do_rm_call acquire_gil]
     }
     """
+    r.run("module", "load", testmodule)
     assert "Blocked client is not allowed" == r.run("do_rm_call", "acquire_gil")
 
 
@@ -83,6 +84,7 @@ def test_blocking_command_are_not_block_the_client_on_rm_call(r: ValkeyTestClien
             assert {[r do_rm_call xreadgroup group g c BLOCK 0 STREAMS empty_stream >] eq {}}
     }
     """
+    r.run("module", "load", testmodule)
     r.run("lpush", "l", "test")
     assert r.run("do_rm_call", "blpop", "l", 0) == "l test"
     r.run("lpush", "l", "test")
@@ -121,6 +123,7 @@ def test_monitor_disallow_inside_rm_call(r: ValkeyTestClient) -> None:
         set e
     } {*ERR*DENY BLOCKING*}
     """
+    r.run("module", "load", testmodule)
     e = []
     try:
         e = r.run("do_rm_call", "monitor")
@@ -139,6 +142,7 @@ def test_subscribe_disallow_inside_rm_call(r: ValkeyTestClient) -> None:
         set e
     } {*ERR*DENY BLOCKING*}
     """
+    r.run("module", "load", testmodule)
     e = []
     try:
         e = r.run("do_rm_call", "subscribe", "x")
@@ -154,6 +158,7 @@ def test_rm_call_from_blocked_client(r: ValkeyTestClient) -> None:
         r do_bg_rm_call hgetall hash
     } {foo bar}
     """
+    r.run("module", "load", testmodule)
     r.run("hset", "hash", "foo", "bar")
     assert r.run("do_bg_rm_call", "hgetall", "hash") == "foo bar"
 
@@ -164,6 +169,7 @@ def test_rm_call_from_blocked_client_with_script_mode(r: ValkeyTestClient) -> No
         r do_bg_rm_call_format S hset k foo bar
     } {1}
     """
+    r.run("module", "load", testmodule)
     assert r.run("do_bg_rm_call_format", "S", "hset", "k", "foo", "bar") == "1"
 
 
@@ -178,6 +184,7 @@ def test_rm_call_from_blocked_client_with_oom_mode(r: ValkeyTestClient) -> None:
         r do_bg_rm_call_format M hset k1 foo bar
     } {1} {needs:config-maxmemory}
     """
+    r.run("module", "load", testmodule)
     r.run("config", "set", "maxmemory", 1)
     with pytest.raises(Exception, match="OOM\\ command\\ not\\ allowed.*"):
         r.run("hset", "hash", "foo", "bar")
@@ -207,24 +214,22 @@ def test_resp_version_carries_through_to_blocked_client(r: ValkeyTestClient) -> 
         }
     }
     """
+    r.run("module", "load", testmodule)
     client_proto = 2
     while client_proto <= 3:
-        if_(
-            '[lsearch $::denytags "resp3"] >= 0',
-            "                if {$client_proto == 3} {continue}\n            ",
-            "elseif",
-            "$::force_resp3",
-            "                if {$client_proto == 2} {continue}\n            ",
-        )
+        if lsearch(denytags, "resp3") >= 0:
+            if client_proto == 3:
+                continue_()
+        elif False:
+            if client_proto == 2:
+                continue_()
         r.run("hello", client_proto)
         r.run("readraw", 1)
         ret = r.run("do_fake_bg_true")
-        if_(
-            "$client_proto == 2",
-            "                assert_equal $ret {:1}\n            ",
-            "else",
-            '                assert_equal $ret "#t"\n            ',
-        )
+        if client_proto == 2:
+            assert ret == ":1"
+        else:
+            assert ret == "#t"
         r.run("readraw", 0)
         r.run("hello", 2)
         client_proto += 1
@@ -290,12 +295,10 @@ def test_busy_module_command_call_type(r: ValkeyTestClient, call_type: str) -> N
     r.run("config", "set", "busy-reply-threshold", busy_time_limit)
     rd = ValkeyTestClient.create_from(r)
     start = clock("clicks", "-milliseconds")
-    if_(
-        '$call_type == "nested"',
-        "            $rd do_rm_call slow_fg_command 0\n        ",
-        "else",
-        "            $rd slow_fg_command 0\n        ",
-    )
+    if call_type == "nested":
+        rd.run("do_rm_call", "slow_fg_command", 0)
+    else:
+        rd.run("slow_fg_command", 0)
     rd.run("flush")
     rd.run("ping")
     rd.run("flush")
@@ -310,12 +313,10 @@ def test_busy_module_command_call_type(r: ValkeyTestClient, call_type: str) -> N
     assert rd.run("read") == "1"
     assert rd.run("read") == "PONG"
     start = clock("clicks", "-milliseconds")
-    if_(
-        '$call_type == "nested"',
-        "            $rd do_rm_call slow_fg_command 200000\n        ",
-        "else",
-        "            $rd slow_fg_command 200000\n        ",
-    )
+    if call_type == "nested":
+        rd.run("do_rm_call", "slow_fg_command", 200000)
+    else:
+        rd.run("slow_fg_command", 200000)
     rd.run("flush")
     time.sleep(10 / 1000)
     r.run("ping")
@@ -503,6 +504,13 @@ def test_unblock_by_timer(r: ValkeyTestClient) -> None:
         assert_match "OK" [r unblock_by_timer 100 0]
     }
     """
+    master = ValkeyTestClient.create_from(r)
+    master_host = r.host
+    master_port = r.port
+    start_server(
+        ["overrides", ["loadmodule", f"{testmodule}"]],
+        "        set replica [srv 0 client]\n        set replica_host [srv 0 host]\n        set replica_port [srv 0 port]\n\n        # Start the replication process...\n        $replica replicaof $master_host $master_port\n        wait_for_sync $replica\n\n        test {WAIT command on module blocked client} {\n            pause_process [srv 0 pid]\n\n            $master do_bg_rm_call_format ! hset bk1 foo bar\n\n            assert_equal [$master wait 1 1000] 0\n            resume_process [srv 0 pid]\n            assert_equal [$master wait 1 1000] 1\n            assert_equal [$replica hget bk1 foo] bar\n        }\n    ",
+    )
     assert fnmatch(str(r.run("unblock_by_timer", 100, 0)), "OK")
 
 
@@ -517,6 +525,13 @@ def test_block_time_is_shorter_than_timer_period(r: ValkeyTestClient) -> None:
         $rd close
     }
     """
+    master = ValkeyTestClient.create_from(r)
+    master_host = r.host
+    master_port = r.port
+    start_server(
+        ["overrides", ["loadmodule", f"{testmodule}"]],
+        "        set replica [srv 0 client]\n        set replica_host [srv 0 host]\n        set replica_port [srv 0 port]\n\n        # Start the replication process...\n        $replica replicaof $master_host $master_port\n        wait_for_sync $replica\n\n        test {WAIT command on module blocked client} {\n            pause_process [srv 0 pid]\n\n            $master do_bg_rm_call_format ! hset bk1 foo bar\n\n            assert_equal [$master wait 1 1000] 0\n            resume_process [srv 0 pid]\n            assert_equal [$master wait 1 1000] 1\n            assert_equal [$replica hget bk1 foo] bar\n        }\n    ",
+    )
     rd = ValkeyTestClient.create_from(r)
     rd.run("unblock_by_timer", 100, 10)
     time.sleep(120 / 1000)
@@ -531,6 +546,13 @@ def test_block_time_is_equal_to_timer_period(r: ValkeyTestClient) -> None:
         assert_match "OK" [r unblock_by_timer 100 100]
     }
     """
+    master = ValkeyTestClient.create_from(r)
+    master_host = r.host
+    master_port = r.port
+    start_server(
+        ["overrides", ["loadmodule", f"{testmodule}"]],
+        "        set replica [srv 0 client]\n        set replica_host [srv 0 host]\n        set replica_port [srv 0 port]\n\n        # Start the replication process...\n        $replica replicaof $master_host $master_port\n        wait_for_sync $replica\n\n        test {WAIT command on module blocked client} {\n            pause_process [srv 0 pid]\n\n            $master do_bg_rm_call_format ! hset bk1 foo bar\n\n            assert_equal [$master wait 1 1000] 0\n            resume_process [srv 0 pid]\n            assert_equal [$master wait 1 1000] 1\n            assert_equal [$replica hget bk1 foo] bar\n        }\n    ",
+    )
     assert fnmatch(str(r.run("unblock_by_timer", 100, 100)), "OK")
 
 
@@ -540,6 +562,13 @@ def test_unload_the_module_blockedclient(r: ValkeyTestClient) -> None:
         assert_equal {OK} [r module unload blockedclient]
     }
     """
+    master = ValkeyTestClient.create_from(r)
+    master_host = r.host
+    master_port = r.port
+    start_server(
+        ["overrides", ["loadmodule", f"{testmodule}"]],
+        "        set replica [srv 0 client]\n        set replica_host [srv 0 host]\n        set replica_port [srv 0 port]\n\n        # Start the replication process...\n        $replica replicaof $master_host $master_port\n        wait_for_sync $replica\n\n        test {WAIT command on module blocked client} {\n            pause_process [srv 0 pid]\n\n            $master do_bg_rm_call_format ! hset bk1 foo bar\n\n            assert_equal [$master wait 1 1000] 0\n            resume_process [srv 0 pid]\n            assert_equal [$master wait 1 1000] 1\n            assert_equal [$replica hget bk1 foo] bar\n        }\n    ",
+    )
     assert "OK" == r.run("module", "unload", "blockedclient")
 
 
@@ -562,6 +591,10 @@ def cmdrstat(*args):
     raise NotImplementedError("cmdrstat")
 
 
+def continue_(*args):
+    raise NotImplementedError("continue_")
+
+
 def errorrstat(*args):
     raise NotImplementedError("errorrstat")
 
@@ -574,8 +607,8 @@ def fail(*args):
     raise NotImplementedError("fail")
 
 
-def if_(*args):
-    raise NotImplementedError("if_")
+def lsearch(*args):
+    raise NotImplementedError("lsearch")
 
 
 def reconnect(*args):
@@ -584,6 +617,10 @@ def reconnect(*args):
 
 def s(*args):
     raise NotImplementedError("s")
+
+
+def start_server(*args):
+    raise NotImplementedError("start_server")
 
 
 def string(*args):

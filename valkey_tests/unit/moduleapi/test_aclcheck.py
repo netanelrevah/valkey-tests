@@ -1,13 +1,12 @@
-# ruff: noqa: PLR2004, RUF043, ANN002, ANN201
+# ruff: noqa: PLR2004, RUF043
+
 from fnmatch import fnmatch
 
 import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
 
-"""
-set testmodule file normalize tests/modules/aclcheck.so
-"""
+testmodule = "tests/modules/aclcheck.so"
 
 pytestmark = [pytest.mark.modules_acl]
 
@@ -30,6 +29,7 @@ def test_test_module_check_acl_for_command_perm(r: ValkeyTestClient) -> None:
         assert {[dict get $entry reason] eq {command}}
     }
     """
+    r.run("module", "load", testmodule)
     assert r.run("aclcheck.rm_call.check.cmd", "set", "x", 5) == "OK"
     r.run("acl", "setuser", "default", "-set")
     try:
@@ -69,6 +69,7 @@ def test_test_module_check_acl_for_key_perm(r: ValkeyTestClient) -> None:
         assert_match "*DENIED KEY*" $e
     }
     """
+    r.run("module", "load", testmodule)
     r.run("acl", "setuser", "default", "+set", "resetkeys", "~x", "%W~y", "%R~z")
     assert r.run("aclcheck.set.check.key", "*", "x", 5) == "OK"
     try:
@@ -105,6 +106,7 @@ def test_test_module_check_acl_for_module_user(r: ValkeyTestClient) -> None:
         assert_equal [r aclcheck.rm_call.check.cmd.module.user set y 5] OK
     }
     """
+    r.run("module", "load", testmodule)
     assert r.run("aclcheck.rm_call.check.cmd.module.user", "set", "y", 5) == "OK"
 
 
@@ -118,6 +120,7 @@ def test_test_module_check_acl_for_channel_perm(r: ValkeyTestClient) -> None:
         set e
     } {*DENIED CHANNEL*}
     """
+    r.run("module", "load", testmodule)
     r.run("acl", "setuser", "default", "resetchannels", "&ch1")
     assert r.run("aclcheck.publish.check.channel", "ch1", "msg") == 0
     try:
@@ -166,6 +169,7 @@ def test_test_module_check_acl_in_rm_call(r: ValkeyTestClient) -> None:
         assert {[dict get $entry reason] eq {command}}
     }
     """
+    r.run("module", "load", testmodule)
     assert r.run("aclcheck.rm_call", "set", "x", 5) == "OK"
     assert r.run("aclcheck.rm_call", "set", "x", 6, "get") == 5
     assert r.run("aclcheck.rm_call", "set", "y", 5) == "OK"
@@ -278,6 +282,7 @@ def test_test_module_comprehensive_acl_check(r: ValkeyTestClient) -> None:
         r acl setuser default on nopass ~* &* +@all alldbs
     }
     """
+    r.run("module", "load", testmodule)
     r.run("acl", "setuser", "testuser", "on", ">testpass", "~*", "&*", "+@all", "alldbs")
     assert r.run("auth", "testuser", "testpass") == "OK"
     assert r.run("aclcheck.check.permissions", 0, "set", "x", 5) == "OK"
@@ -357,6 +362,7 @@ def test_test_blocking_of_commands_outside_of_onload(r: ValkeyTestClient) -> Non
         assert_equal [r block.commands.outside.onload] OK
     }
     """
+    r.run("module", "load", testmodule)
     assert r.run("block.commands.outside.onload") == "OK"
 
 
@@ -370,6 +376,7 @@ def test_test_users_to_have_access_to_module_commands_having_acl_categories(r: V
         assert_equal [r acl DRYRUN j2 aclcheck.module.command.aclcategories.read.only.category] OK
     }
     """
+    r.run("module", "load", testmodule)
     r.run("acl", "SETUSER", "j1", "on", ">password", "-@all", "+@WRITE")
     r.run("acl", "SETUSER", "j2", "on", ">password", "-@all", "+@READ")
     assert r.run("acl", "DRYRUN", "j1", "aclcheck.module.command.aclcategories.write") == "OK"
@@ -383,6 +390,7 @@ def test_unload_the_module_aclcheck(r: ValkeyTestClient) -> None:
         assert_equal {OK} [r module unload aclcheck]
     }
     """
+    r.run("module", "load", testmodule)
     assert "OK" == r.run("module", "unload", "aclcheck")
 
 
@@ -411,6 +419,7 @@ def test_test_module_check_acl_check_permissions_for_key_prefix(r: ValkeyTestCli
         assert_equal [r acl.check_key_prefix read_* R] OK
     }
     """
+    r.run("module", "load", testmodule)
     assert r.run("ACL", "SETUSER", "testuser", "on", ">1234", "%W~write_*", "%R~read_*", "+@all", "-@dangerous") == "OK"
     assert r.run("AUTH", "testuser", 1234) == "OK"
     assert r.run("acl.check_key_prefix", "wr*", "W") == "EACCESS"
@@ -445,6 +454,7 @@ def test_test_module_check_acl_check_permissions_for_key_prefix_read(r: ValkeyTe
         assert_equal [r acl.check_key_prefix write_1 R] OK
     }
     """
+    r.run("module", "load", testmodule)
     assert r.run("ACL", "SETUSER", "testuser", "on", ">1234", "%W~write_*", "%R~*", "+@all", "-@dangerous") == "OK"
     assert r.run("AUTH", "testuser", 1234) == "OK"
     assert r.run("acl.check_key_prefix", "wr*", "W") == "EACCESS"
@@ -459,7 +469,6 @@ def test_test_module_check_acl_check_permissions_for_key_prefix_read(r: ValkeyTe
 pytestmark = [pytest.mark.modules_acl]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_existing_users_to_have_access_to_module_commands_loaded_on_runtime(r: ValkeyTestClient) -> None:
     """
     test {test existing users to have access to module commands loaded on runtime} {
@@ -470,7 +479,7 @@ def test_test_existing_users_to_have_access_to_module_commands_loaded_on_runtime
     }
     """
     r.run("acl", "SETUSER", "j3", "on", ">password", "-@all", "+@WRITE")
-    # TODO: assert_equal r module load $testmodule OK
+    assert r.run("module", "load", testmodule) == "OK"
     assert r.run("acl", "DRYRUN", "j3", "aclcheck.module.command.aclcategories.write") == "OK"
     assert "OK" == r.run("module", "unload", "aclcheck")
 
@@ -478,7 +487,6 @@ def test_test_existing_users_to_have_access_to_module_commands_loaded_on_runtime
 pytestmark = [pytest.mark.modules_acl]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_test_existing_users_without_permissions_do_not_have_access_to_module_commands_loaded_on_runtime(
     r: ValkeyTestClient,
 ) -> None:
@@ -495,7 +503,7 @@ def test_test_existing_users_without_permissions_do_not_have_access_to_module_co
     """
     r.run("acl", "SETUSER", "j4", "on", ">password", "-@all", "+@READ")
     r.run("acl", "SETUSER", "j5", "on", ">password", "-@all", "+@WRITE")
-    # TODO: assert_equal r module load $testmodule OK
+    assert r.run("module", "load", testmodule) == "OK"
     try:
         e = r.run("acl", "DRYRUN", "j4", "aclcheck.module.command.aclcategories.write")
     except Exception as _catch_err:
@@ -586,11 +594,7 @@ def test_test_module_load_fails_if_exceeds_the_maximum_number_of_adding_acl_cate
         assert_error {ERR Error loading the extension. Please check the server logs.} {r module load $testmodule 1}
     }
     """
-    assert_error("ERR Error loading the extension. Please check the server logs.", "r module load $testmodule 1")
-
-
-# --- stubs for unimplemented TCL helpers ---
-
-
-def assert_error(*args):
-    raise NotImplementedError("assert_error")
+    with pytest.raises(
+        Exception, match="ERR\\ Error\\ loading\\ the\\ extension\\.\\ Please\\ check\\ the\\ server\\ logs\\."
+    ):
+        r.run("module", "load", testmodule, 1)

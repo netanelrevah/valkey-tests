@@ -4,9 +4,7 @@ import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
 
-"""
-set testmodule file normalize tests/modules/eventloop.so
-"""
+testmodule = "tests/modules/eventloop.so"
 
 pytestmark = [pytest.mark.modules]
 
@@ -18,6 +16,7 @@ def test_module_eventloop_sendbytes(r: ValkeyTestClient) -> None:
         assert_match "OK" [r test.sendbytes 2000000]
     }
     """
+    r.run("module", "load", testmodule)
     assert fnmatch(str(r.run("test.sendbytes", 5000000)), "OK")
     assert fnmatch(str(r.run("test.sendbytes", 2000000)), "OK")
 
@@ -30,6 +29,7 @@ def test_module_eventloop_iteration(r: ValkeyTestClient) -> None:
         assert {$next_iteration > $iteration}
     }
     """
+    r.run("module", "load", testmodule)
     iteration = r.run("test.iteration")
     next_iteration = r.run("test.iteration")
     assert next_iteration > iteration
@@ -41,6 +41,7 @@ def test_module_eventloop_sanity(r: ValkeyTestClient) -> None:
         r test.sanity
     }
     """
+    r.run("module", "load", testmodule)
     r.run("test.sanity")
 
 
@@ -50,6 +51,7 @@ def test_module_eventloop_oneshot(r: ValkeyTestClient) -> None:
         r test.oneshot
     }
     """
+    r.run("module", "load", testmodule)
     r.run("test.oneshot")
 
 
@@ -59,4 +61,5 @@ def test_unload_the_module_eventloop(r: ValkeyTestClient) -> None:
         assert_equal {OK} [r module unload eventloop]
     }
     """
+    r.run("module", "load", testmodule)
     assert "OK" == r.run("module", "unload", "eventloop")

@@ -756,12 +756,10 @@ def test_commandlog_slow_the_commands_in_script_are_recorded_normally_is_eval_is
     assert 2 == len(slowlog_resp)
     script_cmd = slowlog_resp[0]
     ping_cmd = slowlog_resp[1]
-    if_(
-        "$is_eval",
-        "                assert_equal {eval server.call('ping') 0} [lindex $script_cmd 3]\n            ",
-        "else",
-        "                assert_equal {fcall myfunc 0} [lindex $script_cmd 3]\n            ",
-    )
+    if is_eval:
+        assert "eval server.call('ping') 0" == script_cmd[3]
+    else:
+        assert "fcall myfunc 0" == script_cmd[3]
     assert "ping" == ping_cmd[3]
     assert script_cmd[4] == ping_cmd[4]
     assert "test-client" == script_cmd[5]

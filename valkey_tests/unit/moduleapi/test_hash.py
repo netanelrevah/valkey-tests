@@ -4,9 +4,7 @@ import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
 
-"""
-set testmodule file normalize tests/modules/hash.so
-"""
+testmodule = "tests/modules/hash.so"
 
 pytestmark = [pytest.mark.modules]
 
@@ -31,6 +29,7 @@ def test_module_hash_set(r: ValkeyTestClient) -> None:
         r hgetall k
     } {squirrel ofcourse banana no what nothing something nice}
     """
+    r.run("module", "load", testmodule)
     r.run("set", "k", "mystring")
     with pytest.raises(Exception, match="WRONGTYPE.*"):
         r.run("hash.set", "k", "", "hello", "world")
@@ -51,4 +50,5 @@ def test_unload_the_module_hash(r: ValkeyTestClient) -> None:
         assert_equal {OK} [r module unload hash]
     }
     """
+    r.run("module", "load", testmodule)
     assert "OK" == r.run("module", "unload", "hash")

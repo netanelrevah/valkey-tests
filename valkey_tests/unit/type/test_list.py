@@ -906,13 +906,12 @@ def test_lpop_or_rpop_with_the_count_0_returns_an_empty_array_in_resp_resp(r: Va
         assert_equal {*0} [r rpop listcount 0]
     }
     """
-    if_(
-        '[lsearch $::denytags "resp3"] >= 0',
-        "            if {$resp == 3} {continue}\n        ",
-        "elseif",
-        "$::force_resp3",
-        "            if {$resp == 2} {continue}\n        ",
-    )
+    if lsearch(denytags, "resp3") >= 0:
+        if resp == 3:
+            continue_()
+    elif False:
+        if resp == 2:
+            continue_()
     r.run("hello", resp)
     r.run("readraw", 1)
     r.run("lpush", "listcount", "zero")
@@ -930,13 +929,12 @@ def test_lpop_or_rpop_against_non_existing_key_in_resp_resp(r: ValkeyTestClient,
         verify_resp_response $resp [r rpop non_existing_key] {$-1} {_}
     }
     """
-    if_(
-        '[lsearch $::denytags "resp3"] >= 0',
-        "            if {$resp == 3} {continue}\n        ",
-        "elseif",
-        "$::force_resp3",
-        "            if {$resp == 2} {continue}\n        ",
-    )
+    if lsearch(denytags, "resp3") >= 0:
+        if resp == 3:
+            continue_()
+    elif False:
+        if resp == 2:
+            continue_()
     r.run("hello", resp)
     r.run("readraw", 1)
     r.run("del", "non_existing_key")
@@ -957,13 +955,12 @@ def test_lpop_or_rpop_with_count_against_non_existing_key_in_resp_resp(r: Valkey
         verify_resp_response $resp [r rpop non_existing_key 1] {*-1} {_}
     }
     """
-    if_(
-        '[lsearch $::denytags "resp3"] >= 0',
-        "            if {$resp == 3} {continue}\n        ",
-        "elseif",
-        "$::force_resp3",
-        "            if {$resp == 2} {continue}\n        ",
-    )
+    if lsearch(denytags, "resp3") >= 0:
+        if resp == 3:
+            continue_()
+    elif False:
+        if resp == 2:
+            continue_()
     r.run("hello", resp)
     r.run("readraw", 1)
     r.run("del", "non_existing_key")
@@ -1774,7 +1771,10 @@ def test_brpoplpush_does_not_affect_watch_while_still_blocked(r: ValkeyTestClien
     watching_client.run("read")
     watching_client.run("exec")
     wait_for_condition(
-        50, 10, lambda: len(lsearch("-all", split(string("trim", r.run("client", "list")), "\r\n"), "*cmd=exec*")) == 1
+        50,
+        10,
+        lambda: len(lsearch("-all", split(string("trim", r.run("client", "list")), "\r\n"), "*cmd=exec*")) == 1,
+        lambda: fail(f"{cmd} was not called"),
     )
     r.run("lpush", "srclist{t}", "element")
     res = watching_client.run("read")
@@ -2839,7 +2839,6 @@ def test_lpop_or_rpop_or_lmpop_non_block_or_block_against_non_list_value(r: Valk
         r.run("blmpop", 0, 2, "notalist{t}", "notalist2{t}", "left", "count", 1)
 
 
-@pytest.mark.xfail(reason="not implemented")
 @pytest.mark.parametrize(["num"], [(250), (500)])
 def test_mass_rpop_or_lpop_type(r: ValkeyTestClient, num: int) -> None:
     """
@@ -2866,11 +2865,12 @@ def test_mass_rpop_or_lpop_type(r: ValkeyTestClient, num: int) -> None:
     sum1 = 0
     i = 0
     while i < num:
-        if_("$i == [expr $num/2]", "                    r lpush mylist $large\n                ")
+        if i == expr(num, "/2"):
+            r.run("lpush", "mylist", large)
         r.run("lpush", "mylist", i)
         sum1 += i
         i += 1
-    # TODO: assert_encoding type mylist
+    assert_encoding(type, "mylist")
     sum2 = 0
     i = 0
     while i < expr(num, "/2"):
@@ -3097,7 +3097,6 @@ def test_lrange_against_non_existing_key(r: ValkeyTestClient) -> None:
     assert "" == r.run("lrange", "nosuchkey", 0, 1)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_lrange_with_start_end_yields_an_empty_array_for_backward_compatibility(r: ValkeyTestClient) -> None:
     """
     test {LRANGE with start > end yields an empty array for backward compatibility} {
@@ -3106,7 +3105,7 @@ def test_lrange_with_start_end_yields_an_empty_array_for_backward_compatibility(
         assert_equal {} [r lrange mylist -1 -2]
     }
     """
-    # TODO: create_$type mylist "1 $large 3"
+    globals()[f"create_{type}"]("mylist", f"1 {large} 3")
     assert "" == r.run("lrange", "mylist", 1, 0)
     assert "" == r.run("lrange", "mylist", -1, -2)
 
@@ -3401,7 +3400,6 @@ foreach {max_lp_size large} "3 $largevalue(listpack) -1 $largevalue(quicklist)" 
 """
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_list_quicklist_listpack_encoding_conversion(r: ValkeyTestClient) -> None:
     """
     test "List quicklist -> listpack encoding conversion" {
@@ -3460,16 +3458,16 @@ def test_list_quicklist_listpack_encoding_conversion(r: ValkeyTestClient) -> Non
     r.run("LTRIM", "lst", 1, 1)
     assert_encoding("listpack", "lst")
     r.run("config", "set", "list-max-listpack-size", -1)
-    # TODO: create_quicklist lst "a b c $largevalue(quicklist)"
+    create_quicklist("lst", f"a b c {largevalue['quicklist']}")
     r.run("RPOP", "lst", 1)
     assert_encoding("listpack", "lst")
-    # TODO: create_quicklist lst "a $largevalue(quicklist)"
-    # TODO: r LREM lst 1 largevalue (quicklist)
+    create_quicklist("lst", f"a {largevalue['quicklist']}")
+    r.run("LREM", "lst", 1, largevalue, "(quicklist)")
     assert_encoding("listpack", "lst")
-    # TODO: create_quicklist lst "a b $largevalue(quicklist)"
+    create_quicklist("lst", f"a b {largevalue['quicklist']}")
     r.run("LTRIM", "lst", 0, 1)
     assert_encoding("listpack", "lst")
-    # TODO: create_quicklist lst "$largevalue(quicklist) a b"
+    create_quicklist("lst", f"{largevalue['quicklist']} a b")
     r.run("RPOP", "lst", 2)
     assert_encoding("quicklist", "lst")
     r.run("LSET", "lst", -1, "c")
@@ -3621,7 +3619,6 @@ def test_list_of_various_encodings(r: ValkeyTestClient) -> None:
     assert k == "12 0 9223372036854775808 2147483647 32767 127"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_list_of_various_encodings_sanitize_dump(r: ValkeyTestClient) -> None:
     """
     test "List of various encodings - sanitize dump" {
@@ -3640,7 +3637,7 @@ def test_list_of_various_encodings_sanitize_dump(r: ValkeyTestClient) -> None:
     } {12 0 9223372036854775808 2147483647 32767 127}
     """
     config_set("sanitize-dump-payload", "yes", "mayfail")
-    # TODO: r restore kk 0 dump replace
+    r.run("restore", "kk", 0, dump, "replace")
     assert_encoding("quicklist", "kk")
     k = r.run("lrange", "k", 0, -1)
     kk = r.run("lrange", "kk", 0, -1)
@@ -4065,6 +4062,10 @@ def config_set(*args):
     raise NotImplementedError("config_set")
 
 
+def continue_(*args):
+    raise NotImplementedError("continue_")
+
+
 def create_listpack(*args):
     raise NotImplementedError("create_listpack")
 
@@ -4077,8 +4078,8 @@ def expr(*args):
     raise NotImplementedError("expr")
 
 
-def if_(*args):
-    raise NotImplementedError("if_")
+def fail(*args):
+    raise NotImplementedError("fail")
 
 
 def lpop(*args):

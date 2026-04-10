@@ -4,9 +4,7 @@ import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
 
-"""
-set testmodule file normalize tests/modules/list.so
-"""
+testmodule = "tests/modules/list.so"
 
 
 """
@@ -49,6 +47,7 @@ def test_module_list_set_get_insert_delete(r: ValkeyTestClient) -> None:
         assert_equal 0 [r exists k]
     }
     """
+    r.run("module", "load", testmodule)
     r.run("del", "k")
     with pytest.raises(
         Exception, match="WRONGTYPE\\ Operation\\ against\\ a\\ key\\ holding\\ the\\ wrong\\ kind\\ of\\ value.*"
@@ -88,6 +87,7 @@ def test_module_list_iteration(r: ValkeyTestClient) -> None:
         assert_equal {z y x} [r list.getall k REVERSE]
     }
     """
+    r.run("module", "load", testmodule)
     r.run("del", "k")
     r.run("rpush", "k", "x", "y", "z")
     assert "x y z" == r.run("list.getall", "k")
@@ -103,6 +103,7 @@ def test_module_list_insert_delete(r: ValkeyTestClient) -> None:
         r list.getall k
     } {foo x bar y baz}
     """
+    r.run("module", "load", testmodule)
     r.run("del", "k")
     r.run("rpush", "k", "x", "y", "z")
     verify_list_edit_reply(r.run("list.edit", "k", "ikikdi", "foo", "bar", "baz"), "i 3 index 5")
@@ -118,6 +119,7 @@ def test_module_list_insert_delete_neg_index(r: ValkeyTestClient) -> None:
         r list.getall k
     } {baz y bar z foo}
     """
+    r.run("module", "load", testmodule)
     r.run("del", "k")
     r.run("rpush", "k", "x", "y", "z")
     verify_list_edit_reply(r.run("list.edit", "k", "REVERSE", "ikikdi", "foo", "bar", "baz"), "i 3 index -6")
@@ -133,6 +135,7 @@ def test_module_list_set_while_iterating(r: ValkeyTestClient) -> None:
         r list.getall k
     } {foo y bar}
     """
+    r.run("module", "load", testmodule)
     r.run("del", "k")
     r.run("rpush", "k", "x", "y", "z")
     verify_list_edit_reply(r.run("list.edit", "k", "rkr", "foo", "bar"), "r 2 index 3")
@@ -148,6 +151,7 @@ def test_module_list_set_while_iterating_neg_index(r: ValkeyTestClient) -> None:
         r list.getall k
     } {bar y foo}
     """
+    r.run("module", "load", testmodule)
     r.run("del", "k")
     r.run("rpush", "k", "x", "y", "z")
     verify_list_edit_reply(r.run("list.edit", "k", "reverse", "rkr", "foo", "bar"), "r 2 index -4")
@@ -173,6 +177,7 @@ def test_module_list_encoding_conversion_while_inserting(r: ValkeyTestClient) ->
         assert_equal [r list.getall k] {c d}
     }
     """
+    r.run("module", "load", testmodule)
     r.run("config", "set", "list-max-listpack-size", 4)
     r.run("del", "k")
     r.run("rpush", "k", "a", "b", "c", "d")
@@ -205,6 +210,7 @@ def test_module_list_encoding_conversion_while_replacing(r: ValkeyTestClient) ->
         assert_equal [r list.getall k] {y z}
     }
     """
+    r.run("module", "load", testmodule)
     r.run("config", "set", "list-max-listpack-size", -1)
     r.run("del", "k")
     r.run("rpush", "k", "x", "y", "z")
@@ -262,6 +268,7 @@ def test_module_list_list_entry_and_index_should_be_updated_when_deletion(r: Val
         config_set list-max-listpack-size $original_config
     }
     """
+    r.run("module", "load", testmodule)
     original_config = config_get_set("list-max-listpack-size", 1)
     r.run("del", "l")
     r.run("rpush", "l", "x", "y", "z")
@@ -296,6 +303,7 @@ def test_unload_the_module_list(r: ValkeyTestClient) -> None:
         assert_equal {OK} [r module unload list]
     }
     """
+    r.run("module", "load", testmodule)
     assert "OK" == r.run("module", "unload", "list")
 
 

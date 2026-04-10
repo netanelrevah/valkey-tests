@@ -4,9 +4,7 @@ import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
 
-"""
-set testmodule file normalize tests/modules/basics.so
-"""
+testmodule = "tests/modules/basics.so"
 
 pytestmark = [pytest.mark.modules]
 
@@ -25,7 +23,6 @@ def test_command_caches_response(r: ValkeyTestClient) -> None:
     assert len(cmd1) == len(cmd2)
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_command_cache_is_invalidated_on_module_load(r: ValkeyTestClient) -> None:
     """
     test {COMMAND cache is invalidated on module load} {
@@ -74,7 +71,7 @@ def test_command_cache_is_invalidated_on_module_load(r: ValkeyTestClient) -> Non
         '            set name [lindex $cmd 0]\n            if {[string match "test.*" $name]} {\n                incr module_commands_found\n            }\n        ',
     )
     assert module_commands_found == 0
-    # TODO: r module load testmodule
+    r.run("module", "load", testmodule)
     r.run("command")
     commands_after = r.run("command")
     count_after = len(commands_after)
@@ -195,7 +192,6 @@ def test_command_info_returns_empty_for_unloaded_module_commands(r: ValkeyTestCl
 pytestmark = [pytest.mark.modules]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_command_cache_invalidation_with_multiple_load_or_unload_cycles(r: ValkeyTestClient) -> None:
     """
     test {COMMAND cache invalidation with multiple load/unload cycles} {
@@ -224,13 +220,13 @@ def test_command_cache_invalidation_with_multiple_load_or_unload_cycles(r: Valke
     }
     """
     baseline_count = r.run("command", "count")
-    # TODO: r module load testmodule
+    r.run("module", "load", testmodule)
     count_loaded = r.run("command", "count")
     assert count_loaded > baseline_count
     r.run("module", "unload", "test")
     count_unloaded = r.run("command", "count")
     assert count_unloaded == baseline_count
-    # TODO: r module load testmodule
+    r.run("module", "load", testmodule)
     count_loaded_again = r.run("command", "count")
     assert count_loaded_again == count_loaded
     r.run("module", "unload", "test")
@@ -241,7 +237,6 @@ def test_command_cache_invalidation_with_multiple_load_or_unload_cycles(r: Valke
 pytestmark = [pytest.mark.modules]
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_command_cache_works_correctly_with_resp2_and_resp3(r: ValkeyTestClient) -> None:
     """
     test {COMMAND cache works correctly with RESP2 and RESP3} {
@@ -274,7 +269,7 @@ def test_command_cache_works_correctly_with_resp2_and_resp3(r: ValkeyTestClient)
     """
     r.run("hello", 2)
     commands_resp2_before = r.run("command")
-    # TODO: r module load testmodule
+    r.run("module", "load", testmodule)
     commands_resp2_after = r.run("command")
     assert len(commands_resp2_after) > len(commands_resp2_before)
     r.run("hello", 3)

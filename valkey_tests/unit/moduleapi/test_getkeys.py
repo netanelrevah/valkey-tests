@@ -4,9 +4,7 @@ import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
 
-"""
-set testmodule file normalize tests/modules/getkeys.so
-"""
+testmodule = "tests/modules/getkeys.so"
 
 pytestmark = [pytest.mark.modules]
 
@@ -22,6 +20,7 @@ def test_command_info_correctly_reports_a_movable_keys_module_command(r: ValkeyT
         assert_equal {0} [lindex $info 5]
     }
     """
+    r.run("module", "load", testmodule)
     info = r.run("command", "info", "getkeys.command")[0]
     assert "module movablekeys" == info[2]
     assert "0" == info[3]
@@ -35,6 +34,7 @@ def test_command_getkeys_correctly_reports_a_movable_keys_module_command(r: Valk
         r command getkeys getkeys.command arg1 arg2 key key1 arg3 key key2 key key3
     } {key1 key2 key3}
     """
+    r.run("module", "load", testmodule)
     assert (
         r.run(
             "command", "getkeys", "getkeys.command", "arg1", "arg2", "key", "key1", "arg3", "key", "key2", "key", "key3"
@@ -49,6 +49,7 @@ def test_command_getkeys_correctly_reports_a_movable_keys_module_command_using_f
         r command getkeys getkeys.command_with_flags arg1 arg2 key key1 arg3 key key2 key key3
     } {key1 key2 key3}
     """
+    r.run("module", "load", testmodule)
     assert (
         r.run(
             "command",
@@ -76,6 +77,7 @@ def test_command_getkeysandflags_correctly_reports_a_movable_keys_module_command
         r command getkeysandflags getkeys.command arg1 arg2 key key1 arg3 key key2
     } {{key1 {RW access update}} {key2 {RW access update}}}
     """
+    r.run("module", "load", testmodule)
     assert (
         r.run("command", "getkeysandflags", "getkeys.command", "arg1", "arg2", "key", "key1", "arg3", "key", "key2")
         == "{key1 {RW access update}} {key2 {RW access update}}"
@@ -90,6 +92,7 @@ def test_command_getkeysandflags_correctly_reports_a_movable_keys_module_command
         r command getkeysandflags getkeys.command_with_flags arg1 arg2 key key1 arg3 key key2 key key3
     } {{key1 {RO access}} {key2 {RO access}} {key3 {RO access}}}
     """
+    r.run("module", "load", testmodule)
     assert (
         r.run(
             "command",
@@ -116,6 +119,7 @@ def test_rm_getcommandkeys_on_non_existing_command(r: ValkeyTestClient) -> None:
         set _ $e
     } {*ENOENT*}
     """
+    r.run("module", "load", testmodule)
     try:
         e = r.run("getkeys.introspect", 0, "non-command", "key1", "key2")
     except Exception as _catch_err:
@@ -129,6 +133,7 @@ def test_rm_getcommandkeys_on_built_in_fixed_keys_command(r: ValkeyTestClient) -
         r getkeys.introspect 0 set key1 value1
     } {key1}
     """
+    r.run("module", "load", testmodule)
     assert r.run("getkeys.introspect", 0, "set", "key1", "value1") == "key1"
 
 
@@ -138,6 +143,7 @@ def test_rm_getcommandkeys_on_built_in_fixed_keys_command_with_flags(r: ValkeyTe
         r getkeys.introspect 1 set key1 value1
     } {{key1 OW}}
     """
+    r.run("module", "load", testmodule)
     assert r.run("getkeys.introspect", 1, "set", "key1", "value1") == "{key1 OW}"
 
 
@@ -147,6 +153,7 @@ def test_rm_getcommandkeys_on_eval(r: ValkeyTestClient) -> None:
         r getkeys.introspect 0 eval "" 4 key1 key2 key3 key4 arg1 arg2
     } {key1 key2 key3 key4}
     """
+    r.run("module", "load", testmodule)
     assert (
         r.run("getkeys.introspect", 0, "eval", "", 4, "key1", "key2", "key3", "key4", "arg1", "arg2")
         == "key1 key2 key3 key4"
@@ -159,6 +166,7 @@ def test_rm_getcommandkeys_on_a_movable_keys_module_command(r: ValkeyTestClient)
         r getkeys.introspect 0 getkeys.command arg1 arg2 key key1 arg3 key key2 key key3
     } {key1 key2 key3}
     """
+    r.run("module", "load", testmodule)
     assert (
         r.run(
             "getkeys.introspect",
@@ -184,6 +192,7 @@ def test_rm_getcommandkeys_on_a_non_movable_module_command(r: ValkeyTestClient) 
         r getkeys.introspect 0 getkeys.fixed arg1 key1 key2 key3 arg2
     } {key1 key2 key3}
     """
+    r.run("module", "load", testmodule)
     assert r.run("getkeys.introspect", 0, "getkeys.fixed", "arg1", "key1", "key2", "key3", "arg2") == "key1 key2 key3"
 
 
@@ -194,6 +203,7 @@ def test_rm_getcommandkeys_with_bad_arity(r: ValkeyTestClient) -> None:
         set _ $e
     } {*EINVAL*}
     """
+    r.run("module", "load", testmodule)
     try:
         e = r.run("getkeys.introspect", 0, "set", "key")
     except Exception as _catch_err:

@@ -6,19 +6,11 @@ import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
 
-"""
-set testmodule file normalize tests/modules/blockedclient.so
-"""
+testmodule = "tests/modules/blockedclient.so"
 
+testmodule2 = "tests/modules/postnotifications.so"
 
-"""
-set testmodule2 file normalize tests/modules/postnotifications.so
-"""
-
-
-"""
-set testmodule3 file normalize tests/modules/blockonkeys.so
-"""
+testmodule3 = "tests/modules/blockonkeys.so"
 
 pytestmark = [pytest.mark.modules]
 
@@ -29,6 +21,7 @@ def test_locked_gil_acquisition_from_async_rm_call(r: ValkeyTestClient) -> None:
         assert_equal {OK} [r do_rm_call_async acquire_gil]
     }
     """
+    r.run("module", "load", testmodule)
     assert "OK" == r.run("do_rm_call_async", "acquire_gil")
 
 
@@ -40,6 +33,7 @@ def test_blpop_on_async_rm_call_fire_and_forget(r: ValkeyTestClient) -> None:
         assert_equal {0} [r llen l]
     }
     """
+    r.run("module", "load", testmodule)
     assert "Blocked" == r.run("do_rm_call_fire_and_forget", "blpop", "l", 0)
     r.run("lpush", "l", "a")
     assert "0" == r.run("llen", "l")
@@ -58,6 +52,7 @@ def test_blpop_on_threaded_async_rm_call(r: ValkeyTestClient) -> None:
         $rd close
     }
     """
+    r.run("module", "load", testmodule)
     rd = ValkeyTestClient.create_from(r)
     rd.run("do_rm_call_async_on_thread", "blpop", "l", 0)
     wait_for_blocked_clients_count(1)
@@ -466,6 +461,7 @@ def test_test_basic_replication_stream_on_unblock_handler(r: ValkeyTestClient) -
         $rd close
     }
     """
+    r.run("module", "load", testmodule)
     r.run("flushall")
     repl = attach_to_replication_stream()
     rd = ValkeyTestClient.create_from(r)
@@ -507,6 +503,7 @@ def test_test_unblock_handler_are_executed_as_a_unit(r: ValkeyTestClient) -> Non
         $rd close
     }
     """
+    r.run("module", "load", testmodule)
     r.run("flushall")
     repl = attach_to_replication_stream()
     rd = ValkeyTestClient.create_from(r)
@@ -550,6 +547,7 @@ def test_test_no_propagation_of_blocking_command(r: ValkeyTestClient) -> None:
         $rd close
     }
     """
+    r.run("module", "load", testmodule)
     r.run("flushall")
     repl = attach_to_replication_stream()
     rd = ValkeyTestClient.create_from(r)
@@ -607,6 +605,8 @@ def test_test_unblock_handler_are_executed_as_a_unit_with_key_space_notification
         $rd close
     }
     """
+    r.run("module", "load", testmodule)
+    r.run("module", "load", testmodule2)
     r.run("flushall")
     repl = attach_to_replication_stream()
     rd = ValkeyTestClient.create_from(r)
@@ -699,6 +699,8 @@ def test_test_unblock_handler_are_executed_as_a_unit_with_lazy_expire(r: ValkeyT
         $rd close
     }
     """
+    r.run("module", "load", testmodule)
+    r.run("module", "load", testmodule2)
     r.run("flushall")
     r.run("DEBUG", "SET-ACTIVE-EXPIRE", 0)
     repl = attach_to_replication_stream()
@@ -743,6 +745,8 @@ def test_test_unblock_handler_on_module_blocked_on_keys(r: ValkeyTestClient) -> 
         $rd close
     }
     """
+    r.run("module", "load", testmodule)
+    r.run("module", "load", testmodule3)
     rd = ValkeyTestClient.create_from(r)
     r.run("fsl.push", "l", 1)
     rd.run("do_rm_call_async", "FSL.BPOPGT", "l", 3, 0)

@@ -4,9 +4,7 @@ import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
 
-"""
-set testmodule file normalize tests/modules/hash_stringref.so
-"""
+testmodule = "tests/modules/hash_stringref.so"
 
 pytestmark = [pytest.mark.modules]
 
@@ -24,6 +22,7 @@ def test_module_hash_set(r: ValkeyTestClient) -> None:
         assert_equal "1" [r hash.has_stringref k f]
     }
     """
+    r.run("module", "load", testmodule)
     r.run("del", "k")
     status = catch("r hash.set_stringref k f hello", "errmsg")
     assert status == 1
@@ -40,6 +39,7 @@ def test_unload_the_module_hash(r: ValkeyTestClient) -> None:
         assert_equal {OK} [r module unload hash.stringref]
     }
     """
+    r.run("module", "load", testmodule)
     assert "OK" == r.run("module", "unload", "hash.stringref")
 
 

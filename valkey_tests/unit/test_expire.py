@@ -140,7 +140,6 @@ def test_persist_returns_0_against_non_existing_or_non_volatile_keys(r: ValkeyTe
     assert [r.run("persist", "foo"), r.run("persist", "nokeyatall")] == "0 0"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_expire_precision_is_now_the_millisecond(r: ValkeyTestClient) -> None:
     """
     test {EXPIRE precision is now the millisecond} {
@@ -179,11 +178,10 @@ def test_expire_precision_is_now_the_millisecond(r: ValkeyTestClient) -> None:
         j += 1
     if False:
         pass
-    # TODO: assert_equal a {somevalue}
-    # TODO: assert_equal b {}
+    assert a == "somevalue"
+    assert b == ""
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_psetex_can_set_sub_second_expires(r: ValkeyTestClient) -> None:
     """
     test "PSETEX can set sub-second expires" {
@@ -214,11 +212,9 @@ def test_psetex_can_set_sub_second_expires(r: ValkeyTestClient) -> None:
         j += 1
     if False:
         pass
-    # TODO: list a b
-    assert False
+    assert [a, b] == "somevalue {}"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_pexpire_can_set_sub_second_expires(r: ValkeyTestClient) -> None:
     """
     test "PEXPIRE can set sub-second expires" {
@@ -249,11 +245,9 @@ def test_pexpire_can_set_sub_second_expires(r: ValkeyTestClient) -> None:
         j += 1
     if False:
         pass
-    # TODO: list c d
-    assert False
+    assert [c, d] == "somevalue {}"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_pexpireat_can_set_sub_second_expires(r: ValkeyTestClient) -> None:
     """
     test "PEXPIREAT can set sub-second expires" {
@@ -286,8 +280,7 @@ def test_pexpireat_can_set_sub_second_expires(r: ValkeyTestClient) -> None:
         j += 1
     if False:
         pass
-    # TODO: list e f
-    assert False
+    assert [e, f] == "somevalue {}"
 
 
 def test_expire_or_expireat_or_pexpire_or_pexpireat_expiration_time_is_already_expired(r: ValkeyTestClient) -> None:

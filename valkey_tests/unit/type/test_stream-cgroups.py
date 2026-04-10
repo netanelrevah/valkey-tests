@@ -291,7 +291,7 @@ def test_xack_can_t_remove_the_same_item_multiple_times(r: ValkeyTestClient) -> 
         assert {[r XACK mystream mygroup $id1] eq 0}
     }
     """
-    assert_("[r XACK mystream mygroup $id1] eq 0")
+    assert r.run("XACK", "mystream", "mygroup", id1) == 0
 
 
 def test_xack_is_able_to_accept_multiple_arguments(r: ValkeyTestClient) -> None:
@@ -302,7 +302,7 @@ def test_xack_is_able_to_accept_multiple_arguments(r: ValkeyTestClient) -> None:
         assert {[r XACK mystream mygroup $id1 $id2] eq 1}
     }
     """
-    assert_("[r XACK mystream mygroup $id1 $id2] eq 1")
+    assert r.run("XACK", "mystream", "mygroup", id1, id2) == 1
 
 
 def test_xack_should_fail_if_got_at_least_one_invalid_id(r: ValkeyTestClient) -> None:
@@ -2651,10 +2651,6 @@ start_server {tags {"stream needs:debug"} overrides {appendonly yes aof-use-rdb-
 
 
 # --- stubs for unimplemented TCL helpers ---
-
-
-def assert_(*args):
-    raise NotImplementedError("assert_")
 
 
 def assert_error(*args):

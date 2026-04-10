@@ -4,9 +4,7 @@ import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
 
-"""
-set testmodule file normalize tests/modules/zset.so
-"""
+testmodule = "tests/modules/zset.so"
 
 pytestmark = [pytest.mark.modules]
 
@@ -24,6 +22,7 @@ def test_module_zset_rem(r: ValkeyTestClient) -> None:
         assert_equal 0 [r exists k]
     }
     """
+    r.run("module", "load", testmodule)
     r.run("del", "k")
     r.run("zadd", "k", 100, "hello", 200, "world")
     assert 1 == r.run("zset.rem", "k", "hello")
@@ -45,6 +44,7 @@ def test_module_zset_add(r: ValkeyTestClient) -> None:
         assert_equal {hello 100} [r zrange k 0 -1 withscores]
     }
     """
+    r.run("module", "load", testmodule)
     r.run("del", "k")
     with pytest.raises(Exception, match="ERR\\ ZsetAdd\\ failed"):
         r.run("zset.add", "k", float("nan"), "hello")
@@ -65,6 +65,7 @@ def test_module_zset_incrby(r: ValkeyTestClient) -> None:
         assert_equal {hello 100} [r zrange k 0 -1 withscores]
     }
     """
+    r.run("module", "load", testmodule)
     r.run("del", "k")
     with pytest.raises(Exception, match="ERR\\ ZsetIncrby\\ failed"):
         r.run("zset.incrby", "k", "hello", float("nan"))
@@ -116,6 +117,7 @@ def test_module_zset_rangebylex(r: ValkeyTestClient) -> None:
         assert_equal {ele2 ele1} [r zset.revrangebylex k "(ele0" "(ele3"]
     }
     """
+    r.run("module", "load", testmodule)
     with pytest.raises(Exception, match="ERR\\ wrong\\ number\\ of\\ arguments.*"):
         r.run("zset.rangebylex")
     with pytest.raises(Exception, match="ERR\\ wrong\\ number\\ of\\ arguments.*"):
@@ -184,6 +186,7 @@ def test_module_zset_members(r: ValkeyTestClient) -> None:
         assert_equal {ele0 ele1 ele2 ele3} [lsort [r zset.members k]]
     }
     """
+    r.run("module", "load", testmodule)
     with pytest.raises(Exception, match="ERR\\ wrong\\ number\\ of\\ arguments.*"):
         r.run("zset.members")
     r.run("del", "k")
@@ -214,4 +217,5 @@ def test_unload_the_module_zset(r: ValkeyTestClient) -> None:
         assert_equal {OK} [r module unload zset]
     }
     """
+    r.run("module", "load", testmodule)
     assert "OK" == r.run("module", "unload", "zset")

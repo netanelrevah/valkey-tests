@@ -355,13 +355,12 @@ def test_zpopmin_or_zpopmax_readraw_in_resp_resp(r: ValkeyTestClient, resp: int)
     }
     """
     rd = ValkeyTestClient.create_from(r)
-    if_(
-        '[lsearch $::denytags "resp3"] >= 0',
-        "            if {$resp == 3} {continue}\n        ",
-        "elseif",
-        "$::force_resp3",
-        "            if {$resp == 2} {continue}\n        ",
-    )
+    if lsearch(denytags, "resp3") >= 0:
+        if resp == 3:
+            continue_()
+    elif False:
+        if resp == 2:
+            continue_()
     r.run("hello", resp)
     rd.run("hello", resp)
     rd.run("read")
@@ -426,13 +425,12 @@ def test_bzpopmin_or_bzpopmax_readraw_in_resp_resp(r: ValkeyTestClient, resp: in
     }
     """
     rd = ValkeyTestClient.create_from(r)
-    if_(
-        '[lsearch $::denytags "resp3"] >= 0',
-        "            if {$resp == 3} {continue}\n        ",
-        "elseif",
-        "$::force_resp3",
-        "            if {$resp == 2} {continue}\n        ",
-    )
+    if lsearch(denytags, "resp3") >= 0:
+        if resp == 3:
+            continue_()
+    elif False:
+        if resp == 2:
+            continue_()
     r.run("hello", resp)
     rd.run("hello", resp)
     rd.run("read")
@@ -506,13 +504,12 @@ def test_zmpop_readraw_in_resp_resp(r: ValkeyTestClient, resp: int) -> None:
     }
     """
     rd = ValkeyTestClient.create_from(r)
-    if_(
-        '[lsearch $::denytags "resp3"] >= 0',
-        "            if {$resp == 3} {continue}\n        ",
-        "elseif",
-        "$::force_resp3",
-        "            if {$resp == 2} {continue}\n        ",
-    )
+    if lsearch(denytags, "resp3") >= 0:
+        if resp == 3:
+            continue_()
+    elif False:
+        if resp == 2:
+            continue_()
     r.run("hello", resp)
     rd.run("hello", resp)
     rd.run("read")
@@ -594,13 +591,12 @@ def test_bzmpop_readraw_in_resp_resp(r: ValkeyTestClient, resp: int) -> None:
     }
     """
     rd = ValkeyTestClient.create_from(r)
-    if_(
-        '[lsearch $::denytags "resp3"] >= 0',
-        "            if {$resp == 3} {continue}\n        ",
-        "elseif",
-        "$::force_resp3",
-        "            if {$resp == 2} {continue}\n        ",
-    )
+    if lsearch(denytags, "resp3") >= 0:
+        if resp == 3:
+            continue_()
+    elif False:
+        if resp == 2:
+            continue_()
     r.run("hello", resp)
     rd.run("hello", resp)
     rd.run("read")
@@ -692,7 +688,6 @@ def test_zinterstore_516_regression_mixed_sets_and_ziplist_zsets(r: ValkeyTestCl
     assert r.run("zrange", "to_here{t}", 0, -1) == "100"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_zunionstore_result_is_sorted(r: ValkeyTestClient) -> None:
     """
     test {ZUNIONSTORE result is sorted} {
@@ -727,8 +722,8 @@ def test_zunionstore_result_is_sorted(r: ValkeyTestClient) -> None:
         cmd2.append(expr("rand()"))
         cmd2.append(random_int(1000))
         j += 1
-    # TODO: {*}$cmd1
-    # TODO: {*}$cmd2
+    r.run(*cmd1[1:])
+    r.run(*cmd2[1:])
     assert r.run("zcard", "one{t}") > 100
     assert r.run("zcard", "two{t}") > 100
     r.run("zunionstore", "dest{t}", 2, "one{t}", "two{t}")
@@ -1740,7 +1735,6 @@ def test_zrangestore_range(r: ValkeyTestClient) -> None:
     assert r.run("zrange", "z2{t}", 0, -1, "withscores") == "b 2 c 3"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_zrangestore_bylex(r: ValkeyTestClient) -> None:
     """
     test {ZRANGESTORE BYLEX} {
@@ -1752,14 +1746,12 @@ def test_zrangestore_bylex(r: ValkeyTestClient) -> None:
         r zrange z2{t} 0 -1 withscores
     } {b 2 c 3}
     """
-    # TODO: set res r zrangestore z3{t} z1{t} \[b \[c BYLEX]
-    #           assert_equal $res 2
-    #           assert_encoding listpack z3{t}
-    #           set res [r zrangestore z2{t} z1{t} \[b \[c BYLEX]
-    #           assert_equal $res 2
-    #           r zrange z2{t} 0 -1 withscores
-    #
-    assert False
+    res = r.run("zrangestore", "z3{t}", "z1{t}", "[b", "[c", "BYLEX")
+    assert res == 2
+    assert_encoding("listpack", "z3{t}")
+    res = r.run("zrangestore", "z2{t}", "z1{t}", "[b", "[c", "BYLEX")
+    assert res == 2
+    assert r.run("zrange", "z2{t}", 0, -1, "withscores") == "b 2 c 3"
 
 
 def test_zrangestore_byscore(r: ValkeyTestClient) -> None:
@@ -1858,7 +1850,6 @@ def test_zrangestore_empty_range(r: ValkeyTestClient) -> None:
     assert r.run("exists", "z2{t}") == "0"
 
 
-@pytest.mark.xfail(reason="not implemented")
 def test_zrangestore_bylex_empty_range(r: ValkeyTestClient) -> None:
     """
     test {ZRANGESTORE BYLEX - empty range} {
@@ -1867,11 +1858,9 @@ def test_zrangestore_bylex_empty_range(r: ValkeyTestClient) -> None:
         r exists z2{t}
     } {0}
     """
-    # TODO: set res r zrangestore z2{t} z1{t} \[f \[g BYLEX]
-    #           assert_equal $res 0
-    #           r exists z2{t}
-    #
-    assert False
+    res = r.run("zrangestore", "z2{t}", "z1{t}", "[f", "[g", "BYLEX")
+    assert res == 0
+    assert r.run("exists", "z2{t}") == "0"
 
 
 def test_zrangestore_byscore_empty_range(r: ValkeyTestClient) -> None:
@@ -1893,7 +1882,7 @@ def test_zrange_bylex(r: ValkeyTestClient) -> None:
         r zrange z1{t} \[b \[c BYLEX
     } {b c}
     """
-    assert r.run("zrange", "z1{t}", "\\[b", "\\[c", "BYLEX") == "b c"
+    assert r.run("zrange", "z1{t}", "[b", "[c", "BYLEX") == "b c"
 
 
 def test_zrangestore_invalid_syntax(r: ValkeyTestClient) -> None:
@@ -2482,15 +2471,24 @@ def test_zadd_overflows_the_maximum_allowed_elements_in_a_listpack_type(r: Valke
     original_max = r.run("config", "get", "zset-max-listpack-entries")[1]
     r.run("config", "set", "zset-max-listpack-entries", max_entries)
     if type == "single":
-        for_("set i 0", "$i < $max_entries", "incr i", " r zadd myzset $i $i ")
+        i = 0
+        while i < max_entries:
+            r.run("zadd", "myzset", i, i)
+            i += 1
     elif type == "multiple":
         args = []
-        for_("set i 0", "$i < $max_entries * 2", "incr i", " lappend args $i ")
+        i = 0
+        while i < (max_entries * 2):
+            args.append(i)
+            i += 1
         r.run("zadd", "myzset", "*", args)
     elif type == "single_multiple":
         r.run("zadd", "myzset", 1, 1)
         args = []
-        for_("set i 0", "$i < $max_entries * 2", "incr i", " lappend args $i ")
+        i = 0
+        while i < (max_entries * 2):
+            args.append(i)
+            i += 1
         r.run("zadd", "myzset", "*", args)
     assert_encoding("listpack", "myzset")
     assert max_entries == r.run("zcard", "myzset")
@@ -2612,6 +2610,10 @@ def close_replication_stream(*args):
     raise NotImplementedError("close_replication_stream")
 
 
+def continue_(*args):
+    raise NotImplementedError("continue_")
+
+
 def create_zset(*args):
     raise NotImplementedError("create_zset")
 
@@ -2624,10 +2626,6 @@ def expr(*args):
     raise NotImplementedError("expr")
 
 
-def for_(*args):
-    raise NotImplementedError("for_")
-
-
 def foreach(*args):
     raise NotImplementedError("foreach")
 
@@ -2636,8 +2634,8 @@ def get_keys(*args):
     raise NotImplementedError("get_keys")
 
 
-def if_(*args):
-    raise NotImplementedError("if_")
+def lsearch(*args):
+    raise NotImplementedError("lsearch")
 
 
 def proc(*args):

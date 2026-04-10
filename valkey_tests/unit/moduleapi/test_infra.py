@@ -1,6 +1,5 @@
-"""
-set testmodule file normalize tests/modules/infotest.so
-"""
+testmodule = "tests/modules/infotest.so"
+
 
 """
 test {modules config rewrite} {

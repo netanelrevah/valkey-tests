@@ -121,6 +121,15 @@ class ValkeyTestClient:
         tls_sock = ctx.wrap_socket(self._sock, server_hostname=self.host)
         return ValkeyTestClient(tls_sock)
 
+    def tls_status(self) -> dict:
+        """Return TLS connection info (analogous to ::tls::status in TCL)."""
+        assert isinstance(self._sock, ssl.SSLSocket), "tls_status() called on non-TLS connection"
+        cipher_info = self._sock.cipher()
+        return {
+            "cipher": cipher_info[0] if cipher_info else None,
+            "protocol": self._sock.version(),
+        }
+
     @classmethod
     def create_from(cls, other: "ValkeyTestClient") -> "ValkeyTestClient":
         """Open a new connection to the same server as another client."""

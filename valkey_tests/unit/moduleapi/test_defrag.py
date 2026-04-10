@@ -5,9 +5,7 @@ import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
 
-"""
-set testmodule file normalize tests/modules/defragtest.so
-"""
+testmodule = "tests/modules/defragtest.so"
 
 pytestmark = [pytest.mark.modules]
 

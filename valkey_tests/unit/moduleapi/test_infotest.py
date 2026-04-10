@@ -6,9 +6,7 @@ import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
 
-"""
-set testmodule file normalize tests/modules/infotest.so
-"""
+testmodule = "tests/modules/infotest.so"
 
 
 """
@@ -50,6 +48,7 @@ def test_module_reading_info(r: ValkeyTestClient) -> None:
         assert_match {*not found*} $e
     }
     """
+    r.run("module", "load", testmodule, "log-key", 0)
     assert r.run("info.gets", "replication", "role") == "master"
     assert r.run("info.getc", "replication", "role") == "master"
     assert r.run("info.geti", "stats", "expired_keys") == 0
@@ -79,6 +78,7 @@ def test_module_info_all(r: ValkeyTestClient) -> None:
         assert { [string match "*used_memory*" $info] }
     }
     """
+    r.run("module", "load", testmodule, "log-key", 0)
     info = r.run("info", "all")
     assert_(' ![string match "*Spanish*" $info] ')
     assert_(' ![string match "*infotest_*" $info] ')
@@ -95,6 +95,7 @@ def test_module_info_all_infotest(r: ValkeyTestClient) -> None:
         assert { [string match "*used_memory*" $info] }
     }
     """
+    r.run("module", "load", testmodule, "log-key", 0)
     info = r.run("info", "all", "infotest")
     assert string("match", "*Spanish*", info)
     assert string("match", "*infotest_*", info)
@@ -114,6 +115,7 @@ def test_module_info_everything(r: ValkeyTestClient) -> None:
         field $info infotest_dos
     } {2}
     """
+    r.run("module", "load", testmodule, "log-key", 0)
     info = r.run("info", "everything")
     assert string("match", "*infotest_global*", info)
     assert string("match", "*Spanish*", info)
@@ -133,6 +135,7 @@ def test_module_info_modules(r: ValkeyTestClient) -> None:
         assert { ![string match "*used_memory*" $info] }
     }
     """
+    r.run("module", "load", testmodule, "log-key", 0)
     info = r.run("info", "modules")
     assert string("match", "*Spanish*", info)
     assert string("match", "*infotest_global*", info)
@@ -149,6 +152,7 @@ def test_module_info_one_module(r: ValkeyTestClient) -> None:
         field $info infotest_global
     } {-2}
     """
+    r.run("module", "load", testmodule, "log-key", 0)
     info = r.run("info", "INFOtest")
     assert string("match", "*Spanish*", info)
     assert_(' ![string match "*used_memory*" $info] ')
@@ -165,6 +169,7 @@ def test_module_info_one_section(r: ValkeyTestClient) -> None:
         field $info infotest_uno
     } {one}
     """
+    r.run("module", "load", testmodule, "log-key", 0)
     info = r.run("info", "INFOtest_SpanisH")
     assert_(' ![string match "*used_memory*" $info] ')
     assert_(' ![string match "*Italian*" $info] ')
@@ -180,6 +185,7 @@ def test_module_info_dict(r: ValkeyTestClient) -> None:
         set keys [scan [regexp -inline {keys\=([\d]*)} $keyspace] keys=%d]
     } {3}
     """
+    r.run("module", "load", testmodule, "log-key", 0)
     info = r.run("info", "infotest_keyspace")
     keyspace = field(info, "infotest_db0")
     assert scan(regexp("-inline", "keys\\=([\\d]*)", keyspace), "keys=%d") == "3"
@@ -192,6 +198,7 @@ def test_module_info_unsafe_fields(r: ValkeyTestClient) -> None:
         assert_match {*infotest_unsafe_field:value=1*} $info
     }
     """
+    r.run("module", "load", testmodule, "log-key", 0)
     info = r.run("info", "infotest_unsafe")
     assert fnmatch(str(info), "*infotest_unsafe_field:value=1*")
 
@@ -205,6 +212,7 @@ def test_module_info_multiply_sections_without_all_everything_default_keywords(r
         assert { [string match "*repl_offset*" $info] }
     }
     """
+    r.run("module", "load", testmodule, "log-key", 0)
     info = r.run("info", "replication", "INFOTEST")
     assert string("match", "*Spanish*", info)
     assert_(' ![string match "*used_memory*" $info] ')
@@ -220,6 +228,7 @@ def test_module_info_multiply_sections_with_all_keyword_and_modules(r: ValkeyTes
         assert { [string match "*infotest_global*" $info] }
     }
     """
+    r.run("module", "load", testmodule, "log-key", 0)
     info = r.run("info", "all", "modules")
     assert string("match", "*cluster*", info)
     assert string("match", "*cmdstat_info*", info)
@@ -239,6 +248,7 @@ def test_module_info_multiply_sections_with_everything_keyword(r: ValkeyTestClie
         field $info infotest_dos
     } {2}
     """
+    r.run("module", "load", testmodule, "log-key", 0)
     info = r.run("info", "replication", "everything", "cpu")
     assert string("match", "*client_recent*", info)
     assert string("match", "*cmdstat_info*", info)
@@ -254,6 +264,7 @@ def test_unload_the_module_infotest(r: ValkeyTestClient) -> None:
         assert_equal {OK} [r module unload infotest]
     }
     """
+    r.run("module", "load", testmodule, "log-key", 0)
     assert "OK" == r.run("module", "unload", "infotest")
 
 

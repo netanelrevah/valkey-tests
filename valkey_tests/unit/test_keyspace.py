@@ -441,12 +441,15 @@ def test_copy_basic_usage_for_string(r: ValkeyTestClient) -> None:
     r.run("copy", "mykey{t}", "mynewkey{t}")
     res.append(r.run("get", "mynewkey{t}"))
     res.append(r.run("dbsize"))
-    if_(
-        "$::singledb",
-        "            assert_equal [list foobar 2] [format $res]\n        ",
-        "else",
-        "            r copy mykey{t} mynewkey{t} DB 10\n            r select 10\n            lappend res [r get mynewkey{t}]\n            lappend res [r dbsize]\n            r select 9\n            assert_equal [list foobar 2 foobar 1] [format $res]\n        ",
-    )
+    if False:
+        assert ["foobar", 2] == format_(res)
+    else:
+        r.run("copy", "mykey{t}", "mynewkey{t}", "DB", 10)
+        r.run("select", 10)
+        lappend("res", r.run("get", "mynewkey{t}"))
+        lappend("res", r.run("dbsize"))
+        r.run("select", 9)
+        assert ["foobar", 2, "foobar", 1] == format_(res)
 
 
 def test_copy_for_string_does_not_replace_an_existing_key_without_replace_option(r: ValkeyTestClient) -> None:
@@ -1227,8 +1230,8 @@ def format_(*args):
     raise NotImplementedError("format_")
 
 
-def if_(*args):
-    raise NotImplementedError("if_")
+def lappend(*args):
+    raise NotImplementedError("lappend")
 
 
 def random_int(*args):

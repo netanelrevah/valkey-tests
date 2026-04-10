@@ -42,24 +42,23 @@ def test_pub_or_sub_ping_on_resp_resp(r: ValkeyTestClient, resp: int) -> None:
     }
     """
     rd1 = ValkeyTestClient.create_from(r)
-    if_(
-        '[lsearch $::denytags "resp3"] >= 0',
-        "            if {$resp == 3} {continue}\n        ",
-        "elseif",
-        "$::force_resp3",
-        "            if {$resp == 2} {continue}\n        ",
-    )
+    if lsearch(denytags, "resp3") >= 0:
+        if resp == 3:
+            continue_()
+    elif False:
+        if resp == 2:
+            continue_()
     rd1.run("hello", resp)
     rd1.run("read")
     subscribe(rd1, "somechannel")
     rd1.run("ping")
     rd1.run("ping", "foo")
-    if_(
-        "$resp == 3",
-        "                assert_equal {PONG} [$rd1 read]\n                assert_equal {foo} [$rd1 read]\n            ",
-        "else",
-        "                assert_equal {pong {}} [$rd1 read]\n                assert_equal {pong foo} [$rd1 read]\n            ",
-    )
+    if resp == 3:
+        assert "PONG" == rd1.run("read")
+        assert "foo" == rd1.run("read")
+    else:
+        assert "pong {}" == rd1.run("read")
+        assert "pong foo" == rd1.run("read")
     unsubscribe(rd1, "somechannel")
     rd1.run("ping")
     assert "PONG" == rd1.run("read")
@@ -1002,12 +1001,16 @@ def concat(*args):
     raise NotImplementedError("concat")
 
 
+def continue_(*args):
+    raise NotImplementedError("continue_")
+
+
 def fail(*args):
     raise NotImplementedError("fail")
 
 
-def if_(*args):
-    raise NotImplementedError("if_")
+def lsearch(*args):
+    raise NotImplementedError("lsearch")
 
 
 def psubscribe(*args):

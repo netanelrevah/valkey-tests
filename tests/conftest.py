@@ -94,6 +94,11 @@ def rd(valkey_server):
 
 
 @pytest.fixture()
+def rd0(valkey_server):
+    yield from _client_fixture(valkey_server)
+
+
+@pytest.fixture()
 def rd1(valkey_server):
     yield from _client_fixture(valkey_server)
 
@@ -105,6 +110,16 @@ def rd2(valkey_server):
 
 @pytest.fixture()
 def rd3(valkey_server):
+    yield from _client_fixture(valkey_server)
+
+
+@pytest.fixture()
+def rd4(valkey_server):
+    yield from _client_fixture(valkey_server)
+
+
+@pytest.fixture()
+def rd15(valkey_server):
     yield from _client_fixture(valkey_server)
 
 

@@ -6,9 +6,7 @@ import pytest
 
 from tests.valkey_test_client import ValkeyTestClient
 
-"""
-set testmodule file normalize tests/modules/misc.so
-"""
+testmodule = "tests/modules/misc.so"
 
 pytestmark = [pytest.mark.modules]
 
@@ -21,6 +19,7 @@ def test_test_rm_call(r: ValkeyTestClient) -> None:
         assert { [string match "*cmdstat_module*" $info] }
     }
     """
+    r.run("module", "load", testmodule)
     info = r.run("test.call_info", "commandstats")
     assert string("match", "*cmdstat_module*", info)
 
@@ -33,6 +32,7 @@ def test_test_rm_call_args_array(r: ValkeyTestClient) -> None:
         assert { [string match "*cmdstat_module*" $info] }
     }
     """
+    r.run("module", "load", testmodule)
     info = r.run("test.call_generic", "info", "commandstats")
     assert string("match", "*cmdstat_module*", info)
 
@@ -44,6 +44,7 @@ def test_test_rm_call_recursive(r: ValkeyTestClient) -> None:
         assert { [string match "*cmdstat_module*" $info] }
     }
     """
+    r.run("module", "load", testmodule)
     info = r.run("test.call_generic", "test.call_generic", "info", "commandstats")
     assert string("match", "*cmdstat_module*", info)
 
@@ -54,6 +55,7 @@ def test_test_valkey_version(r: ValkeyTestClient) -> None:
         assert_equal [s valkey_version] [r test.serverversion]
     }
     """
+    r.run("module", "load", testmodule)
     assert s("valkey_version") == r.run("test.serverversion")
 
 
@@ -64,6 +66,7 @@ def test_test_long_double_conversions(r: ValkeyTestClient) -> None:
         assert {[string match $ld "0.00000000000000001"]}
     }
     """
+    r.run("module", "load", testmodule)
     ld = r.run("test.ld_conversion")
     assert string("match", ld, "0.00000000000000001")
 
@@ -75,6 +78,7 @@ def test_test_unsigned_long_long_conversions(r: ValkeyTestClient) -> None:
         assert {[string match $ret "ok"]}
     }
     """
+    r.run("module", "load", testmodule)
     ret = r.run("test.ull_conversion")
     assert string("match", ret, "ok")
 
@@ -90,6 +94,7 @@ def test_test_module_db_commands(r: ValkeyTestClient) -> None:
         assert_equal [r test.dbsize] 0
     }
     """
+    r.run("module", "load", testmodule)
     r.run("set", "x", "foo")
     key = r.run("test.randomkey")
     assert key == "x"
@@ -110,6 +115,7 @@ def test_test_redismodule_resetdataset_do_not_reset_functions(r: ValkeyTestClien
         r function flush
     }
     """
+    r.run("module", "load", testmodule)
     r.run(
         "function",
         "load",
@@ -130,6 +136,7 @@ def test_test_module_keyexists(r: ValkeyTestClient) -> None:
         assert_equal 0 [r test.keyexists x]
     }
     """
+    r.run("module", "load", testmodule)
     r.run("set", "x", "foo")
     assert 1 == r.run("test.keyexists", "x")
     r.run("del", "x")
@@ -156,6 +163,7 @@ def test_test_module_lru_api(r: ValkeyTestClient) -> None:
         assert { $was_set == 0 }
     }
     """
+    r.run("module", "load", testmodule)
     r.run("config", "set", "maxmemory-policy", "allkeys-lru")
     r.run("set", "x", "foo")
     lru = r.run("test.getlru", "x")
@@ -463,9 +471,9 @@ def test_test_module_getclientcert_api(r: ValkeyTestClient) -> None:
     )
     cert = r.run("test.getclientcert")
     if False:
-        assert_('$cert != ""')
+        assert cert != ""
     else:
-        assert_('$cert == ""')
+        assert cert == ""
 
 
 def test_test_detached_thread_safe_cnotext(r: ValkeyTestClient) -> None:
@@ -1163,6 +1171,7 @@ def test_test_dry_run_ok_oom_or_acl(r: ValkeyTestClient) -> None:
         assert_equal [r get x] 5
     }
     """
+    r.run("module", "load", testmodule)
     x = 5
     r.run("set", "x", x)
     try:
@@ -1185,6 +1194,7 @@ def test_test_dry_run_fail_oom(r: ValkeyTestClient) -> None:
         r config set maxmemory 0
     } {OK} {needs:config-maxmemory}
     """
+    r.run("module", "load", testmodule)
     x = 5
     r.run("set", "x", x)
     r.run("config", "set", "maxmemory", 1)
@@ -1211,6 +1221,7 @@ def test_test_dry_run_fail_acl(r: ValkeyTestClient) -> None:
         assert_equal [r get x] $x
     }
     """
+    r.run("module", "load", testmodule)
     x = 5
     r.run("set", "x", x)
     r.run("acl", "setuser", "default", "resetkeys")
@@ -1235,6 +1246,7 @@ def test_test_silent_open_key(r: ValkeyTestClient) -> None:
         assert_equal {0} [r test.get_n_events]
     }
     """
+    r.run("module", "load", testmodule)
     r.run("debug", "set-active-expire", 0)
     r.run("test.clear_n_events")
     r.run("set", "x", 1, "PX", 10)
